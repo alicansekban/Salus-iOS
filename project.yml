@@ -1,0 +1,89 @@
+# XcodeGen manifest for the Salus iOS app.
+#
+# `Salus.xcodeproj` is generated from this file AND committed, so CI (Task 7) needs only
+# Xcode — no `brew install xcodegen` step, and no chance of the runner generating a project
+# that differs from the one a developer built against.
+#
+# The contract that buys: this file is the source of truth. Never hand-edit the project in
+# Xcode's inspector — change `project.yml`, re-run `xcodegen generate`, and commit both.
+#
+# Regenerate with:
+#     xcodegen generate
+
+name: Salus
+
+options:
+  bundleIdPrefix: com.alicansekban
+  deploymentTarget:
+    iOS: "17.0"
+  # Mirror the folder tree in the navigator instead of flattening it, so `App/` on disk and
+  # `App/` in Xcode stay the same thing.
+  createIntermediateGroups: true
+  groupSortPosition: top
+  # An app with no test target yet still gets a scheme worth sharing; keep it out of
+  # `xcuserdata/` (which `.gitignore` drops) so `-scheme Salus` resolves on a clean clone.
+  generateEmptyDirectories: false
+
+# Local SPM packages, referenced by path. Only `SalusDesignSystem` is linked: it is the one
+# package the shell draws from. `SalusModel` comes along as its dependency and is built, but
+# the app deliberately does not `import` it — see `RootView.swift` on why the shell needs no
+# `ThemeMode` value of its own in M0.
+packages:
+  SalusDesignSystem:
+    path: Packages/SalusDesignSystem
+
+settings:
+  base:
+    # Matches the packages' `swift-tools-version: 6.0`, so the app and the code it links are
+    # checked under the same language mode rather than two.
+    SWIFT_VERSION: "6.0"
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+    SWIFT_TREAT_WARNINGS_AS_ERRORS: NO
+    ENABLE_MODULE_VERIFIER: NO
+
+targets:
+  Salus:
+    type: application
+    platform: iOS
+    deploymentTarget: "17.0"
+
+    sources:
+      - path: App
+
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.alicansekban.salus
+        PRODUCT_NAME: Salus
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        # iPhone only, matching the Android phone-first app.
+        TARGETED_DEVICE_FAMILY: "1"
+        # No app icon set is declared in M0: an empty `AppIcon` asset would warn on every
+        # build, and CI (Task 7) holds a zero-warning baseline. The real icon arrives with
+        # the asset catalog.
+        GENERATE_INFOPLIST_FILE: NO
+        CODE_SIGN_STYLE: Automatic
+
+    info:
+      path: App/Info.plist
+      properties:
+        CFBundleDisplayName: Salus
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        # An empty `UILaunchScreen` opts the app into the modern launch-screen path. Without
+        # it iOS runs the app letterboxed at a legacy screen size — which would also make the
+        # verification screenshot lie about how the shell lays out.
+        UILaunchScreen: {}
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+
+    dependencies:
+      - package: SalusDesignSystem
+        product: SalusDesignSystem
+
+    scheme:
+      testTargets: []
+      gatherCoverageData: false

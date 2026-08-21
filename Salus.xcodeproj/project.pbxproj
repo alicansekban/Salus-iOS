@@ -1,0 +1,360 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		1102517D43A6643370219A27 /* AppCompositionRoot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15AD79D550BC94771443016D /* AppCompositionRoot.swift */; };
+		71A7E5AF1C24B88439724AF9 /* RootTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 814A06AA9BCDD69E3C76C98E /* RootTab.swift */; };
+		99186A4143B93D27A5CCE3E2 /* SalusDesignSystem in Frameworks */ = {isa = PBXBuildFile; productRef = C9C72A59E0A6B87AFB4FE4FF /* SalusDesignSystem */; };
+		B049FC0314FE8C521DE31994 /* SalusApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F703871BE6F4C3CF92AA8959 /* SalusApp.swift */; };
+		C2326DF7EB01BFBC5283C249 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3682A16DBF8B254394C1B404 /* RootView.swift */; };
+		FC66D0CB66008FBFBFEB19A3 /* PlaceholderScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E7A0AF160F41F13451BB006 /* PlaceholderScreen.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		15AD79D550BC94771443016D /* AppCompositionRoot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppCompositionRoot.swift; sourceTree = "<group>"; };
+		2E7A0AF160F41F13451BB006 /* PlaceholderScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaceholderScreen.swift; sourceTree = "<group>"; };
+		3682A16DBF8B254394C1B404 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		69A1B55BADFFC2D672DBFB8E /* Salus.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Salus.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		814A06AA9BCDD69E3C76C98E /* RootTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootTab.swift; sourceTree = "<group>"; };
+		92401A60F464F47C5E0F8036 /* SalusDesignSystem */ = {isa = PBXFileReference; lastKnownFileType = folder; name = SalusDesignSystem; path = Packages/SalusDesignSystem; sourceTree = SOURCE_ROOT; };
+		A853DA3BEE5AEAF0DC4959BF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		F703871BE6F4C3CF92AA8959 /* SalusApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SalusApp.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		638B844B1E2F7CFD1F93FD01 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				99186A4143B93D27A5CCE3E2 /* SalusDesignSystem in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		1705B791858378CE8669E1A2 /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+				92401A60F464F47C5E0F8036 /* SalusDesignSystem */,
+			);
+			path = Packages;
+			sourceTree = "<group>";
+		};
+		63647BEF3F7D3E5745B03EDC = {
+			isa = PBXGroup;
+			children = (
+				A8A07DF35E5624B1CA8B63A8 /* App */,
+				1705B791858378CE8669E1A2 /* Packages */,
+				AFDBADA44D114531DF68E190 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		A8A07DF35E5624B1CA8B63A8 /* App */ = {
+			isa = PBXGroup;
+			children = (
+				15AD79D550BC94771443016D /* AppCompositionRoot.swift */,
+				A853DA3BEE5AEAF0DC4959BF /* Info.plist */,
+				2E7A0AF160F41F13451BB006 /* PlaceholderScreen.swift */,
+				814A06AA9BCDD69E3C76C98E /* RootTab.swift */,
+				3682A16DBF8B254394C1B404 /* RootView.swift */,
+				F703871BE6F4C3CF92AA8959 /* SalusApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		AFDBADA44D114531DF68E190 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				69A1B55BADFFC2D672DBFB8E /* Salus.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		A55E00D08F8D285E21B2B103 /* Salus */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 1BBF40E275F2BFFBBED868EF /* Build configuration list for PBXNativeTarget "Salus" */;
+			buildPhases = (
+				29E09EEA532E3D26CEB1E653 /* Sources */,
+				638B844B1E2F7CFD1F93FD01 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Salus;
+			packageProductDependencies = (
+				C9C72A59E0A6B87AFB4FE4FF /* SalusDesignSystem */,
+			);
+			productName = Salus;
+			productReference = 69A1B55BADFFC2D672DBFB8E /* Salus.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		1EE4C78BC1AC9D56571497C6 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					A55E00D08F8D285E21B2B103 = {
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = CE292D13917A4EAB9B30BC9D /* Build configuration list for PBXProject "Salus" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 63647BEF3F7D3E5745B03EDC;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				EBDD90FF7115F19C997BB708 /* XCLocalSwiftPackageReference "Packages/SalusDesignSystem" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = AFDBADA44D114531DF68E190 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				A55E00D08F8D285E21B2B103 /* Salus */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		29E09EEA532E3D26CEB1E653 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1102517D43A6643370219A27 /* AppCompositionRoot.swift in Sources */,
+				FC66D0CB66008FBFBFEB19A3 /* PlaceholderScreen.swift in Sources */,
+				71A7E5AF1C24B88439724AF9 /* RootTab.swift in Sources */,
+				C2326DF7EB01BFBC5283C249 /* RootView.swift in Sources */,
+				B049FC0314FE8C521DE31994 /* SalusApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		28214DE76AFA740F6CF71777 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = App/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.alicansekban.salus;
+				PRODUCT_NAME = Salus;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		3740BBB9CD1C65BA3B667BB7 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_MODULE_VERIFIER = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_TREAT_WARNINGS_AS_ERRORS = NO;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		937CAFBAC182B8EAF2256189 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_MODULE_VERIFIER = NO;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_TREAT_WARNINGS_AS_ERRORS = NO;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		E8BAF29D05BB8C6DB6C6C019 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = App/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.alicansekban.salus;
+				PRODUCT_NAME = Salus;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		1BBF40E275F2BFFBBED868EF /* Build configuration list for PBXNativeTarget "Salus" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				28214DE76AFA740F6CF71777 /* Debug */,
+				E8BAF29D05BB8C6DB6C6C019 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		CE292D13917A4EAB9B30BC9D /* Build configuration list for PBXProject "Salus" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3740BBB9CD1C65BA3B667BB7 /* Debug */,
+				937CAFBAC182B8EAF2256189 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		EBDD90FF7115F19C997BB708 /* XCLocalSwiftPackageReference "Packages/SalusDesignSystem" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/SalusDesignSystem;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		C9C72A59E0A6B87AFB4FE4FF /* SalusDesignSystem */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = SalusDesignSystem;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 1EE4C78BC1AC9D56571497C6 /* Project object */;
+}
