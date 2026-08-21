@@ -19,14 +19,16 @@ typealias ColorSample = (name: String, actual: Color, expected: UInt32)
 /// One sampled dimension row: token name, the transcribed value, the value spelled out in the doc.
 typealias DimensionSample = (name: String, actual: CGFloat, expected: CGFloat)
 
-/// One sampled type role: role name, the transcribed style, and the doc's four metrics.
+/// One sampled type role: role name, the transcribed style, the doc's four §9.1/§9.2 metrics
+/// and its §9.3 Dynamic Type reference style.
 typealias TypeSample = (
     role: String,
     style: SalusTextStyle,
     size: CGFloat,
     lineHeight: CGFloat,
     weight: Font.Weight,
-    tracking: CGFloat
+    tracking: CGFloat,
+    dynamicTypeStyle: Font.TextStyle
 )
 
 @Suite("Design token counts (drift detector)")
@@ -293,21 +295,23 @@ struct DimensionTokenTests {
 
 @Suite("Typography (§9)")
 struct TypographyTokenTests {
+    // The last column is §9.3's Dynamic Type reference style: the curve the role follows,
+    // never the size to ship.
     @Test(
-        "text styles match design-tokens.md §9.1/§9.2",
+        "text styles match design-tokens.md §9.1/§9.2/§9.3",
         arguments: [
-            ("headlineLarge", SalusTypography.headlineLarge, 32, 38, Font.Weight.bold, 0.0),
-            ("headlineMedium", SalusTypography.headlineMedium, 28, 34, Font.Weight.bold, 0.0),
-            ("headlineSmall", SalusTypography.headlineSmall, 24, 32, Font.Weight.semibold, 0.0),
-            ("titleLarge", SalusTypography.titleLarge, 22, 28, Font.Weight.semibold, 0.0),
-            ("titleMedium", SalusTypography.titleMedium, 16, 24, Font.Weight.semibold, 0.2),
-            ("titleSmall", SalusTypography.titleSmall, 14, 20, Font.Weight.medium, 0.1),
-            ("bodyLarge", SalusTypography.bodyLarge, 16, 24, Font.Weight.regular, 0.5),
-            ("bodyMedium", SalusTypography.bodyMedium, 14, 20, Font.Weight.regular, 0.2),
-            ("bodySmall", SalusTypography.bodySmall, 12, 16, Font.Weight.regular, 0.4),
-            ("labelLarge", SalusTypography.labelLarge, 14, 20, Font.Weight.medium, 0.1),
-            ("labelMedium", SalusTypography.labelMedium, 12, 16, Font.Weight.medium, 0.5),
-            ("labelSmall", SalusTypography.labelSmall, 11, 16, Font.Weight.medium, 0.5),
+            ("headlineLarge", SalusTypography.headlineLarge, 32, 38, Font.Weight.bold, 0.0, Font.TextStyle.largeTitle),
+            ("headlineMedium", SalusTypography.headlineMedium, 28, 34, Font.Weight.bold, 0.0, Font.TextStyle.title),
+            ("headlineSmall", SalusTypography.headlineSmall, 24, 32, Font.Weight.semibold, 0.0, Font.TextStyle.title2),
+            ("titleLarge", SalusTypography.titleLarge, 22, 28, Font.Weight.semibold, 0.0, Font.TextStyle.title3),
+            ("titleMedium", SalusTypography.titleMedium, 16, 24, Font.Weight.semibold, 0.2, Font.TextStyle.headline),
+            ("titleSmall", SalusTypography.titleSmall, 14, 20, Font.Weight.medium, 0.1, Font.TextStyle.subheadline),
+            ("bodyLarge", SalusTypography.bodyLarge, 16, 24, Font.Weight.regular, 0.5, Font.TextStyle.body),
+            ("bodyMedium", SalusTypography.bodyMedium, 14, 20, Font.Weight.regular, 0.2, Font.TextStyle.callout),
+            ("bodySmall", SalusTypography.bodySmall, 12, 16, Font.Weight.regular, 0.4, Font.TextStyle.caption),
+            ("labelLarge", SalusTypography.labelLarge, 14, 20, Font.Weight.medium, 0.1, Font.TextStyle.footnote),
+            ("labelMedium", SalusTypography.labelMedium, 12, 16, Font.Weight.medium, 0.5, Font.TextStyle.caption),
+            ("labelSmall", SalusTypography.labelSmall, 11, 16, Font.Weight.medium, 0.5, Font.TextStyle.caption2),
         ] as [TypeSample]
     )
     func textStyle(_ sample: TypeSample) {
@@ -315,6 +319,10 @@ struct TypographyTokenTests {
         #expect(sample.style.lineHeight == sample.lineHeight, "\(sample.role).lineHeight")
         #expect(sample.style.weight == sample.weight, "\(sample.role).weight")
         #expect(sample.style.tracking == sample.tracking, "\(sample.role).tracking")
+        #expect(
+            sample.style.dynamicTypeStyle == sample.dynamicTypeStyle,
+            "\(sample.role).dynamicTypeStyle"
+        )
     }
 
     /// §9.2: display roles exist in the M3 baseline but Salus never draws them.

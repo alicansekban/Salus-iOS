@@ -6,6 +6,10 @@ import SwiftUI
 // Colors with no Material role: one accent set per feature area, plus two shared status
 // colors. Member names are kept byte-identical to the Kotlin ones so the two files stay
 // diffable by eye.
+//
+// Every hex lives on its own named `private static let` below rather than inline in the
+// `SalusExtendedColors` initializer: a `Color(hex:)` call as an initializer argument costs
+// the type checker real time, and the nested `FeatureAccent(...)` calls multiply it.
 
 /// One feature area's accent set. Mirrors `data class FeatureAccent`
 /// (`ExtendedColors.kt:16-21`).
@@ -89,79 +93,164 @@ public struct SalusExtendedColors: Equatable, Sendable {
     }
 }
 
+/// §3.1 / §3.3 — the light accent values. Source: `ExtendedColors.kt:39-74`.
+private enum LightAccentPalette {
+    // medications — ExtendedColors.kt:39-44
+    static let medicationsAccent = Color(hex: 0x17876D)
+    static let medicationsOnAccent = Color(hex: 0xFFFFFF)
+    static let medicationsContainer = Color(hex: 0xC4EFE3)
+    static let medicationsOnContainer = Color(hex: 0x063D33)
+
+    // cycle — ExtendedColors.kt:45-50
+    static let cycleAccent = Color(hex: 0xAE5064)
+    static let cycleOnAccent = Color(hex: 0xFFFFFF)
+    static let cycleContainer = Color(hex: 0xF8DCE2)
+    static let cycleOnContainer = Color(hex: 0x451723)
+
+    // vitals — ExtendedColors.kt:51-56
+    static let vitalsAccent = Color(hex: 0x3E8D5F)
+    static let vitalsOnAccent = Color(hex: 0xFFFFFF)
+    static let vitalsContainer = Color(hex: 0xCDEBD6)
+    static let vitalsOnContainer = Color(hex: 0x0D2E1C)
+
+    // appointments — ExtendedColors.kt:57-62.
+    // `accent` deliberately equals the brand `primary` — that is not a copy-paste slip,
+    // do not "differentiate" it.
+    static let appointmentsAccent = Color(hex: 0x3E7D5F)
+    static let appointmentsOnAccent = Color(hex: 0xFFFFFF)
+    static let appointmentsContainer = Color(hex: 0xD5E8DC)
+    static let appointmentsOnContainer = Color(hex: 0x10281C)
+
+    // trends — ExtendedColors.kt:67-72
+    static let trendsAccent = Color(hex: 0x4F5AA8)
+    static let trendsOnAccent = Color(hex: 0xFFFFFF)
+    static let trendsContainer = Color(hex: 0xDEE0FF)
+    static let trendsOnContainer = Color(hex: 0x00105C)
+
+    // §3.3 status colors
+    static let success = Color(hex: 0x2E7D4F)  // ExtendedColors.kt:73
+    static let warning = Color(hex: 0xA66B00)  // ExtendedColors.kt:74
+
+    static let medications = FeatureAccent(
+        accent: medicationsAccent,
+        onAccent: medicationsOnAccent,
+        container: medicationsContainer,
+        onContainer: medicationsOnContainer
+    )
+    static let cycle = FeatureAccent(
+        accent: cycleAccent,
+        onAccent: cycleOnAccent,
+        container: cycleContainer,
+        onContainer: cycleOnContainer
+    )
+    static let vitals = FeatureAccent(
+        accent: vitalsAccent,
+        onAccent: vitalsOnAccent,
+        container: vitalsContainer,
+        onContainer: vitalsOnContainer
+    )
+    static let appointments = FeatureAccent(
+        accent: appointmentsAccent,
+        onAccent: appointmentsOnAccent,
+        container: appointmentsContainer,
+        onContainer: appointmentsOnContainer
+    )
+    static let trends = FeatureAccent(
+        accent: trendsAccent,
+        onAccent: trendsOnAccent,
+        container: trendsContainer,
+        onContainer: trendsOnContainer
+    )
+}
+
+/// §3.2 / §3.3 — the dark accent values. Source: `ExtendedColors.kt:78-110`.
+private enum DarkAccentPalette {
+    // medications — ExtendedColors.kt:78-83
+    static let medicationsAccent = Color(hex: 0x66D6B8)
+    static let medicationsOnAccent = Color(hex: 0x00382D)
+    static let medicationsContainer = Color(hex: 0x0F4A3D)
+    static let medicationsOnContainer = Color(hex: 0xBFF2E3)
+
+    // cycle — ExtendedColors.kt:84-89
+    static let cycleAccent = Color(hex: 0xEC93A8)
+    static let cycleOnAccent = Color(hex: 0x4C1926)
+    static let cycleContainer = Color(hex: 0x5C2735)
+    static let cycleOnContainer = Color(hex: 0xFBD5DE)
+
+    // vitals — ExtendedColors.kt:90-95
+    static let vitalsAccent = Color(hex: 0x86CFA1)
+    static let vitalsOnAccent = Color(hex: 0x0C3A22)
+    static let vitalsContainer = Color(hex: 0x245538)
+    static let vitalsOnContainer = Color(hex: 0xD0EDD9)
+
+    // appointments — ExtendedColors.kt:96-101
+    static let appointmentsAccent = Color(hex: 0x8BD6B2)
+    static let appointmentsOnAccent = Color(hex: 0x0A3B26)
+    static let appointmentsContainer = Color(hex: 0x275B43)
+    static let appointmentsOnContainer = Color(hex: 0xC4E8D2)
+
+    // trends — ExtendedColors.kt:103-108
+    static let trendsAccent = Color(hex: 0xBAC3FF)
+    static let trendsOnAccent = Color(hex: 0x1E2578)
+    static let trendsContainer = Color(hex: 0x363E90)
+    static let trendsOnContainer = Color(hex: 0xDEE0FF)
+
+    // §3.3 status colors
+    static let success = Color(hex: 0x7ED29A)  // ExtendedColors.kt:109
+    static let warning = Color(hex: 0xE5B85C)  // ExtendedColors.kt:110
+
+    static let medications = FeatureAccent(
+        accent: medicationsAccent,
+        onAccent: medicationsOnAccent,
+        container: medicationsContainer,
+        onContainer: medicationsOnContainer
+    )
+    static let cycle = FeatureAccent(
+        accent: cycleAccent,
+        onAccent: cycleOnAccent,
+        container: cycleContainer,
+        onContainer: cycleOnContainer
+    )
+    static let vitals = FeatureAccent(
+        accent: vitalsAccent,
+        onAccent: vitalsOnAccent,
+        container: vitalsContainer,
+        onContainer: vitalsOnContainer
+    )
+    static let appointments = FeatureAccent(
+        accent: appointmentsAccent,
+        onAccent: appointmentsOnAccent,
+        container: appointmentsContainer,
+        onContainer: appointmentsOnContainer
+    )
+    static let trends = FeatureAccent(
+        accent: trendsAccent,
+        onAccent: trendsOnAccent,
+        container: trendsContainer,
+        onContainer: trendsOnContainer
+    )
+}
+
 extension SalusExtendedColors {
-    /// §3.1 / §3.3 — light. Source: `ExtendedColors.kt:39-74`.
-    ///
-    /// `appointments` deliberately equals the brand `primary` — that is not a copy-paste
-    /// slip, do not "differentiate" it.
+    /// §3.1 / §3.3 — light.
     public static let light = SalusExtendedColors(
-        medications: FeatureAccent(  // ExtendedColors.kt:39-44
-            accent: Color(hex: 0x17876D),
-            onAccent: Color(hex: 0xFFFFFF),
-            container: Color(hex: 0xC4EFE3),
-            onContainer: Color(hex: 0x063D33)
-        ),
-        cycle: FeatureAccent(  // ExtendedColors.kt:45-50
-            accent: Color(hex: 0xAE5064),
-            onAccent: Color(hex: 0xFFFFFF),
-            container: Color(hex: 0xF8DCE2),
-            onContainer: Color(hex: 0x451723)
-        ),
-        vitals: FeatureAccent(  // ExtendedColors.kt:51-56
-            accent: Color(hex: 0x3E8D5F),
-            onAccent: Color(hex: 0xFFFFFF),
-            container: Color(hex: 0xCDEBD6),
-            onContainer: Color(hex: 0x0D2E1C)
-        ),
-        appointments: FeatureAccent(  // ExtendedColors.kt:57-62
-            accent: Color(hex: 0x3E7D5F),
-            onAccent: Color(hex: 0xFFFFFF),
-            container: Color(hex: 0xD5E8DC),
-            onContainer: Color(hex: 0x10281C)
-        ),
-        trends: FeatureAccent(  // ExtendedColors.kt:67-72
-            accent: Color(hex: 0x4F5AA8),
-            onAccent: Color(hex: 0xFFFFFF),
-            container: Color(hex: 0xDEE0FF),
-            onContainer: Color(hex: 0x00105C)
-        ),
-        success: Color(hex: 0x2E7D4F),  // ExtendedColors.kt:73
-        warning: Color(hex: 0xA66B00)  // ExtendedColors.kt:74
+        medications: LightAccentPalette.medications,
+        cycle: LightAccentPalette.cycle,
+        vitals: LightAccentPalette.vitals,
+        appointments: LightAccentPalette.appointments,
+        trends: LightAccentPalette.trends,
+        success: LightAccentPalette.success,
+        warning: LightAccentPalette.warning
     )
 
-    /// §3.2 / §3.3 — dark. Source: `ExtendedColors.kt:78-110`.
+    /// §3.2 / §3.3 — dark.
     public static let dark = SalusExtendedColors(
-        medications: FeatureAccent(  // ExtendedColors.kt:78-83
-            accent: Color(hex: 0x66D6B8),
-            onAccent: Color(hex: 0x00382D),
-            container: Color(hex: 0x0F4A3D),
-            onContainer: Color(hex: 0xBFF2E3)
-        ),
-        cycle: FeatureAccent(  // ExtendedColors.kt:84-89
-            accent: Color(hex: 0xEC93A8),
-            onAccent: Color(hex: 0x4C1926),
-            container: Color(hex: 0x5C2735),
-            onContainer: Color(hex: 0xFBD5DE)
-        ),
-        vitals: FeatureAccent(  // ExtendedColors.kt:90-95
-            accent: Color(hex: 0x86CFA1),
-            onAccent: Color(hex: 0x0C3A22),
-            container: Color(hex: 0x245538),
-            onContainer: Color(hex: 0xD0EDD9)
-        ),
-        appointments: FeatureAccent(  // ExtendedColors.kt:96-101
-            accent: Color(hex: 0x8BD6B2),
-            onAccent: Color(hex: 0x0A3B26),
-            container: Color(hex: 0x275B43),
-            onContainer: Color(hex: 0xC4E8D2)
-        ),
-        trends: FeatureAccent(  // ExtendedColors.kt:103-108
-            accent: Color(hex: 0xBAC3FF),
-            onAccent: Color(hex: 0x1E2578),
-            container: Color(hex: 0x363E90),
-            onContainer: Color(hex: 0xDEE0FF)
-        ),
-        success: Color(hex: 0x7ED29A),  // ExtendedColors.kt:109
-        warning: Color(hex: 0xE5B85C)  // ExtendedColors.kt:110
+        medications: DarkAccentPalette.medications,
+        cycle: DarkAccentPalette.cycle,
+        vitals: DarkAccentPalette.vitals,
+        appointments: DarkAccentPalette.appointments,
+        trends: DarkAccentPalette.trends,
+        success: DarkAccentPalette.success,
+        warning: DarkAccentPalette.warning
     )
 }
