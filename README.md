@@ -21,3 +21,22 @@ and recorded in the plan (§6).
 ## Milestone plans
 
 Per-milestone execution plans live in `docs/plans/` in this repository.
+
+## Toolchain
+
+Host tooling required to build this project. The three command-line tools are installed with
+Homebrew (`brew install xcodegen swiftlint swiftformat`); they are build/host tooling, not
+project dependencies.
+
+| Tool | Version | Purpose |
+| --- | --- | --- |
+| Xcode | 26.4.1 (build 17E202) | Swift compiler, SDKs, simulators |
+| XcodeGen | 2.46.0 | Generates `Salus.xcodeproj` from `project.yml` |
+| SwiftLint | 0.65.0 | Lint |
+| SwiftFormat | 0.62.1 | Formatting |
+
+Verify all three with:
+
+```sh
+xcodegen --version && swiftlint version && swiftformat --version
+```
