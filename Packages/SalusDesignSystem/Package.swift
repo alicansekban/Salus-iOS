@@ -6,7 +6,10 @@ import PackageDescription
 
 let package = Package(
     name: "SalusDesignSystem",
-    platforms: [.iOS(.v17)],
+    // iOS is the ship target. macOS is declared only so `swift test` can build and run the
+    // token pinning tests on the host toolchain — this package draws SwiftUI `Color`/`Font`
+    // values, which need a macOS deployment target above 10.13 (SwiftPM's default).
+    platforms: [.iOS(.v17), .macOS(.v14)],
     products: [
         .library(name: "SalusDesignSystem", targets: ["SalusDesignSystem"])
     ],
