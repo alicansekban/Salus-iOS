@@ -1,20 +1,22 @@
-import SwiftUI
-
-// The two theme settings, ported 1:1 from Android `core/model/.../model/Settings.kt`.
+// The two theme settings, ported 1:1 from Android
+// `core/model/src/main/kotlin/com/alicansekban/salus/core/model/Settings.kt`.
 //
-// On Android these enums live in `:core:model`, not `:core:designsystem`. They sit here for M0
-// because the iOS `SalusModel` package is still a placeholder and the theme resolution below is
-// their only consumer; when `SalusSettings` arrives in M1 they move to `SalusModel` and this
-// package keeps importing them. Nothing about their shape changes when they move.
+// They live here, in the pure-domain layer, exactly as they do on Android: `:core:model` links
+// no UI framework, and `:core:designsystem` depends on `:core:model`, never the reverse. The
+// settings store that reads and writes them (`SalusSettings`, M1) must not have to link SwiftUI
+// to know which mode the user picked.
+//
+// Everything below is String raw values and Bool logic — no SwiftUI, no UIKit. The two pieces
+// that need a framework or the token layer are extensions in `SalusDesignSystem`:
+// `ThemeMode.preferredColorScheme` and `PremiumTheme.accentPalette(dark:)`.
 //
 // The names are deliberately unprefixed — `ThemeMode` and `PremiumTheme` are Salus's own domain
-// vocabulary and are spelled exactly as Kotlin spells them, unlike `SalusColorScheme`, which
-// carries a prefix only because SwiftUI already owns the name `ColorScheme`.
+// vocabulary, spelled exactly as Kotlin spells them.
 //
-// Persistence is NOT this package's business (no storage in M0). What is pinned here is the
-// wire format, so that whatever writes the values in M1 is byte-compatible with Android:
-// DataStore stores `mode.name` / `theme.name` — the Kotlin constant names themselves —
-// under the two string keys carried as `storageKey`.
+// Persistence is not this package's business either. What is pinned here is the wire format, so
+// that whatever writes the values in M1 is byte-compatible with Android: DataStore stores
+// `mode.name` / `theme.name` — the Kotlin constant names themselves — under the two string keys
+// carried as `storageKey`.
 
 /// Which color scheme the user asked for.
 ///
@@ -50,16 +52,6 @@ public enum ThemeMode: String, CaseIterable, Equatable, Sendable {
         case .dark: true
         }
     }
-
-    /// The value to hand SwiftUI's `.preferredColorScheme`: `nil` for `SYSTEM`, so the OS keeps
-    /// deciding — the iOS shape of `isSystemInDarkTheme()` being the Android default.
-    public var preferredColorScheme: ColorScheme? {
-        switch self {
-        case .system: nil
-        case .light: .light
-        case .dark: .dark
-        }
-    }
 }
 
 /// The premium-only color palettes; `classic` is the free Salus brand theme.
@@ -83,17 +75,5 @@ public enum PremiumTheme: String, CaseIterable, Equatable, Sendable {
     public static func fromStoredValue(_ stored: String?) -> PremiumTheme {
         guard let stored, let theme = PremiumTheme(rawValue: stored) else { return .default }
         return theme
-    }
-
-    /// The eight accent roles this palette paints, in the given theme (§4).
-    ///
-    /// `classic` returns the brand accents, which is why applying it is a no-op.
-    public func accentPalette(dark: Bool) -> SalusPremiumAccentPalette {
-        switch self {
-        case .classic: dark ? SalusPremiumAccents.classicDark : SalusPremiumAccents.classicLight
-        case .ocean: dark ? SalusPremiumAccents.oceanDark : SalusPremiumAccents.oceanLight
-        case .sunset: dark ? SalusPremiumAccents.sunsetDark : SalusPremiumAccents.sunsetLight
-        case .forest: dark ? SalusPremiumAccents.forestDark : SalusPremiumAccents.forestLight
-        }
     }
 }

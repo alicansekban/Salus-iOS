@@ -26,7 +26,11 @@ let package = Package(
         .testTarget(
             name: "SalusDesignSystemTests",
             dependencies: [
-                "SalusDesignSystem"
+                "SalusDesignSystem",
+                // The theme tests name `ThemeMode` / `PremiumTheme` directly. They come from the
+                // pure-domain package, so the dependency is declared rather than relied on
+                // transitively through `SalusDesignSystem`.
+                .product(name: "SalusModel", package: "SalusModel")
             ]
         )
     ]

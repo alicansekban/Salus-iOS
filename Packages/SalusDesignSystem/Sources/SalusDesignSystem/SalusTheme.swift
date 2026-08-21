@@ -1,3 +1,4 @@
+import SalusModel
 import SwiftUI
 
 // Theme resolution, mirroring the Android `SalusTheme` composable

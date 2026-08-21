@@ -1,25 +1,22 @@
+import SalusModel
 import SwiftUI
 import Testing
 
 @testable import SalusDesignSystem
 
-// Pinning tests for theme resolution.
+// Pinning tests for theme resolution: mode + palette -> the tokens that get drawn.
 //
-// Two sources of truth, both copied by hand into the literals below:
+// Source of truth, copied by hand into the literals below:
+// `salus-android/core/designsystem/.../theme/Theme.kt:86-104` and
+// `PremiumThemeColors.kt:103-120`, tabulated in `docs/design/design-tokens.md` §4 / §4.5.
 //
-//  * The vocabulary — `salus-android/core/model/.../model/Settings.kt:3-15`. DataStore persists
-//    `mode.name` / `theme.name` (`SalusPreferencesDataSource.kt:38,74`), so the Kotlin enum
-//    constant names ARE the stored strings and the Swift raw values must match them verbatim.
-//    The two preference keys come from `SalusPreferencesDataSource.kt:78,87`.
-//  * The resolution — `salus-android/core/designsystem/.../theme/Theme.kt:86-104` and
-//    `PremiumThemeColors.kt:103-120`, tabulated in `docs/design/design-tokens.md` §4/§4.5.
+// The vocabulary itself — raw values, storage keys, decoding, `isDark(systemIsDark:)` — is pure
+// domain and lives in `SalusModel`; `ThemeSettingsTests` there pins it. What is asserted here is
+// only what needs the token layer or SwiftUI.
 //
-// The token values themselves are pinned by `SalusDesignTokensTests`; the tables here assert
-// that *resolution* lands on them, plus a handful of doc hexes so a swapped palette is caught
-// even if a token were mis-transcribed on both sides.
-
-/// One mode-resolution row: the stored mode, what the OS reports, and the expected outcome.
-typealias ThemeModeRow = (mode: ThemeMode, systemIsDark: Bool, expectedDark: Bool)
+// The token values are pinned by `SalusDesignTokensTests`; the tables below assert that
+// *resolution* lands on them, plus a handful of doc hexes so a swapped palette is caught even if
+// a token were mis-transcribed on both sides.
 
 /// One palette row: palette, theme, and two doc hexes that identify it unambiguously.
 typealias PaletteRow = (
@@ -29,86 +26,8 @@ typealias PaletteRow = (
     onSecondaryContainer: UInt32
 )
 
-/// One decoding row: the raw string DataStore could hold, and the value it must decode to.
-typealias StoredModeRow = (stored: String?, expected: ThemeMode)
-
-@Suite("Theme vocabulary (Android parity)")
-struct ThemeVocabularyTests {
-    @Test("ThemeMode raw values are the Kotlin enum constant names, in declaration order")
-    func themeModeRawValues() {
-        // Settings.kt:3-7
-        #expect(ThemeMode.allCases.map(\.rawValue) == ["SYSTEM", "LIGHT", "DARK"])
-    }
-
-    @Test("PremiumTheme raw values are the Kotlin enum constant names, in declaration order")
-    func premiumThemeRawValues() {
-        // Settings.kt:10-15
-        #expect(PremiumTheme.allCases.map(\.rawValue) == ["CLASSIC", "OCEAN", "SUNSET", "FOREST"])
-    }
-
-    @Test("the DataStore preference keys are carried verbatim")
-    func preferenceKeys() {
-        // SalusPreferencesDataSource.kt:78 / :87
-        #expect(ThemeMode.storageKey == "theme_mode")
-        #expect(PremiumTheme.storageKey == "premium_theme")
-    }
-
-    @Test("the defaults are the UserSettings defaults")
-    func defaults() {
-        // Settings.kt:18 / :33
-        #expect(ThemeMode.default == .system)
-        #expect(PremiumTheme.default == .classic)
-    }
-
-    @Test(
-        "an unknown or absent stored string falls back to the default, case-sensitively",
-        arguments: [
-            ("SYSTEM", ThemeMode.system),
-            ("LIGHT", ThemeMode.light),
-            ("DARK", ThemeMode.dark),
-            // `toEnumOrDefault` matches `it.name == value` — no case folding.
-            ("light", ThemeMode.system),
-            ("MIDNIGHT", ThemeMode.system),
-            ("", ThemeMode.system),
-            (nil, ThemeMode.system),
-        ] as [StoredModeRow]
-    )
-    func decodeStoredMode(_ row: StoredModeRow) {
-        // SalusPreferencesDataSource.kt:89-90
-        #expect(
-            ThemeMode.fromStoredValue(row.stored) == row.expected,
-            "stored \(row.stored ?? "nil")"
-        )
-    }
-
-    @Test("premium palettes decode the same way")
-    func decodeStoredPremiumTheme() {
-        #expect(PremiumTheme.fromStoredValue("FOREST") == .forest)
-        #expect(PremiumTheme.fromStoredValue("forest") == .classic)
-        #expect(PremiumTheme.fromStoredValue(nil) == .classic)
-    }
-}
-
-@Suite("Mode resolution (Theme.kt:87)")
-struct ThemeModeResolutionTests {
-    @Test(
-        "the stored mode wins over the system, SYSTEM follows it",
-        arguments: [
-            (ThemeMode.system, false, false),
-            (ThemeMode.system, true, true),
-            (ThemeMode.light, false, false),
-            (ThemeMode.light, true, false),
-            (ThemeMode.dark, false, true),
-            (ThemeMode.dark, true, true),
-        ] as [ThemeModeRow]
-    )
-    func isDark(_ row: ThemeModeRow) {
-        #expect(
-            row.mode.isDark(systemIsDark: row.systemIsDark) == row.expectedDark,
-            "\(row.mode.rawValue) with systemIsDark=\(row.systemIsDark)"
-        )
-    }
-
+@Suite("Mode resolution, SwiftUI side (Theme.kt:87)")
+struct ThemeModePresentationTests {
     @Test("SYSTEM defers to SwiftUI, the explicit modes override it")
     func preferredColorScheme() {
         // The SwiftUI mirror of `isSystemInDarkTheme()` being the Android default.
