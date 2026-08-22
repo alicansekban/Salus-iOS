@@ -100,3 +100,46 @@
 ## Done criterion (spec §10, iOS-M0)
 
 ✅ *Themed empty shell launches on device* — plus, beyond the spec: CI green and the lint guard proving the domain/UI boundary mechanically.
+
+---
+
+## Execution record (2026-08-21 → 2026-08-22)
+
+Executed subagent-driven: one Opus implementer per task, an independent review per task, one
+whole-branch review at the end, merged fast-forward into `main` at `fb1370f` (+ CI hotfix
+`f32b8fb`). Every task passed review after at most one fix round. 14 commits.
+
+### Rulings made during execution (read these — they were decided on the user's behalf)
+
+- Worked on branch `m0-skeleton` (spec §10: one milestone = one branch) instead of `main`.
+- `SalusTheme` lives in `SalusDesignSystem` with the tokens (mirrors Android `:core:designsystem`);
+  `ThemeMode`/`PremiumTheme` moved to `SalusModel` (Android `:core:model` layering).
+- Token count 213 reached by not counting the §6 pill/Capsule row (valueless; exposed as
+  `SalusShapes.pill`, pinned by test). Two other valueless rows (motion) are counted — a
+  bookkeeping choice, not a missing token.
+- `.macOS(.v14)` on the 12 SwiftUI-reaching packages is a test-host concession only.
+- Generated `Salus.xcodeproj` is committed; `ASSETCATALOG_COMPILER_APPICON_NAME` explicitly
+  empty (the XcodeGen default would have broken the first asset catalog).
+- `force_unwrapping` is repo-wide (SwiftLint cannot path-scope built-ins); tests opt out per line.
+  `large_tuple` warning threshold 7 (for `@Test(arguments:)` row tuples).
+- CI: no Brewfile, no SPM cache (zero third-party deps; 4 GB of `.build`); toolchain asserted —
+  Xcode on major.minor, lint tools exact. CI triggers on push to `main` and PRs only.
+- Final fix wave re-specified one test: "diff == 8 accent roles" was false (light palettes keep
+  `onPrimary`/`onSecondary` white); replaced by total equality of all 35 roles against
+  base-overwritten-by-palette.
+- `developmentRegion = tr` set now (spec §6.4), not deferred to the localisation milestone.
+
+### Deferred findings (none block M1; triaged by the final review)
+
+- `knownRegions` lost `en` until the EN String Catalog lands (XcodeGen re-adds it from resources).
+- `classicEqualsBrand` is tautological by construction; light `secondaryContainer` (#D3E8DB) has
+  no literal pin — fold the remaining §4.1 rows into `premiumRole` and rename the test.
+- `Theme.kt` line citations in comments are stale by 2–7 lines (`isDark` lives at
+  `MainActivity.kt:88-93`).
+- Unselected tab tint and the iOS 26 glass tab bar are not token-driven; the 1pt `hairline`
+  literal has no stroke token → M2 navigation-parity task.
+- `wrapMultilineConditionalAssignment` disabled precautionarily (no measured count).
+- `check-toolchain.sh`: `Xcode_26.4*.app` glob is a prefix match (fail-safe); version-string
+  parsing has no field extraction; `project.yml` vs committed pbxproj drift is not checked.
+- Before M1: give feature views the theme via an `EnvironmentKey` rather than a `theme:`
+  parameter (`App/RootView.swift`).
