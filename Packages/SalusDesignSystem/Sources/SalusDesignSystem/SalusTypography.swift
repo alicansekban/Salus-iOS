@@ -106,7 +106,7 @@ public enum SalusTypography {
             "bodySmall": bodySmall,
             "labelLarge": labelLarge,
             "labelMedium": labelMedium,
-            "labelSmall": labelSmall,
+            "labelSmall": labelSmall
         ]
     }
 }

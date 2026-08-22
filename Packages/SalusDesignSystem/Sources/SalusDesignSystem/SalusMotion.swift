@@ -85,7 +85,7 @@ public enum SalusMotion {
             "enterZIndexPush": .zIndex(enterZIndexPush),
             "enterZIndexPop": .zIndex(enterZIndexPop),
             // `null` everywhere (`SalusTransitions.kt:53`, `:63`).
-            "sizeTransform": .noSizeTransform,
+            "sizeTransform": .noSizeTransform
         ]
     }
 }

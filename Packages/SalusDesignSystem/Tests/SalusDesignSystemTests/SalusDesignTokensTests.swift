@@ -103,7 +103,7 @@ struct MaterialColorRoleTests {
             (
                 "surfaceContainerHighest", SalusColorScheme.light.surfaceContainerHighest,
                 UInt32(0xFFFFFF)
-            ),
+            )
         ] as [ColorSample]
     )
     func lightRole(_ sample: ColorSample) {
@@ -128,7 +128,7 @@ struct MaterialColorRoleTests {
             (
                 "surfaceContainerHighest", SalusColorScheme.dark.surfaceContainerHighest,
                 UInt32(0x2D3430)
-            ),
+            )
         ] as [ColorSample]
     )
     func darkRole(_ sample: ColorSample) {
@@ -154,7 +154,7 @@ struct FeatureAccentTests {
                 UInt32(0x3E7D5F)
             ),
             ("trends.accent", SalusExtendedColors.light.trends.accent, UInt32(0x4F5AA8)),
-            ("trends.onContainer", SalusExtendedColors.light.trends.onContainer, UInt32(0x00105C)),
+            ("trends.onContainer", SalusExtendedColors.light.trends.onContainer, UInt32(0x00105C))
         ] as [ColorSample]
     )
     func lightAccent(_ sample: ColorSample) {
@@ -175,7 +175,7 @@ struct FeatureAccentTests {
                 "appointments.container", SalusExtendedColors.dark.appointments.container,
                 UInt32(0x275B43)
             ),
-            ("trends.accent", SalusExtendedColors.dark.trends.accent, UInt32(0xBAC3FF)),
+            ("trends.accent", SalusExtendedColors.dark.trends.accent, UInt32(0xBAC3FF))
         ] as [ColorSample]
     )
     func darkAccent(_ sample: ColorSample) {
@@ -223,7 +223,7 @@ struct PremiumAccentPaletteTests {
                 "forestLight.secondaryContainer",
                 SalusPremiumAccents.forestLight.secondaryContainer, UInt32(0xD7E8CD)
             ),
-            ("forestDark.primary", SalusPremiumAccents.forestDark.primary, UInt32(0x95D888)),
+            ("forestDark.primary", SalusPremiumAccents.forestDark.primary, UInt32(0x95D888))
         ] as [ColorSample]
     )
     func premiumRole(_ sample: ColorSample) {
@@ -252,7 +252,7 @@ struct DimensionTokenTests {
             ("md", SalusSpacing.md, CGFloat(12)),
             ("lg", SalusSpacing.lg, CGFloat(16)),
             ("xl", SalusSpacing.xl, CGFloat(24)),
-            ("xxl", SalusSpacing.xxl, CGFloat(32)),
+            ("xxl", SalusSpacing.xxl, CGFloat(32))
         ] as [DimensionSample]
     )
     func spacing(_ sample: DimensionSample) {
@@ -266,7 +266,7 @@ struct DimensionTokenTests {
             ("small", SalusShapes.small, CGFloat(12)),
             ("medium", SalusShapes.medium, CGFloat(16)),
             ("large", SalusShapes.large, CGFloat(24)),
-            ("extraLarge", SalusShapes.extraLarge, CGFloat(28)),
+            ("extraLarge", SalusShapes.extraLarge, CGFloat(28))
         ] as [DimensionSample]
     )
     func cornerRadius(_ sample: DimensionSample) {
@@ -279,7 +279,7 @@ struct DimensionTokenTests {
             ("none", SalusElevation.none, CGFloat(0)),
             ("card", SalusElevation.card, CGFloat(2)),
             ("raised", SalusElevation.raised, CGFloat(4)),
-            ("overlay", SalusElevation.overlay, CGFloat(8)),
+            ("overlay", SalusElevation.overlay, CGFloat(8))
         ] as [DimensionSample]
     )
     func elevation(_ sample: DimensionSample) {
@@ -295,8 +295,8 @@ struct DimensionTokenTests {
 
 @Suite("Typography (§9)")
 struct TypographyTokenTests {
-    // The last column is §9.3's Dynamic Type reference style: the curve the role follows,
-    // never the size to ship.
+    /// The last column is §9.3's Dynamic Type reference style: the curve the role follows,
+    /// never the size to ship.
     @Test(
         "text styles match design-tokens.md §9.1/§9.2/§9.3",
         arguments: [
@@ -311,7 +311,7 @@ struct TypographyTokenTests {
             ("bodySmall", SalusTypography.bodySmall, 12, 16, Font.Weight.regular, 0.4, Font.TextStyle.caption),
             ("labelLarge", SalusTypography.labelLarge, 14, 20, Font.Weight.medium, 0.1, Font.TextStyle.footnote),
             ("labelMedium", SalusTypography.labelMedium, 12, 16, Font.Weight.medium, 0.5, Font.TextStyle.caption),
-            ("labelSmall", SalusTypography.labelSmall, 11, 16, Font.Weight.medium, 0.5, Font.TextStyle.caption2),
+            ("labelSmall", SalusTypography.labelSmall, 11, 16, Font.Weight.medium, 0.5, Font.TextStyle.caption2)
         ] as [TypeSample]
     )
     func textStyle(_ sample: TypeSample) {

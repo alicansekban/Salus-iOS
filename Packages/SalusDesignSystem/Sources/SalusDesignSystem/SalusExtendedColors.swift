@@ -36,7 +36,7 @@ public struct FeatureAccent: Equatable, Sendable {
             "accent": accent,
             "onAccent": onAccent,
             "container": container,
-            "onContainer": onContainer,
+            "onContainer": onContainer
         ]
     }
 }
@@ -72,7 +72,7 @@ public struct SalusExtendedColors: Equatable, Sendable {
             SalusFeatureAccentEntry(name: "cycle", accent: cycle),
             SalusFeatureAccentEntry(name: "vitals", accent: vitals),
             SalusFeatureAccentEntry(name: "appointments", accent: appointments),
-            SalusFeatureAccentEntry(name: "trends", accent: trends),
+            SalusFeatureAccentEntry(name: "trends", accent: trends)
         ]
     }
 
@@ -128,8 +128,8 @@ private enum LightAccentPalette {
     static let trendsOnContainer = Color(hex: 0x00105C)
 
     // §3.3 status colors
-    static let success = Color(hex: 0x2E7D4F)  // ExtendedColors.kt:73
-    static let warning = Color(hex: 0xA66B00)  // ExtendedColors.kt:74
+    static let success = Color(hex: 0x2E7D4F) // ExtendedColors.kt:73
+    static let warning = Color(hex: 0xA66B00) // ExtendedColors.kt:74
 
     static let medications = FeatureAccent(
         accent: medicationsAccent,
@@ -196,8 +196,8 @@ private enum DarkAccentPalette {
     static let trendsOnContainer = Color(hex: 0xDEE0FF)
 
     // §3.3 status colors
-    static let success = Color(hex: 0x7ED29A)  // ExtendedColors.kt:109
-    static let warning = Color(hex: 0xE5B85C)  // ExtendedColors.kt:110
+    static let success = Color(hex: 0x7ED29A) // ExtendedColors.kt:109
+    static let warning = Color(hex: 0xE5B85C) // ExtendedColors.kt:110
 
     static let medications = FeatureAccent(
         accent: medicationsAccent,

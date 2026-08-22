@@ -12,12 +12,12 @@ import SwiftUI
 /// default `VStack` spacing (8) implicitly — pass `spacing: SalusSpacing.sm` so the value is
 /// visible and greppable, exactly as the Compose side does.
 public enum SalusSpacing {
-    public static let xs: CGFloat = 4  // Spacing.kt:7
-    public static let sm: CGFloat = 8  // Spacing.kt:8
-    public static let md: CGFloat = 12  // Spacing.kt:9
-    public static let lg: CGFloat = 16  // Spacing.kt:10
-    public static let xl: CGFloat = 24  // Spacing.kt:11
-    public static let xxl: CGFloat = 32  // Spacing.kt:12
+    public static let xs: CGFloat = 4 // Spacing.kt:7
+    public static let sm: CGFloat = 8 // Spacing.kt:8
+    public static let md: CGFloat = 12 // Spacing.kt:9
+    public static let lg: CGFloat = 16 // Spacing.kt:10
+    public static let xl: CGFloat = 24 // Spacing.kt:11
+    public static let xxl: CGFloat = 32 // Spacing.kt:12
 
     public static var allTokens: [String: CGFloat] {
         ["xs": xs, "sm": sm, "md": md, "lg": lg, "xl": xl, "xxl": xxl]
@@ -30,11 +30,11 @@ public enum SalusSpacing {
 /// `style: .continuous`: the squircle is the platform-correct rendering of the same radius
 /// and reads as the same shape as Compose's circular rounding at these sizes.
 public enum SalusShapes {
-    public static let extraSmall: CGFloat = 8  // Shape.kt:10
-    public static let small: CGFloat = 12  // Shape.kt:11
-    public static let medium: CGFloat = 16  // Shape.kt:12
-    public static let large: CGFloat = 24  // Shape.kt:13
-    public static let extraLarge: CGFloat = 28  // Shape.kt:14
+    public static let extraSmall: CGFloat = 8 // Shape.kt:10
+    public static let small: CGFloat = 12 // Shape.kt:11
+    public static let medium: CGFloat = 16 // Shape.kt:12
+    public static let large: CGFloat = 24 // Shape.kt:13
+    public static let extraLarge: CGFloat = 28 // Shape.kt:14
 
     /// A continuous-corner rectangle at one of the radii above.
     public static func rounded(_ radius: CGFloat) -> RoundedRectangle {
@@ -58,7 +58,7 @@ public enum SalusShapes {
             "small": small,
             "medium": medium,
             "large": large,
-            "extraLarge": extraLarge,
+            "extraLarge": extraLarge
         ]
     }
 }
@@ -72,13 +72,13 @@ public enum SalusShapes {
 /// Android too, where the tonal tint carries the elevation instead.
 public enum SalusElevation {
     /// Flat surfaces — no shadow.
-    public static let none: CGFloat = 0  // Spacing.kt:17
+    public static let none: CGFloat = 0 // Spacing.kt:17
     /// Every card. Light mode: `.shadow(color: .black.opacity(0.08), radius: 2, x: 0, y: 1)`.
-    public static let card: CGFloat = 2  // Spacing.kt:18
+    public static let card: CGFloat = 2 // Spacing.kt:18
     /// Raised controls. Light mode: `radius: 4, y: 2`.
-    public static let raised: CGFloat = 4  // Spacing.kt:19
+    public static let raised: CGFloat = 4 // Spacing.kt:19
     /// Overlays. Light mode: `radius: 8, y: 4`.
-    public static let overlay: CGFloat = 8  // Spacing.kt:20
+    public static let overlay: CGFloat = 8 // Spacing.kt:20
 
     public static var allTokens: [String: CGFloat] {
         ["none": none, "card": card, "raised": raised, "overlay": overlay]
@@ -91,7 +91,7 @@ public enum SalusElevation {
 /// the rows and buttons built by hand, where the visible content can be shorter than the
 /// finger that has to hit it: `.frame(minWidth: 48, minHeight: 48).contentShape(Rectangle())`.
 public enum SalusTouchTarget {
-    public static let min: CGFloat = 48  // Spacing.kt:29
+    public static let min: CGFloat = 48 // Spacing.kt:29
 
     public static var allTokens: [String: CGFloat] { ["min": min] }
 }

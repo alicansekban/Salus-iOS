@@ -57,7 +57,7 @@ struct ThemeVocabularyTests {
             ("light", ThemeMode.system),
             ("MIDNIGHT", ThemeMode.system),
             ("", ThemeMode.system),
-            (nil, ThemeMode.system),
+            (nil, ThemeMode.system)
         ] as [StoredModeRow]
     )
     func decodeStoredMode(_ row: StoredModeRow) {
@@ -86,7 +86,7 @@ struct ThemeModeResolutionTests {
             (ThemeMode.light, false, false),
             (ThemeMode.light, true, false),
             (ThemeMode.dark, false, true),
-            (ThemeMode.dark, true, true),
+            (ThemeMode.dark, true, true)
         ] as [ThemeModeRow]
     )
     func isDark(_ row: ThemeModeRow) {

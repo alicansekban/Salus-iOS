@@ -36,7 +36,7 @@ public struct SalusPremiumAccentPalette: Equatable, Sendable {
             "secondary": secondary,
             "onSecondary": onSecondary,
             "secondaryContainer": secondaryContainer,
-            "onSecondaryContainer": onSecondaryContainer,
+            "onSecondaryContainer": onSecondaryContainer
         ]
     }
 }
@@ -253,7 +253,7 @@ public enum SalusPremiumAccents {
             ("sunset.light", sunsetLight),
             ("sunset.dark", sunsetDark),
             ("forest.light", forestLight),
-            ("forest.dark", forestDark),
+            ("forest.dark", forestDark)
         ]
     }
 

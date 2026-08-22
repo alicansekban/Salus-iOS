@@ -41,14 +41,14 @@ struct ThemeModePresentationTests {
 struct PremiumPaletteResolutionTests {
     /// The doc's §4.1–§4.4 tables, one identifying row per palette and theme.
     static let rows: [PaletteRow] = [
-        (.classic, false, 0x3E_7D5F, 0x0E_1F17),
-        (.classic, true, 0x8B_D6B2, 0xD3_E8DB),
-        (.ocean, false, 0x0E_7490, 0x06_1F29),
-        (.ocean, true, 0x5F_D4F0, 0xCD_E7F2),
-        (.sunset, false, 0xB4_491F, 0x2C_160D),
-        (.sunset, true, 0xFF_B598, 0xFF_DBCF),
-        (.forest, false, 0x2E_6B27, 0x12_1F0E),
-        (.forest, true, 0x95_D888, 0xD7_E8CD),
+        (.classic, false, 0x3E7D5F, 0x0E1F17),
+        (.classic, true, 0x8BD6B2, 0xD3E8DB),
+        (.ocean, false, 0x0E7490, 0x061F29),
+        (.ocean, true, 0x5FD4F0, 0xCDE7F2),
+        (.sunset, false, 0xB4491F, 0x2C160D),
+        (.sunset, true, 0xFFB598, 0xFFDBCF),
+        (.forest, false, 0x2E6B27, 0x121F0E),
+        (.forest, true, 0x95D888, 0xD7E8CD)
     ]
 
     @Test("each palette repaints the accent roles with its own §4 values", arguments: rows)
@@ -139,7 +139,7 @@ struct SalusThemeResolutionTests {
         let resolved = SalusTheme.resolve(mode: .light, premiumTheme: .forest, systemIsDark: true)
         #expect(!resolved.isDark)
         #expect(resolved.extendedColors == SalusExtendedColors.light)
-        #expect(resolved.colorScheme.primary == Color(hex: 0x2E_6B27))
+        #expect(resolved.colorScheme.primary == Color(hex: 0x2E6B27))
         #expect(resolved.colorScheme.background == SalusColorScheme.light.background)
     }
 

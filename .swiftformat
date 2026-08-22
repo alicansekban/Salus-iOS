@@ -1,0 +1,90 @@
+# SwiftFormat configuration for Salus iOS.
+# CI baseline: `swiftformat --lint .` must exit 0.
+# Kept deliberately close to the style the existing, already-reviewed sources
+# use, so the formatter enforces consistency instead of rewriting history.
+
+--swiftversion 6.0
+
+# --- Scope ---------------------------------------------------------------
+--exclude .build,.git,.swiftpm,.superpowers,Salus.xcodeproj,Packages/**/.build,Packages/**/.swiftpm
+
+# --- Layout --------------------------------------------------------------
+--indent 4
+--maxwidth 120
+--linebreaks lf
+--tabwidth 4
+--smarttabs enabled
+--trimwhitespace always
+# No trailing comma on the last element. Measured both ways before choosing:
+# `always` would have ADDED 110 commas across the 24 Package.swift manifests,
+# `never` removes 20 from the design-system token tables. The manifests are the
+# majority style, so the formatter follows them. Paired with SwiftLint's
+# `trailing_comma` (mandatory_comma: false) so the two cannot contradict.
+#
+# Caveat: SwiftFormat does not see array literals followed by a type cast
+# (`] as [ColorSample]`). `swiftlint --fix` catches those, so a formatting pass
+# is `swiftformat . && swiftlint --fix`, in that order.
+--trailing-commas never
+--semicolons never
+--wraparguments before-first
+--wrapparameters before-first
+--wrapcollections before-first
+--wrapreturntype preserve
+--wrapconditions preserve
+--wraptypealiases preserve
+--closingparen balanced
+--funcattributes preserve
+--typeattributes preserve
+--varattributes preserve
+
+# --- Syntax --------------------------------------------------------------
+--self remove
+# `@testable` imports stay in their own block at the bottom, the way the test
+# suites are already written.
+--import-grouping testable-last,alpha
+--stripunusedargs closure-only
+--patternlet hoist
+--ranges spaced
+--operatorfunc spaced
+--elseposition same-line
+--guardelse auto
+--emptybraces no-space
+--voidtype void
+--extensionacl on-declarations
+--redundanttype inferred
+--someany true
+
+# --- Documentation / headers --------------------------------------------
+--header ignore
+
+# --- Rules ---------------------------------------------------------------
+# Opt in beyond the defaults.
+--enable blankLineAfterSwitchCase
+--enable blockComments
+--enable isEmpty
+--enable redundantVariable
+--enable sortSwitchCases
+--enable wrapEnumCases
+--enable wrapMultilineStatementBraces
+
+# Opt out of default rules that would churn already-reviewed code or fight the
+# design-token style. Each was measured against the tree before being disabled;
+# the counts below are the findings it would have produced.
+#
+#   organizeDeclarations / sortDeclarations  reshuffle whole types; the token
+#     tables are grouped by meaning (Material role order), not alphabetically.
+#   markTypes                                would inject 44 `// MARK:` banners
+#     into files that are already one-type-per-file.
+#   wrapPropertyBodies                       would explode 16 idiomatic
+#     one-liners (`var id: String { rawValue }`) into three lines each.
+#   blankLinesBetweenScopes                  would break the one-line computed
+#     shape table in SalusDimensions into a blank-line-separated list.
+#   blankLinesBetweenImports                 would remove the blank line that
+#     separates `@testable` imports from the rest.
+--disable organizeDeclarations
+--disable sortDeclarations
+--disable markTypes
+--disable wrapPropertyBodies
+--disable blankLinesBetweenScopes
+--disable blankLinesBetweenImports
+--disable wrapMultilineConditionalAssignment

@@ -40,7 +40,7 @@ public enum SalusTokens {
             // §9 six overridden + six inherited type roles
             ("typography", SalusTypography.allTokens.count),
             // §10 motion
-            ("motion", SalusMotion.allTokens.count),
+            ("motion", SalusMotion.allTokens.count)
         ]
     }
 

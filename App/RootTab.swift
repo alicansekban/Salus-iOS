@@ -38,11 +38,11 @@ enum RootTab: String, CaseIterable, Identifiable {
     /// of that pair rather than a simplification of it.
     var symbolName: String {
         switch self {
-        case .home: "house"  // Icons.Filled/Outlined.Home
-        case .medications: "pills"  // Icons.Filled/Outlined.Medication
-        case .vitals: "waveform.path.ecg"  // Icons.Filled/Outlined.MonitorHeart
-        case .appointments: "calendar"  // Icons.Filled/Outlined.CalendarMonth
-        case .more: "ellipsis.circle"  // Icons.Filled/Outlined.MoreHoriz
+        case .home: "house" // Icons.Filled/Outlined.Home
+        case .medications: "pills" // Icons.Filled/Outlined.Medication
+        case .vitals: "waveform.path.ecg" // Icons.Filled/Outlined.MonitorHeart
+        case .appointments: "calendar" // Icons.Filled/Outlined.CalendarMonth
+        case .more: "ellipsis.circle" // Icons.Filled/Outlined.MoreHoriz
         }
     }
 }
