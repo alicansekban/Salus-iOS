@@ -50,6 +50,46 @@ struct NavigatorTests {
         #expect(await iterator.next() == NavCommand.pop)
     }
 
+    /// The regression this exists for: a single stored `AsyncStream` ends for good the first time
+    /// its consumer is cancelled, and SwiftUI cancels a `.task` every time its view leaves the
+    /// hierarchy. Kotlin's `Channel.receiveAsFlow()` survives a re-collect (`Navigator.kt:44`), so
+    /// this must too — otherwise navigation is silently dead for the rest of the process.
+    @Test("a cancelled consumer does not kill the navigator")
+    func survivesConsumerCancellation() async {
+        let navigator = Navigator()
+
+        let consumer = Task { @MainActor () -> NavCommand? in
+            var iterator = navigator.commands.makeAsyncIterator()
+            return await iterator.next()
+        }
+        navigator.navigate(SampleHomeKey.root)
+        #expect(await consumer.value == .navigate(AnyNavKey(SampleHomeKey.root)))
+        consumer.cancel()
+
+        var iterator = navigator.commands.makeAsyncIterator()
+        navigator.navigate(SampleVitalsKey.root)
+        #expect(await iterator.next() == .navigate(AnyNavKey(SampleVitalsKey.root)))
+    }
+
+    /// The other half of the same property: a command issued in the gap — after the old consumer
+    /// ended, before the new one subscribes — goes back into the backlog instead of being handed to
+    /// a dead stream.
+    @Test("a command issued between two consumers is kept")
+    func keepsCommandsIssuedBetweenConsumers() async {
+        let navigator = Navigator()
+
+        do {
+            var iterator = navigator.commands.makeAsyncIterator()
+            navigator.navigate(SampleHomeKey.root)
+            #expect(await iterator.next() == .navigate(AnyNavKey(SampleHomeKey.root)))
+        }
+
+        navigator.pop()
+
+        var iterator = navigator.commands.makeAsyncIterator()
+        #expect(await iterator.next() == .pop)
+    }
+
     /// A key that is already erased is not erased twice, so what the shell receives compares equal
     /// to what a feature would have pushed directly.
     @Test("navigating with an already-erased key round-trips")

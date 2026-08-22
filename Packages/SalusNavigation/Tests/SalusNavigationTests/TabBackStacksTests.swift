@@ -58,16 +58,16 @@ let tabBackStackCases: [TabBackStackCase] = [
         expectedDepths: [.home: 2, .vitals: 0, .more: 0]
     ),
     TabBackStackCase(
-        name: "re-selecting the current tab pops it to root",
+        name: "re-selecting the current tab is a no-op — its stack survives",
         steps: [.push("a"), .push("b"), .select(.home)],
         expectedSelection: .home,
-        expectedDepths: [.home: 0, .vitals: 0, .more: 0]
+        expectedDepths: [.home: 2, .vitals: 0, .more: 0]
     ),
     TabBackStackCase(
-        name: "re-selecting one tab leaves the other stacks alone",
+        name: "re-selecting a tab leaves every stack, its own included, untouched",
         steps: [.push("a"), .select(.vitals), .push("b"), .select(.vitals)],
         expectedSelection: .vitals,
-        expectedDepths: [.home: 1, .vitals: 0, .more: 0]
+        expectedDepths: [.home: 1, .vitals: 1, .more: 0]
     ),
     TabBackStackCase(
         name: "pop removes one entry from the selected tab",

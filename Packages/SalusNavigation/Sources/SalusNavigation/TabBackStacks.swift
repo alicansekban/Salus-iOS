@@ -14,11 +14,8 @@
 //     The invariant Kotlin's `else` branch protects — the last stack never empties past its root —
 //     is what `pop()` below does unconditionally.
 //
-// Behaviour difference, deliberate: re-selecting the already-selected tab pops that tab to its
-// root. Android does nothing in that case (`TopLevelBackStack.kt:30-35` re-inserts the existing
-// stack unchanged), because Compose's `NavigationBarItem` has no platform convention behind it.
-// iOS does: re-tapping the selected tab is the system-wide gesture for "take me back to the top",
-// and a tab bar that ignores it reads as broken. This is the only semantic divergence in the file.
+// Neither difference is a behaviour difference: what the user can do, and what they see when they
+// do it, is identical on both platforms.
 
 import Observation
 import SwiftUI
@@ -32,8 +29,8 @@ import SwiftUI
 @MainActor
 @Observable
 public final class TabBackStacks<Tab: Hashable & CaseIterable> {
-    /// The selected tab — the twin of `TopLevelBackStack.topLevelKey` (`TopLevelBackStack.kt:18`).
-    /// Settable only through `switchTopLevel(_:)`, which is where the re-select rule lives.
+    /// The selected tab — the twin of `TopLevelBackStack.topLevelKey` (`TopLevelBackStack.kt:18`),
+    /// `private set` there and here. It moves only through `switchTopLevel(_:)`.
     public private(set) var selection: Tab
 
     private var paths: [Tab: NavigationPath]
@@ -54,11 +51,6 @@ public final class TabBackStacks<Tab: Hashable & CaseIterable> {
         paths[tab] ?? NavigationPath()
     }
 
-    public subscript(tab: Tab) -> NavigationPath {
-        get { path(for: tab) }
-        set { paths[tab] = newValue }
-    }
-
     /// The binding the shell hands `NavigationStack(path:)`.
     ///
     /// SwiftUI writes the whole path back — a swipe-to-go-back is a write, not a call to `pop()` —
@@ -71,16 +63,18 @@ public final class TabBackStacks<Tab: Hashable & CaseIterable> {
         )
     }
 
-    /// Selects `tab`, or — if it is already selected — pops it to its root.
+    /// Selects `tab` (`TopLevelBackStack.kt:30-35`).
     ///
-    /// `TopLevelBackStack.kt:30-35` plus the iOS re-select convention described at the top of this
-    /// file. A stack left behind by a switch is untouched, which is the whole point of holding one
-    /// path per tab.
+    /// Re-selecting the tab that is already selected does nothing, and that is the port, not an
+    /// omission: Kotlin's `switchTopLevel` removes the tab's stack from the map and puts the *same*
+    /// list straight back, so the stack survives and `topLevelKey` does not move. iOS convention
+    /// would pop such a tap to the tab's root; Salus does not, because the two platforms must agree
+    /// on what a tab press does.
+    ///
+    /// A stack left behind by a switch is untouched, which is the whole point of holding one path
+    /// per tab.
     public func switchTopLevel(_ tab: Tab) {
-        guard tab != selection else {
-            paths[tab] = NavigationPath()
-            return
-        }
+        guard tab != selection else { return }
         selection = tab
     }
 

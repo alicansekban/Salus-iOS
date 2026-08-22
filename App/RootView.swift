@@ -44,9 +44,10 @@ struct RootView: View {
         )
     }
 
-    /// The tab-bar selection, routed through `switchTopLevel` so that re-tapping the selected tab
-    /// pops it to its root. A plain `Binding` to `selection` would never see that tap: SwiftUI
-    /// writes the tag on every tab press, including one that does not change the value.
+    /// The tab-bar selection, written through `switchTopLevel` — the holder's `selection` is
+    /// `private(set)`, so that method is the only door, exactly as `TopLevelBackStack.topLevelKey`
+    /// moves only through Kotlin's `switchTopLevel` (`TopLevelBackStack.kt:18, 30-35`). A press on
+    /// the tab that is already selected changes nothing, on both platforms.
     private var selection: Binding<RootTab> {
         Binding(
             get: { backStacks.selection },
