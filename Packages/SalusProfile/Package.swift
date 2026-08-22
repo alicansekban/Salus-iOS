@@ -16,7 +16,8 @@ let package = Package(
     dependencies: [
         .package(path: "../SalusModel"),
         .package(path: "../SalusCommon"),
-        .package(path: "../SalusDatabase")
+        .package(path: "../SalusDatabase"),
+        .package(path: "../SalusTesting")
     ],
     targets: [
         .target(
@@ -30,7 +31,11 @@ let package = Package(
         .testTarget(
             name: "SalusProfileTests",
             dependencies: [
-                "SalusProfile"
+                "SalusProfile",
+                // Test-target only, and it stays that way: the library must never link the
+                // fixtures (the twin of Gradle's `testImplementation(project(":core:testing"))`).
+                // `FixedSalusClock` is what makes the `created_at` stamp assertable.
+                .product(name: "SalusTesting", package: "SalusTesting")
             ]
         )
     ]
