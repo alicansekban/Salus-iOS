@@ -99,6 +99,46 @@ fi
 echo
 
 # ---------------------------------------------------------------------------
+# 1b. Put SwiftLint and SwiftFormat on PATH
+# ---------------------------------------------------------------------------
+# The macos-26 image ships both tools, but the PATH a workflow step starts
+# with does not reach Homebrew's bin (CI run #1 died here with
+# "swiftlint: command not found"). A laptop usually has `brew shellenv` in its
+# profile, which is why the same script passed locally. Prepend the two
+# Homebrew prefixes (Apple silicon, Intel) and, only if a tool is still
+# missing, install it — the version assertions below still judge the result.
+for prefix in /opt/homebrew /usr/local; do
+    if [ -d "$prefix/bin" ]; then
+        case ":$PATH:" in
+            *":$prefix/bin:"*) ;;
+            *) PATH="$prefix/bin:$PATH" ;;
+        esac
+    fi
+done
+export PATH
+
+if ! command -v swiftlint >/dev/null 2>&1 || ! command -v swiftformat >/dev/null 2>&1; then
+    if command -v brew >/dev/null 2>&1; then
+        echo "==> swiftlint/swiftformat not on PATH; installing with Homebrew"
+        brew install swiftlint swiftformat
+    else
+        fail "swiftlint or swiftformat is not installed and Homebrew is unavailable." \
+            "Install them: brew install swiftlint swiftformat (see README.md, Toolchain)."
+    fi
+fi
+echo "==> swiftlint:   $(command -v swiftlint)"
+echo "==> swiftformat: $(command -v swiftformat)"
+
+# Later workflow steps start from the runner's default PATH, so hand them the
+# same prefixes. GITHUB_PATH, like GITHUB_ENV, exists only inside Actions.
+if [ -n "${GITHUB_PATH:-}" ]; then
+    for prefix in /opt/homebrew /usr/local; do
+        [ -d "$prefix/bin" ] && echo "$prefix/bin" >>"$GITHUB_PATH"
+    done
+fi
+echo
+
+# ---------------------------------------------------------------------------
 # 2. Assert the versions
 # ---------------------------------------------------------------------------
 
