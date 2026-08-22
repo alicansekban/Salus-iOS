@@ -200,19 +200,28 @@ struct SalusPreferencesDataSourceTests {
     @Test("writing the value that is already stored emits nothing")
     func streamDoesNotRepeatEqualValues() async throws {
         let fixture = try makeFixture()
-        var stream = fixture.source.userSettings.makeAsyncIterator()
+        // A recorder, not the test's own iterator: with `.bufferingNewest(1)` an iterator that is
+        // not currently suspended in `next()` would let a spurious duplicate be overwritten by
+        // the element after it, and the assertion would hold whether the store dedupes or not.
+        let recorder = StreamRecorder(fixture.source.userSettings)
 
-        _ = await stream.next()
+        await recorder.wait(forAtLeast: 1)
         fixture.source.setThemeMode(.dark)
-        #expect(await stream.next() == UserSettings(themeMode: .dark))
+        await recorder.wait(forAtLeast: 2)
 
         // Kotlin's `DataStore.data` is distinct by content, so a no-op write wakes no collector.
-        // If this store emitted it anyway, the next element awaited below would be the dark-only
-        // value and the expectation would fail — no sleep needed to prove the absence.
+        // The yield gives any emission this write produced a chance to be *recorded* rather than
+        // collapsed, so the sequence assertion below can see it.
         fixture.source.setThemeMode(.dark)
+        await Task.yield()
         fixture.source.setOnboardingCompleted(true)
+        await recorder.wait(forAtLeast: 3)
 
-        #expect(await stream.next() == UserSettings(themeMode: .dark, onboardingCompleted: true))
+        #expect(recorder.recorded == [
+            UserSettings(),
+            UserSettings(themeMode: .dark),
+            UserSettings(themeMode: .dark, onboardingCompleted: true)
+        ])
     }
 
     @Test("a change to the app lock flag reaches the stream too")

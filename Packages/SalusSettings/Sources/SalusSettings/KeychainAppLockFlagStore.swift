@@ -63,11 +63,17 @@ public struct KeychainAppLockFlagStore: AppLockFlagStore {
     }
 
     /// The attributes that identify the one item this store owns; every call starts from these.
+    ///
+    /// `kSecUseDataProtectionKeychain` is not decoration: it is a no-op on iOS, but on macOS —
+    /// where the host build and any future Catalyst target run — leaving it out routes the call
+    /// to the legacy file-based keychain, which ignores `kSecAttrAccessible` entirely. The
+    /// `AfterFirstUnlockThisDeviceOnly` protection above would then be silently dropped.
     private static var itemQuery: [String: Any] {
         [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
-            kSecAttrAccount as String: SettingsKeys.appLockEnabled
+            kSecAttrAccount as String: SettingsKeys.appLockEnabled,
+            kSecUseDataProtectionKeychain as String: true
         ]
     }
 }

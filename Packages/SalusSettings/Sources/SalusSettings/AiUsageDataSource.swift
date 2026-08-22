@@ -64,11 +64,16 @@ public final class AiUsageDataSource: Sendable {
     nonisolated(unsafe) let defaults: UserDefaults
     private let values: DefaultsValueStream<AiUsage>
 
+    /// Serialises `recordCall`'s read-modify-write, which `DataStore.edit` gets for free
+    /// (`AiUsageDataSource.kt:106-114`): two concurrent calls must not both read the same count
+    /// and each write count + 1.
+    private let counterLock = NSLock()
+
     public init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
 
         nonisolated(unsafe) let captured = defaults
-        values = DefaultsValueStream { Self.read(from: captured) }
+        values = DefaultsValueStream(defaults: defaults) { Self.read(from: captured) }
     }
 
     /// The counters, re-read on each change (`AiUsageDataSource.kt:82-93`).
@@ -91,28 +96,37 @@ public final class AiUsageDataSource: Sendable {
 
     /// Counts one AI call made on `todayEpochDay` (`AiUsageDataSource.kt:105-115`).
     ///
-    /// Android does the read and the write inside a single `edit`, which is atomic against
-    /// concurrent editors. The iOS twin is a synchronous read-modify-write against one
-    /// `UserDefaults` instance: each individual access is serialised by the framework, and the
-    /// three of them run to completion on the calling thread with no suspension point between —
-    /// so a single-threaded caller (which is what the AI repositories are, one call per user
-    /// action) cannot observe a torn count.
+    /// Android's single `edit` block is atomic in two directions and both are reproduced here:
+    ///
+    ///  * **Against concurrent writers** — `counterLock`, so two calls cannot both read the same
+    ///    count and each store count + 1.
+    ///  * **Towards readers** — `values.batched`, because the day and the count are two
+    ///    `UserDefaults` keys and `didChangeNotification` is posted synchronously from inside
+    ///    `set`. Unbatched, the observer publishes `(todayEpochDay, yesterday's count)` between
+    ///    the two writes and `callsOn(todayEpochDay)` reports a spent quota on a fresh day.
+    ///
+    /// The suppressed notification is delivered on *this* thread, from inside `body`, which is
+    /// why the batch flag has a lock of its own — see `DefaultsValueStream.batched`.
     public func recordCall(todayEpochDay: Int) {
-        let stored = AiCallCount(
-            epochDay: defaults.storedInt(
-                forKey: SettingsKeys.aiCallsEpochDay,
-                default: AiUsage.default.callsEpochDay
-            ),
-            count: defaults.storedInt(
-                forKey: SettingsKeys.aiCallsCount,
-                default: AiUsage.default.callsToday
-            )
-        )
-        let recorded = stored.recordedOn(todayEpochDay: todayEpochDay)
+        counterLock.lock()
+        defer { counterLock.unlock() }
 
-        defaults.set(recorded.epochDay, forKey: SettingsKeys.aiCallsEpochDay)
-        defaults.set(recorded.count, forKey: SettingsKeys.aiCallsCount)
-        values.publish()
+        values.batched {
+            let stored = AiCallCount(
+                epochDay: defaults.storedInt(
+                    forKey: SettingsKeys.aiCallsEpochDay,
+                    default: AiUsage.default.callsEpochDay
+                ),
+                count: defaults.storedInt(
+                    forKey: SettingsKeys.aiCallsCount,
+                    default: AiUsage.default.callsToday
+                )
+            )
+            let recorded = stored.recordedOn(todayEpochDay: todayEpochDay)
+
+            defaults.set(recorded.epochDay, forKey: SettingsKeys.aiCallsEpochDay)
+            defaults.set(recorded.count, forKey: SettingsKeys.aiCallsCount)
+        }
     }
 
     private static func read(from defaults: UserDefaults) -> AiUsage {

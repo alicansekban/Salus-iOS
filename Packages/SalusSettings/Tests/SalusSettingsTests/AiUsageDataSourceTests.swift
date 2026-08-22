@@ -216,30 +216,57 @@ struct AiUsageDataSourceTests {
     @Test("the usage stream emits the current value first, then every change")
     func theUsageStreamEmitsCurrentThenChanges() async throws {
         let fixture = try makeFixture()
-        var stream = fixture.source.usage.makeAsyncIterator()
+        // See the note on `StreamRecorder`: an iterator would let a spurious duplicate be
+        // collapsed by `.bufferingNewest(1)` and the idempotence claim below would be vacuous.
+        let recorder = StreamRecorder(fixture.source.usage)
 
-        #expect(await stream.next() == AiUsage.default)
+        await recorder.wait(forAtLeast: 1)
+        fixture.source.recordCall(todayEpochDay: today)
+        await recorder.wait(forAtLeast: 2)
+        fixture.source.markFreeSummaryUsed()
+        await recorder.wait(forAtLeast: 3)
+
+        // Writing true over true is a no-op for the value, so the stream stays quiet.
+        fixture.source.markFreeSummaryUsed()
+        await Task.yield()
+        fixture.source.recordCall(todayEpochDay: today)
+        await recorder.wait(forAtLeast: 4)
+
+        #expect(recorder.recorded == [
+            AiUsage.default,
+            AiUsage(freeSummaryUsed: false, callsEpochDay: today, callsToday: 1),
+            AiUsage(freeSummaryUsed: true, callsEpochDay: today, callsToday: 1),
+            AiUsage(freeSummaryUsed: true, callsEpochDay: today, callsToday: 2)
+        ])
+    }
+
+    @Test("a day rollover is published as one value, never as yesterday's count under today")
+    func aDayRolloverIsNeverPublishedTorn() async throws {
+        let fixture = try makeFixture()
+        for _ in 0 ..< 47 {
+            fixture.source.recordCall(todayEpochDay: today - 1)
+        }
+
+        let recorder = StreamRecorder(fixture.source.usage)
+        await recorder.wait(forAtLeast: 1)
+        #expect(recorder.recorded.last?.callsToday == 47)
 
         fixture.source.recordCall(todayEpochDay: today)
-        #expect(
-            await stream.next()
-                == AiUsage(freeSummaryUsed: false, callsEpochDay: today, callsToday: 1)
-        )
+        await recorder.wait(forAtLeast: 2)
 
-        // Writing true over true is a no-op for the value, so the stream stays quiet and the next
-        // element is the one the second call produces.
-        fixture.source.markFreeSummaryUsed()
-        #expect(
-            await stream.next()
-                == AiUsage(freeSummaryUsed: true, callsEpochDay: today, callsToday: 1)
-        )
+        // `recordCall` writes two keys, and `UserDefaults` posts `didChangeNotification`
+        // synchronously from inside `set` — so between the two writes the observer would see
+        // `(epochDay: today, callsToday: 47)`: a fresh day already carrying yesterday's spent
+        // quota, which `callsOn(today)` reports as an exhausted allowance. Kotlin's single
+        // `edit` block (`AiUsageDataSource.kt:106-114`) makes that state unobservable; the
+        // batching in `DefaultsValueStream` is what makes it unobservable here.
+        let torn = recorder.recorded.filter { $0.callsEpochDay == today && $0.callsToday != 1 }
+        #expect(torn.isEmpty, "torn values: \(torn)")
 
-        fixture.source.markFreeSummaryUsed()
-        fixture.source.recordCall(todayEpochDay: today)
-        #expect(
-            await stream.next()
-                == AiUsage(freeSummaryUsed: true, callsEpochDay: today, callsToday: 2)
-        )
+        #expect(recorder.recorded == [
+            AiUsage(freeSummaryUsed: false, callsEpochDay: today - 1, callsToday: 47),
+            AiUsage(freeSummaryUsed: false, callsEpochDay: today, callsToday: 1)
+        ])
     }
 
     @Test("the AI counters are stored under the three Android keys")

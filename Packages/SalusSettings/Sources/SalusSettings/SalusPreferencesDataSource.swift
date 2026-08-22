@@ -12,7 +12,17 @@ import SalusModel
 /// Synchronous where Kotlin is `suspend`: `DataStore.edit` suspends because it serialises a file
 /// through a coroutine; `UserDefaults.set` is a synchronous, thread-safe write against an
 /// in-memory domain that the system flushes. Making the setters `async` would buy nothing and
-/// force every caller into a `Task`.
+/// force every caller into a `Task`. Every setter here writes exactly one key, so none of them
+/// needs `DefaultsValueStream.batched` — `AiUsageDataSource.recordCall`, which writes two, does.
+///
+/// **Wiring (controller ruling).** `DataStoreModule.kt` has no twin in this package: there is no
+/// Koin here, and singleton lifetime is the app's composition root's business, not a core
+/// package's. The composition root owns the single instance and is what pairs this type with
+/// `KeychainAppLockFlagStore`; tests and previews pass their own pair instead. It also passes
+/// `UserDefaults.standard` rather than a named suite — deliberately, and not a gap in the port.
+/// Android needs `preferencesDataStoreFile("salus_settings")` because a DataStore *is* a file it
+/// has to name; on iOS the app's own defaults domain is already private to the app, and a suite
+/// would only add a second plist to back up, migrate and get wrong.
 public final class SalusPreferencesDataSource: Sendable {
     /// `UserDefaults` is documented thread-safe but carries no `Sendable` annotation, so the
     /// exemption is spelled out on the one property that needs it rather than by making the whole
@@ -33,7 +43,7 @@ public final class SalusPreferencesDataSource: Sendable {
         self.appLockFlagStore = appLockFlagStore
 
         nonisolated(unsafe) let captured = defaults
-        values = DefaultsValueStream {
+        values = DefaultsValueStream(defaults: defaults) {
             Self.read(from: captured, appLockFlagStore: appLockFlagStore)
         }
     }
@@ -96,10 +106,12 @@ public final class SalusPreferencesDataSource: Sendable {
 
     /// One write plus the re-emit every setter owes the stream.
     ///
-    /// `UserDefaults.didChangeNotification` covers the standard domain, but a suite does not
-    /// always post it, so the stream would be silent in exactly the configuration the tests run
-    /// in. Publishing by hand makes the stream a property of this class rather than of the
-    /// platform's notification behaviour.
+    /// The `publish()` is not redundant even though `UserDefaults.didChangeNotification` fires
+    /// for this write too — it fires *first*, so by the time this line runs the subscribers have
+    /// already seen the new value and it dedupes to nothing. It is here so that the stream is a
+    /// property of this class and not of the platform's notification behaviour, which is what
+    /// makes `setAppLockEnabled` — whose value never touches `UserDefaults` and posts no
+    /// notification at all — work through the same path as the other nine.
     private func write(_ value: Any, forKey key: String) {
         defaults.set(value, forKey: key)
         values.publish()
