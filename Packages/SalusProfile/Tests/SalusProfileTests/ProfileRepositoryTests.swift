@@ -49,7 +49,7 @@ struct ProfileRepositoryTests {
     /// `ProfileRepositoryImpl.kt:23`, the `getById` branch: an existing row keeps its own
     /// `created_at` however far the clock has moved on.
     @Test("saveProfile preserves created_at on a re-save and updates the other fields")
-    func saveProfilePreservesCreatedAtOnARsave() async throws {
+    func saveProfilePreservesCreatedAtOnAResave() async throws {
         let fixture = try Self.makeFixture()
         try await fixture.repository.saveProfile(Self.newProfile(displayName: "Ada"))
 
@@ -80,6 +80,21 @@ struct ProfileRepositoryTests {
         try await fixture.repository.saveProfile(saved)
 
         #expect(try await fixture.repository.getProfile() == saved)
+    }
+
+    /// The twin of Koin resolving `single<ProfileRepository>` (`ProfileModule.kt:7-9`): what the
+    /// factory hands back is a working repository over the given database, not just a value.
+    @Test("makeProfileRepository builds a repository over the given database")
+    func makeProfileRepositoryBuildsAWorkingRepository() async throws {
+        let clock = FixedSalusClock(now: Self.seededAt)
+        let database = try SalusDatabase.inMemory(clock: clock)
+        let repository = makeProfileRepository(database: database, clock: clock)
+
+        var iterator = repository.observeProfile().makeAsyncIterator()
+        let profile = try #require(try await iterator.next())
+
+        #expect(profile?.id == SalusDatabase.defaultProfileId)
+        #expect(profile?.isDefault == true)
     }
 
     /// A profile whose id is not in the seeded database, so `getById` misses and the clock decides
