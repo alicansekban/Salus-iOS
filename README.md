@@ -41,22 +41,28 @@ Verify all three with:
 xcodegen --version && swiftlint version && swiftformat --version
 ```
 
-The versions above are pinned: `.github/workflows/ci.yml` asserts Xcode, SwiftLint and
-SwiftFormat against this table and fails the run if the GitHub runner image drifts away
-from it. Bump the table and the workflow's `Toolchain` step in the same commit.
+The versions above are pinned, and `scripts/check-toolchain.sh` asserts them on every CI
+run and every local `scripts/ci.sh`. Xcode is matched on **major.minor** (any 26.4.x
+passes — the patch changes neither Swift's language rules nor the targeted SDKs, and
+GitHub rotates its image Xcode patches on its own schedule); SwiftLint and SwiftFormat are
+matched **exactly**, because `swiftlint --strict` runs on a zero-warning budget and a patch
+release can add rules. The pins live at the top of that script — bump them and this table
+in the same commit.
 
 ## Continuous integration
 
 `.github/workflows/ci.yml` runs on every pull request and on pushes to `main`, in the
-lint → test → build order the Android repository's `./gradlew build` uses. Each stage is a
-script under `scripts/`, so CI and a laptop run the identical commands:
+lint → test → build order the Android repository's `./gradlew build` uses. Every stage is a
+script under `scripts/`, so CI and a laptop run the identical commands — the workflow
+contains no command of its own:
 
 | Command | What it does |
 | --- | --- |
+| `scripts/check-toolchain.sh` | Selects the pinned Xcode and asserts all three tool versions |
 | `scripts/lint.sh` | `swiftformat --lint .` then `swiftlint --strict`, repo-wide from the repo root |
 | `scripts/test-packages.sh` | `swift test` for all 24 packages under `Packages/` (accepts package names to narrow) |
 | `scripts/build-app.sh` | `xcodebuild build` for the `Salus` scheme on a generic iOS Simulator destination |
-| `scripts/ci.sh` | all three, in order — run this before pushing |
+| `scripts/ci.sh` | all four, in order — run this before pushing |
 
 A clean run takes about four minutes.
 

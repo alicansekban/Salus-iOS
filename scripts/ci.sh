@@ -1,9 +1,9 @@
 #!/bin/bash
 #
 # Runs the whole CI pipeline locally, in the same order and with the same
-# commands as .github/workflows/ci.yml: lint -> test -> build.
+# commands as .github/workflows/ci.yml: toolchain -> lint -> test -> build.
 #
-# The workflow invokes the three scripts below as three separate steps so that
+# The workflow invokes the four scripts below as four separate steps so that
 # GitHub's UI shows which stage failed; this file is the single entry point for
 # a human who just wants to know whether the tree is green before pushing.
 #
@@ -17,19 +17,25 @@ REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO_ROOT"
 
 echo "############################################################"
-echo "# 1/3  lint"
+echo "# 1/4  toolchain"
+echo "############################################################"
+scripts/check-toolchain.sh
+
+echo
+echo "############################################################"
+echo "# 2/4  lint"
 echo "############################################################"
 scripts/lint.sh
 
 echo
 echo "############################################################"
-echo "# 2/3  test (all packages)"
+echo "# 3/4  test (all packages)"
 echo "############################################################"
 scripts/test-packages.sh
 
 echo
 echo "############################################################"
-echo "# 3/3  build (app scheme)"
+echo "# 4/4  build (app scheme)"
 echo "############################################################"
 scripts/build-app.sh
 

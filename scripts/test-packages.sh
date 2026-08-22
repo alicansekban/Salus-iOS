@@ -31,6 +31,18 @@ cd "$REPO_ROOT" || exit 1
 # here. `.build` is pruned: SwiftPM checkouts hold manifests of their own.
 all_dirs="$(find Packages -name Package.swift -not -path '*/.build/*' -exec dirname {} \; | sort)"
 
+# Discovering nothing must never read as "everything passed". Without this the
+# script would print "0/0 packages passed" and exit 0 — a green CI run that
+# tested not one line of code, which is the worst failure mode a test gate has.
+# Reachable for real: a bad `cd`, a checkout that did not fetch Packages/, or
+# someone moving the directory.
+if [ -z "$all_dirs" ]; then
+    echo "error: found no Package.swift under $REPO_ROOT/Packages" >&2
+    echo "       Expected 24 local packages. Refusing to report success on an" >&2
+    echo "       empty set — check the working directory and the checkout." >&2
+    exit 2
+fi
+
 if [ "$#" -gt 0 ]; then
     dirs=""
     for want in "$@"; do

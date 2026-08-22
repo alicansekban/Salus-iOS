@@ -26,14 +26,22 @@
 # so no `brew install` step exists: brewing them would replace known-good,
 # already-present binaries with whatever HEAD of homebrew-core has that day —
 # i.e. it would CREATE the version drift it was meant to prevent, and cost a
-# minute of macOS runner time doing it. The `Toolchain` step below verifies the
+# minute of macOS runner time doing it. scripts/check-toolchain.sh verifies the
 # versions instead and fails loudly if the image ever drifts away from the
 # README, which is the moment a human should decide whether to bump the README
 # or install a specific version.
 #
-# The image's *default* Xcode is 26.6; DEVELOPER_DIR selects 26.4.1 explicitly
-# to match the README. Xcode 16 or newer is all that swift-tools 6.0 / iOS 17
-# actually require, so this pin is about reproducibility, not capability.
+# The image's *default* Xcode is 26.6, so scripts/check-toolchain.sh selects the
+# pinned one and exports DEVELOPER_DIR to the later steps. It matches Xcode on
+# MAJOR.MINOR (26.4.x) rather than on the exact patch — the patch does not change
+# Swift's language rules or the targeted SDKs, and GitHub rotates image Xcode
+# patches on its own schedule. SwiftLint and SwiftFormat are matched exactly,
+# because `--strict` runs on a zero-warning budget and a linter patch release can
+# add rules. The version pins live at the top of that script; this file does not
+# repeat them.
+#
+# Xcode 16 or newer is all that swift-tools 6.0 / iOS 17 actually require, so the
+# pin is about reproducibility, not capability.
 #
 # XcodeGen is NOT installed on the image and is NOT needed: Salus.xcodeproj is
 # generated from project.yml but committed. See scripts/build-app.sh.
@@ -70,12 +78,6 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  # Pinned to the README's Xcode. If an image update removes this path the
-  # `Toolchain` step fails with an explicit message rather than a cryptic
-  # xcodebuild error.
-  DEVELOPER_DIR: /Applications/Xcode_26.4.1.app/Contents/Developer
-
 jobs:
   build:
     runs-on: macos-26
@@ -84,61 +86,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Prints what the run actually used and asserts it against the README's
-      # "Toolchain" table. Everything below depends on these three binaries, so
-      # a mismatch should be visible at the top of the log, not inferred from a
-      # rule that fired unexpectedly 40 lines into the lint step.
+      # 1/4 — toolchain. Selects the pinned Xcode (exporting DEVELOPER_DIR to the
+      # steps below via $GITHUB_ENV) and asserts all three tool versions against
+      # the pins at the top of the script, which mirror README.md's Toolchain
+      # table. Everything below depends on these binaries, so a mismatch should
+      # be visible at the top of the log, not inferred from a lint rule that
+      # fired unexpectedly forty lines later.
       - name: Toolchain
         shell: bash
-        run: |
-          set -euo pipefail
+        run: scripts/check-toolchain.sh
 
-          if [ ! -d "$DEVELOPER_DIR" ]; then
-            echo "::error::$DEVELOPER_DIR is missing on this runner image."
-            echo "The macos-26 image rotated its Xcode set. Pick a version from"
-            echo "https://github.com/actions/runner-images/blob/main/images/macos/macos-26-Readme.md"
-            echo "and update BOTH the DEVELOPER_DIR in this workflow and the"
-            echo "Toolchain table in README.md, in the same commit."
-            ls -1 /Applications | grep -i '^Xcode' || true
-            exit 1
-          fi
-
-          xcodebuild -version
-          swiftlint version
-          swiftformat --version
-
-          # README.md pins these. Keep the two in lockstep.
-          expected_xcode="26.4.1"
-          expected_swiftlint="0.65.0"
-          expected_swiftformat="0.62.1"
-
-          drift=0
-          actual_xcode="$(xcodebuild -version | head -1 | awk '{print $2}')"
-          actual_swiftlint="$(swiftlint version)"
-          actual_swiftformat="$(swiftformat --version)"
-
-          [ "$actual_xcode" = "$expected_xcode" ] || {
-            echo "::error::Xcode $actual_xcode != README's $expected_xcode"; drift=1; }
-          [ "$actual_swiftlint" = "$expected_swiftlint" ] || {
-            echo "::error::SwiftLint $actual_swiftlint != README's $expected_swiftlint"; drift=1; }
-          [ "$actual_swiftformat" = "$expected_swiftformat" ] || {
-            echo "::error::SwiftFormat $actual_swiftformat != README's $expected_swiftformat"; drift=1; }
-
-          if [ "$drift" -ne 0 ]; then
-            echo "The runner image drifted from README.md's Toolchain table."
-            echo "Either pin the tool here (brew install <tool>@<version>) or"
-            echo "update README.md and this step together after re-running the"
-            echo "lint locally on the new version."
-            exit 1
-          fi
-
-      # 1/3 — lint. swiftformat --lint then swiftlint --strict, both repo-wide
+      # 2/4 — lint. swiftformat --lint then swiftlint --strict, both repo-wide
       # from the repo root. scripts/lint.sh documents why `--path` is banned.
       - name: Lint
         shell: bash
         run: scripts/lint.sh
 
-      # 2/3 — test. `swift test` for ALL 24 local packages, not just the ones
+      # 3/4 — test. `swift test` for ALL 24 local packages, not just the ones
       # with hand-written assertions: the placeholder test targets exist to
       # prove every module still compiles and links, which is the only thing M0
       # can assert about most of them.
@@ -154,7 +118,7 @@ jobs:
         shell: bash
         run: scripts/test-packages.sh
 
-      # 3/3 — build the app scheme. `generic/platform=iOS Simulator` needs no
+      # 4/4 — build the app scheme. `generic/platform=iOS Simulator` needs no
       # named device, so the workflow does not break when the image's simulator
       # set changes. See scripts/build-app.sh.
       - name: Build app
