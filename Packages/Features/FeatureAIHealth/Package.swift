@@ -6,7 +6,9 @@ import PackageDescription
 
 let package = Package(
     name: "FeatureAIHealth",
-    platforms: [.iOS(.v17)],
+    // macOS 14 is inherited from SalusDesignSystem/SalusUI so `swift test` runs on
+    // a macOS host; iOS 17 remains the ship target. See SalusUI/Package.swift.
+    platforms: [.iOS(.v17), .macOS(.v14)],
     products: [
         .library(name: "FeatureAIHealth", targets: ["FeatureAIHealth"])
     ],

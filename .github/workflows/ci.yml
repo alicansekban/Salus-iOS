@@ -1,0 +1,162 @@
+# Salus iOS CI.
+#
+# Mirrors the Android repository's workflow shape (salus-android/.github/workflows/ci.yml):
+# one job, triggered on push to main and on every pull request, running the
+# lint -> test -> build sequence that `./gradlew build` runs over there. It is
+# split into named steps here only because the iOS toolchain has no single
+# command that does all three.
+#
+# Every step shells out to a script in scripts/, so a developer can reproduce
+# the whole run with `scripts/ci.sh` and there is exactly one definition of each
+# command. Do not inline a command here that differs from its script.
+#
+# ---------------------------------------------------------------------------
+# Runner image and Xcode
+# ---------------------------------------------------------------------------
+# `macos-26` (the image `macos-latest` points at since June 2026) is pinned by
+# name rather than by `macos-latest`, so an image rotation cannot silently move
+# the toolchain under the project.
+#
+# That image happens to carry EXACTLY the toolchain the README pins:
+#
+#   Xcode 26.4.1 (build 17E202)  at /Applications/Xcode_26.4.1.app
+#   SwiftLint 0.65.0             preinstalled
+#   SwiftFormat 0.62.1           preinstalled
+#
+# so no `brew install` step exists: brewing them would replace known-good,
+# already-present binaries with whatever HEAD of homebrew-core has that day —
+# i.e. it would CREATE the version drift it was meant to prevent, and cost a
+# minute of macOS runner time doing it. The `Toolchain` step below verifies the
+# versions instead and fails loudly if the image ever drifts away from the
+# README, which is the moment a human should decide whether to bump the README
+# or install a specific version.
+#
+# The image's *default* Xcode is 26.6; DEVELOPER_DIR selects 26.4.1 explicitly
+# to match the README. Xcode 16 or newer is all that swift-tools 6.0 / iOS 17
+# actually require, so this pin is about reproducibility, not capability.
+#
+# XcodeGen is NOT installed on the image and is NOT needed: Salus.xcodeproj is
+# generated from project.yml but committed. See scripts/build-app.sh.
+#
+# ---------------------------------------------------------------------------
+# Caching
+# ---------------------------------------------------------------------------
+# Deliberately none.
+#
+#   * There is nothing to *download*. The project has zero third-party
+#     dependencies; all 24 packages resolve to local `.package(path:)` entries,
+#     so SwiftPM never contacts the network and a `~/.swiftpm` / Package.resolved
+#     cache would restore an empty directory.
+#
+#   * Caching build *products* was measured and rejected. Because every package
+#     is tested in its own directory, each one builds its own copy of the shared
+#     subgraph, and the 24 `.build` directories total ~4.0 GB — most of a
+#     repository's entire 10 GB cache quota, for an archive that would have to be
+#     uploaded and downloaded on every run and invalidated by any source change.
+#
+# If the loop ever gets slow enough to matter, the fix is to make the packages
+# share one build (an aggregate test package), not to cache 4 GB.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# A second push to the same branch makes the first run's answer irrelevant, and
+# macOS runner minutes are billed at a multiple of Linux ones.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Pinned to the README's Xcode. If an image update removes this path the
+  # `Toolchain` step fails with an explicit message rather than a cryptic
+  # xcodebuild error.
+  DEVELOPER_DIR: /Applications/Xcode_26.4.1.app/Contents/Developer
+
+jobs:
+  build:
+    runs-on: macos-26
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Prints what the run actually used and asserts it against the README's
+      # "Toolchain" table. Everything below depends on these three binaries, so
+      # a mismatch should be visible at the top of the log, not inferred from a
+      # rule that fired unexpectedly 40 lines into the lint step.
+      - name: Toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ ! -d "$DEVELOPER_DIR" ]; then
+            echo "::error::$DEVELOPER_DIR is missing on this runner image."
+            echo "The macos-26 image rotated its Xcode set. Pick a version from"
+            echo "https://github.com/actions/runner-images/blob/main/images/macos/macos-26-Readme.md"
+            echo "and update BOTH the DEVELOPER_DIR in this workflow and the"
+            echo "Toolchain table in README.md, in the same commit."
+            ls -1 /Applications | grep -i '^Xcode' || true
+            exit 1
+          fi
+
+          xcodebuild -version
+          swiftlint version
+          swiftformat --version
+
+          # README.md pins these. Keep the two in lockstep.
+          expected_xcode="26.4.1"
+          expected_swiftlint="0.65.0"
+          expected_swiftformat="0.62.1"
+
+          drift=0
+          actual_xcode="$(xcodebuild -version | head -1 | awk '{print $2}')"
+          actual_swiftlint="$(swiftlint version)"
+          actual_swiftformat="$(swiftformat --version)"
+
+          [ "$actual_xcode" = "$expected_xcode" ] || {
+            echo "::error::Xcode $actual_xcode != README's $expected_xcode"; drift=1; }
+          [ "$actual_swiftlint" = "$expected_swiftlint" ] || {
+            echo "::error::SwiftLint $actual_swiftlint != README's $expected_swiftlint"; drift=1; }
+          [ "$actual_swiftformat" = "$expected_swiftformat" ] || {
+            echo "::error::SwiftFormat $actual_swiftformat != README's $expected_swiftformat"; drift=1; }
+
+          if [ "$drift" -ne 0 ]; then
+            echo "The runner image drifted from README.md's Toolchain table."
+            echo "Either pin the tool here (brew install <tool>@<version>) or"
+            echo "update README.md and this step together after re-running the"
+            echo "lint locally on the new version."
+            exit 1
+          fi
+
+      # 1/3 — lint. swiftformat --lint then swiftlint --strict, both repo-wide
+      # from the repo root. scripts/lint.sh documents why `--path` is banned.
+      - name: Lint
+        shell: bash
+        run: scripts/lint.sh
+
+      # 2/3 — test. `swift test` for ALL 24 local packages, not just the ones
+      # with hand-written assertions: the placeholder test targets exist to
+      # prove every module still compiles and links, which is the only thing M0
+      # can assert about most of them.
+      #
+      # These run against the HOST (macOS) toolchain, because `swift test`
+      # cannot run a test bundle on a simulator. Project convention, applied in
+      # 12 manifests: an iOS-only package that reaches SwiftUI (directly, like
+      # SalusDesignSystem, or transitively, like SalusUI and the ten feature
+      # packages) also declares `.macOS(.v14)` SOLELY so `swift test` runs on a
+      # macOS host. iOS 17 remains the ship target, and the iOS build of every
+      # package is covered by the xcodebuild step below, which links them all.
+      - name: Test all packages
+        shell: bash
+        run: scripts/test-packages.sh
+
+      # 3/3 — build the app scheme. `generic/platform=iOS Simulator` needs no
+      # named device, so the workflow does not break when the image's simulator
+      # set changes. See scripts/build-app.sh.
+      - name: Build app
+        shell: bash
+        run: scripts/build-app.sh

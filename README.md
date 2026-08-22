@@ -40,3 +40,32 @@ Verify all three with:
 ```sh
 xcodegen --version && swiftlint version && swiftformat --version
 ```
+
+The versions above are pinned: `.github/workflows/ci.yml` asserts Xcode, SwiftLint and
+SwiftFormat against this table and fails the run if the GitHub runner image drifts away
+from it. Bump the table and the workflow's `Toolchain` step in the same commit.
+
+## Continuous integration
+
+`.github/workflows/ci.yml` runs on every pull request and on pushes to `main`, in the
+lint → test → build order the Android repository's `./gradlew build` uses. Each stage is a
+script under `scripts/`, so CI and a laptop run the identical commands:
+
+| Command | What it does |
+| --- | --- |
+| `scripts/lint.sh` | `swiftformat --lint .` then `swiftlint --strict`, repo-wide from the repo root |
+| `scripts/test-packages.sh` | `swift test` for all 24 packages under `Packages/` (accepts package names to narrow) |
+| `scripts/build-app.sh` | `xcodebuild build` for the `Salus` scheme on a generic iOS Simulator destination |
+| `scripts/ci.sh` | all three, in order — run this before pushing |
+
+A clean run takes about four minutes.
+
+Two things the scripts encode that are easy to get wrong by hand:
+
+- **Never lint with `swiftlint --path`.** It silently disables the custom
+  `no_ui_framework_in_domain` rule. Lint the repo, or pass files positionally.
+- **`swift test` builds for the host, not for iOS.** So an iOS-only package that reaches
+  SwiftUI — directly (`SalusDesignSystem`) or transitively (`SalusUI` and the ten feature
+  packages) — also declares `.macOS(.v14)` in its manifest purely to make the host build
+  possible. iOS 17 stays the ship target; the iOS build of every package is what
+  `scripts/build-app.sh` covers.
