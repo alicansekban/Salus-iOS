@@ -10,7 +10,11 @@ import SwiftUI
 /// provide needs a token added to `design-tokens.md` first, not a number added here.
 struct PlaceholderScreen: View {
     let tab: RootTab
-    let theme: SalusResolvedTheme
+
+    /// Read, not passed. The shell resolves the theme once and injects it (`RootView.salusTheme`),
+    /// the way every composable below Android's `MaterialTheme(...)` reads `MaterialTheme.colorScheme`
+    /// rather than taking it as a parameter.
+    @Environment(\.salusTheme) private var theme
 
     private var colors: SalusColorScheme { theme.colorScheme }
 
@@ -69,9 +73,9 @@ struct PlaceholderScreen: View {
             .strokeBorder(colors.outlineVariant, lineWidth: Self.hairline)
     }
 
-    /// Placeholder copy, not a user-facing string: M0 does no strings work, and this text is
+    /// Placeholder copy, not a user-facing string: strings work has not started, and this text is
     /// expected to be deleted rather than localized when the tab gets real content.
-    private static let placeholderBody = "M0 shell — this tab has no content yet."
+    private static let placeholderBody = "Shell — this tab has no content yet."
 
     /// A one-point outline. Not a token: `design-tokens.md` carries no stroke widths, so
     /// inventing a `SalusStroke` namespace to hold a single hairline would put a value in the
@@ -80,9 +84,11 @@ struct PlaceholderScreen: View {
 }
 
 #Preview("Light") {
-    PlaceholderScreen(tab: .home, theme: SalusTheme.resolve(systemIsDark: false))
+    PlaceholderScreen(tab: .home)
+        .salusTheme(SalusTheme.resolve(systemIsDark: false))
 }
 
 #Preview("Dark") {
-    PlaceholderScreen(tab: .vitals, theme: SalusTheme.resolve(systemIsDark: true))
+    PlaceholderScreen(tab: .vitals)
+        .salusTheme(SalusTheme.resolve(systemIsDark: true))
 }
