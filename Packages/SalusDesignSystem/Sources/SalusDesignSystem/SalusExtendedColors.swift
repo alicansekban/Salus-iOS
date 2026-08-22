@@ -31,7 +31,7 @@ public struct FeatureAccent: Equatable, Sendable {
     }
 
     /// The four members keyed by name, for the token registry.
-    public var allTokens: [String: Color] {
+    package var allTokens: [String: Color] {
         [
             "accent": accent,
             "onAccent": onAccent,
@@ -77,7 +77,7 @@ public struct SalusExtendedColors: Equatable, Sendable {
     }
 
     /// The 20 feature accent colors of this theme, keyed `<feature>.<member>`.
-    public var accentTokens: [String: Color] {
+    package var accentTokens: [String: Color] {
         var tokens: [String: Color] = [:]
         for entry in featureAccents {
             for (member, color) in entry.accent.allTokens {
@@ -88,7 +88,7 @@ public struct SalusExtendedColors: Equatable, Sendable {
     }
 
     /// The two status colors of this theme.
-    public var statusTokens: [String: Color] {
+    package var statusTokens: [String: Color] {
         ["success": success, "warning": warning]
     }
 }

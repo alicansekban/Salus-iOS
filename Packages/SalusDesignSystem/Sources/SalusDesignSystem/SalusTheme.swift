@@ -23,13 +23,16 @@ import SwiftUI
 ///
 /// The Android composable provides the same three things — `MaterialTheme(colorScheme = …)`,
 /// `LocalSalusExtendedColors provides …`, and the `darkTheme` flag it branched on.
+///
+/// The three are `let`: a resolved theme is the answer `resolve` computed, not a value to patch
+/// afterwards. Repainting the accents happens on the way in, through `withPremiumAccent`.
 public struct SalusResolvedTheme: Equatable, Sendable {
     /// The 35 Material roles, with the premium palette already applied.
-    public var colorScheme: SalusColorScheme
+    public let colorScheme: SalusColorScheme
     /// The feature accents and status colors, which no palette ever touches.
-    public var extendedColors: SalusExtendedColors
+    public let extendedColors: SalusExtendedColors
     /// Whether the dark theme was resolved.
-    public var isDark: Bool
+    public let isDark: Bool
 
     public init(
         colorScheme: SalusColorScheme,

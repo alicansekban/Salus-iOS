@@ -79,11 +79,12 @@ Milestone plans live in `docs/plans/`. Toolchain and CI usage: `README.md`.
   §6.4 Turkish is the default **and the fallback** locale — a device set to neither TR nor EN
   gets Turkish, exactly as Android's `values/` default does. Anything else that differs is a bug,
   not a port decision. — *review against §6.*
-  - Open item for the localisation milestone: the generated project still carries
-    `developmentRegion = en` (`App/Info.plist` passes `$(DEVELOPMENT_LANGUAGE)` through). Set
-    `DEVELOPMENT_LANGUAGE`/`options.developmentLanguage: tr` in `project.yml` and regenerate when
-    the first String Catalog lands. Changing the fallback to English would have to happen on both
-    platforms together.
+  - The fallback is **set, not pending**: `project.yml` carries `options.developmentLanguage: tr`
+    (which writes `developmentRegion = tr` into the generated project) *and*
+    `settings.base.DEVELOPMENT_LANGUAGE: tr` (which `App/Info.plist` passes through to
+    `CFBundleDevelopmentRegion`). Both lines are needed — the XcodeGen option does not feed the
+    build setting, whose Xcode default is `en`. Changing the fallback to English would have to
+    happen on both platforms together.
 - **Every persisted key and value string is Android-verbatim** (spec §9): the 13 settings keys
   (`onboarding_completed`, `app_lock_enabled`, `secure_screen_enabled`, `theme_mode`,
   `premium_theme`, `glucose_unit`, `cycle_reminder_enabled`, `cycle_reminder_lead_days`,

@@ -273,6 +273,25 @@ struct DimensionTokenTests {
         #expect(sample.actual == sample.expected, "SalusShapes.\(sample.name)")
     }
 
+    /// §6 — `pill` is Compose's `CircleShape` (`Shape.kt:8`). It is a shape rather than a radius,
+    /// so it carries no dimension token and the §6 count stays 5. That also makes it the one
+    /// token the drift detector cannot see: nothing about the 213 total changes if it is
+    /// deleted or turned into a fixed radius. Hence this pin.
+    @Test("the pill is a Capsule and stays outside the radius tokens")
+    func pill() {
+        // Height 60, so the capsule's rounding is 30 — not one of the five §6 radii. At a
+        // 48-high rect it would coincide with `large` (24) and the assertion below would be
+        // measuring the rect rather than the shape.
+        let rect = CGRect(x: 0, y: 0, width: 120, height: 60)
+        #expect(SalusShapes.pill.path(in: rect) == Capsule().path(in: rect))
+        // A capsule's rounding follows the height; a radius token does not.
+        for radius in SalusShapes.allTokens.values {
+            #expect(SalusShapes.pill.path(in: rect) != SalusShapes.rounded(radius).path(in: rect))
+        }
+        // …and it stays uncounted, which is why the 213 total cannot see it.
+        #expect(SalusShapes.allTokens["pill"] == nil)
+    }
+
     @Test(
         "elevation steps match design-tokens.md §7",
         arguments: [

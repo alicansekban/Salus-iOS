@@ -7,6 +7,11 @@
 //
 // Keying by name also catches a duplicated key: two tokens transcribed under one name collapse
 // into a single dictionary entry and the count drops.
+//
+// Those `allTokens` / `accentTokens` / `statusTokens` registries are `package`, not `public`:
+// they are the drift detector's raw material, not a way to reach a token. A feature that wants
+// a color names the token; looking one up by string would put a color outside the reach of the
+// compiler. Only the counts below cross the package boundary.
 
 /// Counts of the transcribed design tokens, per group and in total.
 public enum SalusTokens {

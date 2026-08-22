@@ -74,7 +74,7 @@ public enum SalusMotion {
     }
 
     /// The seven motion tokens of §10.
-    public static var allTokens: [String: SalusMotionToken] {
+    package static var allTokens: [String: SalusMotionToken] {
         [
             "pushPopDuration": .durationSeconds(pushPopDurationSeconds),
             "pushPopEasing": .timingCurve(pushPopEasing),

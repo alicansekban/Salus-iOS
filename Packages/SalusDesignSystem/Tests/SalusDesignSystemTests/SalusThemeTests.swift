@@ -76,26 +76,47 @@ struct PremiumPaletteResolutionTests {
         #expect(scheme.onSecondaryContainer == palette.onSecondaryContainer)
     }
 
-    @Test("nothing outside the eight accent roles moves", arguments: rows)
+    /// The eight Material roles §4 lets a palette repaint (`PremiumThemeColors.kt:110-119`).
+    static let accentRoleNames: Set = [
+        "primary", "onPrimary", "primaryContainer", "onPrimaryContainer",
+        "secondary", "onSecondary", "secondaryContainer", "onSecondaryContainer"
+    ]
+
+    /// Asserted over the whole 35-role registry rather than a hand-picked list of roles: a role
+    /// added to `SalusColorScheme` and then quietly repainted would be missed by a list, and the
+    /// list is exactly the thing nobody updates.
+    @Test("the accented scheme is the base with only the eight §4 roles overwritten", arguments: rows)
     func nonAccentRolesUnchanged(_ row: PaletteRow) {
         let base = row.dark ? SalusColorScheme.dark : SalusColorScheme.light
         let scheme = SalusTheme.colorScheme(dark: row.dark, premiumTheme: row.palette)
+        let baseTokens = base.allTokens
+        let accents = row.palette.accentPalette(dark: row.dark).allTokens
         let label = "\(row.palette.rawValue) dark=\(row.dark)"
-        #expect(scheme.tertiary == base.tertiary, "\(label) tertiary")
-        #expect(scheme.tertiaryContainer == base.tertiaryContainer, "\(label) tertiaryContainer")
-        #expect(scheme.error == base.error, "\(label) error")
-        #expect(scheme.errorContainer == base.errorContainer, "\(label) errorContainer")
-        #expect(scheme.background == base.background, "\(label) background")
-        #expect(scheme.surface == base.surface, "\(label) surface")
-        #expect(scheme.surfaceVariant == base.surfaceVariant, "\(label) surfaceVariant")
-        #expect(scheme.outline == base.outline, "\(label) outline")
-        #expect(scheme.outlineVariant == base.outlineVariant, "\(label) outlineVariant")
-        #expect(scheme.inversePrimary == base.inversePrimary, "\(label) inversePrimary")
-        #expect(scheme.scrim == base.scrim, "\(label) scrim")
-        #expect(
-            scheme.surfaceContainerHighest == base.surfaceContainerHighest,
-            "\(label) surfaceContainerHighest"
-        )
+
+        // The palette offers exactly the eight §4 roles, and all eight are roles of the scheme.
+        #expect(Set(accents.keys) == Self.accentRoleNames, "\(label) palette roles")
+        #expect(baseTokens.count == 35, "\(label) scheme roles")
+        #expect(Set(baseTokens.keys).isSuperset(of: Self.accentRoleNames), "\(label) role names")
+
+        // The whole scheme, role by role: the eight come from the palette, the 27 from the base.
+        var expected = baseTokens
+        for (role, color) in accents {
+            expected[role] = color
+        }
+        #expect(scheme.allTokens == expected, "\(label) resolved scheme")
+
+        // The same statement as a key diff. It is a *subset*, not the full eight: some accent
+        // roles legitimately carry the base's value — every light palette keeps `onPrimary` and
+        // `onSecondary` at #FFFFFF — so those roles are repainted with what was already there.
+        let changed = Set(scheme.allTokens.filter { baseTokens[$0.key] != $0.value }.keys)
+        #expect(changed.isSubset(of: Self.accentRoleNames), "\(label) moved \(changed.sorted())")
+
+        if row.palette == .classic {
+            // CLASSIC is the brand palette itself — `withPremiumAccent` returns `self`.
+            #expect(changed.isEmpty, "\(label) CLASSIC moved \(changed.sorted())")
+        } else {
+            #expect(!changed.isEmpty, "\(label) the palette repainted nothing")
+        }
     }
 
     @Test("CLASSIC returns the brand scheme untouched")

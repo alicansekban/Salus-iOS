@@ -11,7 +11,12 @@ extension Color {
     /// Compose's `Color(0xFF3E7D5F)` land on the same value.
     ///
     /// Never inline a hex literal at a call site — go through the token types in this package.
-    public init(hex: UInt32) {
+    ///
+    /// Deliberately `package`, not `public`: exporting the literal constructor would let every
+    /// feature package mint a color that no line of `design-tokens.md` backs, and the token
+    /// count would never notice. Outside `SalusDesignSystem` there is no way to spell a color
+    /// except a token. The tests reach it because they live in this package.
+    package init(hex: UInt32) {
         self.init(
             .sRGB,
             red: Double((hex >> 16) & 0xFF) / 255,

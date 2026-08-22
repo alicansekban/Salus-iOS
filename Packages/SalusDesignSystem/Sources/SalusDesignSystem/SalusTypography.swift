@@ -93,7 +93,7 @@ public enum SalusTypography {
     )
 
     /// The twelve roles keyed by Material role name.
-    public static var allTokens: [String: SalusTextStyle] {
+    package static var allTokens: [String: SalusTextStyle] {
         [
             "headlineLarge": headlineLarge,
             "headlineMedium": headlineMedium,

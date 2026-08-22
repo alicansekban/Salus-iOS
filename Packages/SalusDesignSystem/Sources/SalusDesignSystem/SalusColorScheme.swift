@@ -59,7 +59,7 @@ public struct SalusColorScheme: Equatable, Sendable {
     public var surfaceContainerHighest: Color
 
     /// Every role of this scheme, keyed by its Material role name. 35 entries.
-    public var allTokens: [String: Color] {
+    package var allTokens: [String: Color] {
         [
             "primary": primary,
             "onPrimary": onPrimary,

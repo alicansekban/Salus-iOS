@@ -27,7 +27,7 @@ public struct SalusPremiumAccentPalette: Equatable, Sendable {
     public var onSecondaryContainer: Color
 
     /// The eight roles keyed by Material role name.
-    public var allTokens: [String: Color] {
+    package var allTokens: [String: Color] {
         [
             "primary": primary,
             "onPrimary": onPrimary,
@@ -44,27 +44,37 @@ public struct SalusPremiumAccentPalette: Equatable, Sendable {
 /// §4.1 — CLASSIC, light. CLASSIC is the Salus brand palette itself: on Android
 /// `withPremiumAccent` returns the scheme untouched rather than copying an identical one over
 /// it (`PremiumThemeColors.kt:105`), so these are the eight brand accent rows of §1.
+///
+/// Read off `SalusColorScheme.light` rather than re-stating its hexes. Two copies of the same
+/// eight literals can drift apart, and the drift would be invisible: nothing in the token count
+/// notices that CLASSIC has stopped being the brand palette. Derived, the identity holds by
+/// construction, and §1 stays the one place a brand accent hex is written down.
 private enum ClassicLightValues {
-    static let primary = Color(hex: 0x3E7D5F)
-    static let onPrimary = Color(hex: 0xFFFFFF)
-    static let primaryContainer = Color(hex: 0xC4E8D2)
-    static let onPrimaryContainer = Color(hex: 0x0B2818)
-    static let secondary = Color(hex: 0x506358)
-    static let onSecondary = Color(hex: 0xFFFFFF)
-    static let secondaryContainer = Color(hex: 0xD3E8DB)
-    static let onSecondaryContainer = Color(hex: 0x0E1F17)
+    private static let brand = SalusColorScheme.light
+
+    static let primary = brand.primary
+    static let onPrimary = brand.onPrimary
+    static let primaryContainer = brand.primaryContainer
+    static let onPrimaryContainer = brand.onPrimaryContainer
+    static let secondary = brand.secondary
+    static let onSecondary = brand.onSecondary
+    static let secondaryContainer = brand.secondaryContainer
+    static let onSecondaryContainer = brand.onSecondaryContainer
 }
 
-/// §4.1 — CLASSIC, dark: the eight brand accent rows of §2.
+/// §4.1 — CLASSIC, dark: the eight brand accent rows of §2, derived from `SalusColorScheme.dark`
+/// for the reason above.
 private enum ClassicDarkValues {
-    static let primary = Color(hex: 0x8BD6B2)
-    static let onPrimary = Color(hex: 0x0A3B26)
-    static let primaryContainer = Color(hex: 0x275B43)
-    static let onPrimaryContainer = Color(hex: 0xC4E8D2)
-    static let secondary = Color(hex: 0xB7CCBE)
-    static let onSecondary = Color(hex: 0x22352B)
-    static let secondaryContainer = Color(hex: 0x384B40)
-    static let onSecondaryContainer = Color(hex: 0xD3E8DB)
+    private static let brand = SalusColorScheme.dark
+
+    static let primary = brand.primary
+    static let onPrimary = brand.onPrimary
+    static let primaryContainer = brand.primaryContainer
+    static let onPrimaryContainer = brand.onPrimaryContainer
+    static let secondary = brand.secondary
+    static let onSecondary = brand.onSecondary
+    static let secondaryContainer = brand.secondaryContainer
+    static let onSecondaryContainer = brand.onSecondaryContainer
 }
 
 /// §4.2 — OCEAN, cyan/teal, light. Source: `PremiumThemeColors.kt:29-38`.
@@ -244,7 +254,7 @@ public enum SalusPremiumAccents {
     )
 
     /// Every palette, keyed `<palette>.<theme>`.
-    public static var allPalettes: [(name: String, palette: SalusPremiumAccentPalette)] {
+    package static var allPalettes: [(name: String, palette: SalusPremiumAccentPalette)] {
         [
             ("classic.light", classicLight),
             ("classic.dark", classicDark),
@@ -258,7 +268,7 @@ public enum SalusPremiumAccents {
     }
 
     /// All 64 premium accent colors, keyed `<palette>.<theme>.<role>`.
-    public static var allTokens: [String: Color] {
+    package static var allTokens: [String: Color] {
         var tokens: [String: Color] = [:]
         for entry in allPalettes {
             for (role, color) in entry.palette.allTokens {

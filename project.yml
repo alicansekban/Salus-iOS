@@ -16,6 +16,11 @@ options:
   bundleIdPrefix: com.alicansekban
   deploymentTarget:
     iOS: "17.0"
+  # Spec §6.4: Turkish is the default AND the fallback locale, exactly as Android's `values/`
+  # default is Turkish. This writes `developmentRegion = tr` into the project — the region a
+  # device that is neither TR nor EN falls back to. Xcode's own default is `en`, which would
+  # have made the fallback English on iOS and Turkish on Android for the same user.
+  developmentLanguage: tr
   # Mirror the folder tree in the navigator instead of flattening it, so `App/` on disk and
   # `App/` in Xcode stay the same thing.
   createIntermediateGroups: true
@@ -40,6 +45,11 @@ settings:
     ENABLE_USER_SCRIPT_SANDBOXING: YES
     SWIFT_TREAT_WARNINGS_AS_ERRORS: NO
     ENABLE_MODULE_VERIFIER: NO
+    # `options.developmentLanguage` above sets the *project's* `developmentRegion`; it does not
+    # feed the `DEVELOPMENT_LANGUAGE` build setting, whose Xcode default is `en`. `App/Info.plist`
+    # passes `$(DEVELOPMENT_LANGUAGE)` through to `CFBundleDevelopmentRegion`, so without this
+    # line the built bundle would still declare English as its fallback. Both have to say `tr`.
+    DEVELOPMENT_LANGUAGE: tr
 
 targets:
   Salus:

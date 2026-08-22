@@ -19,7 +19,7 @@ public enum SalusSpacing {
     public static let xl: CGFloat = 24 // Spacing.kt:11
     public static let xxl: CGFloat = 32 // Spacing.kt:12
 
-    public static var allTokens: [String: CGFloat] {
+    package static var allTokens: [String: CGFloat] {
         ["xs": xs, "sm": sm, "md": md, "lg": lg, "xl": xl, "xxl": xxl]
     }
 }
@@ -52,7 +52,7 @@ public enum SalusShapes {
     public static var pill: Capsule { Capsule() }
 
     /// The five named corner radii.
-    public static var allTokens: [String: CGFloat] {
+    package static var allTokens: [String: CGFloat] {
         [
             "extraSmall": extraSmall,
             "small": small,
@@ -80,7 +80,7 @@ public enum SalusElevation {
     /// Overlays. Light mode: `radius: 8, y: 4`.
     public static let overlay: CGFloat = 8 // Spacing.kt:20
 
-    public static var allTokens: [String: CGFloat] {
+    package static var allTokens: [String: CGFloat] {
         ["none": none, "card": card, "raised": raised, "overlay": overlay]
     }
 }
@@ -93,5 +93,5 @@ public enum SalusElevation {
 public enum SalusTouchTarget {
     public static let min: CGFloat = 48 // Spacing.kt:29
 
-    public static var allTokens: [String: CGFloat] { ["min": min] }
+    package static var allTokens: [String: CGFloat] { ["min": min] }
 }
