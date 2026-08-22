@@ -6,7 +6,10 @@ import PackageDescription
 
 let package = Package(
     name: "SalusSettings",
-    platforms: [.iOS(.v17)],
+    // `.macOS(.v14)` is inherited, not chosen: SalusCommon declares it so that its `@Observable`
+    // controller can be built for the test host, and the floor propagates to every dependent
+    // (CLAUDE.md). iOS 17 remains the ship target.
+    platforms: [.iOS(.v17), .macOS(.v14)],
     products: [
         .library(name: "SalusSettings", targets: ["SalusSettings"])
     ],

@@ -28,7 +28,7 @@
 		32081AE7A86A99CF65AC0A3A /* SalusSettings */ = {isa = PBXFileReference; lastKnownFileType = folder; name = SalusSettings; path = Packages/SalusSettings; sourceTree = SOURCE_ROOT; };
 		3682A16DBF8B254394C1B404 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		4F54D86E0A2A967EA71D0327 /* SalusCommon */ = {isa = PBXFileReference; lastKnownFileType = folder; name = SalusCommon; path = Packages/SalusCommon; sourceTree = SOURCE_ROOT; };
-		69A1B55BADFFC2D672DBFB8E /* Salus.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Salus.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		69A1B55BADFFC2D672DBFB8E /* Salus.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Salus.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		814A06AA9BCDD69E3C76C98E /* RootTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootTab.swift; sourceTree = "<group>"; };
 		92401A60F464F47C5E0F8036 /* SalusDesignSystem */ = {isa = PBXFileReference; lastKnownFileType = folder; name = SalusDesignSystem; path = Packages/SalusDesignSystem; sourceTree = SOURCE_ROOT; };
 		A853DA3BEE5AEAF0DC4959BF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -193,6 +193,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = MSK744V99M;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = App/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
@@ -342,6 +343,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = MSK744V99M;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = App/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;

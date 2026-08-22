@@ -65,7 +65,7 @@ Milestone plans live in `docs/plans/`. Toolchain and CI usage: `README.md`.
 - **`.macOS(.v14)` in a manifest is a test-host concession, not a target.** `swift test` cannot
   run a bundle on an iOS simulator, so a package whose host build cannot succeed under
   `[.iOS(.v17)]` alone also declares `.macOS(.v14)`. **iOS 17 remains the ship target** and never
-  ship-conditions on macOS. There are exactly two reasons a package qualifies, and 16 of the 24
+  ship-conditions on macOS. There are exactly three reasons a package qualifies, and 19 of the 24
   do:
   - **Reaches SwiftUI** — directly (`SalusDesignSystem`) or transitively (`SalusUI` and the ten
     feature packages). Twelve packages.
@@ -75,11 +75,17 @@ Milestone plans live in `docs/plans/`. Toolchain and CI usage: `README.md`.
     *"the library 'SalusDatabase' requires macos 10.13, but depends on the product 'GRDB' which
     requires macos 10.15"*. The floor propagates, so every future package that links
     `SalusDatabase` inherits the concession — that is expected, not a smell.
+  - **Reaches `Observation`** — `SalusCommon`, whose `PendingDeleteController` is `@Observable`
+    (iOS 17 / macOS 14; the host build otherwise fails with *"'Observable()' is only available in
+    macOS 14.0 or newer"*), plus its dependents `SalusSettings` and `SalusTesting`. Three
+    packages, arrived with iOS-M1. `Observation` is not a UI framework, so the domain-layer rule
+    below still holds — this is the same host-build mechanics as the two above, not an exception
+    to it.
 
-  The remaining eight — `SalusModel`, `SalusCommon`, `SalusNavigation`, `SalusSettings`,
-  `SalusBackup`, `SalusNotifications`, `SalusPremium`, `SalusTesting` — stay `[.iOS(.v17)]`
+  The remaining five — `SalusModel`, `SalusNavigation`, `SalusBackup`, `SalusNotifications`,
+  `SalusPremium` — stay `[.iOS(.v17)]`
   alone; do not add `.macOS` to a package that does not need it, and never add it to silence
-  something other than these two. — *enforcement:
+  something other than these three. — *enforcement:
   `scripts/test-packages.sh` (host build) + `scripts/build-app.sh` (real iOS build).*
 
 ## Port fidelity rules
