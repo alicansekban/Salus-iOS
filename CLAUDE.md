@@ -53,6 +53,26 @@ Milestone plans live in `docs/plans/`. Toolchain and CI usage: `README.md`.
     guard reports 0 hits while the rest of the run looks healthy. Lint the **repo** (`swiftlint
     --strict` from the repo root, what `scripts/lint.sh` does), or pass files **positionally**.
     Never `--path`.
+- **Records and DAOs live in `SalusDatabase`; mappers live with the domain type.** Every GRDB row
+  type is a `…Record` under `Packages/SalusDatabase/Sources/SalusDatabase/Records/`, every DAO is a
+  small struct beside them, and neither ever leaves the package: a repository maps the record to
+  the `SalusModel` type before returning it (`SalusProfile/ProfileMappers.swift` is the shape).
+  This is the iOS twin of Android's "Room entities never leak into feature domains; mappers are
+  mandatory". — *enforcement: review; a leak is visible as `import SalusDatabase` in a package that
+  is not a repository.*
+- **`LocalDate` is `SalusModel`'s, and `epochDay` is the wire.** Days are stored and passed as
+  `epochDay` (`Int`); the calendar type around them is `SalusModel.LocalDate`, hand-ported from
+  `kotlinx.datetime.LocalDate` so both platforms do the same proleptic Gregorian arithmetic. Never
+  use `Foundation.Date`, `Calendar` or `DateComponents` for a *day* — they carry a time zone and a
+  user calendar, which is exactly the drift the port is avoiding. `Date` stays for absolute instants
+  only (`epochMs + tz_id`). — *enforcement:
+  `Packages/SalusModel/Tests/SalusModelTests/LocalDateTests.swift` + review.*
+- **The composition root owns the singletons; there is no container.** `App/AppCompositionRoot.swift`
+  is the one place a real dependency is constructed — the twin of Koin's `salusModules`
+  (`AppModules.kt`) — and it holds each as a `let`. No global, no `static let shared`, no service
+  locator: `SalusApp` creates the instance and injects it with `.environment(_:)`, so a test builds
+  its own graph. A type that needs a dependency takes it in `init`; it never reaches for one.
+  — *enforcement: review of any `static` mutable state or new `shared` accessor.*
 - **Features never depend on each other.** A `Packages/Features/Feature*/Package.swift` may
   depend on core packages only — never on another `Feature*`. Cross-feature navigation stays a
   shell callback (spec §4). — *enforcement: the manifests themselves (no Feature→Feature edge
@@ -65,10 +85,11 @@ Milestone plans live in `docs/plans/`. Toolchain and CI usage: `README.md`.
 - **`.macOS(.v14)` in a manifest is a test-host concession, not a target.** `swift test` cannot
   run a bundle on an iOS simulator, so a package whose host build cannot succeed under
   `[.iOS(.v17)]` alone also declares `.macOS(.v14)`. **iOS 17 remains the ship target** and never
-  ship-conditions on macOS. There are exactly three reasons a package qualifies, and 19 of the 24
+  ship-conditions on macOS. There are exactly three reasons a package qualifies, and 20 of the 24
   do:
-  - **Reaches SwiftUI** — directly (`SalusDesignSystem`) or transitively (`SalusUI` and the ten
-    feature packages). Twelve packages.
+  - **Reaches SwiftUI** — directly (`SalusDesignSystem`, and `SalusNavigation` since its
+    `TabBackStacks` holds one `NavigationPath` per tab) or transitively (`SalusUI` and the ten
+    feature packages). Thirteen packages.
   - **Reaches GRDB** — `SalusDatabase`, plus its dependents `SalusProfile`, `SalusAI`,
     `SalusReminder`. Four packages. GRDB's own manifest declares a macOS 10.15 floor; a manifest
     that names no macOS platform is read by SwiftPM as macOS 10.13, and the host build fails with
@@ -82,7 +103,7 @@ Milestone plans live in `docs/plans/`. Toolchain and CI usage: `README.md`.
     below still holds — this is the same host-build mechanics as the two above, not an exception
     to it.
 
-  The remaining five — `SalusModel`, `SalusNavigation`, `SalusBackup`, `SalusNotifications`,
+  The remaining four — `SalusModel`, `SalusBackup`, `SalusNotifications`,
   `SalusPremium` — stay `[.iOS(.v17)]`
   alone; do not add `.macOS` to a package that does not need it, and never add it to silence
   something other than these three. — *enforcement:
@@ -117,6 +138,21 @@ Milestone plans live in `docs/plans/`. Toolchain and CI usage: `README.md`.
   `Packages/SalusModel/Tests/SalusModelTests/ThemeSettingsTests.swift` against
   `ThemeMode.storageKey` / `PremiumTheme.storageKey` in `SalusModel/ThemeSettings.swift`.
   New key ⇒ new pinning test, same commit.*
+- **The Keychain holds exactly one thing: `app_lock_enabled`.** Everything else lives in
+  `UserDefaults`, so the two stores stay one decision rather than a habit. The lock flag is the
+  exception because a flag that gates access to the app must not be clearable by deleting the app's
+  defaults or by restoring a backup — hence `KeychainAppLockFlagStore` and
+  `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly`. Never move a second setting there, and never
+  put health data there. — *enforcement:
+  `SalusPreferencesDataSourceTests.appLockFlagBypassesUserDefaults` pins that the flag never lands
+  in `UserDefaults`; the Keychain store itself is verified on device (it needs an entitlement
+  `swift test` has no way to grant).*
+- **The Room schema JSONs are copied, not authored, and re-synced on every schema bump.**
+  `Packages/SalusDatabase/Tests/SalusDatabaseTests/Resources/RoomSchemas/*.json` are verbatim copies
+  of `salus-android/app/schemas/…`, and `RoomSchemaParityTests` reads them to prove the GRDB
+  migrations produce Android's tables, columns and indices. A schema change on either platform means
+  re-copying the JSON for the new version **in the same commit** as the migration. — *enforcement:
+  `RoomSchemaParityTests`, which fails the moment the two schemas diverge.*
 
 ## Design system rules
 
@@ -128,6 +164,13 @@ Milestone plans live in `docs/plans/`. Toolchain and CI usage: `README.md`.
   §1–§9 of the doc. Adding a token without the doc line fails the count.*
 - **`SalusDesignSystem` is tokens only, no views** (mirrors Android's `:core:designsystem`).
   Shared views live in `SalusUI`. — *review.*
+- **The resolved theme travels in the environment, never as a parameter.** A view reads
+  `@Environment(\.salusTheme) private var theme` (`SalusThemeEnvironment.swift`); the shell resolves
+  it once from the stored `theme_mode` plus the system appearance and applies `.salusTheme(_:)`.
+  This is Compose's `MaterialTheme` CompositionLocal, and it is the reason no screen ever declares a
+  `theme:` argument — threading one through four intermediate views is how a screen ends up drawing
+  a stale palette. — *review; `SalusThemeEnvironmentTests` pins the default (light, classic) so a
+  view rendered outside the shell still draws Salus tokens.*
 - **Color literals live in `private enum` palettes**, one per theme/scheme
   (`LightPalette`, `DarkPalette`, `LightAccentPalette`, `ClassicLightValues`, …). Hoist
   many-argument literals out of the initializer call: nested `FeatureAccent(...)` /
