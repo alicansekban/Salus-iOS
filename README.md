@@ -89,10 +89,15 @@ Two things the scripts encode that are easy to get wrong by hand:
 
 - **Never lint with `swiftlint --path`.** It silently disables the custom
   `no_ui_framework_in_domain` rule. Lint the repo, or pass files positionally.
-- **`swift test` builds for the host, not for iOS.** So 16 of the 24 packages also declare
-  `.macOS(.v14)` in their manifest purely to make the host build possible, for one of two
-  reasons: they reach SwiftUI, directly (`SalusDesignSystem`) or transitively (`SalusUI` and the
-  ten feature packages); or they reach GRDB, whose own manifest sets a macOS 10.15 floor that a
+- **`swift test` builds for the host, not for iOS.** So 20 of the 24 packages also declare
+  `.macOS(.v14)` in their manifest purely to make the host build possible, for one of three
+  reasons: they reach SwiftUI, directly (`SalusDesignSystem`, and `SalusNavigation` since its
+  `TabBackStacks` holds a `NavigationPath` per tab) or transitively (`SalusUI` and the ten
+  feature packages); or they reach GRDB, whose own manifest sets a macOS 10.15 floor that a
   manifest naming no macOS platform (SwiftPM reads that as macOS 10.13) cannot satisfy —
-  `SalusDatabase` and its three dependents `SalusProfile`, `SalusAI`, `SalusReminder`. iOS 17
-  stays the ship target; the iOS build of every package is what `scripts/build-app.sh` covers.
+  `SalusDatabase` and its three dependents `SalusProfile`, `SalusAI`, `SalusReminder`; or they
+  reach `Observation` — `SalusCommon`, whose `PendingDeleteController` is `@Observable`
+  (iOS 17 / macOS 14), plus its dependents `SalusSettings` and `SalusTesting`. The remaining
+  four — `SalusModel`, `SalusBackup`, `SalusNotifications`, `SalusPremium` — stay
+  `[.iOS(.v17)]` alone. iOS 17 stays the ship target; the iOS build of every package is what
+  `scripts/build-app.sh` covers.

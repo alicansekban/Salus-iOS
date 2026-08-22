@@ -6,7 +6,6 @@
 // as `profileModule` is on Android. Keeping it internal keeps `ProfileDao` and the record shape
 // inside this module too.
 
-import Foundation
 import SalusCommon
 import SalusDatabase
 import SalusModel
@@ -58,14 +57,10 @@ final class ProfileRepositoryImpl: ProfileRepository {
     /// `ProfileRepositoryImpl.kt:21-26`.
     func saveProfile(_ profile: Profile) async throws {
         // The seeded row already carries a created_at; only a genuinely new row gets "now".
+        // `nowEpochMilliseconds()` is the twin of `Instant.toEpochMilliseconds()` and lives on
+        // `SalusClock`, so the seed row and this write truncate identically.
         let createdAt = try await profileDao.getById(profile.id)?.createdAtEpochMs
-            ?? Self.epochMilliseconds(clock.now())
+            ?? clock.nowEpochMilliseconds()
         try await profileDao.upsert(profile.toRecord(createdAtEpochMs: createdAt))
-    }
-
-    /// The twin of `Instant.toEpochMilliseconds()`: whole milliseconds, truncated rather than
-    /// rounded, so a stamp never lands in the future.
-    private static func epochMilliseconds(_ instant: Date) -> Int64 {
-        Int64(instant.timeIntervalSince1970 * 1000)
     }
 }

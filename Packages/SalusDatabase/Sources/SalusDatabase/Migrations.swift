@@ -206,11 +206,12 @@ enum SalusMigrations {
     /// inside `"v1"`, where that column does not exist yet — it arrives one migration later and is
     /// NULL for every pre-existing row, which is the same end state the Kotlin insert produces.
     ///
-    /// `System.currentTimeMillis()` becomes the injected clock: a seed row written by `Date()`
-    /// would make the seeded `created_at` unassertable, and production code in this port never
-    /// reads the wall clock directly (`SalusClock.swift`).
+    /// `System.currentTimeMillis()` becomes the injected clock's `nowEpochMilliseconds()`: a seed
+    /// row written by `Date()` would make the seeded `created_at` unassertable, and production
+    /// code in this port never reads the wall clock directly (`SalusClock.swift`). The helper is
+    /// also what `ProfileRepositoryImpl` writes through, so the two agree on truncation.
     private static func seedDefaultProfile(_ db: Database, clock: any SalusClock) throws {
-        let createdAtEpochMs = Int64((clock.now().timeIntervalSince1970 * 1000).rounded())
+        let createdAtEpochMs = clock.nowEpochMilliseconds()
         try db.execute(
             sql: """
             INSERT INTO profiles \

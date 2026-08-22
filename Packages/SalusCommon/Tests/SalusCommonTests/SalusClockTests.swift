@@ -24,3 +24,37 @@ struct SystemSalusClockTests {
         #expect(SystemSalusClock().timeZone() == TimeZone.current)
     }
 }
+
+/// A clock frozen at one instant.
+///
+/// `SalusTesting`'s `FixedSalusClock` cannot be used here — `SalusTesting` depends on
+/// `SalusCommon`, so importing it from this bundle would be a dependency cycle. A tiny local
+/// conformer is enough for the one derived answer under test.
+private struct StubClock: SalusClock {
+    let instant: Date
+
+    func now() -> Date {
+        instant
+    }
+
+    func timeZone() -> TimeZone {
+        TimeZone(identifier: "UTC") ?? .current
+    }
+}
+
+@Suite("SalusClock.nowEpochMilliseconds")
+struct SalusClockEpochMillisecondsTests {
+    @Test("it truncates the sub-millisecond part rather than rounding it")
+    func itTruncatesRatherThanRounds() {
+        // 1_700_000_000.9996 s is 1_700_000_000_999.6 ms: rounding would answer …_000, one
+        // millisecond in the future. `Instant.toEpochMilliseconds()` truncates, and so does this.
+        let clock = StubClock(instant: Date(timeIntervalSince1970: 1_700_000_000.9996))
+        #expect(clock.nowEpochMilliseconds() == 1_700_000_000_999)
+    }
+
+    @Test("it answers whole milliseconds for an exact instant")
+    func itAnswersWholeMilliseconds() {
+        let clock = StubClock(instant: Date(timeIntervalSince1970: 1_700_000_000))
+        #expect(clock.nowEpochMilliseconds() == 1_700_000_000_000)
+    }
+}

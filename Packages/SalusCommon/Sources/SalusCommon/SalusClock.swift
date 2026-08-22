@@ -59,6 +59,16 @@ extension SalusClock {
         return calendar.component(.hour, from: instant) * 60 + calendar.component(.minute, from: instant)
     }
 
+    /// `now()` as the whole milliseconds every persisted `created_at` column stores.
+    ///
+    /// The twin of `Instant.toEpochMilliseconds()` (and of `System.currentTimeMillis()`, which
+    /// Android's seed callback writes): the sub-millisecond part is **truncated, never rounded**,
+    /// so a stamp can never land in the future. Every writer of an epoch-millisecond column goes
+    /// through here, so the seed row and a repository write cannot disagree by a millisecond.
+    public func nowEpochMilliseconds() -> Int64 {
+        Int64(now().timeIntervalSince1970 * 1000)
+    }
+
     /// A Gregorian calendar reading in this clock's zone.
     ///
     /// The identifier is fixed rather than taken from the device: `Calendar.current` follows the

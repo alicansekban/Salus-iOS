@@ -69,15 +69,17 @@ final class AppCompositionRoot {
         let clock = SystemSalusClock()
         let database = Self.openDatabase(clock: clock)
         let appLockFlagStore = KeychainAppLockFlagStore()
+        let profileDao = ProfileDao(database: database)
 
         self.clock = clock
         idGenerator = UUIDIdGenerator()
         self.database = database
-        profileDao = ProfileDao(database: database)
+        self.profileDao = profileDao
         self.appLockFlagStore = appLockFlagStore
         preferences = SalusPreferencesDataSource(defaults: .standard, appLockFlagStore: appLockFlagStore)
         aiUsage = AiUsageDataSource(defaults: .standard)
-        profileRepository = makeProfileRepository(database: database, clock: clock)
+        // The root's own DAO, so the app builds exactly one over this database (Koin's `get()`).
+        profileRepository = makeProfileRepository(profileDao: profileDao, clock: clock)
         pendingDelete = PendingDeleteController()
         navigator = Navigator()
     }

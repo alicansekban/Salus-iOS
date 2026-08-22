@@ -12,12 +12,21 @@ import SalusDatabase
 
 /// The single `ProfileRepository` a caller outside this module can get.
 ///
-/// The `ProfileDao` is built here rather than taken as a parameter because it is Koin's `get()`
-/// on Android: a detail of the wiring, not something a feature ever names. The database and the
-/// clock are the two dependencies the app owns.
+/// Takes the `ProfileDao` because Koin's `get()` hands out the one instance the container built:
+/// the composition root already holds a `ProfileDao`, and building a second one here would give
+/// the app two DAOs over the same database where Android has one.
+public func makeProfileRepository(
+    profileDao: ProfileDao,
+    clock: any SalusClock
+) -> any ProfileRepository {
+    ProfileRepositoryImpl(profileDao: profileDao, clock: clock)
+}
+
+/// The same repository for a caller that holds only the database — a test building a small graph,
+/// where the DAO is a detail of the wiring rather than something worth naming.
 public func makeProfileRepository(
     database: SalusDatabase,
     clock: any SalusClock
 ) -> any ProfileRepository {
-    ProfileRepositoryImpl(profileDao: ProfileDao(database: database), clock: clock)
+    makeProfileRepository(profileDao: ProfileDao(database: database), clock: clock)
 }
