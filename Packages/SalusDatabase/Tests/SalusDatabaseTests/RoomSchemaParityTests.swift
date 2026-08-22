@@ -182,7 +182,9 @@ struct RoomSchemaParityTests {
             }
         )
 
-        #expect(SampleRecords.all.count == columnsByTable.count, "a table lost its record, or gained a second one")
+        // Set equality, not a count: two records pointing at the same table and none at another
+        // keeps the counts matching while leaving a table unproven.
+        #expect(Set(SampleRecords.all.map(\.tableName)) == Set(columnsByTable.keys))
 
         for sample in SampleRecords.all {
             let tableColumns = try #require(

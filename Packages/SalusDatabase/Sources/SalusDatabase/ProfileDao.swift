@@ -53,27 +53,35 @@ public struct ProfileDao: Sendable {
     /// The twin of Kotlin's `Flow<ProfileEntity?>` (`ProfileDao.kt:16-17`): the current value,
     /// then a fresh one after every transaction that changes the `profiles` table.
     ///
-    /// `AsyncStream` rather than the throwing `AsyncValueObservation` it is built on, because the
-    /// Kotlin `Flow` this ports does not carry an error channel either. A failed observation ends
-    /// the stream instead of crashing the screen that reads it; there is no error a UI could act
-    /// on here beyond showing nothing, which is what an ended stream already shows.
-    public func observeDefaultProfile() -> AsyncStream<ProfileRecord?> {
+    /// Throwing, because the `Flow` it ports throws. Room's `@Query`-backed flow re-runs the query
+    /// on every invalidation and lets a failure propagate to the collector; a stream that quietly
+    /// ended instead would hide a disk or corruption error behind an empty screen, which is a
+    /// divergence rather than parity. A failed observation finishes the stream `throwing:` that
+    /// error, so the caller decides what an unreadable database looks like.
+    ///
+    /// `.bufferingNewest(1)`, because Room conflates. `CoroutinesRoom.createFlow` pushes
+    /// invalidations through a conflated channel, so a slow collector is handed the *current* row,
+    /// never a queue of superseded ones. `AsyncThrowingStream` defaults to `.unbounded`, which
+    /// would replay every intermediate value — the opposite behaviour, and stale by definition.
+    public func observeDefaultProfile() -> AsyncThrowingStream<ProfileRecord?, any Error> {
         let observation = ValueObservation.tracking { db in
             try ProfileRecord.fetchOne(db, sql: Self.defaultProfileSql)
         }
         let values = observation.values(in: database.reader)
 
-        return AsyncStream { continuation in
+        return AsyncThrowingStream(bufferingPolicy: .bufferingNewest(1)) { continuation in
             let task = Task {
                 do {
                     for try await profile in values {
                         continuation.yield(profile)
                     }
+                    continuation.finish()
                 } catch {
-                    // Fall through to `finish()`: see the note above.
+                    continuation.finish(throwing: error)
                 }
-                continuation.finish()
             }
+            // A consumer that stops reading — a screen that goes away, a cancelled task — must
+            // stop the observation too, or it keeps re-querying for nobody.
             continuation.onTermination = { _ in task.cancel() }
         }
     }

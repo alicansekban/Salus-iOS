@@ -75,17 +75,48 @@ struct ProfileDaoTests {
 
         var iterator = dao.observeDefaultProfile().makeAsyncIterator()
 
-        let first = try #require(await iterator.next())
+        let first = try #require(try await iterator.next())
         #expect(first?.id == SalusDatabase.defaultProfileId)
         #expect(first?.displayName.isEmpty == true)
 
         let seeded = try #require(first)
         try await dao.upsert(seeded.with(displayName: "Ada", healthNotes: nil))
 
-        // `ValueObservation` coalesces, so the next value is the latest — never a stale one.
-        let updated = try #require(await iterator.next())
+        // The buffering policy keeps only the newest value, so what arrives next is the current
+        // row — a queue of superseded ones is what `.unbounded` would have handed over.
+        let updated = try #require(try await iterator.next())
         #expect(updated?.displayName == "Ada")
         #expect(updated?.id == SalusDatabase.defaultProfileId)
+    }
+
+    /// The reason the stream throws. Kotlin's `Flow` propagates a failing query to the collector;
+    /// this proves the port does too, against a real unreadable database rather than a stub.
+    ///
+    /// The failure is provoked on the observation's *first* fetch, by dropping the table before
+    /// anyone subscribes. Breaking a *live* observation instead does not work and is worth
+    /// recording: SQLite's update hook — which is what GRDB's invalidation is built on — does not
+    /// fire for DDL, so a `DROP TABLE` under a running observation produces no new fetch at all
+    /// and the consumer simply waits forever. A first-fetch failure exercises the same path the
+    /// production error would take: `AsyncValueObservation` throws, and the `catch` finishes the
+    /// stream `throwing:` rather than swallowing it.
+    @Test("observeDefaultProfile surfaces an observation failure to the consumer")
+    func observeDefaultProfileSurfacesAFailure() async throws {
+        let database = try SalusDatabase.inMemory(clock: clock)
+        let dao = ProfileDao(database: database)
+
+        try await database.writer.write { db in
+            // The children's foreign keys would otherwise refuse the drop.
+            try db.execute(sql: "PRAGMA foreign_keys = OFF")
+            try db.execute(sql: "DROP TABLE profiles")
+        }
+
+        var iterator = dao.observeDefaultProfile().makeAsyncIterator()
+
+        let error = await #expect(throws: DatabaseError.self) {
+            try await iterator.next()
+        }
+        #expect(error?.resultCode == .SQLITE_ERROR)
+        #expect(error?.message?.contains("no such table: profiles") == true)
     }
 
     private func makeDao() throws -> ProfileDao {
