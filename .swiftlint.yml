@@ -156,15 +156,47 @@ custom_rules:
   # SalusCommon are the platform-agnostic core and must never see a UI
   # framework. Violating this makes the domain layer untestable off-device
   # and blocks any future reuse (watchOS, macOS, server-side tooling).
+  #
+  # The regex has to survive every spelling of an import that Swift accepts,
+  # because each one is a way around the guard:
+  #   (@[A-Za-z_][A-Za-z0-9_]*[ \t]+)*  attribute prefixes, repeatable —
+  #                                     `@testable import SwiftUI`,
+  #                                     `@_exported import UIKit`,
+  #                                     `@preconcurrency @testable import ...`
+  #   ((typealias|struct|...)[ \t]+)?   Swift's import-kind grammar. Without
+  #                                     this, `import struct SwiftUI.Color`
+  #                                     and `import class UIKit.UIColor`
+  #                                     sail straight past, since the token
+  #                                     after `import` is the declaration
+  #                                     kind, not the module name.
+  #   SwiftUICore, UIKitCore            real shipping frameworks. SwiftUICore
+  #                                     vends Color/Font/Animation, so it is
+  #                                     a complete substitute for the thing
+  #                                     this rule exists to block, and `\b`
+  #                                     will not match it mid-word against
+  #                                     `SwiftUI`. Longest alternatives are
+  #                                     listed first for legibility.
   no_ui_framework_in_domain:
     name: "UI Framework In Domain Layer"
-    regex: '^[ \t]*(@[A-Za-z_]+[ \t]+)*import[ \t]+(SwiftUI|UIKit|AppKit|WatchKit)\b'
+    regex: '^[ \t]*(@[A-Za-z_][A-Za-z0-9_]*[ \t]+)*import[ \t]+((typealias|struct|class|actor|enum|protocol|func|var|let)[ \t]+)?(SwiftUICore|SwiftUI|UIKitCore|UIKit|AppKit|WatchKit)\b'
     excluded_match_kinds:
       - comment
       - doccomment
       - string
     message: "SalusModel and SalusCommon are platform-agnostic domain layers: SwiftUI/UIKit imports are forbidden here (iOS twin of Android's salus.jvm.library guard)."
     severity: error
+    # WARNING for whoever wires up CI or a pre-commit hook: these `included`
+    # regexes are matched against the path SwiftLint resolves for each file,
+    # and `--path` changes that resolution enough that they stop matching.
+    # Measured against a real `import SwiftUI` planted in SalusModel:
+    #
+    #   swiftlint lint --strict                        -> 1 hit   (correct)
+    #   swiftlint lint --strict Packages/.../File.swift -> 1 hit   (correct)
+    #   swiftlint lint --strict --path <file-or-dir>    -> 0 hits  (SILENT PASS)
+    #
+    # Other rules still fire under `--path`, so the run looks healthy while
+    # this guard is switched off. Lint the repo, or pass files positionally.
+    # Never lint changed files with `--path`.
     included:
       - "Packages/SalusModel/.*\\.swift"
       - "Packages/SalusCommon/.*\\.swift"
