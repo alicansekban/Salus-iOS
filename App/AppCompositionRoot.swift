@@ -86,7 +86,9 @@ final class AppCompositionRoot {
     ///
     /// The twin of `MainActivity.onStop` (`MainActivity.kt:111-116`): "Undo windows do not survive
     /// backgrounding: a deletion the user confirmed must not linger unresolved across a process
-    /// death." `scenePhase == .background` is iOS's `onStop`.
+    /// death." `scenePhase == .background` is iOS's `onStop`, and `SalusApp` is what calls this —
+    /// inside a `beginBackgroundTask` window, because unlike `onStop` this is `async` and iOS would
+    /// otherwise be free to suspend the process partway through the commit.
     func commitPendingDeletes() async {
         await pendingDelete.commitAll()
     }
