@@ -51,10 +51,20 @@
 # ---------------------------------------------------------------------------
 # Deliberately none.
 #
-#   * There is nothing to *download*. The project has zero third-party
-#     dependencies; all 24 packages resolve to local `.package(path:)` entries,
-#     so SwiftPM never contacts the network and a `~/.swiftpm` / Package.resolved
-#     cache would restore an empty directory.
+#   * There is almost nothing to *download*, and caching it was measured and
+#     rejected. Since iOS-M1 the tree has exactly one remote dependency, GRDB,
+#     named by Packages/SalusDatabase/Package.swift and reached by the app
+#     transitively; the other 23 packages resolve to local `.package(path:)`
+#     entries and never contact the network. Measured on an M-series laptop with
+#     ~/Library/Caches/org.swift.swiftpm purged AND DerivedData deleted — i.e.
+#     GRDB cloned over the network and compiled from scratch — the whole
+#     scripts/build-app.sh step takes 54s, and scripts/test-packages.sh
+#     SalusDatabase 16s. The ruling for this milestone was to add an
+#     actions/cache step only if GRDB cost the build-app step more than two
+#     minutes. Its entire cost, clone included, is under one; an
+#     upload/download of the cache would plausibly cost more than it saves.
+#     Re-measure, do not re-argue, if purchases-ios or firebase-ios-sdk lands —
+#     firebase-ios-sdk in particular is a different order of magnitude.
 #
 #   * Caching build *products* was measured and rejected. Because every package
 #     is tested in its own directory, each one builds its own copy of the shared

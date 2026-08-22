@@ -29,13 +29,33 @@ options:
   # `xcuserdata/` (which `.gitignore` drops) so `-scheme Salus` resolves on a clean clone.
   generateEmptyDirectories: false
 
-# Local SPM packages, referenced by path. Only `SalusDesignSystem` is linked: it is the one
-# package the shell draws from. `SalusModel` comes along as its dependency and is built, but
-# the app deliberately does not `import` it — see `RootView.swift` on why the shell needs no
-# `ThemeMode` value of its own in M0.
+# Local SPM packages, referenced by path.
+#
+# M0 linked `SalusDesignSystem` alone — the one package the shell drew from. M1 (Core) adds the
+# six core packages the shell composes over: persistence (`SalusDatabase`), the settings and
+# profile repositories built on it, the domain and utility layers they are written in
+# (`SalusModel`, `SalusCommon`), and the navigation graph (`SalusNavigation`). Linking them here
+# is what puts them through `scripts/build-app.sh` — the only gate that compiles them against the
+# **iOS** SDK rather than the macOS host `swift test` uses.
+#
+# `SalusDatabase` is also the edge that pulls the project's first remote dependency, GRDB, into
+# the app: `xcodebuild` resolves it transitively and pins it in
+# `Salus.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved`, which is committed.
 packages:
   SalusDesignSystem:
     path: Packages/SalusDesignSystem
+  SalusDatabase:
+    path: Packages/SalusDatabase
+  SalusSettings:
+    path: Packages/SalusSettings
+  SalusProfile:
+    path: Packages/SalusProfile
+  SalusCommon:
+    path: Packages/SalusCommon
+  SalusModel:
+    path: Packages/SalusModel
+  SalusNavigation:
+    path: Packages/SalusNavigation
 
 settings:
   base:
@@ -107,6 +127,18 @@ targets:
     dependencies:
       - package: SalusDesignSystem
         product: SalusDesignSystem
+      - package: SalusDatabase
+        product: SalusDatabase
+      - package: SalusSettings
+        product: SalusSettings
+      - package: SalusProfile
+        product: SalusProfile
+      - package: SalusCommon
+        product: SalusCommon
+      - package: SalusModel
+        product: SalusModel
+      - package: SalusNavigation
+        product: SalusNavigation
 
     scheme:
       testTargets: []

@@ -49,6 +49,25 @@ matched **exactly**, because `swiftlint --strict` runs on a zero-warning budget 
 release can add rules. The pins live at the top of that script — bump them and this table
 in the same commit.
 
+## Dependencies
+
+The dependency allowlist is closed and is exactly three (`CLAUDE.md`), each arriving with the
+milestone that needs it. One of the three has arrived:
+
+| Dependency | Version | Declared in | Why |
+| --- | --- | --- | --- |
+| [GRDB.swift](https://github.com/groue/GRDB.swift) | `from: "7.11.1"` (resolved 7.11.1) | `Packages/SalusDatabase/Package.swift` | SQLite persistence — the twin of Android's Room layer (iOS-M1/M2) |
+
+The remaining two, not yet added: `purchases-ios` (RevenueCat, premium) and `firebase-ios-sdk`
+(FirebaseAI + FirebaseAppCheck, AI). Charts, PDF, crypto and biometrics come from the system.
+
+`SalusDatabase` is the only package that names GRDB; the other 23 manifests declare
+`dependencies: []` or local `.package(path:)` entries only, and the app reaches GRDB
+transitively by linking `SalusDatabase`. Two resolution files are committed so a clean clone and
+a CI run build the reviewed revision: `Packages/SalusDatabase/Package.resolved` (SwiftPM) and
+`Salus.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved` (Xcode). Every other
+`Package.resolved` stays git-ignored — a graph of local paths pins nothing.
+
 ## Continuous integration
 
 `.github/workflows/ci.yml` runs on every pull request and on pushes to `main`, in the
@@ -70,8 +89,10 @@ Two things the scripts encode that are easy to get wrong by hand:
 
 - **Never lint with `swiftlint --path`.** It silently disables the custom
   `no_ui_framework_in_domain` rule. Lint the repo, or pass files positionally.
-- **`swift test` builds for the host, not for iOS.** So an iOS-only package that reaches
-  SwiftUI — directly (`SalusDesignSystem`) or transitively (`SalusUI` and the ten feature
-  packages) — also declares `.macOS(.v14)` in its manifest purely to make the host build
-  possible. iOS 17 stays the ship target; the iOS build of every package is what
-  `scripts/build-app.sh` covers.
+- **`swift test` builds for the host, not for iOS.** So 16 of the 24 packages also declare
+  `.macOS(.v14)` in their manifest purely to make the host build possible, for one of two
+  reasons: they reach SwiftUI, directly (`SalusDesignSystem`) or transitively (`SalusUI` and the
+  ten feature packages); or they reach GRDB, whose own manifest sets a macOS 10.15 floor that a
+  manifest naming no macOS platform (SwiftPM reads that as macOS 10.13) cannot satisfy —
+  `SalusDatabase` and its three dependents `SalusProfile`, `SalusAI`, `SalusReminder`. iOS 17
+  stays the ship target; the iOS build of every package is what `scripts/build-app.sh` covers.

@@ -17,7 +17,13 @@ xcuserdata/
 # SPM
 .build/
 .swiftpm/
+# Ignored by default: a resolution file for a package graph made only of local `.package(path:)`
+# entries pins nothing and just churns. The two exceptions below are the graphs that reach the
+# network — since M1 the tree has one remote dependency, GRDB — and those must be pinned, so a
+# CI run and a clean clone build the exact revision that was reviewed.
 Package.resolved
+!Packages/SalusDatabase/Package.resolved
+!Salus.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
 
 # Secrets / local config
 *.local.xcconfig

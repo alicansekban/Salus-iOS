@@ -14,10 +14,14 @@ Milestone plans live in `docs/plans/`. Toolchain and CI usage: `README.md`.
 - **The dependency allowlist is closed and is exactly three** (spec §3), each arriving with the
   milestone that needs it and never before: **GRDB** (iOS-M1/M2 persistence), **`purchases-ios`**
   (RevenueCat, premium), **`firebase-ios-sdk`** (FirebaseAI + FirebaseAppCheck, AI). Charts, PDF,
-  crypto and biometrics come from the system. Nothing else is ever added. The tree today has
-  **zero** remote SPM dependencies — every one of the 24 manifests declares `dependencies: []`
-  or local `.package(path:)` entries only. — *enforcement: review of every `Package.swift` /
-  `project.yml` diff.*
+  crypto and biometrics come from the system. Nothing else is ever added, and the allowlist stays
+  closed at three. The tree today has **exactly one** remote SPM dependency, arrived with iOS-M1:
+  **GRDB.swift**, pinned `from: "7.11.1"`, declared in `Packages/SalusDatabase/Package.swift` and
+  nowhere else. The other 23 manifests still declare `dependencies: []` or local
+  `.package(path:)` entries only; the app reaches GRDB transitively, by linking `SalusDatabase`.
+  A second `.package(url:)` line anywhere is a finding unless it is `purchases-ios` or
+  `firebase-ios-sdk` arriving with its own milestone. — *enforcement: review of every
+  `Package.swift` / `project.yml` diff.*
 - Offline-first, local-only: no backend of ours, no analytics, no ad-hoc networking. The
   Android carve-outs (store billing, Firebase AI) arrive with their own milestones and
   nowhere else. — *review.*
@@ -59,12 +63,23 @@ Milestone plans live in `docs/plans/`. Toolchain and CI usage: `README.md`.
   *review; `scripts/test-packages.sh` discovers packages by manifest, so a new one is tested
   automatically.*
 - **`.macOS(.v14)` in a manifest is a test-host concession, not a target.** `swift test` cannot
-  run a bundle on an iOS simulator, so iOS-only packages that reach SwiftUI (directly:
-  `SalusDesignSystem`; transitively: `SalusUI` and the ten feature packages) also declare
-  `.macOS(.v14)`. **iOS 17 remains the ship target** and never ship-conditions on macOS.
-  The other twelve packages — `SalusModel`, `SalusCommon` and the ten non-SwiftUI core packages
-  — stay `[.iOS(.v17)]` alone; do not add `.macOS` to a package that does not need it. —
-  *enforcement:
+  run a bundle on an iOS simulator, so a package whose host build cannot succeed under
+  `[.iOS(.v17)]` alone also declares `.macOS(.v14)`. **iOS 17 remains the ship target** and never
+  ship-conditions on macOS. There are exactly two reasons a package qualifies, and 16 of the 24
+  do:
+  - **Reaches SwiftUI** — directly (`SalusDesignSystem`) or transitively (`SalusUI` and the ten
+    feature packages). Twelve packages.
+  - **Reaches GRDB** — `SalusDatabase`, plus its dependents `SalusProfile`, `SalusAI`,
+    `SalusReminder`. Four packages. GRDB's own manifest declares a macOS 10.15 floor; a manifest
+    that names no macOS platform is read by SwiftPM as macOS 10.13, and the host build fails with
+    *"the library 'SalusDatabase' requires macos 10.13, but depends on the product 'GRDB' which
+    requires macos 10.15"*. The floor propagates, so every future package that links
+    `SalusDatabase` inherits the concession — that is expected, not a smell.
+
+  The remaining eight — `SalusModel`, `SalusCommon`, `SalusNavigation`, `SalusSettings`,
+  `SalusBackup`, `SalusNotifications`, `SalusPremium`, `SalusTesting` — stay `[.iOS(.v17)]`
+  alone; do not add `.macOS` to a package that does not need it, and never add it to silence
+  something other than these two. — *enforcement:
   `scripts/test-packages.sh` (host build) + `scripts/build-app.sh` (real iOS build).*
 
 ## Port fidelity rules
