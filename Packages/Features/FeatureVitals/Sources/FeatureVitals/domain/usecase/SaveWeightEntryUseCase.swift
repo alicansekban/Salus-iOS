@@ -49,9 +49,13 @@ public struct SaveWeightEntryUseCase: VitalsQuickEntry {
         // `SaveWeightEntryUseCase.kt:30-32`, written as the range the value must be *inside*
         // rather than as the two comparisons it must fail. The two spellings agree on every real
         // number and differ on one value: Kotlin's `kilograms < MIN || kilograms > MAX` is false
-        // for NaN, so Android would store a NaN weight, while this rejects it. Both text fields
-        // can produce NaN — Swift's `Double("nan")` and Kotlin's `"nan".toDoubleOrNull()` both
-        // parse it — so the difference is reachable, and rejecting is the side worth being on.
+        // for NaN, so Android stores a NaN weight where this rejects it. Both text fields can
+        // produce NaN — Swift's `Double("nan")` and Kotlin's `"nan".toDoubleOrNull()` both parse
+        // it — so the difference is reachable.
+        //
+        // This is a **recorded divergence**, not an incidental one: iOS is the correct side, and
+        // Android carries the backlog item (§11 A10) to reject NaN too. `NaN is rejected` in
+        // `SaveWeightEntryUseCaseTests` pins it until Android catches up.
         guard let kilograms, kilograms >= Self.minKg, kilograms <= Self.maxKg else {
             return .invalidWeight
         }
@@ -69,12 +73,15 @@ public struct SaveWeightEntryUseCase: VitalsQuickEntry {
     /// The `VitalsQuickEntry` entry point other features use (`SaveWeightEntryUseCase.kt:48-61`).
     /// It deliberately shares the validation above rather than trusting the caller.
     ///
-    /// One port note: Kotlin's `TimeZone.of(timeZoneId)` throws `IllegalTimeZoneException` for an
-    /// identifier the platform does not know. Crashing a caller that passed a bad string is not
-    /// behaviour worth carrying over, and the contract already has a way to say "nothing was
-    /// written" — so an unresolvable identifier is rejected the way an out-of-range weight is.
+    /// - Throws: `IllegalTimeZoneError.unknownTimeZone` for an identifier this platform cannot
+    ///   resolve, which is what `TimeZone.of(timeZoneId)` does at `SaveWeightEntryUseCase.kt:57`.
+    ///   The `false` return means "the weight was rejected"; a zone that does not resolve is a
+    ///   broken call, not a rejected reading, and answering `false` would tell the caller its
+    ///   number was out of range.
     public func recordWeight(kilograms: Double, epochMs: Int64, timeZoneId: String) async throws -> Bool {
-        guard let timeZone = TimeZone(identifier: timeZoneId) else { return false }
+        guard let timeZone = TimeZone(identifier: timeZoneId) else {
+            throw IllegalTimeZoneError.unknownTimeZone(timeZoneId)
+        }
         let result = try await self(
             existingId: nil,
             kilograms: kilograms,

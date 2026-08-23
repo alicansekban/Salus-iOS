@@ -7,6 +7,7 @@
 // inside the repository as `CLAUDE.md` requires.
 
 import Foundation
+import SalusCommon
 import SalusDatabase
 import SalusModel
 
@@ -16,16 +17,26 @@ let weightUnit = "kg"
 
 /// `WeightEntryMapper.kt:13-19`.
 extension VitalsMeasurementRecord {
-    func toWeightEntry() -> WeightEntry {
-        WeightEntry(
+    /// - Throws: `IllegalTimeZoneError.unknownTimeZone` when `tz_id` names a zone this platform
+    ///   cannot resolve, which is what `TimeZone.of` does at `WeightEntryMapper.kt:16`. Degrading
+    ///   to GMT instead would be quieter and wrong: the zone is what redraws the reading at the
+    ///   wall-clock time it was taken at, so a silent substitution moves a measurement to another
+    ///   hour of the day and nothing says so. The repository's streams finish with this error, the
+    ///   way a Kotlin `Flow.map` that throws does.
+    ///
+    ///   Recorded, not fixed here: Foundation's `TimeZone(identifier:)` rejects the fixed-offset
+    ///   spellings (`"+03:00"`, `"UTC+03:00"`) that `kotlinx.datetime.TimeZone.of` accepts, so a
+    ///   row written by Android with an offset id would throw on iOS where Android reads it back.
+    ///   Nothing in the app writes one today — every writer stores a region id — but a backup from
+    ///   a future Android build could.
+    func toWeightEntry() throws -> WeightEntry {
+        guard let timeZone = TimeZone(identifier: timeZoneId) else {
+            throw IllegalTimeZoneError.unknownTimeZone(timeZoneId)
+        }
+        return WeightEntry(
             id: id,
             measuredAt: Date(epochMilliseconds: measuredAtEpochMs),
-            // Kotlin's `TimeZone.of` throws on an identifier the platform does not know — a zone
-            // retired from the database, or one written by a build with a newer tzdb. Degrading to
-            // GMT is the same call `ProfileMappers` makes for an unknown `sex`: one unreadable row
-            // must not take the whole history list down with it. Only the displayed wall-clock
-            // time is affected; the instant itself is the column, and it is exact.
-            timeZone: TimeZone(identifier: timeZoneId) ?? .gmt,
+            timeZone: timeZone,
             kilograms: valuePrimary,
             note: note
         )

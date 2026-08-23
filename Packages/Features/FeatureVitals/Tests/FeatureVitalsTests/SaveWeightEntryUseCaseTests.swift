@@ -122,6 +122,24 @@ struct SaveWeightEntryUseCaseTests {
         #expect(repository.current().isEmpty)
     }
 
+    /// iOS-only, and deliberately not one of the six Kotlin cases: Kotlin's
+    /// `kilograms < MIN || kilograms > MAX` is false for NaN, so Android stores a NaN weight where
+    /// this rejects it (a recorded divergence, Android backlog §11 A10). `Double("nan")` is how a
+    /// text field produces one, so this is reachable from the editor rather than theoretical.
+    @Test("NaN is rejected")
+    func nanIsRejected() async throws {
+        let result = try await useCase(
+            existingId: nil,
+            kilograms: Double.nan,
+            measuredAt: Self.measuredAt,
+            timeZone: Self.zone,
+            note: nil
+        )
+
+        #expect(result == .invalidWeight)
+        #expect(repository.current().isEmpty)
+    }
+
     /// `SaveWeightEntryUseCaseTest.kt:71-81`.
     @Test("existing id is preserved on update")
     func existingIdIsPreservedOnUpdate() async throws {

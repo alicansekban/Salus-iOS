@@ -9,6 +9,7 @@
 // cross-platform mismatch.
 
 import Foundation
+import SalusCommon
 import SalusDatabase
 import SalusModel
 import SalusTesting
@@ -23,8 +24,8 @@ struct WeightEntryMapperTests {
 
     /// `WeightEntryMapper.kt:13-19`.
     @Test("a record becomes the domain entry, column for column")
-    func aRecordBecomesTheDomainEntry() {
-        let entry = Self.record(note: "after breakfast").toWeightEntry()
+    func aRecordBecomesTheDomainEntry() throws {
+        let entry = try Self.record(note: "after breakfast").toWeightEntry()
 
         #expect(entry.id == "w1")
         #expect(entry.measuredAt == Date(epochMilliseconds: Self.measuredAtEpochMs))
@@ -55,36 +56,52 @@ struct WeightEntryMapperTests {
     /// value deliberately ends in `123` rather than in three zeros, so the sub-second part is
     /// carried by the `Double` a `Date` holds and not by an integer that happens to survive.
     @Test("record → entry → record round trips")
-    func recordToEntryToRecordRoundTrips() {
+    func recordToEntryToRecordRoundTrips() throws {
         let original = Self.record(note: "after breakfast")
 
-        let mapped = original.toWeightEntry().toRecord(profileId: original.profileId)
+        let mapped = try original.toWeightEntry().toRecord(profileId: original.profileId)
 
         #expect(mapped == original)
     }
 
     /// The other direction of the same round trip, including the note-less row.
     @Test("entry → record → entry round trips, with and without a note")
-    func entryToRecordToEntryRoundTrips() {
+    func entryToRecordToEntryRoundTrips() throws {
         let notes: [String?] = ["after breakfast", nil]
         for note in notes {
             let original = Self.entry(note: note)
 
-            let mapped = original.toRecord(profileId: "profile-1").toWeightEntry()
+            let mapped = try original.toRecord(profileId: "profile-1").toWeightEntry()
 
             #expect(mapped == original)
         }
     }
 
     /// A stored identifier Foundation cannot resolve — a zone retired from the database, or one
-    /// written by an Android build with a newer tzdb. Kotlin's `TimeZone.of` throws here; the port
-    /// degrades to GMT instead, the way `ProfileMappers` degrades an unknown `sex` to nil, so one
-    /// unreadable row cannot take the history list down with it.
-    @Test("an unresolvable stored time zone id degrades to GMT")
-    func anUnresolvableStoredTimeZoneIdDegradesToGmt() {
-        let entry = Self.record(note: nil, timeZoneId: "Mars/Olympus_Mons").toWeightEntry()
+    /// written by a build with a newer tzdb. Kotlin's `TimeZone.of` throws here
+    /// (`WeightEntryMapper.kt:16`) and so does this: the zone is what redraws the reading at the
+    /// wall-clock time it was taken at, so substituting one silently moves the measurement to a
+    /// different hour of the day with nothing to show for it.
+    @Test("an unresolvable stored time zone id throws")
+    func anUnresolvableStoredTimeZoneIdThrows() {
+        let record = Self.record(note: nil, timeZoneId: "Mars/Olympus_Mons")
 
-        #expect(entry.timeZone == .gmt)
+        #expect(throws: IllegalTimeZoneError.unknownTimeZone("Mars/Olympus_Mons")) {
+            try record.toWeightEntry()
+        }
+    }
+
+    /// Recorded, not fixed: `kotlinx.datetime.TimeZone.of` accepts a fixed-offset id, Foundation's
+    /// `TimeZone(identifier:)` does not. Nothing in the app writes one — every writer stores a
+    /// region id — but a backup from a future Android build could, and this pins which side of the
+    /// difference iOS is on so the day it matters is not a mystery.
+    @Test("a fixed-offset time zone id is not resolvable on this platform")
+    func aFixedOffsetTimeZoneIdIsNotResolvable() {
+        let record = Self.record(note: nil, timeZoneId: "+03:00")
+
+        #expect(throws: IllegalTimeZoneError.unknownTimeZone("+03:00")) {
+            try record.toWeightEntry()
+        }
     }
 
     private static func record(note: String?, timeZoneId: String? = nil) -> VitalsMeasurementRecord {

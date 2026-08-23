@@ -3,6 +3,7 @@
 // (`VitalsRepositoryImpl.kt:46-86`) arrive with iOS-M7 alongside their protocol members.
 
 import Foundation
+import SalusCommon
 import SalusDatabase
 import SalusModel
 
@@ -40,13 +41,13 @@ public final class VitalsRepositoryImpl: VitalsRepository {
             fromEpochMs: from.epochMilliseconds,
             untilEpochMs: until.epochMilliseconds
         )
-        return Self.mapped(records) { $0.map { record in record.toWeightEntry() } }
+        return Self.mapped(records) { try $0.map { record in try record.toWeightEntry() } }
     }
 
     /// `VitalsRepositoryImpl.kt:30-33`.
     public func observeLatestWeight() -> AsyncThrowingStream<WeightEntry?, any Error> {
         let records = vitalsDao.observeLatest(profileId: profileId, type: VitalType.weight.rawValue)
-        return Self.mapped(records) { $0?.toWeightEntry() }
+        return Self.mapped(records) { try $0?.toWeightEntry() }
     }
 
     /// `VitalsRepositoryImpl.kt:35-36`.
@@ -61,7 +62,7 @@ public final class VitalsRepositoryImpl: VitalsRepository {
         else {
             return nil
         }
-        return record.toWeightEntry()
+        return try record.toWeightEntry()
     }
 
     /// `VitalsRepositoryImpl.kt:38-40`.
@@ -79,16 +80,18 @@ public final class VitalsRepositoryImpl: VitalsRepository {
 
     /// The twin of `Flow.map` over a DAO observation, factored out because both observations above
     /// would otherwise be the same fifteen lines with one expression changed. A failure of the
-    /// observation finishes the mapped stream with the same error instead of ending it silently.
+    /// observation finishes the mapped stream with the same error instead of ending it silently —
+    /// and so does a failure of the mapping itself, which is what a Kotlin `Flow.map` whose lambda
+    /// throws does (`WeightEntryMapper.kt:16`, `TimeZone.of`).
     private static func mapped<Record: Sendable, Value: Sendable>(
         _ records: AsyncThrowingStream<Record, any Error>,
-        _ transform: @escaping @Sendable (Record) -> Value
+        _ transform: @escaping @Sendable (Record) throws -> Value
     ) -> AsyncThrowingStream<Value, any Error> {
         AsyncThrowingStream(bufferingPolicy: .bufferingNewest(1)) { continuation in
             let task = Task {
                 do {
                     for try await record in records {
-                        continuation.yield(transform(record))
+                        try continuation.yield(transform(record))
                     }
                     continuation.finish()
                 } catch {

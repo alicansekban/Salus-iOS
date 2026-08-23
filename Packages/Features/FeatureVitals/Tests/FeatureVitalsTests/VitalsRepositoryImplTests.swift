@@ -12,6 +12,7 @@
 // stream value rather than by sleeping.
 
 import Foundation
+import SalusCommon
 import SalusDatabase
 import SalusModel
 import SalusTesting
@@ -73,6 +74,38 @@ struct VitalsRepositoryImplTests {
         )
 
         #expect(try await fixture.repository.getWeightEntry(id: "bp1") == nil)
+    }
+
+    /// The mapper throws on a stored zone id this platform cannot resolve
+    /// (`WeightEntryMapper.kt:16`), and a Kotlin `Flow.map` whose lambda throws fails its
+    /// collector. The Swift stream has to do the same rather than end quietly, or a corrupt row
+    /// would show up as an empty history list.
+    @Test("an unresolvable stored time zone id fails the history stream")
+    func anUnresolvableStoredTimeZoneIdFailsTheStream() async throws {
+        let fixture = try Self.makeFixture()
+        try await fixture.dao.upsert(
+            VitalsMeasurementRecord(
+                id: "w1",
+                profileId: SalusDatabase.defaultProfileId,
+                type: VitalType.weight.rawValue,
+                measuredAtEpochMs: Self.seededAt.epochMilliseconds,
+                timeZoneId: "Mars/Olympus_Mons",
+                valuePrimary: 82.5,
+                valueSecondary: nil,
+                valueTertiary: nil,
+                unit: "kg",
+                measurementContext: nil,
+                note: nil
+            )
+        )
+
+        var iterator = fixture.repository
+            .observeWeightHistory(from: Self.seededAt, until: Self.seededAt.addingTimeInterval(60))
+            .makeAsyncIterator()
+
+        await #expect(throws: IllegalTimeZoneError.unknownTimeZone("Mars/Olympus_Mons")) {
+            try await iterator.next()
+        }
     }
 
     /// `VitalsRepositoryImpl.kt:20-28` — oldest first, and the window is closed at both ends
