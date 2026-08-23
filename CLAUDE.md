@@ -36,9 +36,19 @@ Milestone plans live in `docs/plans/`. Toolchain and CI usage: `README.md`.
 - All project documentation, code comments and commit messages are **English**.
   Conversation with the user stays Turkish. — *review.*
 - **UI framework:** SwiftUI. **Persistence:** GRDB (M2). **Charts:** Swift Charts, wrapped in
-  `SalusUI` — features never import Charts directly (the twin of Android's Vico rule). — *review
-  until `SalusUI` ships its chart adapter, then a lint rule of the same shape as
-  `no_ui_framework_in_domain`, `included:` on `Packages/Features/`.*
+  `SalusUI` — features never import Charts directly (the twin of Android's Vico rule). The adapter
+  shipped with iOS-M2: `ChartUiModel` + `SalusLineChart` in `Packages/SalusUI/Sources/SalusUI/chart/`.
+  — *enforcement: `.swiftlint.yml` custom rule `no_charts_in_features` (severity: error), `included:`
+  scoped to `Packages/Features/`, matching scoped and `@preconcurrency`-prefixed imports too; proven
+  to actually fire by `scripts/lint-custom-rules.sh`, which plants a fixture inside the scope and an
+  identical one outside it. Both run in `scripts/ci.sh`.*
+- **`docs/ios-feature-template.md` is the reference for every new feature**, written from the
+  shipped `FeatureVitals` and the section-for-section twin of
+  `salus-android/docs/architecture/feature-template.md`. Copy its shape — package manifest,
+  `domain`/`data`/`ui`/`navigation` layout, UDF state types, the shell/navigation-container rule,
+  the Route/Screen split, `…Destinations()`, the module factory, the testing standard, Charts and
+  Strings — rather than improvising a second one. The rules here bind; that file shows the shape
+  they produce, so when the two disagree, this file wins and the template gets fixed. — *review.*
 
 ## Layer rules
 
@@ -190,7 +200,7 @@ Milestone plans live in `docs/plans/`. Toolchain and CI usage: `README.md`.
   `Packages/SalusDesignSystem/Sources/SalusDesignSystem/` + review; a regression shows up as a
   compile timeout in `scripts/test-packages.sh`.*
 
-## Copy and localisation rules (state now, enforced when the feature lands)
+## Copy and localisation rules
 
 - **Banned health-claims vocabulary applies to all user-facing copy** — and to the Swift sources
   and comments around it, as on Android. Banned stems, case-insensitive substrings: `uyum` ·
@@ -198,15 +208,33 @@ Milestone plans live in `docs/plans/`. Toolchain and CI usage: `README.md`.
   `target range` (plus the dotted-İ foldings `compli̇an` / `compli̇e`). The correct phrase is
   **"kaydedilen doz" / "recorded doses"** — no `MISSED` dose row is ever written, so the ratio
   describes recorded doses only; calling it adherence turns a fact about records into a claim
-  about someone's treatment (spec §7, §12). — *enforcement: a Swift string test equivalent to
-  Android's `BannedHealthClaims` + `PaywallStringsTest` / `TrendsStringsTest`, to be written with
-  the first user-facing strings. Until then: review.*
+  about someone's treatment (spec §7, §12). — *enforcement: `SalusTesting`'s `BannedHealthClaims`,
+  the twin of Android's, run repo-wide from
+  `Packages/SalusTesting/Tests/SalusTestingTests/BannedHealthClaimsTests.swift`: "no Swift source in
+  the repository names anything banned" (`assertSourcesNameNothingBanned(roots:exemptFileName:)`)
+  and "no string catalog in the repository names anything banned"
+  (`assertCatalogsNameNothingBanned(paths:)`). Both fail loudly if the scan reaches zero files, so a
+  broken path cannot pass as a clean tree. Note the scan covers `Packages/` — `App/` is still review.*
 - **The AI/PDF disclaimer is verbatim and mandatory** on every AI output and every PDF page
   footer: TR *"Bu rapor bilgilendirme amaçlıdır, tıbbi tavsiye değildir."* /
   EN *"This report is for informational purposes only and is not medical advice."* — *review,
   then the same string test.*
 - **TR + EN string parity.** TR is the default and the fallback (§6.4); EN is a full peer. Every
-  key exists in both. — *enforcement: a key-set parity test, added with the first String Catalog.*
+  key exists in both. Strings live in one `Localizable.xcstrings` per package under
+  `Sources/<Package>/Resources/`, reached through a typed `enum` over `Bundle.module`
+  (`VitalsStrings.swift`) — never a bare `String(localized:)` at a call site, which resolves against
+  the *main* bundle and silently returns the key. — *enforcement: `SalusTesting`'s
+  `StringCatalogParity` — `assertSourceLanguage` (tr), `assertKeys(of:are:)` against a literal key-set
+  pin copied from the Android XML, and `assertEveryKeyIsLocalized` (both locales present and
+  non-empty, no third locale). A new catalog gets its own test suite in the same commit; the shape is
+  `Packages/Features/FeatureVitals/Tests/FeatureVitalsTests/VitalsStringsTests.swift`.*
+  - **Placeholder mapping is the one place the port is not byte-for-byte**: Java's `%1$s` becomes
+    `%1$@` (a Swift `String` under `%s` reads a C string pointer) and `%1$d` becomes `%1$lld`
+    (Swift's `Int` is 64-bit). The sentence around the specifier never changes.
+  - **A `.xcstrings` is compiled only by Xcode's build system.** `swift build` / `swift test` copies
+    the catalog into the resource bundle verbatim, so a lookup under `swift test` finds no table and
+    `String(localized:)` returns the key. String tests therefore assert against the **file**; the
+    end-to-end check is `scripts/build-app.sh` plus a simulator run.
 
 ## Project file and build rules
 
@@ -214,13 +242,19 @@ Milestone plans live in `docs/plans/`. Toolchain and CI usage: `README.md`.
   hand-edit the `.pbxproj` or change settings in Xcode's inspector — edit `project.yml`, run
   `xcodegen generate`, commit both in the same commit. — *review of any diff that touches
   `Salus.xcodeproj/project.pbxproj` without `project.yml`.*
-- **Local == CI.** `scripts/ci.sh` runs `check-toolchain.sh → lint.sh → test-packages.sh →
-  build-app.sh`; `.github/workflows/ci.yml` calls the same four scripts and contains no command
-  of its own. Run `scripts/ci.sh` before every integration — the twin of Android's
-  `./gradlew build`. — *enforcement: the workflow.*
+- **Local == CI.** `scripts/ci.sh` runs `check-toolchain.sh → lint.sh → lint-custom-rules.sh →
+  test-packages.sh → build-app.sh`; `.github/workflows/ci.yml` calls the same five scripts and
+  contains no command of its own. Run `scripts/ci.sh` before every integration — the twin of
+  Android's `./gradlew build`. — *enforcement: the workflow.*
 - **Lint gate:** `swiftformat --lint .` first, then `swiftlint --strict` (zero warnings), both
   repo-wide from the repo root. To format rather than check: `swiftformat . && swiftlint --fix`,
   in that order. — *enforcement: `scripts/lint.sh`.*
+- **Custom-rule gate:** a SwiftLint custom rule is a regex plus an `included:` scope and **both
+  halves fail silently** — a regex that matches nothing and a scope that matches no file look
+  exactly like a clean tree. `scripts/lint-custom-rules.sh` plants, for each custom rule, a file
+  that must trip it inside the scope and an identical file outside it, and fails unless the rule
+  fired once inside and stayed quiet outside. Add a `check` block to that script in the same commit
+  as a new custom rule. — *enforcement: `scripts/lint-custom-rules.sh`, step 3 of `scripts/ci.sh`.*
 - **Test gate:** `swift test` for **all 24 packages** under `Packages/`; the script fails if any
   package fails, and fails loudly if it discovers zero packages. — *enforcement:
   `scripts/test-packages.sh`.*
@@ -234,7 +268,15 @@ Milestone plans live in `docs/plans/`. Toolchain and CI usage: `README.md`.
 
 ## Process
 
-- **One milestone = one branch** (`mX-*`), one commit per task, conventional commits in English.
+- **One milestone = one branch** (`mX-*`), **one or a few conventional commits per task, in
+  English; squashing is not required.** The earlier wording said "one commit per task", and no
+  milestone has ever matched it: iOS-M1's tasks were multi-commit, and iOS-M2's ran 1-4 commits each
+  (Task 1 took four — three independent library changes plus a script — and every review fix round
+  added one). The reason to keep them separate is that a fix round's commit is the reviewable unit;
+  squashing it into the feature commit hides what review changed. What is binding is that **each
+  commit is a conventional commit that builds**, and that a task's commits are contiguous — not
+  their count. Rewritten 2026-08-23 (iOS-M2 Task 8) to match the history instead of the other way
+  round.
 - **Linear history only.** Rebase onto `main`, fast-forward merge (`git merge --ff-only`). Never
   `--no-ff`, never a merge commit.
 - Review before merge; `scripts/ci.sh` green is the entry ticket, not the finish line.

@@ -20,7 +20,12 @@ and recorded in the plan (§6).
 
 ## Milestone plans
 
-Per-milestone execution plans live in `docs/plans/` in this repository.
+Per-milestone execution plans live in `docs/plans/` in this repository, each ending with an
+execution record of the rulings made while it was built.
+
+`docs/ios-feature-template.md` is the reference for a new feature package — the section-for-section
+twin of `salus-android/docs/architecture/feature-template.md`, written from the shipped
+`FeatureVitals` (iOS-M2).
 
 ## Toolchain
 
@@ -79,12 +84,23 @@ contains no command of its own:
 | --- | --- |
 | `scripts/check-toolchain.sh` | Selects the pinned Xcode and asserts all three tool versions |
 | `scripts/lint.sh` | `swiftformat --lint .` then `swiftlint --strict`, repo-wide from the repo root |
+| `scripts/lint-custom-rules.sh` | Proves each `.swiftlint.yml` **custom** rule still fires, with planted fixtures |
 | `scripts/test-packages.sh` | `swift test` for all 24 packages under `Packages/` (accepts package names to narrow) |
 | `scripts/build-app.sh` | `xcodebuild build` for the `Salus` scheme on a generic iOS Simulator destination |
-| `scripts/ci.sh` | all four, in order — run this before pushing |
+| `scripts/ci.sh` | all five, in order — run this before pushing |
 | `scripts/clean.sh` | removes every package's `.build` / `.swiftpm` and this project's DerivedData |
 
 A clean run takes about four minutes.
+
+`scripts/lint-custom-rules.sh` is not a second lint pass. The two custom rules —
+`no_ui_framework_in_domain` and `no_charts_in_features` — are each a regex plus an `included:`
+scope, and **both halves fail silently**: a regex that matches nothing and a scope that matches no
+file produce exactly the output of a clean tree, so a rule can rot into decoration without a single
+red run. For each rule the script plants a file that must trip it *inside* the scope and an
+identical file *outside* it, lints the repo, and fails unless the rule fired once inside and stayed
+quiet outside — the second half being what catches an `included:` regex gone too wide. Fixtures are
+removed on every exit path, interrupts included. A new custom rule gets a `check` block in the same
+commit.
 
 `scripts/clean.sh` is the odd one out: it is Android's `./gradlew clean`, not a CI stage, and
 `scripts/ci.sh` does not call it. It prints every directory it removes with its size. The
@@ -94,10 +110,17 @@ with no Xcode selected still gets the package caches cleaned. The packages are d
 manifest, the way `scripts/test-packages.sh` discovers them. Removing the `.build` directories
 drops the resolved GRDB checkout too, so the next `scripts/test-packages.sh` re-fetches it.
 
-Two things the scripts encode that are easy to get wrong by hand:
+Three things the scripts encode that are easy to get wrong by hand:
 
 - **Never lint with `swiftlint --path`.** It silently disables the custom
-  `no_ui_framework_in_domain` rule. Lint the repo, or pass files positionally.
+  `no_ui_framework_in_domain` and `no_charts_in_features` rules. Lint the repo, or pass files
+  positionally.
+- **A stale `Packages/*/.build` survives a `git checkout` and fails the tests.** Adding a *file* to
+  a package that another package depends on by path does not always invalidate the dependent's
+  cached build, so a warm checkout — switching branches, or pulling a commit that added a source
+  file — can make `scripts/test-packages.sh` fail on a tree that is actually fine, usually as an
+  "unable to find" or missing-symbol error for the new file. Found in iOS-M2. The fix is
+  `scripts/clean.sh` and a re-run; do not go looking for the bug first.
 - **`swift test` builds for the host, not for iOS.** So 20 of the 24 packages also declare
   `.macOS(.v14)` in their manifest purely to make the host build possible, for one of three
   reasons: they reach SwiftUI, directly (`SalusDesignSystem`, and `SalusNavigation` since its

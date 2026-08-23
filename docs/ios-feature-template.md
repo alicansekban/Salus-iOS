@@ -1,0 +1,348 @@
+# Salus iOS Feature Template
+
+Reference implementation: **`Packages/Features/FeatureVitals`** (iOS-M2). Copy this structure when
+creating a new feature package.
+
+This file is the section-for-section twin of
+`salus-android/docs/architecture/feature-template.md`. Where the two differ, the difference is the
+platform, not a decision: each section names the Android construct it replaces. Every claim below
+cites a file that ships today — if a citation and the code disagree, the code is right and this
+file is stale.
+
+Binding rules live in `CLAUDE.md`; this file shows the shape they produce.
+
+---
+
+## Package setup
+
+There is no convention plugin twin — SwiftPM has none — so a feature manifest is written out in
+full. Copy `Packages/Features/FeatureVitals/Package.swift` and change the name:
+
+```swift
+// swift-tools-version: 6.0                                   // never 5.x; Swift 6 language mode
+import PackageDescription
+
+let package = Package(
+    name: "Feature<Name>",
+    defaultLocalization: "tr",                                // TR is default AND fallback (spec §6.4)
+    platforms: [.iOS(.v17), .macOS(.v14)],                    // macOS is a `swift test` host concession
+    products: [.library(name: "Feature<Name>", targets: ["Feature<Name>"])],
+    dependencies: [ /* core packages only, all `.package(path:)` */ ],
+    targets: [
+        .target(
+            name: "Feature<Name>",
+            dependencies: [ /* .product(name:package:) for each of the above */ ],
+            resources: [.process("Resources")]                // the String Catalog
+        ),
+        .testTarget(
+            name: "Feature<Name>Tests",
+            dependencies: ["Feature<Name>", .product(name: "SalusTesting", package: "SalusTesting")]
+        )
+    ]
+)
+```
+
+Reference: `Packages/Features/FeatureVitals/Package.swift` — tools version line 1,
+`defaultLocalization` line 11, platforms line 14, the eight `.package(path:)` entries lines 18-27,
+`.process("Resources")` line 41, the test-only `SalusTesting` dependency lines 44-50.
+
+Four things the Gradle twin does implicitly and SwiftPM does not:
+
+- **`SalusTesting` is a dependency of the *test* target only** — never of the library target. This
+  is `testImplementation(projects.core.testing)`; putting it on the library ships `FixedSalusClock`
+  into the app.
+- **`.macOS(.v14)` is a test-host concession, not a target.** `swift test` cannot run a bundle on a
+  simulator, so a package that reaches SwiftUI, GRDB or `Observation` also names macOS. iOS 17
+  stays the ship target. `CLAUDE.md` lists the three qualifying reasons; do not add it for a fourth.
+- **Features never depend on each other.** A `Feature*` manifest names core packages only. Cross-
+  feature navigation is a shell callback (spec §4) — see *Navigation* below.
+- **No new remote dependency.** The allowlist is closed at three (`CLAUDE.md`); a
+  `.package(url:)` line in a feature manifest is a finding.
+
+There is no `settings.gradle.kts` twin to edit, but there *is* an equivalent step: the app links
+the package in `project.yml`, and `xcodegen generate` is run and both files committed in the same
+commit (`project.yml` gained `FeatureVitals` in iOS-M2 Task 7).
+
+## Directory structure
+
+```
+Packages/Features/Feature<Name>/
+ └─ Sources/Feature<Name>/
+     ├─ domain/          PURE SWIFT — no SwiftUI import, ported 1:1 from Kotlin
+     │   ├─ model/       Domain models (WeightEntry.swift)
+     │   ├─ repository/  Repository PROTOCOL (VitalsRepository.swift)
+     │   └─ usecase/     Business rules — validation lives here (SaveWeightEntryUseCase.swift)
+     ├─ data/            RepositoryImpl + Record↔Domain mappers.
+     │                   GRDB records NEVER leave SalusDatabase; mappers are mandatory.
+     │                   (VitalsRepositoryImpl.swift, WeightEntryMapper.swift)
+     ├─ ui/<screen>/     Per screen: <Screen>UiState.swift (UiState + Event [+ Effect])
+     │                   + <Screen>ViewModel.swift + <Screen>Screen.swift (Route + Screen)
+     ├─ navigation/      Hashable & Sendable keys + `func <name>Destinations() -> some View`
+     ├─ Resources/       Localizable.xcstrings (tr source + en)
+     ├─ <Name>Strings.swift    typed accessors over Bundle.module
+     └─ <Name>Module.swift     the module factory (Koin module twin)
+```
+
+The `di/` directory of the Android template has no twin: there is no container, so the module is a
+value at the package root (`VitalsModule.swift`) rather than a package of registrations.
+
+Where Android puts `domain/` purity under a `salus.jvm.library` convention plugin, iOS relies on
+review plus the SwiftLint custom rules — `no_ui_framework_in_domain` scopes to `SalusModel` and
+`SalusCommon`, so a feature's own `domain/` is a review rule. A `import SwiftUI` under `domain/`
+is a finding.
+
+## UDF state types (in `<Screen>UiState.swift` — never `<X>Contract.swift`)
+
+- **UiState**: one `struct`, `Sendable`, every property with a default in `init` so a screen can be
+  previewed from `.init()`. Starts with `isLoading = true`. Lists are plain Swift arrays —
+  `ImmutableList` has no twin and needs none: a Swift `struct`/`Array` is already a value type, and
+  `@Observable` diffs by property access rather than by recomposition stability.
+  Reference: `ui/list/VitalsUiState.swift:155` (`VitalsUiState`),
+  `ui/editor/WeightEditorUiState.swift:9` (`WeightEditorUiState`).
+- **Event**: an `enum`, `Equatable, Sendable` — user intents. Single entry point: `onEvent(_:)`.
+  Reference: `ui/list/VitalsUiState.swift:195` (`VitalsEvent`),
+  `ui/editor/WeightEditorUiState.swift:38` (`WeightEditorEvent`).
+- **Effect**: an `enum` — one-shot **UI** work the screen must perform. **Never model navigation as
+  an Effect**; a ViewModel navigates through the injected `Navigator`. Neither M2 screen has one,
+  which is the expected default: add an Effect type only when there is real UI work to do.
+
+ViewModel rules:
+
+- `@MainActor @Observable public final class <Screen>ViewModel`
+  (`ui/list/VitalsViewModel.swift:43-45`). `@Observable` replaces `StateFlow`; `state` is a plain
+  stored property the view reads.
+- **There is no `stateIn(WhileSubscribed(5_000))` twin.** `@Observable` has no subscription-count
+  hook, so the DB observation starts in `init` (via `start()`, `VitalsViewModel.swift:79`, `:114`)
+  and is cancelled in `deinit` (`:82`). The cancellation is held in a small box so a `deinit` — which
+  cannot touch main-actor state — can still cancel it (`ui/CancellationBox.swift`).
+- The DB is the single source of truth: the source is an `AsyncThrowingStream` from the repository,
+  conflated with `.bufferingNewest(1)` (Room's `Flow` conflation).
+- Inject `SalusClock` for time — never `Date()` in feature code (test determinism).
+- Generate ids through `IdGenerator`.
+- A stream that combines a DB stream with an `@Observable` (M2 combines history with
+  `PendingDeleteController.pendingIds`) has no `combine` twin: re-register
+  `withObservationTracking` after every change and re-publish
+  (`VitalsViewModel.swift:189` and `:202`).
+
+## Shell and navigation-container rule (MANDATORY)
+
+**There is exactly one `TabView` and one `NavigationStack` per tab in the app: the shell's.**
+`App/RootView.swift:63` owns the `TabView`; `App/RootView.swift:121` builds the one
+`NavigationStack` a tab gets, over the tab's own `NavigationPath` from `TabBackStacks`.
+
+Feature screens:
+
+- **NEVER declare a `NavigationStack`, `NavigationSplitView` or `TabView`.** A second navigation
+  container re-applies the safe area and pushes the title bar down — the exact twin of Android's
+  double-Scaffold bug.
+- **NEVER call `.ignoresSafeArea`, `.safeAreaInset` or a status/home-bar padding hack.** Insets are
+  consumed in one place.
+- If a title bar is needed, use `.navigationTitle(_:)` + `.toolbar { }` on the screen's own body —
+  the shell's stack renders them (`ui/editor/WeightEditorScreen.swift:82-83`).
+- If a FAB is needed, `ZStack(alignment: .bottomTrailing)` + `.padding(16)`
+  (`ui/list/VitalsScreen.swift:72-73`, whose comment names the rule).
+- Screen roots start with `.frame(maxWidth: .infinity, maxHeight: .infinity)`.
+
+The snackbar host is the shell's too, and there is exactly one
+(`App/RootView.swift:102` + `:114`): a feature raises a request through `SalusSnackbarController`
+and never mounts a host. The tab bar is the shell's, rendered for every tab.
+
+Reference: `VitalsScreen` (ZStack + FAB) and `WeightEditorScreen` (VStack + toolbar).
+
+## Route / Screen split
+
+- **`<Name>Route`**: `public`, stateful. It reads the feature's module from the environment
+  (`@Environment(\.vitalsModule)`), builds the ViewModel once inside `.task`, holds it in `@State`,
+  and draws a `ProgressView` until it exists. Click-driven navigation goes through
+  `module.navigator`. Only *cross-feature* navigation arrives as a closure parameter
+  (`onOpenTrends`). Reference: `ui/list/VitalsScreen.swift:23-56`.
+- **`<Name>Screen`**: **internal, not public** — stateless: `state` + `onEvent` + nav callbacks
+  only, so it is `#Preview`-able and testable without a ViewModel. Nothing outside the package
+  needs it; the shell only ever names the Route. Reference: `ui/list/VitalsScreen.swift:62`,
+  `ui/editor/WeightEditorScreen.swift:54`.
+
+`koinViewModel()` has no twin, and the missing one matters: SwiftUI has no per-destination
+ViewModel store, so **the Route owns the ViewModel in `@State`** and a pushed destination gets a
+fresh one because SwiftUI builds a fresh Route. A parameterised ViewModel
+(`koinViewModel { parametersOf(id) }`) is a factory call with the argument —
+`module.makeWeightEditorViewModel(entryId)`.
+
+## Navigation (keys, `…Destinations()`, `Navigator`)
+
+```swift
+// navigation/<Name>Navigation.swift
+public struct <Name>Key: Hashable, Sendable { public init() {} }        // the tab root, if it is one
+public struct DetailKey: Hashable, Sendable { public let id: String? }
+
+public extension View {
+    /// Every destination this feature owns. The shell applies it to the tab's NavigationStack.
+    func <name>Destinations() -> some View {
+        navigationDestination(for: DetailKey.self) { key in DetailRoute(id: key.id) }
+    }
+}
+```
+
+Reference: `navigation/VitalsNavigation.swift:21` (`VitalsKey`), `:26` (`WeightEditorKey`), `:48`
+(`vitalsDestinations()`); mounted at `App/RootView.swift:123-135`.
+
+- `EntryProviderScope<NavKey>.<name>Entries()` becomes a **`View` modifier**. Both keep every key
+  inside the feature that owns it: the shell names none of them, it applies the modifier.
+- **`@Serializable` has no twin, and the keys are not `Codable`.** Navigation 3 serialises keys to
+  survive process death; a `NavigationPath` only serialises entries appended through its
+  `Codable`-constrained overload, and nothing restores a path yet. `Hashable` is what
+  `navigationDestination(for:)` actually requires.
+- **`AnyNavKey` carries an `append` closure that appends the *concrete* key**
+  (`Packages/SalusNavigation/Sources/SalusNavigation/AnyNavKey.swift:23-29`, iOS-M2 Task 1). That
+  one line is why a feature can keep owning its destinations instead of the app target needing a
+  central `navigationDestination(for: AnyNavKey.self)` switch — the M1 deferred finding this
+  milestone closed.
+- **Navigating within a feature goes through `Navigator`** (`SalusNavigation`), injected into the
+  ViewModel for outcome-driven moves (`pop()` after a successful save) or reached through the
+  module in the Route for click-driven ones. The back stack belongs to the app
+  (`TabBackStacks`); the `Navigator` only publishes commands the shell applies.
+- **Navigating to another feature's key is impossible by construction** — that is the point. Those
+  stay closures the shell fills in, because only the shell sees every key.
+- The stack's own back button pops the same `NavigationPath` that `Navigator.pop()` mutates, so a
+  screen never draws its own back arrow and never takes an `onBack` parameter.
+
+## Module factory
+
+Koin's `module { }` is a description a container resolves per call site. There is no container
+(`CLAUDE.md`: "the composition root owns the singletons"), so the module is a **value the
+composition root builds once and hands down**:
+
+```swift
+@MainActor
+public struct <Name>Module {
+    public let repository: any <Name>Repository                       // single<XRepository>
+    public let navigator: Navigator
+    public let makeSomeUseCase: @MainActor () -> SomeUseCase          // factoryOf(::SomeUseCase)
+    public let makeListViewModel: @MainActor () -> ListViewModel      // viewModelOf(::ListViewModel)
+    public let makeDetailViewModel: @MainActor (String?) -> DetailViewModel  // viewModel { params -> }
+}
+
+@MainActor public func make<Name>Module(…) -> <Name>Module { … }      // every dependency passed in
+
+extension EnvironmentValues {
+    @Entry public var <name>Module: <Name>Module?                     // how the Routes reach it
+}
+```
+
+Reference: `VitalsModule.swift:32-51` (the three Koin scopes and their twins are documented at
+`:1-19`), `:58` (`makeVitalsModule`), `:115` (the `@Entry`). Built in
+`App/AppCompositionRoot.swift:113`, injected on the **stack** in `App/RootView.swift:135` — not
+inside its root view, or a pushed destination would not see it.
+
+- The environment value is **optional** because `@Entry` needs a default and there is no honest
+  one: a module built from nothing would be a second, silent object graph. A Route that finds `nil`
+  draws its spinner, so a dropped injection looks like a dropped injection.
+- `KoinModulesTest` has no twin — there is no graph to verify, because the compiler checks it: an
+  unbuilt dependency is a missing initialiser argument.
+- A type that the app also needs by protocol (Kotlin's `bind VitalsQuickEntry::class`) needs no
+  second registration; the composition root exposes it as a computed property over the same factory
+  (`AppCompositionRoot.swift:86`).
+
+## Testing standard
+
+| What | How |
+| --- | --- |
+| UseCase | Pure Swift Testing; `Fake<X>Repository` in the test target (`Tests/…/FakeVitalsRepository.swift`) |
+| ViewModel | `@MainActor` suite + fake repo + `FixedSalusClock` + `FakeNavigator`; there is no Turbine — poll the `@Observable` `state` with the local `waitUntil` helper (`Tests/…/WaitUntil.swift`) |
+| Mapper | Input/output equality, pure test (`WeightEntryMapperTests.swift`) |
+| DAO | Lives in `SalusDatabase`, not in the feature: add feature-specific queries and their tests there (`VitalsDaoTests.swift`) |
+| Repository impl | In-memory `SalusDatabase.inMemory()` round trip (`VitalsRepositoryImplTests.swift`) |
+| Views | `#Preview` build only — there is no Compose-UI-test twin in the gates; behaviour lives in the ViewModel where it can be asserted |
+
+- **`MainDispatcherRule` has no twin.** `@MainActor` on the suite is the whole mechanism.
+- **`Navigator` is a concrete `final class`, not a protocol.** The fake is a real `Navigator`
+  instance whose `NavCommand` stream the test records (`Tests/…/FakeNavigator.swift`) — do not
+  introduce a protocol for it.
+- **The Android test table is the drift detector**: port it case-for-case, by name. A ported type
+  without its ported table is an unfinished port. A table that exists only on iOS is an Android gap
+  — open it in `salus-android/docs/ios-v1-plan.md` §11 in the same milestone.
+- `scripts/test-packages.sh <PackageName>` narrows the run; `scripts/ci.sh` is the gate.
+- After adding a *file* to a path dependency, a warm checkout can fail with a stale
+  `Packages/*/.build`. Run `scripts/clean.sh`.
+
+## Charts
+
+**Features NEVER import Charts.** Use `ChartUiModel` + `SalusLineChart` from `SalusUI`; the x axis
+is epoch-day, and conversion/downsampling happens in the ViewModel
+(`VitalsViewModel.dailyPoints` / `chartOrNull`).
+
+- `ChartPoint(xEpochDay: Int, y: Float)`,
+  `ChartUiModel(points:xLabel:yLabel:secondaryPoints:)` with `@Sendable` label closures —
+  `Packages/SalusUI/Sources/SalusUI/chart/ChartUiModel.swift:17`, `:35`.
+- `SalusLineChart(model:lineColor:contentDescription:)` —
+  `Packages/SalusUI/Sources/SalusUI/chart/SalusLineChart.swift:28`.
+- **This is mechanical**: `.swiftlint.yml`'s `no_charts_in_features` custom rule (error,
+  `included:` scoped to `Packages/Features/`) rejects `import Charts` in any form —
+  scoped, `@preconcurrency`-prefixed — and `scripts/lint-custom-rules.sh` proves the rule fires by
+  planting a fixture inside the scope and an identical one outside it. Both run in `scripts/ci.sh`.
+- Never lint with `swiftlint --path`: it silently disables the custom rules.
+
+### Material → SwiftUI mappings this slice settled
+
+Recorded so nobody re-improvises them. Full tables in the iOS-M2 task 3 and task 6 reports.
+
+| Android | iOS |
+| --- | --- |
+| Vico `CartesianChartHost` + `CartesianChartModelProducer` | Swift Charts `Chart { }` — the marks *are* the data, so the producer and its `LaunchedEffect` disappear |
+| `LineCartesianLayer` + `AreaFill` + `Brush.verticalGradient` | `LineMark` + `AreaMark` + `LinearGradient` |
+| `CartesianValueFormatter` | `AxisMarks { AxisValueLabel { … } }` calling `model.xLabel` / `model.yLabel` |
+| `FilterChip` / `SingleChoiceSegmentedButtonRow` | `Picker(…).pickerStyle(.segmented)` with an **empty** label — `design-tokens.md` has no chip spec, so no `SalusFilterChip` exists |
+| `LazyColumn` + `contentPadding` | `ScrollView` + `LazyVStack` + `.padding` |
+| `CircularProgressIndicator` | `ProgressView()` |
+| `TopAppBar` | `.navigationTitle(_:)` + `.toolbar { ToolbarItem(placement: .primaryAction) }` |
+| `navigationIcon` back arrow | the stack's own back button (see *Navigation*) |
+| `OutlinedTextField` (+ `suffix`, `isError`/`supportingText`, `minLines`) | `TextField(…).textFieldStyle(.roundedBorder)`; a trailing `Text` in an `HStack`; an error-role `Text` under the field; `axis: .vertical` + `.lineLimit(2...6)` |
+| `AlertDialog` | `.salusConfirmDialog(isPresented:)`, confirm button `role: .destructive` |
+| `Icons.Filled.*` (`ImageVector`) | SF Symbol **names** (`systemImage: String`) |
+| `Modifier.semantics { contentDescription }` | `.accessibilityElement(children: .ignore)` + `.accessibilityLabel` |
+| `Modifier.weight(1f)` in a `Row` | `.frame(maxWidth: .infinity, alignment: .leading)` in an `HStack` |
+| `Column`/`Row` default arrangement | `VStack`/`HStack` with an **explicit** `spacing: 0` |
+| `CardDefaults.cardElevation` | `.salusShadow(.card, isDark:)` — no shadow in dark (`design-tokens.md` §7) |
+| `String.format(locale, "%d", int)` | `String(format: "%lld", locale:, …)` — Swift's `Int` is 64-bit |
+| `DateTimeFormatter.ofPattern(p, locale)` | `DateFormatter` with a **fixed** `dateFormat`, never `setLocalizedDateFormatFromTemplate` (which reorders components per region where Android does not) |
+| `koinViewModel()` / `koinInject<Navigator>()` | `@Environment(\.<name>Module)` + a factory called from `.task` |
+
+Design values come only from `salus-android/docs/design/design-tokens.md` through
+`SalusDesignSystem`; a view reads the theme from `@Environment(\.salusTheme)` and never takes a
+`theme:` parameter.
+
+## Strings
+
+Android's `res/values/strings.xml` + `values-en/strings.xml` become **one String Catalog per
+package**: `Sources/Feature<Name>/Resources/Localizable.xcstrings`, `tr` as the source language,
+`en` as the only other locale.
+
+- Port key **name and text verbatim** from the XML. No new copy is invented in the port.
+- Access strings through a typed `enum` over `Bundle.module`
+  (`VitalsStrings.swift:35` and its accessors) — never a bare `String(localized:)` at a call site,
+  because the key would then resolve against the *main* bundle and silently return itself.
+- **Placeholder mapping is the one place the port is not byte-for-byte**: `%1$s` → `%1$@` (a Swift
+  `String` under `%s` reads a C pointer) and `%1$d` → `%1$lld` (Swift's `Int` is 64-bit). The
+  sentence around the specifier is unchanged. Documented at `VitalsStrings.swift:6-22`.
+- `SalusUI` owns its own catalog for the shared strings (`SalusUIStrings.swift`); a feature never
+  reaches into another package's bundle.
+- A snackbar request carries an **already-localised `String`**, not a key: the host is mounted in
+  the shell and a feature's strings live in its own `Bundle.module`.
+
+**Both string rules are mechanical**, from `SalusTesting`:
+
+- `StringCatalogParity` — `assertSourceLanguage` (tr), `assertKeys(of:are:)` (a literal key-set
+  pin copied from the XML), `assertEveryKeyIsLocalized` (both locales present, non-empty, and no
+  third locale). Per-package usage: `Tests/FeatureVitalsTests/VitalsStringsTests.swift:274`,
+  `:283`, `:302`, `:311`.
+- `BannedHealthClaims.assertCatalogsNameNothingBanned(paths:)` and
+  `assertSourcesNameNothingBanned(roots:exemptFileName:)` — run repo-wide from
+  `Packages/SalusTesting/Tests/SalusTestingTests/BannedHealthClaimsTests.swift:68` ("no Swift source
+  in the repository names anything banned") and `:79` ("no string catalog in the repository names
+  anything banned"). Both fail loudly if the scan reaches zero files.
+
+**Toolchain trap, and it costs an hour to rediscover:** a `.xcstrings` is compiled into
+`.lproj/Localizable.strings` by **Xcode's** build system only. `swift build` / `swift test` copies
+the catalog verbatim, so a lookup under `swift test` finds no table and `String(localized:)`
+returns the key. That is why the tests assert against the **file**, never against a resolved
+string; the end-to-end check is the simulator run
+(`Packages/Features/FeatureVitals/Sources/FeatureVitals/VitalsStrings.swift:24-31`).
