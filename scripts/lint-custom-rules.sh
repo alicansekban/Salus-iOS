@@ -20,10 +20,15 @@
 # The fixtures are removed on every exit path, interrupts included.
 #
 # NOTE: this runs `swiftlint` REPO-WIDE from the repo root, never `--path` — see
-# the warning in .swiftlint.yml and scripts/lint.sh. It is deliberately NOT part
-# of scripts/ci.sh: the pipeline there is the four scripts the workflow calls,
-# and adding a fifth is a change to both files plus the README. Run this after
-# editing a custom rule.
+# the warning in .swiftlint.yml and scripts/lint.sh.
+#
+# It IS part of the pipeline: step 3 of 5 in scripts/ci.sh and the "Custom lint
+# rules" step of .github/workflows/ci.yml, between lint and test. An earlier
+# revision of this header argued the opposite — that a fifth script was not worth
+# the edit to both files plus the README — which had the effect of leaving the
+# only proof that the custom rules still fire in a script nothing ran. Adding a
+# custom rule therefore also means adding a `check` block below, in the same
+# commit; run this directly while iterating on a rule's regex.
 
 set -uo pipefail
 

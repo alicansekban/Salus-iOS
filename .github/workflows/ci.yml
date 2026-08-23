@@ -96,7 +96,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # 1/4 — toolchain. Selects the pinned Xcode (exporting DEVELOPER_DIR to the
+      # 1/5 — toolchain. Selects the pinned Xcode (exporting DEVELOPER_DIR to the
       # steps below via $GITHUB_ENV) and asserts all three tool versions against
       # the pins at the top of the script, which mirror README.md's Toolchain
       # table. Everything below depends on these binaries, so a mismatch should
@@ -106,13 +106,27 @@ jobs:
         shell: bash
         run: scripts/check-toolchain.sh
 
-      # 2/4 — lint. swiftformat --lint then swiftlint --strict, both repo-wide
+      # 2/5 — lint. swiftformat --lint then swiftlint --strict, both repo-wide
       # from the repo root. scripts/lint.sh documents why `--path` is banned.
       - name: Lint
         shell: bash
         run: scripts/lint.sh
 
-      # 3/4 — test. `swift test` for ALL 24 local packages, not just the ones
+      # 3/5 — custom lint rules. NOT a second lint pass: the step above proves
+      # the tree is clean, this one proves the .swiftlint.yml CUSTOM rules would
+      # still catch a violation. A custom rule is a regex plus an `included:`
+      # scope and both halves fail silently — a regex that matches nothing and a
+      # scope that matches no file produce exactly the output of a clean tree, so
+      # `no_ui_framework_in_domain` and `no_charts_in_features` could rot into
+      # decoration without a single red run. The script plants a file that must
+      # trip each rule inside its scope and an identical one outside it, and
+      # removes them on every exit path (trap on EXIT/INT/TERM), so a cancelled
+      # run leaves no fixture behind.
+      - name: Custom lint rules
+        shell: bash
+        run: scripts/lint-custom-rules.sh
+
+      # 4/5 — test. `swift test` for ALL 24 local packages, not just the ones
       # with hand-written assertions: the placeholder test targets exist to
       # prove every module still compiles and links, which is the only thing M0
       # can assert about most of them.
@@ -128,7 +142,7 @@ jobs:
         shell: bash
         run: scripts/test-packages.sh
 
-      # 4/4 — build the app scheme. `generic/platform=iOS Simulator` needs no
+      # 5/5 — build the app scheme. `generic/platform=iOS Simulator` needs no
       # named device, so the workflow does not break when the image's simulator
       # set changes. See scripts/build-app.sh.
       - name: Build app
