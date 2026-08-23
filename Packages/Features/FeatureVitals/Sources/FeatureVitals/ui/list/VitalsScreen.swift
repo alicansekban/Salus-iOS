@@ -46,13 +46,27 @@ public struct VitalsRoute: View {
             }
         }
         .task {
-            guard viewModel == nil, let module else { return }
-            viewModel = module.makeVitalsViewModel()
+            guard let module else { return }
+            guard let viewModel else {
+                // First appearance: `init` opens the first history window. The ViewModel is owned
+                // for the lifetime of the route and is never recreated below.
+                viewModel = module.makeVitalsViewModel()
+                return
+            }
+            // Every later appearance — the pop-back from the weight editor above all — reopens the
+            // window with a fresh `until`. This is Android's `WhileSubscribed(5_000)` re-subscribe
+            // (`VitalsViewModel.kt:87-90`) restarting `flatMapLatest` (`VitalsViewModel.kt:51-53`);
+            // without it an entry saved just now sits past the window's fixed `until` and never
+            // shows up. See `VitalsViewModel.restartHistoryObservation()`.
+            viewModel.restartHistoryObservation()
         }
     }
 
     /// `VitalsScreen.kt:74-80`. M2 owns one editor key; M7 adds the other two arms here.
     private func openEditor(_ type: VitalType, entryId: String?) {
+        // TODO(M7): drop the `type == .weight` half — blood pressure and glucose silently no-op
+        // here because their editor keys do not exist yet (`VitalsScreen.kt:74-80` navigates all
+        // three). M7 replaces this guard with the three-way switch.
         guard let module, type == .weight else { return }
         module.navigator.navigate(WeightEditorKey(entryId: entryId))
     }

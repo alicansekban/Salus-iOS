@@ -28,7 +28,10 @@
 //
 //   `.stateIn(scope, WhileSubscribed(5_000), VitalsUiState())` — `@Observable` has no
 //   subscription-count hook, so the observation runs from `init` to `deinit` instead of starting
-//   and stopping with the UI. The initial value is the same `VitalsUiState()`.
+//   and stopping with the UI. The initial value is the same `VitalsUiState()`. The half of
+//   `WhileSubscribed` that *is* load-bearing — re-running `flatMapLatest` with a fresh
+//   `clock.now()` when the list re-subscribes — is ported by hand as
+//   `restartHistoryObservation()`, which `VitalsRoute.task` calls on every appearance.
 
 import Foundation
 import Observation
@@ -142,8 +145,20 @@ public final class VitalsViewModel {
     }
 
     /// The twin of `flatMapLatest`: the previous window's collection is cancelled and a new one
-    /// starts (`VitalsViewModel.kt:52-83`).
-    private func restartHistoryObservation() {
+    /// starts (`VitalsViewModel.kt:52-83`), recomputing `until` from the clock
+    /// (`VitalsViewModel.kt:53`) while keeping the current type and range.
+    ///
+    /// **Why this is public.** The window is `BETWEEN from AND until`, and `until` is a *fixed*
+    /// instant taken when the window opened — so an entry saved afterwards
+    /// (`measuredAt > until`) falls outside it and never arrives. Android never sees this because
+    /// `.stateIn(scope, SharingStarted.WhileSubscribed(5_000), VitalsUiState())`
+    /// (`VitalsViewModel.kt:87-90`) *stops* collecting once the list leaves composition and
+    /// re-runs the whole `combine(selectedType, selectedRange).flatMapLatest { … }`
+    /// (`VitalsViewModel.kt:51-52`) — with a fresh `clock.now()` — when the screen re-subscribes
+    /// after the editor pops. `@Observable` has no subscription-count hook, so the collection here
+    /// runs from `init` to `deinit`; `VitalsRoute` calls this from its `.task`, which SwiftUI
+    /// re-runs on every appearance, to port those re-subscribe semantics by hand.
+    public func restartHistoryObservation() {
         historyTask.cancel()
         // `combine` starts over: the new window has emitted nothing yet, so the previous state
         // stands until it does — which is exactly what `stateIn` holds on to across a restart.

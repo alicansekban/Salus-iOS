@@ -1,3 +1,4 @@
+import SwiftUI
 import Testing
 
 @testable import SalusNavigation
@@ -100,5 +101,44 @@ struct NavigatorTests {
         navigator.navigate(AnyNavKey(SampleHomeKey.root))
 
         #expect(await iterator.next() == .navigate(AnyNavKey(SampleHomeKey.root)))
+    }
+}
+
+/// The seam between the two halves of this package, which nothing pinned before: `Navigator`
+/// erases a feature's key into `AnyNavKey`, the app shell reads the command and calls
+/// `TabBackStacks.push`, and what has to come out the far end is the **concrete** key — a
+/// `navigationDestination(for: SampleHomeKey.self)` never matches a box.
+///
+/// `NavigatorTests` stops at the command and `TabBackStacksPushTests` starts at an `AnyNavKey`
+/// built by hand; between them sits `RootView.observeNavigationCommands()` (`RootView.swift:153-159`,
+/// the twin of `SalusApp.kt:92-99`), which lives in the app target and has no test bundle. This
+/// case runs that four-line switch here so the round trip is covered end to end.
+@Suite("Navigator → TabBackStacks")
+@MainActor
+struct NavigatorBackStackTests {
+    @Test("navigate lands the concrete key in the selected tab's path")
+    func navigateLandsTheConcreteKeyInThePath() async {
+        let navigator = Navigator()
+        let stacks = TabBackStacks<SampleTab>(initial: .home)
+        var iterator = navigator.commands.makeAsyncIterator()
+
+        navigator.navigate(SampleHomeKey.detail("a"))
+        navigator.navigate(SampleVitalsKey.root)
+        navigator.pop()
+
+        // `RootView.observeNavigationCommands()`, verbatim.
+        for _ in 0 ..< 3 {
+            switch await iterator.next() {
+            case let .navigate(key): stacks.push(key)
+            case .pop: stacks.pop()
+            case nil: Issue.record("the navigator ended its stream")
+            }
+        }
+
+        // The pop removed the vitals key; the home key survives with its own type intact, which is
+        // the property `NavigationPath` equality is sensitive to.
+        #expect(stacks.path(for: .home) == NavigationPath([SampleHomeKey.detail("a")]))
+        #expect(stacks.path(for: .vitals).isEmpty)
+        #expect(stacks.path(for: .more).isEmpty)
     }
 }

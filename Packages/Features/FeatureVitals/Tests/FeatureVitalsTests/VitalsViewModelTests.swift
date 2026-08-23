@@ -160,4 +160,47 @@ struct VitalsViewModelTests {
         #expect(viewModel.state.entries.count == 1)
         #expect(repository.current().count == 1)
     }
+
+    /// No Kotlin twin — this pins the hand-ported half of `WhileSubscribed`.
+    ///
+    /// The DAO query is `BETWEEN from AND until`, and `until` is the `clock.now()` taken when the
+    /// window opened (`VitalsViewModel.kt:53`). An entry saved afterwards carries
+    /// `measuredAt = instant(today, minuteOfDayNow())`, which is *past* that `until`, so the open
+    /// window never yields it. Android is saved by
+    /// `.stateIn(scope, SharingStarted.WhileSubscribed(5_000), …)` (`VitalsViewModel.kt:87-90`):
+    /// the list unsubscribes while the editor is on top and re-subscribing re-runs
+    /// `combine(selectedType, selectedRange).flatMapLatest { … }` (`VitalsViewModel.kt:51-52`)
+    /// with a fresh `now`. `VitalsRoute.task` calls `restartHistoryObservation()` on every
+    /// appearance to do the same; this test is that call.
+    @Test("an entry saved after the window opened is listed")
+    func anEntrySavedAfterTheWindowOpenedIsListed() async throws {
+        repository.setEntries(entry("existing", daysAgo: 1, kg: 80.0))
+        let viewModel = viewModel()
+        await waitUntil("the first history emission") { !viewModel.state.isLoading }
+        #expect(viewModel.state.entries.map(\.id) == ["existing"])
+
+        // The editor round trip: the clock moves past the window's `until`, and the entry it saves
+        // is stamped with the new instant.
+        let later = Self.now.addingTimeInterval(10 * 60)
+        clock.advanceTo(later)
+        try await repository.saveWeightEntry(
+            WeightEntry(id: "fresh", measuredAt: later, timeZone: Self.zone, kilograms: 79.4, note: nil)
+        )
+
+        // The save re-emits on the still-open stream, and the row falls outside `until`.
+        await waitUntil("the save to land in the repository") { repository.current().count == 2 }
+        #expect(
+            viewModel.state.entries.map(\.id) == ["existing"],
+            "the window that is already open cannot reach past its own `until`"
+        )
+
+        viewModel.restartHistoryObservation()
+
+        await waitUntil("the reopened window") { viewModel.state.entries.count == 2 }
+        #expect(viewModel.state.entries.map(\.id) == ["fresh", "existing"], "newest first")
+        #expect(viewModel.state.latestKilograms == 79.4)
+        // The restart keeps the current selection rather than resetting it.
+        #expect(viewModel.state.selectedType == .weight)
+        #expect(viewModel.state.selectedRange == .month)
+    }
 }
