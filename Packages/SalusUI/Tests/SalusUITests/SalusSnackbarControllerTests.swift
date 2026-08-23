@@ -25,10 +25,20 @@ import Testing
 struct SalusSnackbarControllerTests {
     @Test("the duration table is Material's (SnackbarHost.kt:302-307)")
     func durationTableIsMaterials() {
-        #expect(SnackbarDuration.short.milliseconds == 4000)
-        #expect(SnackbarDuration.long.milliseconds == 10000)
+        #expect(SnackbarDuration.short.timeoutMillis == 4000)
+        #expect(SnackbarDuration.long.timeoutMillis == 10000)
         // Kotlin says `Long.MAX_VALUE`, which is "never" spelled as a number; Swift says nil.
-        #expect(SnackbarDuration.indefinite.milliseconds == nil)
+        #expect(SnackbarDuration.indefinite.timeoutMillis == nil)
+    }
+
+    @Test("an explicit timeout is carried through unchanged")
+    func explicitTimeoutIsCarriedThroughUnchanged() {
+        // The fourth case exists for a snackbar whose lifetime belongs to something else's clock —
+        // today only the undo snackbar, which borrows `PendingDeleteController`'s window. Material
+        // has no equivalent, which is why it sits beside the three ported cases rather than in them.
+        #expect(SnackbarDuration.milliseconds(5000).timeoutMillis == 5000)
+        #expect(SnackbarRequest(message: "Deleted", duration: .milliseconds(1234)).duration
+            == .milliseconds(1234))
     }
 
     @Test("an action label makes the request indefinite, its absence makes it short (SnackbarHost.kt:104-105)")

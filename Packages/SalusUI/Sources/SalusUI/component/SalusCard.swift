@@ -64,13 +64,13 @@ public struct SalusCard<Content: View>: View {
 #Preview("Card") {
     VStack(spacing: SalusSpacing.lg) {
         SalusCard {
-            Text("Card title")
+            Text(verbatim: "Card title")
                 .font(SalusTypography.titleMedium.font)
-            Text("Supporting content sits on a card that lifts off the tinted background.")
+            Text(verbatim: "Supporting content sits on a card that lifts off the tinted background.")
                 .font(SalusTypography.bodyMedium.font)
         }
         SalusCard(onTap: {}, contentPadding: SalusSpacing.md, content: {
-            Text("Tappable, tighter padding")
+            Text(verbatim: "Tappable, tighter padding")
                 .font(SalusTypography.bodyMedium.font)
         })
     }

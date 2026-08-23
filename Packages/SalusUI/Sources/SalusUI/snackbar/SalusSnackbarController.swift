@@ -20,25 +20,37 @@
 import Foundation
 import Observation
 
-/// How long a snackbar stays up. The twin of `androidx.compose.material3.SnackbarDuration`
-/// (`SnackbarHost.kt:286-307`), whose numbers the Salus app inherits unchanged.
+/// How long a snackbar stays up. The three named cases are the twin of
+/// `androidx.compose.material3.SnackbarDuration` (`SnackbarHost.kt:286-307`), whose numbers the
+/// Salus app inherits unchanged.
 public enum SnackbarDuration: Sendable, Equatable {
     case short
     case long
     case indefinite
+    /// An explicit timeout, for a snackbar whose lifetime belongs to another clock. Material has no
+    /// such case, which is why it sits beside the ported three rather than inside them; today the
+    /// only user is the undo snackbar, which borrows `PendingDeleteController`'s window
+    /// (`UndoableDelete.swift`).
+    case milliseconds(Int)
 
     /// `SnackbarDuration.toMillis` (`SnackbarHost.kt:302-307`). `nil` is Kotlin's `Long.MAX_VALUE`,
     /// which is "never" written as a number.
-    public var milliseconds: Int? {
+    public var timeoutMillis: Int? {
         switch self {
         case .short: 4000
         case .long: 10000
         case .indefinite: nil
+        case let .milliseconds(value): value
         }
     }
 
     /// What `SnackbarHostState.showSnackbar` picks when the caller names no duration
     /// (`SnackbarHost.kt:104-105`) — and `SalusApp.kt:116-119` is exactly that call.
+    ///
+    /// Left exactly as Material has it, including `.indefinite` for a request that carries an
+    /// action: the controller stays a generic snackbar host, and a future action snackbar that
+    /// really should wait for the user keeps that behaviour for free. The undo snackbar is the one
+    /// that must not wait, and it says so at its own call site rather than by bending this rule.
     public static func `default`(hasActionLabel: Bool) -> SnackbarDuration {
         hasActionLabel ? .indefinite : .short
     }
@@ -133,7 +145,7 @@ public final class SalusSnackbarController {
         // `SnackbarHost.kt:224-232`: the host delays for the duration and then dismisses. An
         // indefinite snackbar starts no timer at all — Kotlin's `delay(Long.MAX_VALUE)` with the
         // waiting spelled honestly.
-        guard let millis = request.duration.milliseconds else {
+        guard let millis = request.duration.timeoutMillis else {
             timeout = nil
             return
         }

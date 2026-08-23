@@ -13,7 +13,7 @@
 ## Global Constraints
 
 - No new dependencies (allowlist stays GRDB only; Swift Charts is a system framework).
-- Reviewed against Android `:feature:vitals` on 2026-08-22; the divergences this plan records on purpose (VM ctor without `VitalsPreferences`, `instant(of:minuteOfDay:)` instead of `localTimeNow()`, resolved snackbar strings, hidden FAB for non-weight types, concrete `Navigator` fake) are the complete list — anything else that differs is a bug. **Three more were added during execution and review, and are equally binding: `SalusSnackbarHost` dismisses on a tap of its body (Task 3 ruling — Android's host has no such affordance; note the `Indefinite` snackbar blocks both platforms' queues, so this is a UX fix for a shared defect); `SaveWeightEntryUseCase` rejects a NaN weight (Task 4 ruling — Kotlin stores it; iOS is correct and Android adopts it as §11 A11); and **repository write failures are swallowed into UI state** rather than propagating (final review — `WeightEditorViewModel.save`'s `catch` resets `isSaving` and leaves the editor open, and both deferred deletes use `try? await`, where Kotlin lets the `suspend fun`'s throw reach `viewModelScope` and crash. The code is deliberately left as it is: iOS has no `viewModelScope` to fail into and no retry affordance exists on either platform, so a crash would be a worse port than a silent no-op — but it is a behaviour difference and belongs on this list, not in a code comment only).**
+- Reviewed against Android `:feature:vitals` on 2026-08-22; the divergences this plan records on purpose (VM ctor without `VitalsPreferences`, `instant(of:minuteOfDay:)` instead of `localTimeNow()`, resolved snackbar strings, hidden FAB for non-weight types, concrete `Navigator` fake) are the complete list — anything else that differs is a bug. **Three more were added during execution and review, and are equally binding: `SalusSnackbarHost` dismisses on a tap of its body (Task 3 ruling — Android's host has no such affordance; it stays now that ruling 2 is superseded, because `SnackbarDuration.default(hasActionLabel:)` still answers `.indefinite` for any *other* action snackbar and a snackbar with no timeout needs a way out) — **and, since 2026-08-23, a fourth: the undo snackbar auto-dismisses when the undo window closes** (`duration: .milliseconds(PendingDeleteController.undoWindowMillis)`), which Android does not do until §11 A10 lands; `SaveWeightEntryUseCase` rejects a NaN weight (Task 4 ruling — Kotlin stores it; iOS is correct and Android adopts it as §11 A11); and **repository write failures are swallowed into UI state** rather than propagating (final review — `WeightEditorViewModel.save`'s `catch` resets `isSaving` and leaves the editor open, and both deferred deletes use `try? await`, where Kotlin lets the `suspend fun`'s throw reach `viewModelScope` and crash. The code is deliberately left as it is: iOS has no `viewModelScope` to fail into and no retry affordance exists on either platform, so a crash would be a worse port than a silent no-op — but it is a behaviour difference and belongs on this list, not in a code comment only).**
 - Port fidelity: Kotlin names, validation constants (`MIN_KG = 20.0`, `MAX_KG = 400.0`), `unit = "kg"`, `type = "WEIGHT"`, `ChartRange` days (7/30/90/365, default `MONTH`), `resolveEditorMeasuredAt` semantics, Android test tables by name. Behaviour differences only where spec §6 or a ledger ruling records them.
 - **Strings:** Turkish is the development/fallback language, EN a full peer; the 48 `vitals_*` keys of `feature/vitals/src/main/res/values{,-en}/strings.xml` are ported verbatim (name and text) — banned-claims vocabulary (CLAUDE.md) applies to every string; no new copy is invented.
 - UDF rule: `<Screen>UiState.swift` holds UiState + Event (+ Effect only when real UI work exists); one `onEvent(_:)`; navigation goes through the injected `Navigator`, never an Effect. Inject `SalusClock`/`IdGenerator`; never `Date()` in feature code.
@@ -159,7 +159,7 @@ In ledger order. Each says what it costs if it turns out to be wrong.
    no chip spec — only a `container` fill mention — so no `SalusFilterChip` is added and the type
    selector uses a segmented picker. *Why:* the plan's own stated fallback.
    *Cost if wrong:* one view swap in `VitalsScreen`.
-2. **The undo snackbar keeps Android's `Indefinite` duration** (Task 3). Material3's
+2. **~~The undo snackbar keeps Android's `Indefinite` duration~~ — SUPERSEDED 2026-08-23 by the user's order after the manual simulator pass; see the note at the end of this ruling** (Task 3). Material3's
    `showSnackbar` defaults to `Indefinite` when an action label is present, so Android's undo
    snackbar (`SalusApp.kt:114-121`) never auto-dismisses even though the undo window itself is
    5 s (`PendingDeleteController.kt:78`, `UNDO_WINDOW_MILLIS = 5_000L`) — after 5 s the action is a
@@ -174,9 +174,23 @@ In ledger order. Each says what it costs if it turns out to be wrong.
    completely: a second delete's undo is unreachable until the first delete's stale UNDO is tapped.
    A10 is therefore a fix on **both** platforms, and both `docs/ios-v1-plan.md` §6.5 and A10 were
    rewritten to say so.
+   **Superseded, 2026-08-23 (user's order from the manual simulator pass).** Confirmed on device:
+   after five seconds "Geri al" is a silent no-op while the snackbar sits there until it is tapped.
+   The ruling is now: **the undo snackbar auto-dismisses when the undo window closes.** iOS landed
+   its half on `m2-vitals-weight` — `UndoableDelete` passes
+   `duration: .milliseconds(PendingDeleteController.undoWindowMillis)`, so the timeout is *derived*
+   from the window rather than repeating a second literal 5000, and `SnackbarDuration` grew a fourth
+   case (`.milliseconds(Int)`) beside Material's three to carry it. `SalusSnackbarController` is
+   deliberately unchanged: `default(hasActionLabel:)` still answers `.indefinite`, so the host stays
+   a generic snackbar host and a future action snackbar that really should wait for the user keeps
+   Material's behaviour. **A10 stays open for the Android side**, and until it closes this is a
+   recorded divergence, not a port bug.
 3. **`SalusSnackbarHost` tap-to-dismiss is a recorded iOS divergence** (Task 3). Android's host has
    no such affordance. iOS adds one because ruling 2 leaves an `Indefinite` snackbar on screen with
    a dead action and a queue stuck behind it. Added to Global Constraints above.
+   **Still binding after ruling 2 was superseded** (2026-08-23): the undo snackbar no longer needs
+   the escape hatch, but every other action snackbar still defaults to `.indefinite`, so the tap is
+   the only way out of one.
    **As corrected above, the tap is a UX fix for a defect both platforms have**, not compensation
    for a weaker iOS queue — Android's queue blocks identically and simply has no way out of it.
    *Cost if wrong:* remove one modifier (`SalusSnackbarHost.swift:65`).
@@ -338,7 +352,9 @@ not A9/A10 as this plan's Task 8 brief assumed.
 - **A10** — the undo snackbar's duration should equal `PendingDeleteController.UNDO_WINDOW_MILLIS`.
   Today `SalusApp.kt:114-119` passes an action label and no duration, and Material3 defaults that to
   `Indefinite`, so the snackbar outlives the 5 s window and its action becomes a silent no-op
-  (ruling 2).
+  (ruling 2). **The iOS half landed on 2026-08-23** (`fix(ui): auto-dismiss the undo snackbar when
+  the undo window closes`, this branch) after the user ruled on it from the simulator pass; the
+  Android half is still open, and the two platforms differ here until it closes.
 - **A11** — `SaveWeightEntryUseCase` should reject NaN, as iOS does (ruling 5).
 - **A12** — a docs reconcile: `design-tokens.md` §2.1 and §7 tell iOS to fill cards with
   `surfaceContainerLowest`, while `SalusCard.kt:34` uses `surfaceContainerLow`. In light mode both

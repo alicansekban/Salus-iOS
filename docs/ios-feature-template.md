@@ -335,6 +335,16 @@ package**: `Sources/Feature<Name>/Resources/Localizable.xcstrings`, `tr` as the 
   reaches into another package's bundle.
 - A snackbar request carries an **already-localised `String`**, not a key: the host is mounted in
   the shell and a feature's strings live in its own `Bundle.module`.
+- **Preview and accessibility copy uses `Text(verbatim:)`.** `Text("…")` with a literal takes a
+  `LocalizedStringKey`, and Xcode's string extraction writes every one it finds in a package into
+  that package's `Localizable.xcstrings` — which is how a stray `"Host"` and an empty key landed in
+  `SalusUI`'s catalog during the M2 simulator pass and broke its key-set pin. If the text is not
+  meant to be translated, it must not look like a key.
+- **A delete goes through `UndoableDelete`, and its snackbar dies with the undo window.** The
+  request is built with `duration: .milliseconds(PendingDeleteController.undoWindowMillis)`, so the
+  timeout is derived from the window rather than repeating the number; a feature never sets a
+  snackbar duration for a delete itself. Every *other* action snackbar keeps Material's default
+  (`.indefinite`) and is dismissed by tapping it.
 
 **Both string rules are mechanical**, from `SalusTesting`:
 

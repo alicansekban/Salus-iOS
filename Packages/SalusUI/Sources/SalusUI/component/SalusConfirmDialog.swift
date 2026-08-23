@@ -60,7 +60,12 @@ private struct SalusConfirmDialogPreview: View {
     @State private var isPresented = true
 
     var body: some View {
-        Text("Host")
+        // `verbatim:` on purpose: the other `Text(_:)` overload takes a `LocalizedStringKey`, and
+        // Xcode's string extraction writes every one it finds in this package into
+        // `Localizable.xcstrings` — which is how a stray "Host" key (and an empty one) turned up in
+        // the catalog during the M2 simulator pass and broke `SalusUIStringsTests`. Preview copy is
+        // never localised, so it must never look like a key.
+        Text(verbatim: "Host")
             .salusConfirmDialog(
                 isPresented: $isPresented,
                 title: "Kilo kaydı silinsin mi?",

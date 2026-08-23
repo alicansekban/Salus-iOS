@@ -7,10 +7,12 @@
 // single text action on the trailing edge.
 //
 // One affordance Android does not have, added on purpose: tapping the snackbar body dismisses it.
-// Material defaults an undo snackbar to `Indefinite` (`SnackbarHost.kt:104-105`), and on Android
-// the collector suspends until that snackbar goes away — so without a way out, an iOS undo
-// snackbar would sit there forever and block everything queued behind it. The duration table is
-// ported unchanged; this is the escape hatch the platform does not otherwise provide.
+// It arrived because the undo snackbar was `Indefinite` and blocked the queue behind it; that case
+// is gone (`UndoableDelete.swift` now ties the undo snackbar to the undo window), but the
+// affordance stays, because `SnackbarDuration.default(hasActionLabel:)` still answers `.indefinite`
+// for any *other* action snackbar — Material's rule, kept — and a snackbar with no timeout needs a
+// way out. It is a recorded iOS divergence, not compensation for a weaker queue: Android's queue
+// blocks identically and simply has nothing to tap.
 
 import SalusDesignSystem
 import SwiftUI

@@ -32,7 +32,10 @@ public struct SalusFab: View {
                 .background(background)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(contentDescription.map(Text.init) ?? Text(""))
+        // `verbatim:` throughout: `Text(_:)` with a literal takes a `LocalizedStringKey`, and
+        // Xcode's extraction writes every one it finds into this package's `Localizable.xcstrings`
+        // — the empty key it added during the M2 simulator pass came from here.
+        .accessibilityLabel(Text(verbatim: contentDescription ?? ""))
     }
 
     /// `containerColor = primary`, `shape = MaterialTheme.shapes.medium` (`SalusFab.kt:29-31`).
