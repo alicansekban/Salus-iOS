@@ -115,6 +115,8 @@ public enum BannedHealthClaims {
         case bannedTerm(file: String, stem: String)
         /// No Swift source was reached at all, which would otherwise pass by doing no work.
         case nothingScanned(roots: [String])
+        /// No String Catalog was reached at all, for the same reason and with the same danger.
+        case noCatalogScanned(paths: [String])
         /// A root could not be walked.
         case unreadableRoot(String)
 
@@ -128,6 +130,11 @@ public enum BannedHealthClaims {
             case let .nothingScanned(roots):
                 "No Swift source was found under \(roots). A path typo would otherwise make this "
                     + "guard pass by scanning nothing at all."
+
+            case let .noCatalogScanned(paths):
+                "No .xcstrings catalog was found under \(paths). Catalogs arrive one feature at a "
+                    + "time, so a wrong path reads as \"nothing banned\" rather than as \"nothing "
+                    + "read\" — which is the failure this case exists to make loud."
 
             case let .unreadableRoot(root):
                 "\(root) could not be walked, so the guard cannot say what it contains."
@@ -172,6 +179,50 @@ public enum BannedHealthClaims {
         guard scanned > 0 else { throw ScanError.nothingScanned(roots: roots.map(\.path)) }
     }
 
+    /// Checks that every String Catalog reached through `paths` names nothing on `stems` — and
+    /// that at least one was reached (the twin of Android's
+    /// `assertFilesNameNothingBanned`, `BannedHealthClaims.kt:110-124`).
+    ///
+    /// This is the scan that matters most, because a catalog holds the words a user actually
+    /// reads, and `assertSourcesNameNothingBanned` above reads `.swift` files only — a catalog was
+    /// invisible to it. The whole file is folded and searched, comments included: an `.xcstrings`
+    /// `"comment"` is what a translator reads before choosing a word, so a comment framing a
+    /// string as adherence is how the wrong word reaches the copy.
+    ///
+    /// A path is either a catalog to check or a directory to walk for catalogs. Android passes
+    /// files, because Gradle gives a module exactly two `strings.xml`; here one repository-wide
+    /// run over `Packages/` covers every feature's catalog the moment it is added, with no edit to
+    /// the feature that added it. Both shapes are useful, and both count toward the same guard.
+    ///
+    /// Hidden directories are not descended into, which is what keeps `.build` out: SwiftPM copies
+    /// each catalog into a resource bundle there, and a stale copy would be scanned as if it were
+    /// source.
+    public static func assertCatalogsNameNothingBanned(paths: [URL]) throws {
+        var scanned = 0
+
+        for path in paths {
+            if path.pathExtension == catalogExtension {
+                try assertFileNamesNothingBanned(path)
+                scanned += 1
+                continue
+            }
+
+            let enumerator = FileManager.default.enumerator(
+                at: path,
+                includingPropertiesForKeys: nil,
+                options: [.skipsHiddenFiles]
+            )
+            guard let enumerator else { throw ScanError.unreadableRoot(path.path) }
+
+            for case let url as URL in enumerator where url.pathExtension == catalogExtension {
+                try assertFileNamesNothingBanned(url)
+                scanned += 1
+            }
+        }
+
+        guard scanned > 0 else { throw ScanError.noCatalogScanned(paths: paths.map(\.path)) }
+    }
+
     /// Reads one file and checks it against every stem.
     ///
     /// The text is folded with Swift's locale-independent `lowercased()`, which is the twin of
@@ -191,4 +242,5 @@ public enum BannedHealthClaims {
     }
 
     private static let swiftExtension = "swift"
+    private static let catalogExtension = "xcstrings"
 }

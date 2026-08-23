@@ -22,7 +22,9 @@ let package = Package(
     dependencies: [
         .package(path: "../SalusDesignSystem"),
         .package(path: "../SalusCommon"),
-        .package(path: "../SalusModel")
+        .package(path: "../SalusModel"),
+        // Tests only: `StringCatalogParity`, the one home of the TR/EN catalog checks.
+        .package(path: "../SalusTesting")
     ],
     targets: [
         .target(
@@ -39,7 +41,8 @@ let package = Package(
         .testTarget(
             name: "SalusUITests",
             dependencies: [
-                "SalusUI"
+                "SalusUI",
+                .product(name: "SalusTesting", package: "SalusTesting")
             ]
         )
     ]

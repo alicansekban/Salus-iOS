@@ -76,6 +76,45 @@ struct BannedHealthClaimsTests {
         )
     }
 
+    @Test("no string catalog in the repository names anything banned")
+    func noStringCatalogNamesAnythingBanned() throws {
+        // The Swift scan above reads `.swift` only, so a catalog was invisible to it — and the
+        // catalog is where the words a user actually reads live. This is the twin of Android's
+        // per-module `assertFilesNameNothingBanned(STRING_FILES)`, hoisted to one repository-wide
+        // run: every `.xcstrings` under `Packages/` is covered the moment it is added, with no
+        // edit to the feature that added it.
+        try BannedHealthClaims.assertCatalogsNameNothingBanned(
+            paths: [Self.repositoryRoot.appendingPathComponent("Packages")]
+        )
+    }
+
+    @Test("a catalog that names a banned stem fails the scan")
+    func aCatalogThatNamesABannedStemFailsTheScan() throws {
+        let root = try Self.makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        let stem = try #require(BannedHealthClaims.stems.first)
+        try #"{"sourceLanguage":"tr","strings":{"k":{"localizations":{"tr":{"stringUnit":{"value":"\#(stem)"}}}}}}"#
+            .write(to: root.appendingPathComponent("Localizable.xcstrings"), atomically: true, encoding: .utf8)
+
+        #expect(throws: BannedHealthClaims.ScanError.self) {
+            try BannedHealthClaims.assertCatalogsNameNothingBanned(paths: [root])
+        }
+    }
+
+    @Test("a catalog scan that reaches no catalog fails instead of passing on an empty set")
+    func aCatalogScanThatReachesNoCatalogFails() throws {
+        let root = try Self.makeTemporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+
+        // Same failure mode as the source scan, and likelier here: `.xcstrings` files arrive one
+        // feature at a time, so a wrong root reads as "nothing banned" rather than as "nothing
+        // read".
+        #expect(throws: BannedHealthClaims.ScanError.self) {
+            try BannedHealthClaims.assertCatalogsNameNothingBanned(paths: [root])
+        }
+    }
+
     @Test("a source that names a banned stem fails the scan")
     func aSourceThatNamesABannedStemFailsTheScan() throws {
         let root = try Self.makeTemporaryDirectory()
