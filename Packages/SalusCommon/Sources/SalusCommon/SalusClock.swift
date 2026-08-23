@@ -100,9 +100,10 @@ extension SalusClock {
     /// The twin of `Instant.toEpochMilliseconds()` (and of `System.currentTimeMillis()`, which
     /// Android's seed callback writes): the sub-millisecond part is **truncated, never rounded**,
     /// so a stamp can never land in the future. Every writer of an epoch-millisecond column goes
-    /// through here, so the seed row and a repository write cannot disagree by a millisecond.
+    /// through the same conversion — `Date.epochMilliseconds` in `EpochMilliseconds.swift`, which
+    /// this delegates to — so the seed row and a repository write cannot disagree by a millisecond.
     public func nowEpochMilliseconds() -> Int64 {
-        Int64(now().timeIntervalSince1970 * 1000)
+        now().epochMilliseconds
     }
 
     /// A Gregorian calendar reading in this clock's zone.
