@@ -2,9 +2,17 @@
 #
 # Mirrors the Android repository's workflow shape (salus-android/.github/workflows/ci.yml):
 # one job, triggered on push to main and on every pull request, running the
-# lint -> test -> build sequence that `./gradlew build` runs over there. It is
-# split into named steps here only because the iOS toolchain has no single
-# command that does all three.
+# same sequence `./gradlew build` runs over there. Five stages, in order:
+#
+#   0. check-toolchain.sh    Xcode/SwiftLint/SwiftFormat against README's pins
+#   1. lint.sh               swiftformat --lint, then swiftlint --strict
+#   2. lint-custom-rules.sh  proves each custom rule fires inside its scope
+#                            and stays quiet outside it
+#   3. test-packages.sh      swift test over all 24 packages under Packages/
+#   4. build-app.sh          the real iOS build of Salus.xcodeproj
+#
+# It is split into named steps here only because the iOS toolchain has no single
+# command that does all five.
 #
 # Every step shells out to a script in scripts/, so a developer can reproduce
 # the whole run with `scripts/ci.sh` and there is exactly one definition of each

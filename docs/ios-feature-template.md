@@ -155,10 +155,10 @@ Reference: `VitalsScreen` (ZStack + FAB) and `WeightEditorScreen` (VStack + tool
   (`@Environment(\.vitalsModule)`), builds the ViewModel once inside `.task`, holds it in `@State`,
   and draws a `ProgressView` until it exists. Click-driven navigation goes through
   `module.navigator`. Only *cross-feature* navigation arrives as a closure parameter
-  (`onOpenTrends`). Reference: `ui/list/VitalsScreen.swift:23-56`.
+  (`onOpenTrends`). Reference: `ui/list/VitalsScreen.swift:23-73`.
 - **`<Name>Screen`**: **internal, not public** — stateless: `state` + `onEvent` + nav callbacks
   only, so it is `#Preview`-able and testable without a ViewModel. Nothing outside the package
-  needs it; the shell only ever names the Route. Reference: `ui/list/VitalsScreen.swift:62`,
+  needs it; the shell only ever names the Route. Reference: `ui/list/VitalsScreen.swift:76`,
   `ui/editor/WeightEditorScreen.swift:54`.
 
 `koinViewModel()` has no twin, and the missing one matters: SwiftUI has no per-destination
@@ -311,6 +311,14 @@ Design values come only from `salus-android/docs/design/design-tokens.md` throug
 `theme:` parameter.
 
 ## Strings
+
+**This section has no Android twin**, exactly as the `di/` directory and `koinViewModel()` have no
+iOS twin above: `salus-android/docs/architecture/feature-template.md` says nothing about strings,
+because on Android a `strings.xml` pair *is* the whole mechanism and needs no template. The iOS
+side needs one — catalog layout, the typed accessor, the placeholder remapping and the `swift test`
+trap are all port-specific — so it is written here and the "section-for-section twin" claim at the
+top is one section short in this direction. The same is true of **Material → SwiftUI mappings this
+slice settled** under `## Charts`: a mapping table exists only for the platform being mapped *to*.
 
 Android's `res/values/strings.xml` + `values-en/strings.xml` become **one String Catalog per
 package**: `Sources/Feature<Name>/Resources/Localizable.xcstrings`, `tr` as the source language,

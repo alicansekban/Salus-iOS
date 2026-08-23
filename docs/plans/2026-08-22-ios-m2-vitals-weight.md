@@ -13,7 +13,7 @@
 ## Global Constraints
 
 - No new dependencies (allowlist stays GRDB only; Swift Charts is a system framework).
-- Reviewed against Android `:feature:vitals` on 2026-08-22; the divergences this plan records on purpose (VM ctor without `VitalsPreferences`, `instant(of:minuteOfDay:)` instead of `localTimeNow()`, resolved snackbar strings, hidden FAB for non-weight types, concrete `Navigator` fake) are the complete list — anything else that differs is a bug. **Two more were added during execution and are equally binding: `SalusSnackbarHost` dismisses on a tap of its body (Task 3 ruling — Android's host has no such affordance, and without it an `Indefinite` undo snackbar blocks the FIFO queue), and `SaveWeightEntryUseCase` rejects a NaN weight (Task 4 ruling — Kotlin stores it; iOS is correct and Android adopts it as §11 A11).**
+- Reviewed against Android `:feature:vitals` on 2026-08-22; the divergences this plan records on purpose (VM ctor without `VitalsPreferences`, `instant(of:minuteOfDay:)` instead of `localTimeNow()`, resolved snackbar strings, hidden FAB for non-weight types, concrete `Navigator` fake) are the complete list — anything else that differs is a bug. **Three more were added during execution and review, and are equally binding: `SalusSnackbarHost` dismisses on a tap of its body (Task 3 ruling — Android's host has no such affordance; note the `Indefinite` snackbar blocks both platforms' queues, so this is a UX fix for a shared defect); `SaveWeightEntryUseCase` rejects a NaN weight (Task 4 ruling — Kotlin stores it; iOS is correct and Android adopts it as §11 A11); and **repository write failures are swallowed into UI state** rather than propagating (final review — `WeightEditorViewModel.save`'s `catch` resets `isSaving` and leaves the editor open, and both deferred deletes use `try? await`, where Kotlin lets the `suspend fun`'s throw reach `viewModelScope` and crash. The code is deliberately left as it is: iOS has no `viewModelScope` to fail into and no retry affordance exists on either platform, so a crash would be a worse port than a silent no-op — but it is a behaviour difference and belongs on this list, not in a code comment only).**
 - Port fidelity: Kotlin names, validation constants (`MIN_KG = 20.0`, `MAX_KG = 400.0`), `unit = "kg"`, `type = "WEIGHT"`, `ChartRange` days (7/30/90/365, default `MONTH`), `resolveEditorMeasuredAt` semantics, Android test tables by name. Behaviour differences only where spec §6 or a ledger ruling records them.
 - **Strings:** Turkish is the development/fallback language, EN a full peer; the 48 `vitals_*` keys of `feature/vitals/src/main/res/values{,-en}/strings.xml` are ported verbatim (name and text) — banned-claims vocabulary (CLAUDE.md) applies to every string; no new copy is invented.
 - UDF rule: `<Screen>UiState.swift` holds UiState + Event (+ Effect only when real UI work exists); one `onEvent(_:)`; navigation goes through the injected `Navigator`, never an Effect. Inject `SalusClock`/`IdGenerator`; never `Date()` in feature code.
@@ -94,7 +94,7 @@
 **Files:** `App/{AppCompositionRoot,RootView,RootTab,PlaceholderScreen}.swift`, `project.yml` (+ regenerated project: link `FeatureVitals`, `SalusUI`).
 
 - [x] Root builds `VitalsDao`, the vitals module (repository singleton, `SaveWeightEntryUseCase` also exposed as `any VitalsQuickEntry` for onboarding later), `SalusSnackbarController`, `UndoableDelete`. `RootView` mounts `SalusSnackbarHost` once, hosts `VitalsRoute` in the Vitals tab with `.vitalsDestinations()`, `onOpenTrends` is a no-op callback with a TODO(M11) comment; other tabs keep `PlaceholderScreen`.
-- [x] Verify: `scripts/ci.sh` green; simulator run — add two weights on different days, see list newest-first and chart, edit one, delete with undo (row returns), delete and let the window close (row gone after relaunch); screenshots light/dark into the workspace; boot log unchanged.
+- [~] Verify — **`ci.sh` half only; every simulator step below is owed by the user** (see "Manual verification still owed"): `scripts/ci.sh` green; simulator run — add two weights on different days, see list newest-first and chart, edit one, delete with undo (row returns), delete and let the window close (row gone after relaunch); screenshots light/dark into the workspace; boot log unchanged.
 - [x] Commit (`feat(app): …`).
 
 ### Task 8: Feature template doc, rules, record, merge
@@ -115,8 +115,11 @@
 Executed subagent-driven on branch `m2-vitals-weight` off `main` at `e355f66`: one Opus implementer
 per task, an independent reviewer per task, a scoped re-review after each fix round. No task ran in
 parallel with another — every pair in the pre-flight scan was consistent, so the chain was strictly
-sequential and each task rebased on nothing. Four of the seven implementation tasks passed review
-first time; the other three passed after exactly one fix round each. Sixteen commits, `e355f66..`.
+sequential and each task rebased on nothing. **Three** of the seven implementation tasks passed
+review first time (2, 3, 5); the other **four** (1, 4, 6, 7) passed after exactly one fix round
+each — read the table below, which is the authority. Sixteen commits carry Tasks 1-7
+(`e355f66..0065ac9`); Task 8 adds two (`3d4dabe`, `bc74e25`) and the final review's fix wave adds
+its own on top (see "Final review fix wave" at the end).
 
 `scripts/ci.sh` was green at the end of Tasks 4, 6, 7 and 8. The **simulator half of Task 7's
 verification was not performed** — see "Manual verification still owed" below; it is the reason the
@@ -151,14 +154,24 @@ In ledger order. Each says what it costs if it turns out to be wrong.
    *Cost if wrong:* one view swap in `VitalsScreen`.
 2. **The undo snackbar keeps Android's `Indefinite` duration** (Task 3). Material3's
    `showSnackbar` defaults to `Indefinite` when an action label is present, so Android's undo
-   snackbar (`SalusApp.kt:114-119`) never auto-dismisses even though the undo window itself is
+   snackbar (`SalusApp.kt:114-121`) never auto-dismisses even though the undo window itself is
    5 s (`PendingDeleteController.kt:78`, `UNDO_WINDOW_MILLIS = 5_000L`) — after 5 s the action is a
    no-op that still sits on screen. The port keeps the behaviour rather than fixing it on one
    platform; the fix is opened as Android §11 **A10**. *Cost if wrong:* Android fixes it first and
    iOS re-syncs one line.
+   **Corrected by the final review:** the ruling as first written said the *blocked queue* was an
+   iOS-only consequence, because the iOS host is a hand-written FIFO rather than Material's. It is
+   not. `SalusApp.kt:114-121` collects `snackbarController.requests` **sequentially** and suspends
+   inside `snackbarHostState.showSnackbar`, which holds `SnackbarHostState`'s mutex for as long as
+   the snackbar is shown — so an `Indefinite` undo snackbar blocks **Android's** queue just as
+   completely: a second delete's undo is unreachable until the first delete's stale UNDO is tapped.
+   A10 is therefore a fix on **both** platforms, and both `docs/ios-v1-plan.md` §6.5 and A10 were
+   rewritten to say so.
 3. **`SalusSnackbarHost` tap-to-dismiss is a recorded iOS divergence** (Task 3). Android's host has
-   no such affordance. iOS adds one because ruling 2 leaves an `Indefinite` snackbar that would
-   otherwise block the FIFO queue forever. Added to Global Constraints above.
+   no such affordance. iOS adds one because ruling 2 leaves an `Indefinite` snackbar on screen with
+   a dead action and a queue stuck behind it. Added to Global Constraints above.
+   **As corrected above, the tap is a UX fix for a defect both platforms have**, not compensation
+   for a weaker iOS queue — Android's queue blocks identically and simply has no way out of it.
    *Cost if wrong:* remove one modifier (`SalusSnackbarHost.swift:65`).
 4. **An unresolvable stored time-zone id throws, matching Kotlin** (Task 4). The mapper throws, the
    stream propagates, `recordWeight` throws — rather than degrading to GMT or returning `false`.
@@ -180,7 +193,8 @@ In ledger order. Each says what it costs if it turns out to be wrong.
 
 ### Recorded divergences from Android, complete list
 
-The five the plan recorded up front, plus the two added by rulings 3 and 5:
+The five the plan recorded up front, the two added by rulings 3 and 5, and an eighth the final
+review named:
 
 1. `VitalsViewModel`'s constructor omits `preferences: VitalsPreferences` (M7 work; **M7 changes the
    signature**, not only the state builders).
@@ -194,6 +208,16 @@ The five the plan recorded up front, plus the two added by rulings 3 and 5:
    `Navigator` is a concrete `final class` and **no `Navigator` protocol is introduced**.
 6. **`SalusSnackbarHost` dismisses on a tap of its body** (ruling 3).
 7. **`SaveWeightEntryUseCase` rejects NaN** (ruling 5).
+8. **Repository write failures are swallowed into UI state** (final review). Kotlin's
+   `saveWeightEntry` / `deleteWeightEntry` are `suspend fun`s whose throw propagates into
+   `viewModelScope` and takes the app down. On iOS, `WeightEditorViewModel.save`'s `catch`
+   (`WeightEditorViewModel.swift:133-140`) resets `isSaving` and leaves the editor open with its
+   text intact, and both deferred deletes are `try? await`
+   (`WeightEditorViewModel.swift:151`, `VitalsViewModel.swift:129`) so a failed delete simply
+   reappears on the next emission. **The code is not changed**: there is no `viewModelScope` to
+   fail into, and neither platform offers a retry, so crashing would be the worse port. It is
+   listed here because it is a real behaviour difference and the comments alone were not the
+   record.
 
 Anything else that differs from `:feature:vitals` is a bug, not a port decision.
 
@@ -207,7 +231,7 @@ None of these blocks iOS-M3. Ordered as they were raised.
 - `SalusClock.swift:87-92` unreachable fallback uses offset at wrong instant.
 - `FixedSalusClockTests` "exact inverse" title overstates (minute truncation is plan-mandated; add
   comment).
-- No end-to-end `Navigator.navigate` → push concrete-key test.
+- No end-to-end `Navigator.navigate` → push concrete-key test. **→ resolved in the final review fix wave: `NavigatorBackStackTests` in `SalusNavigationTests`.**
 - 4 commits for one task (CLAUDE.md says one per task; M1 also had multi-commit tasks) — triage at
   final review. **→ resolved in Task 8: the rule was rewritten, not the history.**
 - `clean.sh` "nothing to remove" branch effectively dead.
@@ -258,7 +282,7 @@ None of these blocks iOS-M3. Ordered as they were raised.
   `sortedBy` (VM:219, FakeRepo:52); `EditorDateField`'s nil branch is inert; `VitalsScreen` paints a
   background (Kotlin doesn't) — Task 7's shell decides; `DateFormatter` per call;
   `withObservationTracking` not torn down in `deinit`; `FakeNavigator.stop()` not in teardown;
-  `VitalsScreen.swift` is 414 lines; `VitalsRoute.openEditor`'s non-weight drop lacks a `TODO(M7)`.
+  `VitalsScreen.swift` is 414 lines; `VitalsRoute.openEditor`'s non-weight drop lacks a `TODO(M7)` **→ added in the final review fix wave**.
 - Row tap target excludes `SalusCard`'s 16 pt padding (Compose includes it).
 
 **Task 7 — shell**
@@ -319,3 +343,59 @@ not A9/A10 as this plan's Task 8 brief assumed.
   before it becomes permanent.
 - Still open from before this milestone: **A8** (the vitals test tables iOS-M2 wrote with no Android
   twin — `WeightEntryMapperTest`, `EditorMeasuredAtTest`), opened 2026-08-22.
+
+### Final review fix wave (2026-08-23)
+
+After Task 8 the branch got a whole-branch review plus a scoped Task 8 review. Between them they
+raised one Critical, three Important and six minors; all were fixed in one wave, in two iOS commits
+plus one on the Android side. `scripts/ci.sh` was green before each.
+
+**C1 (Critical) — the list window's `until` was frozen at ViewModel creation.**
+`VitalsViewModel.restartHistoryObservation()` took `let until = clock.now()` once, and the DAO
+query is `BETWEEN from AND until`, so a weight saved afterwards — `measuredAt` is
+`instant(today, minuteOfDayNow())`, strictly greater than that `until` — never appeared in the
+list. The user saw the editor pop, the row missing, and only a range-chip toggle or an app relaunch
+brought it back. Android is saved by `.stateIn(scope, WhileSubscribed(5_000), …)`
+(`VitalsViewModel.kt:87-90`): the list unsubscribes while the editor is on top and re-subscribing
+re-runs `combine(selectedType, selectedRange).flatMapLatest { … }` (`VitalsViewModel.kt:51-53`)
+with a fresh `now`. `@Observable` has no subscription-count hook, so the iOS observation ran from
+`init` to `deinit` and `VitalsRoute.task` guarded on `viewModel == nil`. Fixed by porting the
+re-subscribe by hand rather than by recreating the ViewModel: `restartHistoryObservation()` is now
+`public` and `VitalsRoute.task` calls it on **every** run — SwiftUI re-runs `.task` on each
+appearance, the pop-back from the editor included — keeping the current type and range and taking a
+fresh `until`. Single-ViewModel ownership is unchanged. Covered by `an entry saved after the window
+opened is listed` in `VitalsViewModelTests`, which advances `FixedSalusClock` past the original
+`until`, saves through the fake, asserts the still-open window cannot see the row, then asserts the
+restart lists it newest-first. Android has the same bug in a milder form and now carries it as §11
+**A13**. Commit `8407f43`.
+
+**I2 (Important) — the A10 / §6.5 wording was factually wrong**, on both repos. Corrected in
+ruling 2, ruling 3, `docs/ios-v1-plan.md` §6.5 and §11 A10: an `Indefinite` undo snackbar blocks
+Android's queue too, because `SalusApp.kt:114-121` collects sequentially and `showSnackbar` holds
+`SnackbarHostState`'s mutex. Android commit `206c4af`.
+
+**T8-1 (Important)** — Task 7's verify checkbox is now `[~]` and says in-line that only the
+`ci.sh` half ran and every simulator step is owed by the user.
+
+**T8-2 (Important)** — the "four passed first time / three needed a round" sentence was inverted
+against its own table (3 clean: 2, 3, 5; 4 with one round: 1, 4, 6, 7) and is fixed, and the commit
+count now names what it counts: 16 for Tasks 1-7 (`e355f66..0065ac9`), 2 for Task 8, plus this
+wave's.
+
+**Minors.** `SaveWeightEntryUseCase.swift` cited "§11 A10" for the NaN item — it is **A11**.
+`VitalsRoute.openEditor`'s non-weight drop got the `// TODO(M7)` marker the Task 6 review asked
+for. The swallowed repository write failures are recorded as the **8th** divergence, in Global
+Constraints and in the divergence list above (code unchanged, deliberately).
+`.github/workflows/ci.yml`'s header no longer says "lint → test → build … no single command that
+does all three" — it lists the five stages `scripts/ci.sh` runs.
+`docs/ios-feature-template.md` now says the **Strings** section and the **Material → SwiftUI**
+subsection have no Android twin, the way the `di/` and `koinViewModel()` gaps are already noted in
+the other direction. The Task 1 deferred finding "no end-to-end `Navigator.navigate` → push
+concrete-key test" is closed by `NavigatorBackStackTests`, which runs
+`RootView.observeNavigationCommands()`'s switch verbatim and asserts the **concrete** key lands in
+the tab's `NavigationPath` — the seam between `NavigatorTests` and `TabBackStacksPushTests` that
+nothing pinned, and that lives in the app target where there is no test bundle.
+
+**What this wave did not change:** the merge and the push are still held for the user, and the
+simulator verification above is still owed.
+

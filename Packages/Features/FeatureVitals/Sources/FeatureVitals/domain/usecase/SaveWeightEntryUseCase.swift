@@ -54,7 +54,7 @@ public struct SaveWeightEntryUseCase: VitalsQuickEntry {
         // it — so the difference is reachable.
         //
         // This is a **recorded divergence**, not an incidental one: iOS is the correct side, and
-        // Android carries the backlog item (§11 A10) to reject NaN too. `NaN is rejected` in
+        // Android carries the backlog item (§11 A11) to reject NaN too. `NaN is rejected` in
         // `SaveWeightEntryUseCaseTests` pins it until Android catches up.
         guard let kilograms, kilograms >= Self.minKg, kilograms <= Self.maxKg else {
             return .invalidWeight
