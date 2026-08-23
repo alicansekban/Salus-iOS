@@ -79,8 +79,14 @@ public final class TabBackStacks<Tab: Hashable & CaseIterable> {
     }
 
     /// Pushes `key` onto the selected tab's stack (`TopLevelBackStack.kt:37-40`).
+    ///
+    /// Through `AnyNavKey.append(to:)`, so what lands in the path is the feature's own key type and
+    /// its own `navigationDestination(for:)` matches it. Appending the box instead would leave the
+    /// app target as the only place able to resolve a destination.
     public func push(_ key: AnyNavKey) {
-        paths[selection, default: NavigationPath()].append(key)
+        var path = paths[selection] ?? NavigationPath()
+        key.append(to: &path)
+        paths[selection] = path
     }
 
     /// Pops the selected tab's stack, stopping at its root (`TopLevelBackStack.kt:42-55`).

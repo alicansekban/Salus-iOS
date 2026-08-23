@@ -1,3 +1,4 @@
+import SwiftUI
 import Testing
 
 @testable import SalusNavigation
@@ -126,5 +127,32 @@ struct TabBackStacksTests {
         binding.wrappedValue.removeLast()
         #expect(stacks.path(for: .vitals).isEmpty)
         #expect(stacks.path(for: .home).isEmpty)
+    }
+}
+
+/// The push has to carry the key's concrete type into the tab's `NavigationPath`, or the
+/// `navigationDestination(for:)` a feature registers for its own key type never matches. Same
+/// type-sensitive `NavigationPath` equality as `AnyNavKeyAppendTests`, one level up.
+@Suite("TabBackStacks — pushing a concrete key")
+@MainActor
+struct TabBackStacksPushTests {
+    @Test("push puts the concrete key on the selected tab's path, not the erased box")
+    func pushPutsTheConcreteKeyOnThePath() {
+        let stacks = TabBackStacks<SampleTab>(initial: .home)
+
+        stacks.push(AnyNavKey(SampleHomeKey.detail("a")))
+
+        #expect(stacks.path(for: .home) == NavigationPath([SampleHomeKey.detail("a")]))
+    }
+
+    @Test("a key pushed on one tab does not reach another tab's path")
+    func pushDoesNotReachAnotherTab() {
+        let stacks = TabBackStacks<SampleTab>(initial: .home)
+
+        stacks.switchTopLevel(.vitals)
+        stacks.push(AnyNavKey(SampleVitalsKey.root))
+
+        #expect(stacks.path(for: .vitals) == NavigationPath([SampleVitalsKey.root]))
+        #expect(stacks.path(for: .home) == NavigationPath())
     }
 }

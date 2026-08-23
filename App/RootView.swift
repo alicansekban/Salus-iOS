@@ -81,12 +81,15 @@ struct RootView: View {
         .task { await root.logSeededProfile() }
     }
 
+    /// One stack per tab. No `navigationDestination` here on purpose: `TabBackStacks.push` puts the
+    /// feature's **concrete** key into the path, so each feature package registers its own
+    /// `navigationDestination(for:)` in a `…Destinations()` modifier applied here — the twin of
+    /// Android's `vitalsEntries` / `homeEntries` `NavEntry` providers. The shell therefore never
+    /// names a key, and until the first feature lands (Task 7) a pushed key simply has no
+    /// destination registered for it yet.
     private func tabStack(for tab: RootTab) -> some View {
         NavigationStack(path: backStacks.binding(for: tab)) {
             PlaceholderScreen(tab: tab)
-                .navigationDestination(for: AnyNavKey.self) { key in
-                    PushedKeyPlaceholder(key: key)
-                }
         }
     }
 
@@ -105,28 +108,6 @@ struct RootView: View {
             case let .navigate(key): backStacks.push(key)
             case .pop: backStacks.pop()
             }
-        }
-    }
-}
-
-/// What a pushed key draws until the feature that owns it lands.
-///
-/// M1 ships the navigation plumbing, not destinations: no feature declares a key yet, so this is
-/// reachable only from a test or a future push. It exists so `navigationDestination` is registered
-/// from the start — a stack whose destination is missing pushes a blank screen and logs nothing.
-private struct PushedKeyPlaceholder: View {
-    let key: AnyNavKey
-
-    @Environment(\.salusTheme) private var theme
-
-    var body: some View {
-        ZStack {
-            theme.colorScheme.background
-                .ignoresSafeArea()
-            Text(String(describing: key.base))
-                .font(SalusTypography.bodyMedium.font)
-                .foregroundStyle(theme.colorScheme.onSurfaceVariant)
-                .padding(SalusSpacing.lg)
         }
     }
 }
