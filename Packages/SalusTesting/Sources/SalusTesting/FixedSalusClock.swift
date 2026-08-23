@@ -25,16 +25,20 @@ public final class FixedSalusClock: SalusClock, @unchecked Sendable {
         ?? .gmt
 
     private let lock = NSLock()
-    private var instant: Date
+
+    /// Named `currentInstant` rather than `instant`: `SalusClock`'s extension declares
+    /// `instant(of:minuteOfDay:)`, and a stored property spelled `instant` shadows that method for
+    /// every `@testable` importer of this package — the call then fails to compile against a `Date`.
+    private var currentInstant: Date
     private var zone: TimeZone
 
     public init(now: Date, timeZone: TimeZone = FixedSalusClock.defaultZone) {
-        instant = now
+        currentInstant = now
         zone = timeZone
     }
 
     public func now() -> Date {
-        lock.withLock { instant }
+        lock.withLock { currentInstant }
     }
 
     public func timeZone() -> TimeZone {
@@ -43,7 +47,7 @@ public final class FixedSalusClock: SalusClock, @unchecked Sendable {
 
     /// Moves the clock to `newInstant` (`FixedSalusClock.kt:18-20`).
     public func advanceTo(_ newInstant: Date) {
-        lock.withLock { instant = newInstant }
+        lock.withLock { currentInstant = newInstant }
     }
 
     /// Reads the same instant in `newZone` (`FixedSalusClock.kt:22-24`).

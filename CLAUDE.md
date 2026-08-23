@@ -66,13 +66,16 @@ Milestone plans live in `docs/plans/`. Toolchain and CI usage: `README.md`.
   use `Foundation.Date`, `Calendar` or `DateComponents` for a *day* — they carry a time zone and a
   user calendar, which is exactly the drift the port is avoiding. `Date` stays for absolute instants
   only (`epochMs + tz_id`).
-  - **The one carve-out is the instant→day conversion itself**, which has no other correct form:
+  - **The one carve-out is the instant↔day conversion itself**, which has no other correct form:
     turning a `Date` into the day it falls on in a zone needs a calendar. It lives in
     `SalusCommon/SalusClock.swift` and nowhere else — `today()`, `todayEpochDay()` and
     `minuteOfDayNow()`, each reading a fixed *Gregorian* `Calendar` in the clock's zone (never
     `Calendar.current`, which follows the device's region and would answer a different year for
-    the same instant). Everything downstream of that boundary is `LocalDate` / `epochDay` integer
-    math: a second `Calendar` anywhere else in the tree is the finding this rule is for.
+    the same instant). The day→instant direction is the same boundary read backwards and the
+    **second and last** member of the carve-out: `instant(of:minuteOfDay:)`, the twin of
+    `LocalDateTime(date, time).toInstant(zone)` that composes an editor's saved timestamp
+    (`EditorMeasuredAt.kt:37`). Everything downstream of that boundary is `LocalDate` / `epochDay`
+    integer math: a second `Calendar` anywhere else in the tree is the finding this rule is for.
   — *enforcement:
   `Packages/SalusModel/Tests/SalusModelTests/LocalDateTests.swift` + review.*
 - **The composition root owns the singletons; there is no container.** `App/AppCompositionRoot.swift`

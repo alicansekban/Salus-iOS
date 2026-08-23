@@ -59,6 +59,42 @@ extension SalusClock {
         return calendar.component(.hour, from: instant) * 60 + calendar.component(.minute, from: instant)
     }
 
+    /// The instant at which `minuteOfDay` minutes past midnight is read on `day`, in this clock's
+    /// zone — the inverse of `today()` / `minuteOfDayNow()`.
+    ///
+    /// The twin of `LocalDateTime(date, time).toInstant(zone)`, which is how Android composes the
+    /// timestamp an editor saves (`feature/vitals/.../ui/editor/EditorMeasuredAt.kt:37`). Kotlin's
+    /// `LocalTime` is ported as a minute of day, so the editor passes `clock.minuteOfDayNow()` for
+    /// today and `12 * 60` for a past day (`EditorMeasuredAt.kt:13, 36`).
+    ///
+    /// This is the **second and last** instant↔day boundary in the tree, and it is here for the
+    /// same reason `today()` is: a wall-clock reading only becomes an instant through a calendar in
+    /// a zone, and doing that anywhere else would put a second `Calendar` in the tree
+    /// (`CLAUDE.md`, the `LocalDate` rule's carve-out). Everything downstream stays `epochMs`.
+    ///
+    /// On a day where the clocks jump forward, a `minuteOfDay` inside the skipped hour names no
+    /// wall-clock time; `Calendar` resolves it forward past the gap, which is what
+    /// `java.time`/`kotlinx.datetime` do for the same input.
+    public func instant(of day: LocalDate, minuteOfDay: Int) -> Date {
+        var components = DateComponents()
+        components.year = day.year
+        components.month = day.month
+        components.day = day.day
+        components.hour = minuteOfDay / 60
+        components.minute = minuteOfDay % 60
+
+        if let instant = gregorianCalendar().date(from: components) {
+            return instant
+        }
+
+        // Unreachable for a Gregorian calendar and a real zone — `date(from:)` resolves gaps rather
+        // than failing — but the API is optional and this package carries no force unwrap
+        // (`CLAUDE.md`). The fallback is the same arithmetic without the calendar: the day's UTC
+        // midnight from `epochDay`, plus the minutes, less the zone's offset at that instant.
+        let wallClock = Date(timeIntervalSince1970: TimeInterval(day.epochDay * 86400 + minuteOfDay * 60))
+        return wallClock.addingTimeInterval(-TimeInterval(timeZone().secondsFromGMT(for: wallClock)))
+    }
+
     /// `now()` as the whole milliseconds every persisted `created_at` column stores.
     ///
     /// The twin of `Instant.toEpochMilliseconds()` (and of `System.currentTimeMillis()`, which

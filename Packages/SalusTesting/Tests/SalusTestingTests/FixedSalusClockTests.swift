@@ -134,3 +134,111 @@ struct FixedSalusClockTests {
         #expect(FixedSalusClock(now: utcInstant(2026, 3, 15, 21, 0)).timeZone() == FixedSalusClock.defaultZone)
     }
 }
+
+// MARK: - The day → instant direction
+
+// `instant(of:minuteOfDay:)` is the inverse of `today()` / `minuteOfDayNow()` and the second and
+// last instant↔day boundary in the tree (`CLAUDE.md`, the `LocalDate` rule's carve-out). Android
+// spells it `LocalDateTime(date, time).toInstant(zone)` inside `resolveEditorMeasuredAt`
+// (`feature/vitals/.../ui/editor/EditorMeasuredAt.kt:37`); iOS ports `localTimeNow()` as
+// `minuteOfDayNow()`, so the editor composes the same answer as
+// `instant(of: date, minuteOfDay: clock.minuteOfDayNow())` for today and
+// `instant(of: date, minuteOfDay: 12 * 60)` for a past day (`EditorMeasuredAt.kt:13, 36`).
+//
+// Tested here rather than in `SalusCommon` for the same reason the rest of the extension is: the
+// fixed clock is the only clock whose answers can be written down in advance, and it cannot live in
+// `SalusCommon`'s tests without inverting the package dependency.
+//
+// HOW THE EXPECTED VALUES WERE DERIVED — again none of them come from `Calendar`: `utcInstant`
+// builds them from `LocalDate.epochDay` plus an offset, and the zone offsets are the ones spelled
+// out at the top of this file (Istanbul a fixed UTC+03, London UTC+00 in winter and UTC+01 from
+// 2026-03-29T01:00Z).
+
+/// One row: the day and minute of day handed to the clock, the zone it is in, and the instant that
+/// wall-clock reading names there.
+typealias InstantRow = (day: LocalDate, minuteOfDay: Int, zone: TimeZone, expectedInstant: Date)
+
+@Suite("SalusClock.instant(of:minuteOfDay:)")
+struct SalusClockInstantTests {
+    static let instantRows: [InstantRow] = [
+        // Istanbul, UTC+03 all year: midday, midnight, and the last minute of the day.
+        (LocalDate(year: 2026, month: 3, day: 15), 12 * 60, FixedSalusClock.defaultZone, utcInstant(2026, 3, 15, 9, 0)),
+        (LocalDate(year: 2026, month: 3, day: 16), 0, FixedSalusClock.defaultZone, utcInstant(2026, 3, 15, 21, 0)),
+        (LocalDate(year: 2026, month: 3, day: 15), 1439, FixedSalusClock.defaultZone, utcInstant(2026, 3, 15, 20, 59)),
+        // UTC, where the wall clock and the instant agree.
+        (LocalDate(year: 2026, month: 3, day: 15), 1259, utc, utcInstant(2026, 3, 15, 20, 59)),
+        // London on either side of the 2026 British Summer Time change: the same minute of day is
+        // an hour apart in UTC depending on which side of 2026-03-29T01:00Z the day falls.
+        (LocalDate(year: 2026, month: 3, day: 28), 12 * 60, london, utcInstant(2026, 3, 28, 12, 0)),
+        (LocalDate(year: 2026, month: 3, day: 29), 12 * 60, london, utcInstant(2026, 3, 29, 11, 0)),
+        (LocalDate(year: 2026, month: 3, day: 29), 30, london, utcInstant(2026, 3, 29, 0, 30)),
+        (LocalDate(year: 2026, month: 3, day: 29), 150, london, utcInstant(2026, 3, 29, 1, 30))
+    ]
+
+    @Test("a day and a minute of day name one instant in the clock's zone", arguments: instantRows)
+    func aDayAndMinuteNameOneInstant(row: InstantRow) {
+        let clock = FixedSalusClock(now: utcInstant(2020, 1, 1, 0, 0), timeZone: row.zone)
+
+        #expect(clock.instant(of: row.day, minuteOfDay: row.minuteOfDay) == row.expectedInstant)
+    }
+
+    /// The round trip, over every row the day→instant direction is already pinned against: reading
+    /// an instant as a day plus a minute of day and composing it back must land on the same instant.
+    @Test(
+        "it is the exact inverse of today() and minuteOfDayNow()",
+        arguments: FixedSalusClockTests.midnightRows + FixedSalusClockTests.daylightRows
+    )
+    func itIsTheInverseOfTodayAndMinuteOfDayNow(row: ZoneRow) {
+        let clock = FixedSalusClock(now: row.instant, timeZone: row.zone)
+
+        #expect(clock.instant(of: clock.today(), minuteOfDay: clock.minuteOfDayNow()) == clock.now())
+    }
+
+    /// The editor's two cases, composed exactly as `resolveEditorMeasuredAt` does
+    /// (`EditorMeasuredAt.kt:36-37`): the current time for today, midday for a past day.
+    @Test("it composes the editor's measured-at for today and for a past day")
+    func itComposesTheEditorsMeasuredAt() {
+        let clock = FixedSalusClock(now: utcInstant(2026, 3, 15, 12, 34))
+
+        #expect(clock.instant(of: clock.today(), minuteOfDay: clock.minuteOfDayNow()) == clock.now())
+
+        let pastDay = LocalDate(epochDay: clock.todayEpochDay() - 7)
+        #expect(clock.instant(of: pastDay, minuteOfDay: 12 * 60) == utcInstant(2026, 3, 8, 9, 0))
+    }
+
+    /// The two wall-clock readings a daylight change makes ill-defined, pinned so a Foundation
+    /// behaviour change would be caught rather than silently persisted into a measurement.
+    ///
+    /// Both answers are `java.time`'s (`ZonedDateTime.of`, which `kotlinx.datetime.toInstant` calls):
+    /// a skipped reading resolves *forward* past the gap, and a repeated one takes the *earlier* of
+    /// its two offsets. That agreement is the point — the same input must not produce two different
+    /// instants on the two platforms.
+    @Test("a wall-clock reading the daylight change skips or repeats resolves as java.time does")
+    func aDaylightEdgeResolvesAsJavaTimeDoes() {
+        let clock = FixedSalusClock(now: utcInstant(2020, 1, 1, 0, 0), timeZone: london)
+
+        // 2026-03-29 01:30 never happens in London: the clocks go 01:00 GMT → 02:00 BST. Resolved
+        // forward, it is 02:30 BST — which is 01:30 UTC, and reads back as minute of day 150.
+        let skipped = clock.instant(of: LocalDate(year: 2026, month: 3, day: 29), minuteOfDay: 90)
+        #expect(skipped == utcInstant(2026, 3, 29, 1, 30))
+        #expect(FixedSalusClock(now: skipped, timeZone: london).minuteOfDayNow() == 150)
+
+        // 2026-10-25 01:30 happens twice: the clocks go 02:00 BST → 01:00 GMT. The earlier of the
+        // two, still on BST, is 00:30 UTC.
+        let repeated = clock.instant(of: LocalDate(year: 2026, month: 10, day: 25), minuteOfDay: 90)
+        #expect(repeated == utcInstant(2026, 10, 25, 0, 30))
+    }
+
+    /// The zone is the clock's, read at call time — `moveToZone` must move the answer.
+    @Test("the answer follows the clock's zone, not the device's")
+    func theAnswerFollowsTheClocksZone() {
+        let clock = FixedSalusClock(now: utcInstant(2026, 3, 15, 12, 0))
+        let day = LocalDate(year: 2026, month: 3, day: 15)
+
+        #expect(clock.instant(of: day, minuteOfDay: 12 * 60) == utcInstant(2026, 3, 15, 9, 0))
+
+        clock.moveToZone(utc)
+
+        #expect(clock.instant(of: day, minuteOfDay: 12 * 60) == utcInstant(2026, 3, 15, 12, 0))
+    }
+}
