@@ -50,6 +50,11 @@ public struct SalusLineChart: View {
 
     public var body: some View {
         chart
+            // Vico's `CartesianLayerRangeProvider.auto()`, ported (see `ChartAxisScale`). Without
+            // these two, Swift Charts rounds a numeric axis out to whole hundreds of epoch days and
+            // a ten-day series draws as a near-vertical sliver.
+            .chartXScaleIfSet(ChartAxisScale.xDomain(for: model))
+            .chartYScaleIfSet(ChartAxisScale.yDomain(for: model))
             .chartXAxis { xAxis }
             .chartYAxis { yAxis }
             // Vico draws no legend unless one is added (`SalusLineChart.kt:81-107` adds none), and
@@ -101,16 +106,30 @@ public struct SalusLineChart: View {
         )
     }
 
-    /// `HorizontalAxis.rememberBottom(valueFormatter = bottomFormatter)` (`SalusLineChart.kt:106`).
+    /// `HorizontalAxis.rememberBottom(valueFormatter = bottomFormatter)` (`SalusLineChart.kt:106`),
+    /// with the mark positions coming from the data rather than from Swift Charts' round numbers —
+    /// see `ChartAxisScale.xAxisValues(for:)` for how that lines up with Vico's item placer.
     private var xAxis: some AxisContent {
-        AxisMarks { value in
+        AxisMarks(values: ChartAxisScale.xAxisValues(for: model)) { value in
             AxisGridLine()
             AxisTick()
-            AxisValueLabel {
+            // The first and last marks sit exactly on the plot edges, because the domain is the
+            // data's own range. A centred label there would hang half outside the chart, and Swift
+            // Charts drops rather than clips it — the last date simply vanished. Anchoring the
+            // extremes inwards is Vico's `shiftExtremeLines` idea applied to the labels.
+            AxisValueLabel(anchor: Self.labelAnchor(at: value.index, of: value.count)) {
                 if let epochDay = value.as(Int.self) {
                     Text(model.xLabel(epochDay))
                 }
             }
+        }
+    }
+
+    private static func labelAnchor(at index: Int, of count: Int) -> UnitPoint {
+        switch index {
+        case 0: .topLeading
+        case count - 1: .topTrailing
+        default: .top
         }
     }
 
@@ -143,6 +162,29 @@ public struct SalusLineChart: View {
 }
 
 extension View {
+    /// Applies an explicit x domain when there is one. A `nil` domain means the model carries no
+    /// points — the chart is not shown in that state (`chartOrNull`'s two-point minimum), but a
+    /// view has no say in that, and pinning an empty domain is what makes Swift Charts draw
+    /// nothing at all rather than an empty grid.
+    @ViewBuilder
+    fileprivate func chartXScaleIfSet(_ domain: ClosedRange<Int>?) -> some View {
+        if let domain {
+            chartXScale(domain: domain)
+        } else {
+            self
+        }
+    }
+
+    /// The y twin of ``chartXScaleIfSet(_:)``.
+    @ViewBuilder
+    fileprivate func chartYScaleIfSet(_ domain: ClosedRange<Float>?) -> some View {
+        if let domain {
+            chartYScale(domain: domain)
+        } else {
+            self
+        }
+    }
+
     /// Replaces the chart's own (unreadable) accessibility tree with one spoken summary, the twin
     /// of `Modifier.semantics { contentDescription = … }` (`SalusLineChart.kt:116-120`). A `nil`
     /// summary leaves the view untouched, exactly as the Kotlin `else` branch does.

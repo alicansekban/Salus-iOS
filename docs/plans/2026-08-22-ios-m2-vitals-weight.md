@@ -125,6 +125,13 @@ its own on top (see "Final review fix wave" at the end).
 verification was not performed** — see "Manual verification still owed" below; it is the reason the
 `--ff-only` merge and the push are held for the user rather than done here.
 
+**The manual pass then ran, and it found one defect:** the Vitals chart drew a near-vertical line
+because Swift Charts scaled its numeric x axis to round tick values (~9 months around epoch day
+20 678) instead of to the ten days of data — fixed in the commit `fix(ui): scale the chart axes to
+the data like Vico does`, which ports Vico's `CartesianLayerRangeProvider.auto()` into
+`ChartAxisScale` and pins it with a test table; everything else in the pass (delete, undo, snackbar)
+behaved correctly.
+
 ### Commits and review rounds per task
 
 | Task | Commits | Review |
