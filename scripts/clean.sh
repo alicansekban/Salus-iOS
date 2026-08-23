@@ -76,10 +76,19 @@ EOF
 
 echo
 echo "==> Xcode DerivedData for this project"
-build_dir="$(
-    xcodebuild -project Salus.xcodeproj -scheme Salus -showBuildSettings 2>/dev/null |
-        awk -F' = ' '/^ *BUILD_DIR = /{print $2; exit}'
-)"
+# `if !` rather than a bare assignment, deliberately: under `set -e` a command
+# substitution that fails takes the whole script down with it, so the warning
+# below would be dead code exactly when it is wanted (no xcodebuild on PATH ->
+# 127, no Xcode selected or a bad scheme -> 66/1). Guarding the command makes
+# its failure a value instead of an exit. The settings are captured whole and
+# filtered afterwards, rather than piped straight into awk, so that awk cannot
+# close the pipe early and leave xcodebuild killed by SIGPIPE (141) — which is
+# invisible while the output fits the pipe buffer and starts happening when it
+# no longer does.
+if ! build_settings="$(xcodebuild -project Salus.xcodeproj -scheme Salus -showBuildSettings 2>/dev/null)"; then
+    build_settings=""
+fi
+build_dir="$(printf '%s\n' "$build_settings" | awk -F' = ' '/^ *BUILD_DIR = /{value=$2} END{print value}')"
 
 if [ -z "$build_dir" ]; then
     echo "    skipped: could not read BUILD_DIR from xcodebuild" >&2
