@@ -17,7 +17,8 @@ let package = Package(
         .package(path: "../SalusModel"),
         .package(path: "../SalusCommon"),
         .package(path: "../SalusDatabase"),
-        .package(path: "../SalusNotifications")
+        .package(path: "../SalusNotifications"),
+        .package(path: "../SalusTesting")
     ],
     targets: [
         .target(
@@ -32,7 +33,10 @@ let package = Package(
         .testTarget(
             name: "SalusReminderTests",
             dependencies: [
-                "SalusReminder"
+                "SalusReminder",
+                // Test-target only, and it stays that way: the library must never link the
+                // fixtures (the twin of Gradle's `testImplementation(project(":core:testing"))`).
+                .product(name: "SalusTesting", package: "SalusTesting")
             ]
         )
     ]
