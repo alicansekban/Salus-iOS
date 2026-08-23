@@ -24,6 +24,12 @@
 # A formatting pass (as opposed to this check) is:
 #   swiftformat . && swiftlint --fix
 # in that order -- see the note in .swiftformat about `] as [T]` casts.
+#
+# This script proves the tree is CLEAN; it cannot prove the custom rules are
+# awake, because a rule that matches nothing looks exactly like a clean tree.
+# `scripts/lint-custom-rules.sh` is the other half: it plants a fixture that must
+# trip each custom rule and one outside its scope that must not. Run it after
+# editing a rule in .swiftlint.yml.
 
 set -euo pipefail
 

@@ -201,4 +201,34 @@ custom_rules:
       - "Packages/SalusModel/.*\\.swift"
       - "Packages/SalusCommon/.*\\.swift"
 
+  # The iOS twin of Android's Vico rule: the chart engine is an implementation
+  # detail of the shared UI layer, and it is a DIFFERENT engine on each platform
+  # (Vico there, Swift Charts here). A feature that imports Charts pins itself to
+  # this one and bypasses `ChartUiModel`, the contract both platforms speak — so
+  # the next chart arrives as a second, subtly different axis/label/color story.
+  # `SalusUI` owns `SalusLineChart` and is the ONE package allowed to import it.
+  #
+  # Same regex shape as `no_ui_framework_in_domain` above, and for the same
+  # reason: every spelling of an import that Swift accepts is a way around the
+  # guard — attribute prefixes (`@preconcurrency import Charts`) and the
+  # import-kind grammar (`import struct Charts.LineMark`).
+  #
+  # The module name matched is the bare `Charts` — what `import Charts` binds to
+  # is Apple's Swift Charts, since the dependency allowlist is closed at three
+  # and holds no charting package.
+  no_charts_in_features:
+    name: "Charts In Feature Package"
+    regex: '^[ \t]*(@[A-Za-z_][A-Za-z0-9_]*[ \t]+)*import[ \t]+((typealias|struct|class|actor|enum|protocol|func|var|let)[ \t]+)?Charts\b'
+    excluded_match_kinds:
+      - comment
+      - doccomment
+      - string
+    message: "Features must not import Charts: the chart engine lives behind SalusUI's ChartUiModel/SalusLineChart (iOS twin of Android's Vico rule)."
+    severity: error
+    # The same `--path` warning as above applies verbatim: lint the repo, or
+    # pass files positionally. `scripts/lint-custom-rules.sh` proves this rule
+    # actually fires, with a planted fixture.
+    included:
+      - "Packages/Features/.*\\.swift"
+
 reporter: "xcode"
