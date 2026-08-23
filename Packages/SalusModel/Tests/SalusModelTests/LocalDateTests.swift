@@ -139,3 +139,95 @@ struct LocalDateRoundTripTests {
         #expect(dates.count == 2)
     }
 }
+
+// MARK: - Normalisation of impossible component triples
+
+// The M1 review's deferred finding, closed here. `kotlinx.datetime.LocalDate(year, month, day)`
+// THROWS on a triple that names no real day; a Swift initialiser that throws would push a `try`
+// into every call site, including the SwiftUI date pickers this milestone builds, so the M1 ruling
+// picked normalisation instead: the triple is carried the arithmetic distance it names, exactly as
+// `java.time.LocalDate.plusDays` would.
+//
+// The invariant that makes this safe is that `epochDay` — the wire, the storage unit and the
+// ordering key — is total: every triple maps to one day, and that day is what `Equatable`,
+// `Comparable` and `Hashable` all read. Before this change 2026-02-30 was a value that compared
+// unequal to 2026-03-02 while ordering neither before nor after it, which is an `Equatable` /
+// `Comparable` contradiction a `sorted()` or a `Set` would have shown as a bug much later.
+//
+// The reference values were produced independently (Python `datetime.date(y, 1, 1) + timedelta`),
+// never by the implementation under test.
+
+/// One normalisation row: the triple as written, and the real date it names.
+typealias NormalisationRow = (
+    year: Int, month: Int, day: Int,
+    expectedYear: Int, expectedMonth: Int, expectedDay: Int
+)
+
+let normalisationRows: [NormalisationRow] = [
+    // A real date is its own normal form — the overwhelmingly common case.
+    (2026, 8, 22, 2026, 8, 22),
+    (1970, 1, 1, 1970, 1, 1),
+    // Day past the end of the month.
+    (2026, 2, 30, 2026, 3, 2), // February 2026 has 28 days
+    (2026, 2, 29, 2026, 3, 1), // 2026 is not a leap year
+    (2024, 2, 30, 2024, 3, 1), // 2024 is, so February has one more day to spend
+    (2026, 4, 31, 2026, 5, 1), // April has 30
+    (2026, 12, 32, 2027, 1, 1), // and a spill past December rolls the year
+    // Day at or below zero: day 0 is the last day of the previous month, by the same arithmetic.
+    (2026, 3, 0, 2026, 2, 28),
+    (2024, 3, 0, 2024, 2, 29),
+    (2026, 1, 0, 2025, 12, 31),
+    // Month out of range rolls the year, in both directions.
+    (2026, 13, 1, 2027, 1, 1),
+    (2026, 14, 15, 2027, 2, 15),
+    (2026, 0, 1, 2025, 12, 1),
+    (2026, -1, 1, 2025, 11, 1),
+    (2026, 25, 1, 2028, 1, 1),
+    // Month and day both out of range, and a year before the epoch.
+    (1969, 13, 32, 1970, 2, 1),
+    (2026, 15, 31, 2027, 3, 31)
+]
+
+@Suite("LocalDate — normalisation")
+struct LocalDateNormalisationTests {
+    @Test("an impossible component triple normalises to the day it names", arguments: normalisationRows)
+    func normalises(_ row: NormalisationRow) {
+        let date = LocalDate(year: row.year, month: row.month, day: row.day)
+        let expected = LocalDate(
+            year: row.expectedYear,
+            month: row.expectedMonth,
+            day: row.expectedDay
+        )
+
+        let written = "\(row.year)-\(row.month)-\(row.day)"
+        #expect(date.year == row.expectedYear, "\(written) year")
+        #expect(date.month == row.expectedMonth, "\(written) month")
+        #expect(date.day == row.expectedDay, "\(written) day")
+        #expect(date.epochDay == expected.epochDay, "\(written) epoch day")
+    }
+
+    /// The contradiction the normalisation removes: `==` and `<` now answer about the same day.
+    @Test("Equatable and Comparable agree about a normalised date")
+    func equalityAndOrderingAgree() {
+        let impossible = LocalDate(year: 2026, month: 2, day: 30)
+        let real = LocalDate(year: 2026, month: 3, day: 2)
+
+        #expect(impossible == real)
+        #expect(!(impossible < real))
+        #expect(!(real < impossible))
+        #expect(impossible.hashValue == real.hashValue)
+        #expect(Set([impossible, real]).count == 1)
+    }
+
+    /// Normalising must not disturb the epoch-day round trip the whole port is written against.
+    @Test("normalisation is idempotent and epoch-day stable over a long sweep")
+    func idempotentOverASweep() {
+        for epochDay in -3000 ... 3000 {
+            let date = LocalDate(epochDay: epochDay)
+            let rebuilt = LocalDate(year: date.year, month: date.month, day: date.day)
+
+            #expect(rebuilt == date)
+            #expect(rebuilt.epochDay == epochDay)
+        }
+    }
+}

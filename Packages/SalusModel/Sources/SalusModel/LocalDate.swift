@@ -19,14 +19,26 @@ public struct LocalDate: Equatable, Hashable, Comparable, Sendable {
     public let month: Int
     public let day: Int
 
-    /// Builds a date from its components.
+    /// Builds a date from its components, **normalising** a triple that names no real day.
     ///
-    /// The components are taken as given — the caller is expected to hold a real date, as it does
-    /// on Android where the value arrives from `kotlinx.datetime` or from a stored epoch day.
+    /// `kotlinx.datetime.LocalDate(year, month, day)` throws on such a triple. The port normalises
+    /// instead (the M1 ruling): a throwing initialiser would put a `try` in front of every date a
+    /// picker or a repository builds, and the picker cannot produce an out-of-range value anyway.
+    /// A month outside `1...12` carries into the year and the day is then counted from the first of
+    /// that month, so 2026-02-30 is 2026-03-02 and 2026-01-00 is 2025-12-31 — the arithmetic
+    /// `java.time.LocalDate.plusDays` does, one day at a time.
+    ///
+    /// The normalisation is what keeps `Equatable` and `Comparable` from contradicting each other:
+    /// both read `epochDay`, which is total, so two triples naming the same day are one value.
     public init(year: Int, month: Int, day: Int) {
-        self.year = year
-        self.month = month
-        self.day = day
+        // The month first, because `epochDay(year:month:day:)` below is only defined for 1...12;
+        // then the day as an offset from the first of the normalised month.
+        let monthIndex = month - 1
+        let monthOfYear = monthIndex.flooredMod(12)
+        let carriedYear = year + (monthIndex - monthOfYear) / 12
+        let firstOfMonth = Self.epochDay(year: carriedYear, month: monthOfYear + 1, day: 1)
+
+        self.init(epochDay: firstOfMonth + day - 1)
     }
 
     /// Builds the date `epochDay` days after 1970-01-01. Negative values run backwards from it.
@@ -43,12 +55,23 @@ public struct LocalDate: Equatable, Hashable, Comparable, Sendable {
         let month = monthPosition + (monthPosition < 10 ? 3 : -9) // 1…12
         let year = yearOfEra + era * 400 + (month <= 2 ? 1 : 0)
 
-        self.init(year: year, month: month, day: day)
+        // Assigned directly rather than delegating to `init(year:month:day:)`: that initialiser now
+        // normalises *through* this one, and delegating back would recurse forever.
+        self.year = year
+        self.month = month
+        self.day = day
     }
 
     /// Days since 1970-01-01; negative before it.
     public var epochDay: Int {
-        // `days_from_civil`, the inverse of the initialiser above.
+        Self.epochDay(year: year, month: month, day: day)
+    }
+
+    /// `days_from_civil`, the inverse of `init(epochDay:)`.
+    ///
+    /// Static because the normalising initialiser needs it before there is a `self` to read, and
+    /// its `month` must be inside `1...12` — the caller normalises the month first.
+    private static func epochDay(year: Int, month: Int, day: Int) -> Int {
         let shiftedYear = year - (month <= 2 ? 1 : 0)
         let era = (shiftedYear >= 0 ? shiftedYear : shiftedYear - 399) / 400
         let yearOfEra = shiftedYear - era * 400 // 0…399
