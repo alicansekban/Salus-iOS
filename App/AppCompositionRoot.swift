@@ -1,11 +1,14 @@
+import FeatureVitals
 import Foundation
 import Observation
 import os
 import SalusCommon
 import SalusDatabase
+import SalusModel
 import SalusNavigation
 import SalusProfile
 import SalusSettings
+import SalusUI
 
 /// Where the object graph gets assembled — the iOS twin of Android's Koin container
 /// (`app/src/main/kotlin/com/alicansekban/salus/di/AppModules.kt`, whose `salusModules` list is
@@ -65,14 +68,36 @@ final class AppCompositionRoot {
     /// `navigationModule`: publishes what ViewModels ask for; the shell applies it.
     let navigator: Navigator
 
+    /// The twin of the one `SnackbarHostState` `SalusApp.kt:106-136` remembers: the app has exactly
+    /// one, and `RootView` mounts exactly one `SalusSnackbarHost` over it. A screen cannot own one —
+    /// deleting from the editor pops that screen, and the undo has to appear on the list underneath.
+    let snackbar: SalusSnackbarController
+
+    /// `vitalsModule` (`feature/vitals/.../di/VitalsModule.kt`), built once and handed to the vitals
+    /// tab through the environment. It owns the feature's `single` repository and the
+    /// `UndoableDelete` built over `pendingDelete` + `snackbar`, so nothing here re-creates either.
+    let vitalsModule: VitalsModule
+
+    /// `single<VitalsQuickEntry> { … }` — Kotlin's `bind VitalsQuickEntry::class`
+    /// (`VitalsModule.kt:26`). A computed property rather than a stored one because the Koin
+    /// registration it ports is a `factory`: every caller gets a fresh use case over the same
+    /// repository. Nothing consumes it yet; onboarding's "current weight" step (M6) is the caller
+    /// this exists for, and exposing it here is what keeps that step from opening a second graph.
+    var vitalsQuickEntry: any VitalsQuickEntry { vitalsModule.makeSaveWeightEntryUseCase() }
+
     init() {
         let clock = SystemSalusClock()
         let database = Self.openDatabase(clock: clock)
         let appLockFlagStore = KeychainAppLockFlagStore()
         let profileDao = ProfileDao(database: database)
 
+        let idGenerator = UUIDIdGenerator()
+        let pendingDelete = PendingDeleteController()
+        let navigator = Navigator()
+        let snackbar = SalusSnackbarController()
+
         self.clock = clock
-        idGenerator = UUIDIdGenerator()
+        self.idGenerator = idGenerator
         self.database = database
         self.profileDao = profileDao
         self.appLockFlagStore = appLockFlagStore
@@ -80,8 +105,19 @@ final class AppCompositionRoot {
         aiUsage = AiUsageDataSource(defaults: .standard)
         // The root's own DAO, so the app builds exactly one over this database (Koin's `get()`).
         profileRepository = makeProfileRepository(profileDao: profileDao, clock: clock)
-        pendingDelete = PendingDeleteController()
-        navigator = Navigator()
+        self.pendingDelete = pendingDelete
+        self.navigator = navigator
+        self.snackbar = snackbar
+        // The locals above rather than `self.…`: `vitalsModule` is still uninitialised here, so the
+        // instance is not whole yet and Swift will not let this read its own stored properties.
+        vitalsModule = makeVitalsModule(
+            vitalsDao: VitalsDao(database: database),
+            clock: clock,
+            idGenerator: idGenerator,
+            pendingDeletes: pendingDelete,
+            snackbar: snackbar,
+            navigator: navigator
+        )
     }
 
     /// Commits every open undo window.

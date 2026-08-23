@@ -41,6 +41,11 @@ options:
 # `SalusDatabase` is also the edge that pulls the project's first remote dependency, GRDB, into
 # the app: `xcodebuild` resolves it transitively and pins it in
 # `Salus.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved`, which is committed.
+#
+# M2 adds two more: `SalusUI` (the shared views and the one snackbar host the shell mounts) and
+# `FeatureVitals` (the first feature package). Linking a feature here is also what compiles its
+# String Catalog — `swift test` never does, so the simulator run is the only place a missing
+# translation shows up.
 packages:
   SalusDesignSystem:
     path: Packages/SalusDesignSystem
@@ -56,6 +61,10 @@ packages:
     path: Packages/SalusModel
   SalusNavigation:
     path: Packages/SalusNavigation
+  SalusUI:
+    path: Packages/SalusUI
+  FeatureVitals:
+    path: Packages/Features/FeatureVitals
 
 settings:
   base:
@@ -139,6 +148,10 @@ targets:
         product: SalusModel
       - package: SalusNavigation
         product: SalusNavigation
+      - package: SalusUI
+        product: SalusUI
+      - package: FeatureVitals
+        product: FeatureVitals
 
     scheme:
       testTargets: []

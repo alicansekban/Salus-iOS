@@ -1,6 +1,8 @@
+import FeatureVitals
 import SalusDesignSystem
 import SalusModel
 import SalusNavigation
+import SalusUI
 import SwiftUI
 
 /// The five-tab shell — the iOS twin of `app/src/main/kotlin/com/alicansekban/salus/ui/SalusApp.kt`.
@@ -13,6 +15,8 @@ import SwiftUI
 ///     it — the `MaterialTheme(...)` wrapper of `Theme.kt:99-104`, spelled as an environment value.
 ///  3. **It hosts one navigation stack per tab.** Android flattens its per-tab stacks into the one
 ///     list `NavDisplay` renders; SwiftUI gives each tab its own `NavigationStack`.
+///  4. **It mounts the app's one snackbar host** (`SalusApp.kt:106-136`), above the tabs, so an undo
+///     survives the screen the delete was triggered from.
 ///
 /// `@MainActor` on the struct rather than only on `body`: `TabBackStacks` is a main-actor
 /// `@Observable`, and a stored-property initializer runs outside `body`'s isolation.
@@ -56,23 +60,33 @@ struct RootView: View {
     }
 
     var body: some View {
-        TabView(selection: selection) {
-            ForEach(RootTab.allCases) { tab in
-                tabStack(for: tab)
-                    .tabItem { Label(tab.placeholderLabel, systemImage: tab.symbolName) }
-                    .tag(tab)
+        ZStack {
+            TabView(selection: selection) {
+                ForEach(RootTab.allCases) { tab in
+                    tabStack(for: tab)
+                        .tabItem { Label(tab.placeholderLabel, systemImage: tab.symbolName) }
+                        .tag(tab)
+                }
             }
+            // The selected tab's accent. `primary` rather than a hand-picked highlight, so a premium
+            // palette repaints the tab bar for free the moment entitlement is wired up: `primary` is
+            // one of the eight roles `withPremiumAccent` swaps.
+            .tint(theme.colorScheme.primary)
+            // Android's `NavigationBar` sits on `surfaceContainer` by default; pin the same role here
+            // instead of inheriting the platform's translucent material, which would sample whatever
+            // is behind it and drift from the token.
+            .toolbarBackground(theme.colorScheme.surfaceContainer, for: .tabBar)
+            .toolbarBackground(.visible, for: .tabBar)
+
+            // The app's single snackbar host, mounted here and nowhere else — the twin of the
+            // `SnackbarHost` inside `SalusApp.kt`'s one `Scaffold`. Above the `TabView` rather than
+            // inside a tab, because a delete confirmed in the weight editor pops that screen and the
+            // undo has to outlive it. Its own layout is a `Spacer` above the bar, so it lets every
+            // touch through except the snackbar's own.
+            SalusSnackbarHost(controller: root.snackbar)
         }
-        // The selected tab's accent. `primary` rather than a hand-picked highlight, so a premium
-        // palette repaints the tab bar for free the moment entitlement is wired up: `primary` is
-        // one of the eight roles `withPremiumAccent` swaps.
-        .tint(theme.colorScheme.primary)
-        // Android's `NavigationBar` sits on `surfaceContainer` by default; pin the same role here
-        // instead of inheriting the platform's translucent material, which would sample whatever is
-        // behind it and drift from the token.
-        .toolbarBackground(theme.colorScheme.surfaceContainer, for: .tabBar)
-        .toolbarBackground(.visible, for: .tabBar)
-        // Resolved once, read everywhere below — no screen takes a `theme:` parameter.
+        // Resolved once, read everywhere below — no screen takes a `theme:` parameter. Outside the
+        // `TabView` so the snackbar host, which draws in `inverseSurface`, reads the same palette.
         .salusTheme(theme)
         // `nil` for `.system`, which leaves the window to the OS (`ThemeMode.preferredColorScheme`).
         .preferredColorScheme(themeMode.preferredColorScheme)
@@ -81,15 +95,33 @@ struct RootView: View {
         .task { await root.logSeededProfile() }
     }
 
-    /// One stack per tab. No `navigationDestination` here on purpose: `TabBackStacks.push` puts the
-    /// feature's **concrete** key into the path, so each feature package registers its own
+    /// One stack per tab. No `navigationDestination` written here on purpose: `TabBackStacks.push`
+    /// puts the feature's **concrete** key into the path, so each feature package registers its own
     /// `navigationDestination(for:)` in a `…Destinations()` modifier applied here — the twin of
     /// Android's `vitalsEntries` / `homeEntries` `NavEntry` providers. The shell therefore never
-    /// names a key, and until the first feature lands (Task 7) a pushed key simply has no
-    /// destination registered for it yet.
+    /// names a key; `vitalsDestinations()` below is the first of those modifiers, and the four
+    /// remaining tabs keep their placeholder until their feature lands.
+    @ViewBuilder
     private func tabStack(for tab: RootTab) -> some View {
-        NavigationStack(path: backStacks.binding(for: tab)) {
-            PlaceholderScreen(tab: tab)
+        switch tab {
+        case .vitals:
+            NavigationStack(path: backStacks.binding(for: tab)) {
+                VitalsRoute(onOpenTrends: {
+                    // TODO(M11): trends is another feature's screen, whose key this shell cannot
+                    // name yet. Cross-feature navigation is a shell callback (spec §4), so when
+                    // `FeatureTrends` lands this pushes its key through `root.navigator`.
+                })
+                .vitalsDestinations()
+            }
+            // Applied to the stack, not inside its root: a pushed `WeightEditorKey` destination is
+            // rendered by the stack, so an environment value set on the root view would not reach
+            // the editor.
+            .environment(\.vitalsModule, root.vitalsModule)
+
+        default:
+            NavigationStack(path: backStacks.binding(for: tab)) {
+                PlaceholderScreen(tab: tab)
+            }
         }
     }
 
