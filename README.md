@@ -82,8 +82,17 @@ contains no command of its own:
 | `scripts/test-packages.sh` | `swift test` for all 24 packages under `Packages/` (accepts package names to narrow) |
 | `scripts/build-app.sh` | `xcodebuild build` for the `Salus` scheme on a generic iOS Simulator destination |
 | `scripts/ci.sh` | all four, in order — run this before pushing |
+| `scripts/clean.sh` | removes every package's `.build` / `.swiftpm` and this project's DerivedData |
 
 A clean run takes about four minutes.
+
+`scripts/clean.sh` is the odd one out: it is Android's `./gradlew clean`, not a CI stage, and
+`scripts/ci.sh` does not call it. It prints every directory it removes with its size. The
+DerivedData path is read from `xcodebuild -showBuildSettings` (`BUILD_DIR`, two levels up)
+rather than guessed, because Xcode names it `Salus-<hash>` after the project's path; a machine
+with no Xcode selected still gets the package caches cleaned. The packages are discovered by
+manifest, the way `scripts/test-packages.sh` discovers them. Removing the `.build` directories
+drops the resolved GRDB checkout too, so the next `scripts/test-packages.sh` re-fetches it.
 
 Two things the scripts encode that are easy to get wrong by hand:
 
