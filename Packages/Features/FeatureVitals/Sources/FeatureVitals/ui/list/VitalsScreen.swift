@@ -242,6 +242,21 @@ struct VitalsScreen: View {
 }
 
 /// One row of the list (`VitalsScreen.kt:286-331`).
+///
+/// **Why this is not `SalusCard(onTap:)` with the trash button inside it.** That is what Compose
+/// does — `SalusCard(onClick = onClick)` with an `IconButton` in its content — and it works there
+/// because Compose dispatches a tap to the innermost clickable. `SalusCard(onTap:)` on iOS is
+/// `Button(action: onTap) { surface }` (`SalusCard.swift:33-34`), so the trash button would sit
+/// **inside another Button's label**, where SwiftUI's default styles treat it as decoration and
+/// route the tap to the outer button: the row would open the editor and `deleteRequested` would
+/// never fire.
+///
+/// So the outer `Button` is gone. The card is the plain, non-interactive `SalusCard`, "open" is a
+/// tap gesture on the text column, and the trash stays a real `Button` — and the two tap targets
+/// are **disjoint by layout**, not merely ordered by dispatch rules: the column is a sibling of the
+/// button in the `HStack`, so no tap can reach both and there is nothing left to swallow anything.
+/// The gesture route costs the row its automatic button semantics, so they are added back by hand
+/// below; VoiceOver still reaches both actions, the row's own and the trash button's.
 private struct VitalsRow: View {
     let entry: VitalsListItem
     let onTap: () -> Void
@@ -250,34 +265,51 @@ private struct VitalsRow: View {
     @Environment(\.salusTheme) private var theme
 
     var body: some View {
-        SalusCard(onTap: onTap) {
+        SalusCard {
             HStack(alignment: .center, spacing: SalusSpacing.sm) {
-                VStack(alignment: .leading, spacing: 0) {
-                    Text(entry.headline)
-                        .font(SalusTypography.titleMedium.font)
-                        .foregroundStyle(theme.colorScheme.onSurface)
-                    Text(entry.measuredAt.formatted(pattern: rowDatePattern))
-                        .font(SalusTypography.bodyMedium.font)
-                        .foregroundStyle(theme.colorScheme.onSurfaceVariant)
-                    if let supporting = entry.supportingText {
-                        Text(supporting)
-                            .font(SalusTypography.bodySmall.font)
-                            .foregroundStyle(theme.colorScheme.onSurfaceVariant)
-                    }
-                    if let note = entry.note {
-                        Text(note)
-                            .font(SalusTypography.bodySmall.font)
-                            .foregroundStyle(theme.colorScheme.onSurfaceVariant)
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
+                details
+                    // The column already fills every point the trash button does not, and
+                    // `contentShape` makes the empty space beside a short value tappable too.
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(Rectangle())
+                    .onTapGesture(perform: onTap)
+                    // A tap gesture is invisible to VoiceOver, where Compose's `Card(onClick =)`
+                    // is announced as a button. `.combine` reads the row's lines as one element,
+                    // the trait announces it as activatable, and the action is what a double tap
+                    // runs — the three together are what the outer `Button` used to provide.
+                    .accessibilityElement(children: .combine)
+                    .accessibilityAddTraits(.isButton)
+                    .accessibilityAction(.default, onTap)
 
+                // A sibling of the column, not a descendant of any Button: this is the whole fix.
                 Button(action: onDelete) {
                     Label(VitalsStrings.delete, systemImage: "trash")
                         .labelStyle(.iconOnly)
                         .foregroundStyle(theme.colorScheme.error)
                 }
                 .buttonStyle(.plain)
+            }
+        }
+    }
+
+    /// `VitalsScreen.kt:296-320`.
+    private var details: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text(entry.headline)
+                .font(SalusTypography.titleMedium.font)
+                .foregroundStyle(theme.colorScheme.onSurface)
+            Text(entry.measuredAt.formatted(pattern: rowDatePattern))
+                .font(SalusTypography.bodyMedium.font)
+                .foregroundStyle(theme.colorScheme.onSurfaceVariant)
+            if let supporting = entry.supportingText {
+                Text(supporting)
+                    .font(SalusTypography.bodySmall.font)
+                    .foregroundStyle(theme.colorScheme.onSurfaceVariant)
+            }
+            if let note = entry.note {
+                Text(note)
+                    .font(SalusTypography.bodySmall.font)
+                    .foregroundStyle(theme.colorScheme.onSurfaceVariant)
             }
         }
     }
