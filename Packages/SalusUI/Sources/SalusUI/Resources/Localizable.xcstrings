@@ -1,0 +1,60 @@
+{
+  "sourceLanguage" : "tr",
+  "strings" : {
+    "salus_cancel" : {
+      "comment" : "Dismiss button of every SalusConfirmDialog. Android: core/ui values/strings.xml salus_cancel.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancel"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vazgeç"
+          }
+        }
+      }
+    },
+    "salus_delete" : {
+      "comment" : "Confirm button of every SalusConfirmDialog. Android: core/ui values/strings.xml salus_delete.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delete"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sil"
+          }
+        }
+      }
+    },
+    "salus_undo" : {
+      "comment" : "Snackbar action that takes a pending delete back. Android: core/ui values/strings.xml salus_undo.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Undo"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geri al"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}
