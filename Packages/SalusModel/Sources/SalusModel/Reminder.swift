@@ -4,10 +4,14 @@
 /// What a scheduled reminder is for.
 ///
 /// Raw values are the Kotlin constant names (`Reminder.kt:3-8`), which is what is persisted.
+///
+/// `SNOOZE` was deleted on 2026-08-23 as dead code (`ios-v1-plan.md`, the "Medication reminders
+/// are alarms" note): a snooze re-emits the same `MEDICATION_DOSE` occurrence with a later
+/// trigger, so it never needed a type of its own. The deletion is two-sided; Android's
+/// `core/model` drops it too.
 public enum ReminderType: String, CaseIterable, Equatable, Hashable, Sendable {
     case medicationDose = "MEDICATION_DOSE"
     case appointment = "APPOINTMENT"
-    case snooze = "SNOOZE"
     case cyclePeriod = "CYCLE_PERIOD"
 }
 

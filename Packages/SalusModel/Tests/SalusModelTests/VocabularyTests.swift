@@ -45,7 +45,8 @@ struct ReminderVocabularyTests {
     @Test("ReminderType raw values are the Kotlin constant names, in declaration order")
     func reminderTypeRawValues() {
         // Reminder.kt:3-8
-        let expected = ["MEDICATION_DOSE", "APPOINTMENT", "SNOOZE", "CYCLE_PERIOD"]
+        // `SNOOZE` deleted 2026-08-23 as dead code, on both platforms.
+        let expected = ["MEDICATION_DOSE", "APPOINTMENT", "CYCLE_PERIOD"]
         #expect(ReminderType.allCases.map(\.rawValue) == expected)
     }
 
