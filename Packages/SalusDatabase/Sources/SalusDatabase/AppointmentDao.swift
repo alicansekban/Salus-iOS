@@ -1,8 +1,9 @@
 // Ported 1:1 from `core/database/src/main/kotlin/com/alicansekban/salus/core/database/dao/AppointmentDao.kt`.
 //
-// Conventions — the plain struct over the database, the `@Query` strings carried verbatim, the
-// conflated `AsyncThrowingStream` standing in for Room's `Flow` — are `ProfileDao`'s; its doc
-// comments explain why each of them is what it is, and are not repeated here.
+// Conventions — the plain struct over the database, the `@Query` strings carried verbatim — are
+// `ProfileDao`'s; its doc comments explain why each of them is what it is, and are not repeated
+// here. The `AsyncThrowingStream` standing in for Room's `Flow` comes from `conflatedStream`,
+// which is where that decision is written down.
 //
 // Two things are worth naming here. `upsertWithReminders` is Room's `@Transaction` default method,
 // so it is one `write` block: the appointment and its reminder rows are replaced together or not
@@ -58,11 +59,7 @@ public struct AppointmentDao: Sendable {
     /// `AppointmentDao.kt:30-31`.
     public func getById(_ id: String) async throws -> AppointmentRecord? {
         try await database.reader.read { db in
-            try AppointmentRecord.fetchOne(
-                db,
-                sql: "SELECT * FROM appointments WHERE id = ?",
-                arguments: [id]
-            )
+            try AppointmentRecord.fetchOne(db, sql: Self.byIdSql, arguments: [id])
         }
     }
 
@@ -70,13 +67,9 @@ public struct AppointmentDao: Sendable {
     /// (`AppointmentDao.kt:33-34`).
     public func observeById(_ id: String) -> AsyncThrowingStream<AppointmentRecord?, any Error> {
         let observation = ValueObservation.tracking { db in
-            try AppointmentRecord.fetchOne(
-                db,
-                sql: "SELECT * FROM appointments WHERE id = ?",
-                arguments: [id]
-            )
+            try AppointmentRecord.fetchOne(db, sql: Self.byIdSql, arguments: [id])
         }
-        return Self.conflatedStream(observation.values(in: database.reader))
+        return conflatedStream(observation.values(in: database.reader))
     }
 
     /// `AppointmentDao.kt:36-37`.
@@ -86,7 +79,7 @@ public struct AppointmentDao: Sendable {
         let observation = ValueObservation.tracking { db in
             try AppointmentReminderRecord.fetchAll(db, sql: Self.remindersForSql, arguments: [appointmentId])
         }
-        return Self.conflatedStream(observation.values(in: database.reader))
+        return conflatedStream(observation.values(in: database.reader))
     }
 
     /// One profile's still-scheduled appointments from an instant onward, soonest first
@@ -107,7 +100,7 @@ public struct AppointmentDao: Sendable {
                 arguments: [profileId, fromEpochMs]
             )
         }
-        return Self.conflatedStream(observation.values(in: database.reader))
+        return conflatedStream(observation.values(in: database.reader))
     }
 
     /// The complement of `observeUpcoming`, newest first (`AppointmentDao.kt:48-55`). The `OR`
@@ -128,7 +121,7 @@ public struct AppointmentDao: Sendable {
                 arguments: [profileId, beforeEpochMs]
             )
         }
-        return Self.conflatedStream(observation.values(in: database.reader))
+        return conflatedStream(observation.values(in: database.reader))
     }
 
     /// `AppointmentDao.kt:57-58`.
@@ -199,8 +192,11 @@ public struct AppointmentDao: Sendable {
                 arguments: [profileId]
             )
         }
-        return Self.conflatedStream(observation.values(in: database.reader))
+        return conflatedStream(observation.values(in: database.reader))
     }
+
+    /// `AppointmentDao.kt:30-31` and `:33-34` are the same query, read once and observed once.
+    private static let byIdSql = "SELECT * FROM appointments WHERE id = ?"
 
     /// `AppointmentDao.kt:36-37` and `:57-58` are the same query, observed once and read once.
     private static let remindersForSql = "SELECT * FROM appointment_reminders WHERE appointment_id = ?"
@@ -209,26 +205,4 @@ public struct AppointmentDao: Sendable {
     /// also the middle of `upsertWithReminders`, which cannot call it because that would open a
     /// second write inside the transaction.
     private static let deleteRemindersForSql = "DELETE FROM appointment_reminders WHERE appointment_id = ?"
-
-    /// The bridge from a GRDB observation to the conflated, throwing stream a ported `Flow` is —
-    /// see `ProfileDao.observeDefaultProfile` for why it conflates and why it throws.
-    private static func conflatedStream<Value: Sendable>(
-        _ values: AsyncValueObservation<Value>
-    ) -> AsyncThrowingStream<Value, any Error> {
-        AsyncThrowingStream(bufferingPolicy: .bufferingNewest(1)) { continuation in
-            let task = Task {
-                do {
-                    for try await value in values {
-                        continuation.yield(value)
-                    }
-                    continuation.finish()
-                } catch {
-                    continuation.finish(throwing: error)
-                }
-            }
-            // A consumer that stops reading must stop the observation too, or it keeps
-            // re-querying for nobody.
-            continuation.onTermination = { _ in task.cancel() }
-        }
-    }
 }

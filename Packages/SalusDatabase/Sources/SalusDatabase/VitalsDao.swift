@@ -1,8 +1,9 @@
 // Ported 1:1 from `core/database/src/main/kotlin/com/alicansekban/salus/core/database/dao/VitalsDao.kt`.
 //
-// Conventions — the plain struct over the database, the `@Query` strings carried verbatim, the
-// conflated `AsyncThrowingStream` standing in for Room's `Flow` — are `ProfileDao`'s; its doc
-// comments explain why each of them is what it is, and are not repeated here.
+// Conventions — the plain struct over the database, the `@Query` strings carried verbatim — are
+// `ProfileDao`'s; its doc comments explain why each of them is what it is, and are not repeated
+// here. The `AsyncThrowingStream` standing in for Room's `Flow` comes from `conflatedStream`,
+// which is where that decision is written down.
 //
 // The one thing worth naming again: `BETWEEN` is inclusive at both ends, so the window a caller
 // asks for is closed on both sides. That is the Kotlin semantics, not a rounding of it.
@@ -56,7 +57,7 @@ public struct VitalsDao: Sendable {
                 arguments: [profileId, type, fromEpochMs, untilEpochMs]
             )
         }
-        return Self.conflatedStream(observation.values(in: database.reader))
+        return conflatedStream(observation.values(in: database.reader))
     }
 
     /// The newest measurement of one type, or none (`VitalsDao.kt:33-41`).
@@ -76,7 +77,7 @@ public struct VitalsDao: Sendable {
                 arguments: [profileId, type]
             )
         }
-        return Self.conflatedStream(observation.values(in: database.reader))
+        return conflatedStream(observation.values(in: database.reader))
     }
 
     /// Every type at once, for callers that summarise a whole period and would otherwise pay one
@@ -104,30 +105,6 @@ public struct VitalsDao: Sendable {
     public func deleteById(_ id: String) async throws {
         try await database.writer.write { db in
             try db.execute(sql: "DELETE FROM vitals_measurements WHERE id = ?", arguments: [id])
-        }
-    }
-
-    /// The bridge from a GRDB observation to the conflated, throwing stream a ported `Flow` is —
-    /// see `ProfileDao.observeDefaultProfile` for why it conflates and why it throws. It is a
-    /// helper here because this DAO observes twice and the two would otherwise be the same
-    /// fifteen lines with one word changed.
-    private static func conflatedStream<Value: Sendable>(
-        _ values: AsyncValueObservation<Value>
-    ) -> AsyncThrowingStream<Value, any Error> {
-        AsyncThrowingStream(bufferingPolicy: .bufferingNewest(1)) { continuation in
-            let task = Task {
-                do {
-                    for try await value in values {
-                        continuation.yield(value)
-                    }
-                    continuation.finish()
-                } catch {
-                    continuation.finish(throwing: error)
-                }
-            }
-            // A consumer that stops reading must stop the observation too, or it keeps
-            // re-querying for nobody.
-            continuation.onTermination = { _ in task.cancel() }
         }
     }
 }
