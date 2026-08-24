@@ -37,10 +37,15 @@ public struct SalusFilterChip: View {
                 Text(label)
                     .font(SalusTypography.labelLarge.font)
                     .tracking(SalusTypography.labelLarge.tracking)
+                    // A chip label is one short phrase ("1 hour before"); wrapping it would turn
+                    // the row into a paragraph. Material's chip does not wrap either.
+                    .lineLimit(1)
             }
             .foregroundStyle(isSelected ? colors.onSecondaryContainer : colors.onSurfaceVariant)
             .padding(.horizontal, SalusSpacing.lg)
-            .frame(height: Self.containerHeight)
+            // `minHeight`, not `height`: at the larger Dynamic Type sizes the label is taller
+            // than Material's 32 pt and the chip has to grow with it rather than clip.
+            .frame(minHeight: Self.containerHeight)
             .background(background)
             // Compose's `minimumInteractiveComponentSize()`, which every Material chip applies:
             // the chip still *draws* 32 dp tall, but it is hittable across the full touch target.

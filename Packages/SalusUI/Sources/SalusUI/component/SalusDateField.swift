@@ -59,16 +59,31 @@ public struct SalusDateField: View {
 
     private func selection(for epochDay: Int) -> Binding<Date> {
         Binding(
-            get: { Date(timeIntervalSince1970: Double(epochDay) * secondsPerDay) },
-            set: { picked in
-                onChange(Int((picked.timeIntervalSince1970 / secondsPerDay).rounded(.down)))
-            }
+            get: { SalusDateFieldBinding.date(epochDay: epochDay) },
+            set: { picked in onChange(SalusDateFieldBinding.epochDay(from: picked)) }
         )
     }
 }
 
-/// `EditorDateField.kt:22` — `MILLIS_PER_DAY`, in the unit `Date` counts.
-private let secondsPerDay: Double = 86400
+/// The `epochDay` ↔ `Date` arithmetic behind ``SalusDateField``, lifted out of the view so it can
+/// be tested without SwiftUI.
+enum SalusDateFieldBinding {
+    /// The unit `Date` counts, against the days Kotlin counts
+    /// (`EditorDateField.kt:22, 29, 35` — `MILLIS_PER_DAY`).
+    private static let secondsPerDay = 86400
+
+    /// The GMT instant at midnight on `epochDay`.
+    static func date(epochDay: Int) -> Date {
+        Date(timeIntervalSince1970: Double(epochDay * secondsPerDay))
+    }
+
+    /// The GMT day `date` falls in, as days since 1970-01-01.
+    static func epochDay(from date: Date) -> Int {
+        // Floored, not truncated: integer division toward zero would put every instant on
+        // 1969-12-31 on day 0.
+        Int((date.timeIntervalSince1970 / Double(secondsPerDay)).rounded(.down))
+    }
+}
 
 #Preview("Editor date field") {
     Form {

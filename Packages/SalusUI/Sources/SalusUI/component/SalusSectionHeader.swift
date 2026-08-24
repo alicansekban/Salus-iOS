@@ -1,32 +1,49 @@
-// The twin of the `titleSmall` group label Kotlin writes above a form section, e.g.
-// `feature/appointments/src/main/kotlin/com/alicansekban/salus/feature/appointments/
-// ui/editor/AppointmentEditorScreen.kt:310-313` (the reminder-offset row's heading).
+// Ported from `core/ui/src/main/kotlin/com/alicansekban/salus/core/ui/component/
+// SalusSectionHeader.kt:24-49`.
 //
-// Note the name it shares with `core/ui/.../component/SalusSectionHeader.kt`, which is the *screen*
-// section title above a group of cards — `titleLarge`, `onSurface`, with an optional trailing
-// action. That one has no iOS caller yet; if it ever gains one it lands beside this file under the
-// name Kotlin's other header earns, rather than by widening this one.
+// Kotlin's `contentPadding` parameter is not ported: it exists so a parent that already applies the
+// screen's horizontal padding can drop this one, and no iOS caller does that yet. It arrives the
+// day one needs it, rather than as an unused knob.
 
 import SalusDesignSystem
 import SwiftUI
 
-/// Small heading above a group of form rows or chips.
-public struct SalusSectionHeader: View {
+/// Section title above a group of cards or list rows, with an optional trailing action
+/// (e.g. a "See all" button) (`SalusSectionHeader.kt:18-22`).
+public struct SalusSectionHeader<Actions: View>: View {
     private let title: String
+    private let actions: Actions
 
     @Environment(\.salusTheme) private var theme
 
-    public init(title: String) {
+    public init(title: String, @ViewBuilder actions: () -> Actions) {
         self.title = title
+        self.actions = actions()
     }
 
     public var body: some View {
-        Text(title)
-            .font(SalusTypography.titleSmall.font)
-            .tracking(SalusTypography.titleSmall.tracking)
-            .foregroundStyle(theme.colorScheme.onSurfaceVariant)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.top, SalusSpacing.sm)
+        // Zero, matching Compose's `Arrangement.Start` default — the same reasoning as
+        // `SalusScreenHeader`: a trailing button carries its own touch-target padding.
+        HStack(spacing: 0) {
+            Text(title)
+                .font(SalusTypography.titleLarge.font)
+                .tracking(SalusTypography.titleLarge.tracking)
+                .foregroundStyle(theme.colorScheme.onSurface)
+                // `Modifier.weight(1f)` (`SalusSectionHeader.kt:43`).
+                .frame(maxWidth: .infinity, alignment: .leading)
+            actions
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, SalusSpacing.lg)
+        .padding(.vertical, SalusSpacing.sm)
+    }
+}
+
+extension SalusSectionHeader where Actions == EmptyView {
+    /// The header with no trailing action — Kotlin's `action: (…)? = null` default
+    /// (`SalusSectionHeader.kt:31`).
+    public init(title: String) {
+        self.init(title: title, actions: { EmptyView() })
     }
 }
 
@@ -34,11 +51,14 @@ public struct SalusSectionHeader: View {
     let theme = SalusTheme.resolve(systemIsDark: false)
     return ZStack(alignment: .top) {
         theme.colorScheme.background
-        VStack(alignment: .leading, spacing: 0) {
-            SalusSectionHeader(title: "Reminders")
-            SalusFilterChip(label: "1 hour before", isSelected: true, action: {})
+        VStack(spacing: 0) {
+            SalusSectionHeader(title: "Upcoming") {
+                Button("See all") {}
+                    .buttonStyle(.plain)
+                    .foregroundStyle(theme.colorScheme.primary)
+            }
+            SalusSectionHeader(title: "Notes")
         }
-        .padding(SalusSpacing.lg)
     }
     .frame(height: 140)
     .salusTheme(theme)
