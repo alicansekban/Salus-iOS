@@ -15,7 +15,9 @@
 
 import Foundation
 import SalusCommon
+import SalusDatabase
 import SalusModel
+import SalusTesting
 
 @testable import SalusReminder
 
@@ -156,5 +158,69 @@ final class FakeReminderEnvironment: ReminderEnvironment, @unchecked Sendable {
 
     func backgroundRefreshAvailable() -> Bool {
         lock.withLock { backgroundRefresh }
+    }
+}
+
+/// Everything a synchronizer case injects, in one value: the **real** ledger over an in-memory
+/// database, the recording gateway, a settable handler and environment, and the fixed clock the
+/// whole tree uses. Shared by both synchronizer suites — the ported Kotlin cases and the iOS
+/// deltas — which is also what keeps either of them readable in one screenful.
+struct SynchronizerFixture {
+    /// `ReminderWindowSynchronizerTest.kt:20` — 2025-08-24T02:26:40Z.
+    static let baseNow = Date(epochMilliseconds: 1_756_000_000_000)
+
+    let dao: ReminderAlarmDao
+    let gateway = RecordingNotificationGateway()
+    let handler = FakeReminderHandler()
+    let environment = FakeReminderEnvironment()
+    let clock: FixedSalusClock
+
+    init() throws {
+        let clock = FixedSalusClock(now: Self.baseNow, timeZone: .gmt)
+        self.clock = clock
+        dao = try ReminderAlarmDao(database: SalusDatabase.inMemory(clock: clock))
+    }
+
+    func makeSynchronizer(_ config: ReminderWindowConfig) -> ReminderWindowSynchronizer {
+        ReminderWindowSynchronizer(
+            dao: dao,
+            gateway: gateway,
+            handlerRegistry: ReminderHandlerRegistry(all: [handler]),
+            environment: environment,
+            clock: clock,
+            idGenerator: SequentialIdGenerator(),
+            config: config
+        )
+    }
+
+    func occurrence(_ entityId: String, _ key: String, _ triggerAt: Date) -> ReminderOccurrence {
+        ReminderOccurrence(entityId: entityId, occurrenceKey: key, triggerAt: triggerAt)
+    }
+
+    /// The whole ledger, soonest first. `ReminderAlarmDao` has no "select everything" query and
+    /// Room does not declare one either, so the suites read it back through the queries that exist,
+    /// over the two entity ids these cases write.
+    func ledger() async throws -> [ReminderAlarmRecord] {
+        var rows: [ReminderAlarmRecord] = []
+        for entityId in ["med-1", "med-2"] {
+            rows += try await dao.getByEntity(type: ReminderType.medicationDose.rawValue, entityId: entityId)
+        }
+        return rows.sorted { $0.triggerAtEpochMs < $1.triggerAtEpochMs }
+    }
+}
+
+/// Kotlin's cases are written in `2.hours` / `49.hours`; this is that spelling in the unit
+/// `Foundation` measures an offset from a `Date` in.
+extension TimeInterval {
+    static func minutes(_ count: Int) -> TimeInterval {
+        TimeInterval(count) * 60
+    }
+
+    static func hours(_ count: Int) -> TimeInterval {
+        TimeInterval(count) * 60 * 60
+    }
+
+    static func days(_ count: Int) -> TimeInterval {
+        TimeInterval(count) * 24 * 60 * 60
     }
 }

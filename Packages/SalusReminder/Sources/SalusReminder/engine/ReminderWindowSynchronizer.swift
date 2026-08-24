@@ -18,9 +18,13 @@
 //     the OS was *allowed* to present it. Delivered-then-dismissed is indistinguishable from
 //     delivered-and-read, and both are `FIRED`.
 //  4. Cancellation is batched, because the notification centre's own API is.
-//  5. `sync()` does not throw. Its callers — a background task and `requestSync()` — have nobody
-//     to report to, so a failure is absorbed and the next pass reconciles from wherever this one
-//     stopped. Kotlin's `suspend fun sync()` propagates to WorkManager, which retries the worker.
+//  5. `sync()` does not throw, and the materialize loop isolates per occurrence. Kotlin's
+//     `suspend fun sync()` propagates to WorkManager, which retries the whole worker; iOS has no
+//     retry twin, so an abort is final until something else asks for a sync. One occurrence that
+//     cannot be materialized therefore fails alone rather than starving the rest of the window,
+//     and `sync()` itself absorbs what is left because its callers — a background task and
+//     `requestSync()` — have nobody to report to. Building the desired set still aborts the pass,
+//     as Kotlin's does: a handler that cannot say what it wants leaves nothing to reconcile against.
 //
 // This type reads `SalusDatabase` records directly rather than through a repository, which is the
 // one place in the tree that happens. It is not a leak: the ledger has no domain type — it *is*
@@ -76,9 +80,10 @@ public final class ReminderWindowSynchronizer: Sendable {
         do {
             try await reconcile()
         } catch {
-            // Delta 5 of the header: there is no caller to report to. Whatever committed before
-            // the failure is consistent on its own — every write below is a single-row statement
-            // that either happened or did not — and the next pass reconciles from there.
+            // Delta 5 of the header: there is no caller to report to. Only the phases around
+            // the materialize loop reach here — that loop isolates per occurrence — and whatever
+            // committed before the failure is consistent on its own, since every write below is a
+            // single-row statement that either happened or did not.
         }
     }
 
@@ -109,7 +114,17 @@ public final class ReminderWindowSynchronizer: Sendable {
 
         let pending = await gateway.pendingRequestCodes()
         for entry in desired {
-            try await materialize(entry, existing: activeByIdentity[entry.identity], pending: pending)
+            do {
+                try await materialize(entry, existing: activeByIdentity[entry.identity], pending: pending)
+            } catch {
+                // Per-occurrence isolation, and the one place this pass does not abort. Kotlin lets
+                // the whole pass throw because WorkManager retries the worker; iOS has no retry
+                // twin — a background task that failed is simply not run again until the system
+                // feels like it — so one occurrence that cannot be materialized (a request-code
+                // collision hitting the unique index, a handler throwing from `notificationContent`)
+                // must not starve every later occurrence of the window. The rest of the pass, and
+                // the next pass, still reconcile it.
+            }
         }
 
         try await dao.purgeFinishedBefore(now.addingTimeInterval(-Self.retention).epochMilliseconds)
