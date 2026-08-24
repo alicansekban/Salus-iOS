@@ -1,3 +1,4 @@
+import FeatureSettings
 import FeatureVitals
 import SalusDesignSystem
 import SalusModel
@@ -92,8 +93,8 @@ struct RootView: View {
     /// puts the feature's **concrete** key into the path, so each feature package registers its own
     /// `navigationDestination(for:)` in a `…Destinations()` modifier applied here — the twin of
     /// Android's `vitalsEntries` / `homeEntries` `NavEntry` providers. The shell therefore never
-    /// names a key; `vitalsDestinations()` below is the first of those modifiers, and the four
-    /// remaining tabs keep their placeholder until their feature lands.
+    /// names a key; `vitalsDestinations()` and `settingsDestinations()` below are those modifiers,
+    /// and the three remaining tabs keep their placeholder until their feature lands.
     private func tabStack(for tab: RootTab) -> some View {
         navigationStack(for: tab)
             // The app's one snackbar host, applied *inside* the tab's content region rather than
@@ -136,6 +137,20 @@ struct RootView: View {
             // rendered by the stack, so an environment value set on the root view would not reach
             // the editor.
             .environment(\.vitalsModule, root.vitalsModule)
+
+        case .more:
+            NavigationStack(path: backStacks.binding(for: tab)) {
+                // TODO(M8): the settings hub replaces this placeholder. Until it lands the tab's
+                // root carries the one row this milestone needs, so Reminder Health is reachable
+                // rather than only routable.
+                PlaceholderScreen(tab: tab) {
+                    root.navigator.navigate(ReminderHealthKey())
+                }
+                .settingsDestinations()
+            }
+            // On the stack, not inside its root — a pushed `ReminderHealthKey` destination is
+            // rendered by the stack, so an environment value set on the root would not reach it.
+            .environment(\.settingsModule, root.settingsModule)
 
         default:
             NavigationStack(path: backStacks.binding(for: tab)) {

@@ -51,6 +51,10 @@ options:
 # all: `SystemAlarmKitScheduler` is behind `#if canImport(AlarmKit)` and
 # `SystemBackgroundRefreshRequester` behind `#if os(iOS)`, and the macOS host build `swift test`
 # uses compiles neither.
+#
+# M3 also adds `FeatureSettings`, the second feature package: it owns Reminder Health, and linking
+# it is what compiles its String Catalog and its `UIApplication.open*SettingsURLString` effects —
+# both invisible to the macOS host build.
 packages:
   SalusDesignSystem:
     path: Packages/SalusDesignSystem
@@ -70,6 +74,8 @@ packages:
     path: Packages/SalusUI
   FeatureVitals:
     path: Packages/Features/FeatureVitals
+  FeatureSettings:
+    path: Packages/Features/FeatureSettings
   SalusReminder:
     path: Packages/SalusReminder
 
@@ -198,6 +204,8 @@ targets:
         product: SalusUI
       - package: FeatureVitals
         product: FeatureVitals
+      - package: FeatureSettings
+        product: FeatureSettings
       - package: SalusReminder
         product: SalusReminder
 

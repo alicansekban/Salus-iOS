@@ -105,6 +105,14 @@ is a finding.
 - **Effect**: an `enum` — one-shot **UI** work the screen must perform. **Never model navigation as
   an Effect**; a ViewModel navigates through the injected `Navigator`. Neither M2 screen has one,
   which is the expected default: add an Effect type only when there is real UI work to do.
+  M3's `ReminderHealthEffect` is the first, and it settled how one is delivered: Kotlin's
+  `Channel(BUFFERED, DROP_OLDEST)` + `receiveAsFlow()` has no `@Observable` twin, so the ViewModel
+  publishes `private(set) var pendingEffect: Effect?` with a `consumeEffect()` that clears it, and
+  the Route drains it from `.onChange(of: viewModel.pendingEffect)` — dropping the nil edge the
+  clear itself produces. Reference:
+  `Packages/Features/FeatureSettings/Sources/FeatureSettings/ui/reminderhealth/`
+  (`ReminderHealthViewModel.swift`, `ReminderHealthScreen.swift`); the app layer's
+  `ReminderOpenRouter` is the same shape one layer up.
 
 ViewModel rules:
 

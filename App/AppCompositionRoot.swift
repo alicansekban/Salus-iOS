@@ -1,3 +1,4 @@
+import FeatureSettings
 import FeatureVitals
 import Foundation
 import Observation
@@ -80,6 +81,11 @@ final class AppCompositionRoot {
     /// tab through the environment. It owns the feature's `single` repository and the
     /// `UndoableDelete` built over `pendingDelete` + `snackbar`, so nothing here re-creates either.
     let vitalsModule: VitalsModule
+
+    /// `settingsModule` (`feature/settings/.../di/SettingsModule.kt`), built once and handed to the
+    /// More tab through the environment. It is the only consumer of the three reminder properties
+    /// below that a user ever sees: Reminder Health reads them and offers the two prompts.
+    let settingsModule: SettingsModule
 
     /// `reminderModule`'s `single<ReminderEnvironment>` (`ReminderModule.kt:20`) — the honest
     /// read of what the OS will and will not let the reminder pipeline do. Reminder Health
@@ -173,6 +179,13 @@ final class AppCompositionRoot {
             pendingDeletes: pendingDelete,
             snackbar: snackbar,
             navigator: navigator
+        )
+        settingsModule = makeSettingsModule(
+            reminderEnvironment: reminder.environment,
+            reminderAuthorization: reminder.environment,
+            reminderSyncState: reminder.syncState,
+            clock: clock,
+            alarmKitSupported: reminder.alarmKitSupported
         )
     }
 
@@ -300,6 +313,11 @@ final class AppCompositionRoot {
 
         return ReminderGraph(
             environment: environment,
+            // The authorizing seam's presence IS the "iOS 26.1+" answer, and this is the one place
+            // in the app that knows it. Reminder Health needs the same fact to decide whether to
+            // draw the AlarmKit row, so it is carried out of here rather than re-derived from a
+            // second `#available`.
+            alarmKitSupported: alarmKit.authorizing != nil,
             syncState: syncState,
             scheduler: scheduler,
             openRouter: openRouter,
@@ -397,6 +415,8 @@ final class ReminderOpenRouter {
 /// The reminder engine's sub-graph, handed back from `makeReminderGraph` in one piece.
 private struct ReminderGraph {
     let environment: SystemReminderEnvironment
+    /// Whether this OS has AlarmKit at all — see `makeAlarmKitBackend`.
+    let alarmKitSupported: Bool
     let syncState: any ReminderSyncStateStore
     let scheduler: BackgroundRefreshScheduler
     let openRouter: ReminderOpenRouter

@@ -1,0 +1,261 @@
+{
+  "sourceLanguage" : "tr",
+  "strings" : {
+    "reminder_health_all_ok" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Everything looks good — reminders should arrive on time."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Her şey yolunda görünüyor — hatırlatıcılar zamanında gelecektir."
+          }
+        }
+      }
+    },
+    "reminder_health_background_refresh_ok" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Salus can refresh the reminder list in the background."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Salus hatırlatıcı listesini arka planda tazeleyebiliyor."
+          }
+        }
+      }
+    },
+    "reminder_health_background_refresh_problem" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Background App Refresh is off — the reminder list is only refreshed while the app is open."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Arka plan yenilemesi kapalı — hatırlatıcı listesi yalnızca uygulamayı açtığınızda tazelenir."
+          }
+        }
+      }
+    },
+    "reminder_health_background_refresh_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Background App Refresh"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Arka plan yenilemesi"
+          }
+        }
+      }
+    },
+    "reminder_health_fix" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fix"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Düzelt"
+          }
+        }
+      }
+    },
+    "reminder_health_full_screen_ok" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Medication alarms will take over the lock screen."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "İlaç alarmları kilit ekranını kaplayarak çalacak."
+          }
+        }
+      }
+    },
+    "reminder_health_full_screen_problem" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Medication alarms cannot take over the screen — a dose still arrives as a notification with sound, but no alarm opens on the lock screen."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "İlaç alarmları ekranı kaplayamıyor — doz saati geldiğinde sesli bildirim gelir, ama kilit ekranında alarm açılmaz."
+          }
+        }
+      }
+    },
+    "reminder_health_full_screen_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Full-screen medication alarms"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tam ekran ilaç alarmları"
+          }
+        }
+      }
+    },
+    "reminder_health_intro" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "For reminders to arrive on time, Salus needs the settings below. All checks run on this device only — nothing leaves it."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hatırlatıcıların zamanında gelmesi için Salus'un aşağıdaki ayarlara ihtiyacı var. Tüm kontroller yalnızca bu cihazda çalışır — hiçbir veri dışarı çıkmaz."
+          }
+        }
+      }
+    },
+    "reminder_health_last_sync" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Last reminder pass: %1$@"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Son hatırlatıcı taraması: %1$@"
+          }
+        }
+      }
+    },
+    "reminder_health_never_synced" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The reminder pass has not run on this device yet."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hatırlatıcı taraması bu cihazda henüz çalışmadı."
+          }
+        }
+      }
+    },
+    "reminder_health_notifications_ok" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notifications are enabled."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bildirimler açık."
+          }
+        }
+      }
+    },
+    "reminder_health_notifications_problem" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notifications are off — reminders cannot be shown."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bildirimler kapalı — hatırlatıcılar gösterilemez."
+          }
+        }
+      }
+    },
+    "reminder_health_notifications_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notifications"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bildirimler"
+          }
+        }
+      }
+    },
+    "reminder_health_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reminder health"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hatırlatıcı sağlığı"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

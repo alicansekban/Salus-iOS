@@ -1,3 +1,4 @@
+import FeatureSettings
 import SalusDesignSystem
 import SwiftUI
 
@@ -10,6 +11,13 @@ import SwiftUI
 /// provide needs a token added to `design-tokens.md` first, not a number added here.
 struct PlaceholderScreen: View {
     let tab: RootTab
+
+    /// Pushes Reminder Health, on the one tab that has a screen to reach.
+    ///
+    /// TODO(M8): delete this along with the whole view. Reminder Health is a row on the settings
+    /// hub (`SettingsScreen.kt`), and the hub is M8; until it exists the row lives here, because a
+    /// screen nothing can open is a screen nobody has looked at.
+    var onOpenReminderHealth: (() -> Void)?
 
     /// Read, not passed. The shell resolves the theme once and injects it (`RootView.salusTheme`),
     /// the way every composable below Android's `MaterialTheme(...)` reads `MaterialTheme.colorScheme`
@@ -31,6 +39,9 @@ struct PlaceholderScreen: View {
             icon
             title
             subtitle
+            if let onOpenReminderHealth {
+                reminderHealthRow(onOpenReminderHealth)
+            }
         }
         .frame(maxWidth: .infinity)
         .padding(SalusSpacing.xl)
@@ -60,6 +71,20 @@ struct PlaceholderScreen: View {
             .multilineTextAlignment(.center)
     }
 
+    /// The one real destination this placeholder can reach. Its label is the screen's own title,
+    /// read from `FeatureSettings`' bundle rather than restated here — a feature never has its
+    /// strings copied into the shell.
+    private func reminderHealthRow(_ onOpen: @escaping () -> Void) -> some View {
+        Button(action: onOpen) {
+            Label(SettingsStrings.reminderHealthTitle, systemImage: "bell.badge")
+                .font(SalusTypography.labelLarge.font)
+                .tracking(SalusTypography.labelLarge.tracking)
+        }
+        .buttonStyle(.borderedProminent)
+        .tint(colors.primary)
+        .padding(.top, SalusSpacing.sm)
+    }
+
     /// The card itself: a `surfaceContainer` fill on the `background`, outlined so the two
     /// surfaces stay distinguishable in both themes rather than only in the light one.
     private var cardSurface: some View {
@@ -85,6 +110,11 @@ struct PlaceholderScreen: View {
 
 #Preview("Light") {
     PlaceholderScreen(tab: .home)
+        .salusTheme(SalusTheme.resolve(systemIsDark: false))
+}
+
+#Preview("More, with the Reminder Health row") {
+    PlaceholderScreen(tab: .more, onOpenReminderHealth: {})
         .salusTheme(SalusTheme.resolve(systemIsDark: false))
 }
 
