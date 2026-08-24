@@ -11,10 +11,11 @@
 		0E32E65689FF17CEBD1E46D5 /* FeatureVitals in Frameworks */ = {isa = PBXBuildFile; productRef = 5FBA7A24FA520BFB0BB3288E /* FeatureVitals */; };
 		1102517D43A6643370219A27 /* AppCompositionRoot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15AD79D550BC94771443016D /* AppCompositionRoot.swift */; };
 		1F0578B19CE4AC5AB5CCC17F /* DebugReminderHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C21605CC5C2E2D933AFE62F /* DebugReminderHandler.swift */; };
+		23F65989585616FBE8ED64EA /* SalusReminder in Frameworks */ = {isa = PBXBuildFile; productRef = A5B22EB0FD372492463281EC /* SalusReminder */; };
 		3321C284993CDAECC785BB87 /* SalusDatabase in Frameworks */ = {isa = PBXBuildFile; productRef = 23E6F4A762A65FDBF66C5851 /* SalusDatabase */; };
 		537EC5AA135769AF924F7DC3 /* SalusCommon in Frameworks */ = {isa = PBXBuildFile; productRef = AC3FBAE5BFB699978B2666B6 /* SalusCommon */; };
 		551793D6452E4FC23ACF2654 /* SalusNavigation in Frameworks */ = {isa = PBXBuildFile; productRef = ACCBF7E12A2FD2C767BEFFBE /* SalusNavigation */; };
-		67B28E418073168A4F8C0D99 /* SalusReminder in Frameworks */ = {isa = PBXBuildFile; productRef = A5B22EB0FD372492463281EC /* SalusReminder */; };
+		67B28E418073168A4F8C0D99 /* FeatureAppointments in Frameworks */ = {isa = PBXBuildFile; productRef = 80827652F8B85F6508132EC2 /* FeatureAppointments */; };
 		71A7E5AF1C24B88439724AF9 /* RootTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 814A06AA9BCDD69E3C76C98E /* RootTab.swift */; };
 		913F6C91A354A0813950BD24 /* salus_alarm.caf in Resources */ = {isa = PBXBuildFile; fileRef = 80918512BF78D2B9D3F0B433 /* salus_alarm.caf */; };
 		99186A4143B93D27A5CCE3E2 /* SalusDesignSystem in Frameworks */ = {isa = PBXBuildFile; productRef = C9C72A59E0A6B87AFB4FE4FF /* SalusDesignSystem */; };
@@ -31,6 +32,7 @@
 /* Begin PBXFileReference section */
 		0CB7EF65297E10E2C5CF4C2D /* SalusDatabase */ = {isa = PBXFileReference; lastKnownFileType = folder; name = SalusDatabase; path = Packages/SalusDatabase; sourceTree = SOURCE_ROOT; };
 		15AD79D550BC94771443016D /* AppCompositionRoot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppCompositionRoot.swift; sourceTree = "<group>"; };
+		2A068E62066834CBBAD1DFE8 /* FeatureAppointments */ = {isa = PBXFileReference; lastKnownFileType = folder; name = FeatureAppointments; path = Packages/Features/FeatureAppointments; sourceTree = SOURCE_ROOT; };
 		2E7A0AF160F41F13451BB006 /* PlaceholderScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaceholderScreen.swift; sourceTree = "<group>"; };
 		32081AE7A86A99CF65AC0A3A /* SalusSettings */ = {isa = PBXFileReference; lastKnownFileType = folder; name = SalusSettings; path = Packages/SalusSettings; sourceTree = SOURCE_ROOT; };
 		3682A16DBF8B254394C1B404 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
@@ -69,7 +71,8 @@
 				C9CA768F60D2F662068FC166 /* SalusUI in Frameworks */,
 				0E32E65689FF17CEBD1E46D5 /* FeatureVitals in Frameworks */,
 				D9E03062854D4C95BAF2AB90 /* FeatureSettings in Frameworks */,
-				67B28E418073168A4F8C0D99 /* SalusReminder in Frameworks */,
+				67B28E418073168A4F8C0D99 /* FeatureAppointments in Frameworks */,
+				23F65989585616FBE8ED64EA /* SalusReminder in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -79,6 +82,7 @@
 		1705B791858378CE8669E1A2 /* Packages */ = {
 			isa = PBXGroup;
 			children = (
+				2A068E62066834CBBAD1DFE8 /* FeatureAppointments */,
 				FB07F2CDE3F6B9CCBA968FB7 /* FeatureSettings */,
 				7E5895AE298994F9E378CD48 /* FeatureVitals */,
 				4F54D86E0A2A967EA71D0327 /* SalusCommon */,
@@ -163,6 +167,7 @@
 				886E308EC0BDC87438F00E5C /* SalusUI */,
 				5FBA7A24FA520BFB0BB3288E /* FeatureVitals */,
 				E9250C08C6EC71E8E58894A2 /* FeatureSettings */,
+				80827652F8B85F6508132EC2 /* FeatureAppointments */,
 				A5B22EB0FD372492463281EC /* SalusReminder */,
 			);
 			productName = Salus;
@@ -194,6 +199,7 @@
 			mainGroup = 63647BEF3F7D3E5745B03EDC;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
+				6465DBEECB45F10665EDA24A /* XCLocalSwiftPackageReference "Packages/Features/FeatureAppointments" */,
 				BABE690D8DEEB98C0F649877 /* XCLocalSwiftPackageReference "Packages/Features/FeatureSettings" */,
 				BEEB2F0D34F81F43C2C56B7D /* XCLocalSwiftPackageReference "Packages/Features/FeatureVitals" */,
 				2BCCBA865C424BCA501A3067 /* XCLocalSwiftPackageReference "Packages/SalusCommon" */,
@@ -470,6 +476,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/SalusProfile;
 		};
+		6465DBEECB45F10665EDA24A /* XCLocalSwiftPackageReference "Packages/Features/FeatureAppointments" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/Features/FeatureAppointments;
+		};
 		951D15A91AED724707D7B845 /* XCLocalSwiftPackageReference "Packages/SalusSettings" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/SalusSettings;
@@ -512,6 +522,10 @@
 		5FBA7A24FA520BFB0BB3288E /* FeatureVitals */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = FeatureVitals;
+		};
+		80827652F8B85F6508132EC2 /* FeatureAppointments */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = FeatureAppointments;
 		};
 		886E308EC0BDC87438F00E5C /* SalusUI */ = {
 			isa = XCSwiftPackageProductDependency;

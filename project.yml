@@ -55,6 +55,11 @@ options:
 # M3 also adds `FeatureSettings`, the second feature package: it owns Reminder Health, and linking
 # it is what compiles its String Catalog and its `UIApplication.open*SettingsURLString` effects —
 # both invisible to the macOS host build.
+#
+# M4 adds `FeatureAppointments`, the third feature package. Linking it compiles its String Catalog
+# — `swift test` never does — and, once the later M4 tasks land, its EventKit/EventKitUI
+# add-to-calendar sheet, which sits behind `#if canImport(EventKitUI)` and so is invisible to the
+# macOS host build.
 packages:
   SalusDesignSystem:
     path: Packages/SalusDesignSystem
@@ -76,6 +81,8 @@ packages:
     path: Packages/Features/FeatureVitals
   FeatureSettings:
     path: Packages/Features/FeatureSettings
+  FeatureAppointments:
+    path: Packages/Features/FeatureAppointments
   SalusReminder:
     path: Packages/SalusReminder
 
@@ -213,6 +220,8 @@ targets:
         product: FeatureVitals
       - package: FeatureSettings
         product: FeatureSettings
+      - package: FeatureAppointments
+        product: FeatureAppointments
       - package: SalusReminder
         product: SalusReminder
 
