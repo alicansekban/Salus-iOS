@@ -1,0 +1,7 @@
+/* The English peer of the Turkish `NSAlarmKitUsageDescription` that `project.yml` writes into
+   `App/Info.plist`. Turkish is the development language and the fallback locale (spec §6.4), so it
+   stays the base value in the plist and this file overrides it for English devices only — the same
+   split every `Localizable.xcstrings` in `Packages/` uses, applied to the one purpose string the
+   app has. AlarmKit shows this sentence in its authorization prompt; without it, the prompt on an
+   English device would read Turkish. */
+"NSAlarmKitUsageDescription" = "Salus needs alarm access so your medication reminders can ring as full-screen alarms.";

@@ -179,8 +179,15 @@ targets:
         # and every dose silently falls back to the time-sensitive notification path.
         #
         # Turkish, because §6.4 makes `tr` the development language and the fallback locale, and
-        # `DEVELOPMENT_LANGUAGE` above says so. An `en.lproj/InfoPlist.strings` peer is owed before
-        # the English build ships — tracked in the iOS-M3 execution record.
+        # `DEVELOPMENT_LANGUAGE` above says so. The value here is therefore the BASE — what a locale
+        # that is neither Turkish nor English gets.
+        #
+        # iOS-M3 Task 9 added the two localized peers, `App/{tr,en}.lproj/InfoPlist.strings`, which
+        # XcodeGen picks up from the `App` walk above as one variant group. Both, not just English:
+        # measured on the built bundle, with `en.lproj` as the only `.lproj`,
+        # `Bundle.preferredLocalizations` answers `["en"]` even for a `tr-TR` preference, so a
+        # Turkish phone would have read the English sentence. So `tr.lproj` deliberately repeats the
+        # value below — one sentence, three places. Edit all three together.
         NSAlarmKitUsageDescription:
           İlaç hatırlatmalarınızın tam ekran alarm olarak çalabilmesi için Salus'un alarm iznine
           ihtiyacı var.

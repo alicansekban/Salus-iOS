@@ -290,8 +290,9 @@ final class AppCompositionRoot {
         )
         let syncState = UserDefaultsReminderSyncStateStore()
         // `getAll()` with nothing registered yet: the medication, appointment and cycle handlers
-        // arrive with M4/M5/M6, and the engine reconciles an empty window until they do.
-        let handlerRegistry = ReminderHandlerRegistry(all: [])
+        // arrive with M4/M5/M6, and the engine reconciles an empty window until they do. A Debug
+        // build can install one fake handler in their place — see `debugHandlers`.
+        let handlerRegistry = ReminderHandlerRegistry(all: debugHandlers(clock: clock))
         let scheduler = BackgroundRefreshScheduler(
             synchronizer: ReminderWindowSynchronizer(
                 dao: ReminderAlarmDao(database: database),
@@ -332,6 +333,22 @@ final class AppCompositionRoot {
                 }
             )
         )
+    }
+
+    /// The handlers a Debug build may add to the empty registry — today exactly one, and only when
+    /// the app was launched with ``DebugReminderHandler/leadMinutesKey``.
+    ///
+    /// It exists because the acceptance criteria (`docs/plans/2026-08-23-ios-m3-reminder-engine.md`)
+    /// are about a reminder surviving a force-quit, a timezone change and a cold period, and none of
+    /// that can be walked on a device while every handler is still owed by a later milestone. A
+    /// Release build has neither this list nor the type in it: both are `#if DEBUG`.
+    private static func debugHandlers(clock: any SalusClock) -> [any ReminderHandler] {
+        #if DEBUG
+            if let handler = DebugReminderHandler(clock: clock) {
+                return [handler]
+            }
+        #endif
+        return []
     }
 
     /// The AlarmKit backend, or a pair of nils below the version that has one.

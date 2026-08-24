@@ -1,0 +1,8 @@
+/* The Turkish peer. It duplicates the `NSAlarmKitUsageDescription` value `project.yml` writes into
+   `App/Info.plist`, and it has to: the plist value is the base — the fallback for a locale that is
+   neither Turkish nor English — but a value in `Info.plist` alone is not a *localization*. Measured
+   on the built bundle: with `en.lproj` as the only `.lproj`, `Bundle.preferredLocalizations` answers
+   `["en"]` even for a `tr-TR` device, so a Turkish phone would have read the English sentence. With
+   both files present it answers `["tr"]` for `tr-TR`, `["en"]` for `en-US`, and `["tr"]` for
+   anything else — which is spec §6.4 exactly. Edit the three together. */
+"NSAlarmKitUsageDescription" = "İlaç hatırlatmalarınızın tam ekran alarm olarak çalabilmesi için Salus'un alarm iznine ihtiyacı var.";
