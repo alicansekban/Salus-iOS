@@ -218,3 +218,111 @@ struct BackgroundRefreshSchedulerTests {
         #expect(ReminderBackgroundRefresh.refillInterval == 12 * 60 * 60)
     }
 }
+
+/// Records what the background task was told, and how many times.
+///
+/// The count is the point: `BGTask.setTaskCompleted` may be called exactly once — a second call
+/// terminates the app — and the expiration handler and the finished pass are two callers racing to
+/// make it.
+final class CompletionRecorder: @unchecked Sendable {
+    private let lock = NSLock()
+    private var outcomes: [Bool] = []
+
+    /// Every reported outcome, in order.
+    var reported: [Bool] { lock.withLock { outcomes } }
+
+    func report(_ success: Bool) {
+        lock.withLock { outcomes.append(success) }
+    }
+}
+
+// What a launched `BGAppRefreshTask` runs, minus the task itself.
+//
+// The `BGTaskScheduler` half of this file cannot be executed anywhere `swift test` runs — the
+// framework is unavailable on macOS, and on the simulator its daemon refuses every submission, so
+// `_simulateLaunchForTaskWithIdentifier:` has no scheduled request to launch (verified in the
+// iOS-M3 Task 7 execution record). What is left after removing `BGTask` is all of the logic, and it
+// is these two types: the pass itself, and the guard that keeps two racing finishers from calling
+// `setTaskCompleted` twice.
+@Suite("Background refresh task body")
+struct BackgroundRefreshTaskBodyTests {
+    private let synchronizer = GatedWindowSynchronizer()
+    private let requester = RecordingBackgroundRefreshRequester()
+    private let syncState = InMemoryReminderSyncStateStore()
+    private let recorder = CompletionRecorder()
+    private let clock = FixedSalusClock(now: BackgroundRefreshSchedulerTests.now, timeZone: .gmt)
+
+    private func makeScheduler() -> BackgroundRefreshScheduler {
+        BackgroundRefreshScheduler(
+            synchronizer: synchronizer,
+            backgroundRefresh: requester,
+            syncState: syncState,
+            clock: clock
+        )
+    }
+
+    private func makeCompletion() -> BackgroundRefreshCompletion {
+        BackgroundRefreshCompletion { [recorder] success in recorder.report(success) }
+    }
+
+    @Test("the first outcome is reported and a later one is dropped")
+    func onlyTheFirstOutcomeIsReported() {
+        let completion = makeCompletion()
+
+        completion.finish(success: false)
+        completion.finish(success: true)
+
+        #expect(recorder.reported == [false])
+    }
+
+    @Test("concurrent finishes still report exactly once")
+    func concurrentFinishesReportOnce() async {
+        let completion = makeCompletion()
+
+        await withTaskGroup(of: Void.self) { group in
+            for _ in 0 ..< 32 {
+                group.addTask { completion.finish(success: true) }
+            }
+        }
+
+        #expect(recorder.reported == [true])
+    }
+
+    @Test("a background pass reconciles the window before it reports success")
+    func passReportsSuccessAfterReconciling() async {
+        let completion = makeCompletion()
+        synchronizer.hold()
+
+        let pass = ReminderBackgroundRefresh.runBackgroundPass(on: makeScheduler(), reporting: completion)
+        await synchronizer.waitForPassToStart()
+        // Reporting completion here would tell iOS the refresh is done while the window is still
+        // half-reconciled, and iOS schedules the next opportunity against that answer.
+        #expect(recorder.reported.isEmpty)
+
+        synchronizer.release()
+        await pass.value
+
+        #expect(synchronizer.passes == 1)
+        #expect(recorder.reported == [true])
+        // The pass went through the coalescing funnel, so it stamped and re-armed like any other.
+        #expect(syncState.recorded == [BackgroundRefreshSchedulerTests.now])
+        #expect(requester.submissions.count == 1)
+    }
+
+    @Test("an expiration mid-pass reports once, and the finished pass does not report again")
+    func expirationDuringPassReportsOnce() async {
+        let completion = makeCompletion()
+        synchronizer.hold()
+
+        let pass = ReminderBackgroundRefresh.runBackgroundPass(on: makeScheduler(), reporting: completion)
+        await synchronizer.waitForPassToStart()
+        // The system taking its time back while the pass is still running — `task.expirationHandler`.
+        completion.finish(success: false)
+        synchronizer.release()
+        await pass.value
+
+        // One report, not two. The second `setTaskCompleted` is what terminates the app, and this
+        // is the only place that is proven.
+        #expect(recorder.reported == [false])
+    }
+}

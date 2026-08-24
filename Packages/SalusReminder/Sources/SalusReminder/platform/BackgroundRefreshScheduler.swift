@@ -155,6 +155,61 @@ public final class BackgroundRefreshScheduler: ReminderScheduler, ReminderWindow
     }
 }
 
+extension ReminderBackgroundRefresh {
+    /// One background reconciliation pass: refill the window, then report completion — in that
+    /// order, because iOS schedules the next refresh opportunity against the answer.
+    ///
+    /// This is the body of the launched task minus the `BGTask` itself, and it is a function rather
+    /// than four lines inside `registerTask` for one reason: `BGTaskScheduler` cannot be reached by
+    /// any test. It does not exist on the macOS host `swift test` builds for, and on the simulator
+    /// its daemon refuses every submission — so `_simulateLaunchForTaskWithIdentifier:` finds no
+    /// scheduled request and refuses to launch anything (iOS-M3 Task 7 execution record has the
+    /// commands and the error). Everything that is ours therefore lives on this side of the seam,
+    /// where `BackgroundRefreshTaskBodyTests` runs it.
+    ///
+    /// - Parameter scheduler: the coalescing funnel, so a background pass joins a foreground one
+    ///   instead of racing it.
+    /// - Returns: the pass, so a caller can await it.
+    @discardableResult
+    static func runBackgroundPass(
+        on scheduler: any ReminderWindowSyncing,
+        reporting completion: BackgroundRefreshCompletion
+    ) -> Task<Void, Never> {
+        Task {
+            await scheduler.sync()
+            completion.finish(success: true)
+        }
+    }
+}
+
+/// Reports the outcome of a background task exactly once, whichever caller gets there first.
+///
+/// The whole point is the "once". `BGTask.setTaskCompleted` may be called a single time — a second
+/// call terminates the app — and a launched task has two callers racing to make it: the pass that
+/// finished, and the expiration handler iOS runs when it takes the time back. Neither can know
+/// about the other, so the guard belongs between them.
+///
+/// `@unchecked Sendable` because it deliberately holds a non-`Sendable` closure: on iOS that
+/// closure captures the `BGTask`, which is not `Sendable` either. The lock is what makes the
+/// promise true — the closure is read and cleared under it, so it is called on exactly one thread,
+/// exactly once, and never after that.
+final class BackgroundRefreshCompletion: @unchecked Sendable {
+    private let lock = NSLock()
+    private var report: ((Bool) -> Void)?
+
+    init(report: @escaping (Bool) -> Void) {
+        self.report = report
+    }
+
+    func finish(success: Bool) {
+        let pending: ((Bool) -> Void)? = lock.withLock {
+            defer { report = nil }
+            return report
+        }
+        pending?(success)
+    }
+}
+
 #if os(iOS)
 
     import BackgroundTasks
@@ -206,39 +261,16 @@ public final class BackgroundRefreshScheduler: ReminderScheduler, ReminderWindow
                 forTaskWithIdentifier: taskIdentifier,
                 using: nil
             ) { task in
-                let completion = BackgroundRefreshCompletion(task: task)
+                let completion = BackgroundRefreshCompletion { success in
+                    task.setTaskCompleted(success: success)
+                }
                 // The system's warning shot: finish now, or be killed. There is no partial result
                 // to save — a half-reconciled window is repaired by the next pass — so this only
                 // reports the failure, which is how iOS learns to give the task a later slot.
                 task.expirationHandler = { completion.finish(success: false) }
 
-                Task {
-                    await scheduler.sync()
-                    completion.finish(success: true)
-                }
+                runBackgroundPass(on: scheduler, reporting: completion)
             }
-        }
-    }
-
-    /// Calls `setTaskCompleted` exactly once, from whichever of the two paths gets there first.
-    ///
-    /// Two things force this to be its own type. `BGTask` is not `Sendable`, so it cannot be
-    /// captured by the `Task` that finishes it without a vouched-for box; and calling
-    /// `setTaskCompleted` twice — expiration and completion racing — terminates the app.
-    private final class BackgroundRefreshCompletion: @unchecked Sendable {
-        private let lock = NSLock()
-        private var task: BGTask?
-
-        init(task: BGTask) {
-            self.task = task
-        }
-
-        func finish(success: Bool) {
-            let pending: BGTask? = lock.withLock {
-                defer { task = nil }
-                return task
-            }
-            pending?.setTaskCompleted(success: success)
         }
     }
 
