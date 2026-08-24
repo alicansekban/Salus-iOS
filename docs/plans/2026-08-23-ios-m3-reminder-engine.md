@@ -352,6 +352,13 @@ In ledger order. Each says what it costs if it turns out to be wrong.
 10. **The AlarmKit row reuses Android's `reminder_health_full_screen_*` keys verbatim** rather than
     minting iOS names, because `alarmKitAuthorized` is documented as the replacement for
     `canUseFullScreenAlarms` and the Android copy describes the iOS behaviour accurately.
+11. **`UserNotificationGateway.trigger(at:)` uses `UNCalendarNotificationTrigger`**, i.e. wall-clock
+    date components resolved in the zone current at bake time, not the absolute instant. A pending
+    request therefore drifts to wall-clock semantics across a timezone change while the app is
+    closed; Android's `AlarmManager` keeps the absolute instant until its receiver — which runs
+    without the app — resyncs it. Both platforms converge at the next sync, and wall-clock is
+    arguably the better semantic for medication times anyway. Recorded here because the port rule
+    says any unrecorded difference is a bug.
 
 Anything else that differs from `:core:reminder` is a bug, not a port decision.
 

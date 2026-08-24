@@ -78,6 +78,11 @@ public final class ReminderNotificationDelegate: NSObject, UNUserNotificationCen
         _: UNUserNotificationCenter,
         willPresent _: UNNotification
     ) async -> UNNotificationPresentationOptions {
+        // Returns `foregroundPresentationOptions` for every notification the OS hands this
+        // delegate, not only ones the reminder engine scheduled — deliberate, because the engine
+        // is the app's only notification scheduler today. If another subsystem ever posts its own
+        // notifications, add a `ReminderUserInfo.ref(from:)` guard here so a non-reminder
+        // notification does not inherit this engine's presentation choice.
         Self.foregroundPresentationOptions
     }
 

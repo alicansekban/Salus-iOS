@@ -83,8 +83,10 @@ final class AppCompositionRoot {
     let vitalsModule: VitalsModule
 
     /// `settingsModule` (`feature/settings/.../di/SettingsModule.kt`), built once and handed to the
-    /// More tab through the environment. It is the only consumer of the three reminder properties
-    /// below that a user ever sees: Reminder Health reads them and offers the two prompts.
+    /// More tab through the environment. `settingsModule` is built from local values at
+    /// construction, not from the three reminder properties below — those `let`s exist to keep the
+    /// reminder surface alive and visible on the root, and the settings module is handed the same
+    /// instances at construction time so Reminder Health reads them and offers the two prompts.
     let settingsModule: SettingsModule
 
     /// `reminderModule`'s `single<ReminderEnvironment>` (`ReminderModule.kt:20`) — the honest
