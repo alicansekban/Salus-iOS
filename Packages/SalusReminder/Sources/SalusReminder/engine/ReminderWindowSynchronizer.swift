@@ -32,6 +32,7 @@
 // reason (`:core:reminder` depends on `:core:database`).
 
 import Foundation
+import os
 import SalusCommon
 import SalusDatabase
 import SalusModel
@@ -44,6 +45,17 @@ import SalusModel
 /// ``ReminderScheduler/requestSync()``, on the background refresh task, and after
 /// launch/time/timezone/permission changes.
 public final class ReminderWindowSynchronizer: Sendable {
+    /// Where the two absorbed failures below go instead of nowhere.
+    ///
+    /// `sync()` cannot report to a caller and the materialize loop must not abort the pass (deltas
+    /// 5 and 3 of the header), so without this the engine's only two failure modes would be
+    /// invisible — a reminder that never appears, and no way to tell a bug from an empty schedule.
+    /// `os.Logger` is not a UI framework, so the domain-purity rule is untouched; category
+    /// `reminder` so `xcrun simctl spawn booted log stream` can filter to the engine, and nothing
+    /// health-related is ever written (spec §12): the ledger identity is ids and instants, never a
+    /// medication name or a notification body.
+    private static let logger = Logger(subsystem: "com.alicansekban.salus", category: "reminder")
+
     /// How long a finished row is kept before it is purged (`ReminderWindowSynchronizer.kt:94`).
     /// Unlike the window it is not a point of variation between the platforms, so it stays a
     /// constant rather than joining ``ReminderWindowConfig``.
@@ -83,7 +95,11 @@ public final class ReminderWindowSynchronizer: Sendable {
             // Delta 5 of the header: there is no caller to report to. Only the phases around
             // the materialize loop reach here — that loop isolates per occurrence — and whatever
             // committed before the failure is consistent on its own, since every write below is a
-            // single-row statement that either happened or did not.
+            // single-row statement that either happened or did not. The log line is all the
+            // reporting there is; the window is left to the next pass.
+            Self.logger.error(
+                "reminder window sync aborted: \(String(describing: error), privacy: .public)"
+            )
         }
     }
 
@@ -123,7 +139,15 @@ public final class ReminderWindowSynchronizer: Sendable {
                 // feels like it — so one occurrence that cannot be materialized (a request-code
                 // collision hitting the unique index, a handler throwing from `notificationContent`)
                 // must not starve every later occurrence of the window. The rest of the pass, and
-                // the next pass, still reconcile it.
+                // the next pass, still reconcile it. The type is enough to say which handler is
+                // involved; the entity id and the content stay out of the log (spec §12).
+                Self.logger.error(
+                    """
+                    reminder occurrence not materialized \
+                    (type=\(entry.ref.type.rawValue, privacy: .public)): \
+                    \(String(describing: error), privacy: .public)
+                    """
+                )
             }
         }
 

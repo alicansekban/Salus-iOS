@@ -20,6 +20,7 @@
 		B08C36EA11ED996DB0731323 /* SalusSettings in Frameworks */ = {isa = PBXBuildFile; productRef = 57D3E1D1FDC2AE9506EA16BD /* SalusSettings */; };
 		C2326DF7EB01BFBC5283C249 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3682A16DBF8B254394C1B404 /* RootView.swift */; };
 		C9CA768F60D2F662068FC166 /* SalusUI in Frameworks */ = {isa = PBXBuildFile; productRef = 886E308EC0BDC87438F00E5C /* SalusUI */; };
+		D9E03062854D4C95BAF2AB90 /* SalusReminder in Frameworks */ = {isa = PBXBuildFile; productRef = A5B22EB0FD372492463281EC /* SalusReminder */; };
 		E96240D6854215CCE9B0EB25 /* SalusProfile in Frameworks */ = {isa = PBXBuildFile; productRef = C00759E3F5DE77C5688CF407 /* SalusProfile */; };
 		FC66D0CB66008FBFBFEB19A3 /* PlaceholderScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E7A0AF160F41F13451BB006 /* PlaceholderScreen.swift */; };
 /* End PBXBuildFile section */
@@ -42,6 +43,7 @@
 		C9D663E6B65CEEF73E47F04C /* SalusProfile */ = {isa = PBXFileReference; lastKnownFileType = folder; name = SalusProfile; path = Packages/SalusProfile; sourceTree = SOURCE_ROOT; };
 		CFD65DD6E68A8FDD2B7AF95E /* SalusUI */ = {isa = PBXFileReference; lastKnownFileType = folder; name = SalusUI; path = Packages/SalusUI; sourceTree = SOURCE_ROOT; };
 		DB6A66893942C24C8375E552 /* SalusNavigation */ = {isa = PBXFileReference; lastKnownFileType = folder; name = SalusNavigation; path = Packages/SalusNavigation; sourceTree = SOURCE_ROOT; };
+		DCD32552E9312DFB2001E89E /* SalusReminder */ = {isa = PBXFileReference; lastKnownFileType = folder; name = SalusReminder; path = Packages/SalusReminder; sourceTree = SOURCE_ROOT; };
 		F703871BE6F4C3CF92AA8959 /* SalusApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SalusApp.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -59,6 +61,7 @@
 				551793D6452E4FC23ACF2654 /* SalusNavigation in Frameworks */,
 				C9CA768F60D2F662068FC166 /* SalusUI in Frameworks */,
 				0E32E65689FF17CEBD1E46D5 /* FeatureVitals in Frameworks */,
+				D9E03062854D4C95BAF2AB90 /* SalusReminder in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -75,6 +78,7 @@
 				ABE62DF92DB777EA452EBEAF /* SalusModel */,
 				DB6A66893942C24C8375E552 /* SalusNavigation */,
 				C9D663E6B65CEEF73E47F04C /* SalusProfile */,
+				DCD32552E9312DFB2001E89E /* SalusReminder */,
 				32081AE7A86A99CF65AC0A3A /* SalusSettings */,
 				CFD65DD6E68A8FDD2B7AF95E /* SalusUI */,
 			);
@@ -147,6 +151,7 @@
 				ACCBF7E12A2FD2C767BEFFBE /* SalusNavigation */,
 				886E308EC0BDC87438F00E5C /* SalusUI */,
 				5FBA7A24FA520BFB0BB3288E /* FeatureVitals */,
+				A5B22EB0FD372492463281EC /* SalusReminder */,
 			);
 			productName = Salus;
 			productReference = 69A1B55BADFFC2D672DBFB8E /* Salus.app */;
@@ -183,6 +188,7 @@
 				C711BED0BE26D716D6F5882B /* XCLocalSwiftPackageReference "Packages/SalusModel" */,
 				C61908D549345FD630F0BEC5 /* XCLocalSwiftPackageReference "Packages/SalusNavigation" */,
 				337C96AD9EDA00BA0977AE74 /* XCLocalSwiftPackageReference "Packages/SalusProfile" */,
+				23445E271CDF2938E9C5329F /* XCLocalSwiftPackageReference "Packages/SalusReminder" */,
 				951D15A91AED724707D7B845 /* XCLocalSwiftPackageReference "Packages/SalusSettings" */,
 				248CA880A0C0E1AB1D9F5F58 /* XCLocalSwiftPackageReference "Packages/SalusUI" */,
 			);
@@ -420,6 +426,10 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
+		23445E271CDF2938E9C5329F /* XCLocalSwiftPackageReference "Packages/SalusReminder" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/SalusReminder;
+		};
 		248CA880A0C0E1AB1D9F5F58 /* XCLocalSwiftPackageReference "Packages/SalusUI" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/SalusUI;
@@ -478,6 +488,10 @@
 		8ECECD06AD0F99DA3A276AD5 /* SalusModel */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = SalusModel;
+		};
+		A5B22EB0FD372492463281EC /* SalusReminder */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = SalusReminder;
 		};
 		AC3FBAE5BFB699978B2666B6 /* SalusCommon */ = {
 			isa = XCSwiftPackageProductDependency;

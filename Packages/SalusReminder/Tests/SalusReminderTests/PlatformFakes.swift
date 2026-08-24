@@ -28,9 +28,17 @@ final class FakeUserNotificationCenter: UserNotificationCenting, @unchecked Send
     private var requests: [UNNotificationRequest] = []
     private var categories: Set<UNNotificationCategory> = []
     private var addFailure: (any Error)?
+    private var authorizationCalls: [UNAuthorizationOptions] = []
+    private var authorizationGrant = true
+    private var authorizationFailure: (any Error)?
 
     /// Everything the centre is holding, in insertion order.
     var pending: [UNNotificationRequest] { lock.withLock { requests } }
+
+    /// Every option set the app asked authorization for, in order. Authorization is the
+    /// composition root's business (`SystemReminderEnvironment`), so the gateway never appears
+    /// here — a request recorded during a gateway case would be a bug.
+    var authorizationRequests: [UNAuthorizationOptions] { lock.withLock { authorizationCalls } }
 
     /// The last `setNotificationCategories` argument — the centre keeps only the latest set.
     var registeredCategories: Set<UNNotificationCategory> { lock.withLock { categories } }
@@ -70,10 +78,26 @@ final class FakeUserNotificationCenter: UserNotificationCenting, @unchecked Send
         lock.withLock { self.categories = categories }
     }
 
-    func requestAuthorization(options _: UNAuthorizationOptions) async throws -> Bool {
-        // The gateway never asks: authorization is the composition root's business (Task 7), and
-        // this is here only because the seam declares it. A case that needs it records here.
-        true
+    /// What the next `requestAuthorization` answers — the user tapping Allow or Don't Allow.
+    func grantAuthorization(_ granted: Bool) {
+        lock.withLock { authorizationGrant = granted }
+    }
+
+    /// Makes every subsequent `requestAuthorization` throw, which is how the centre refuses to
+    /// even ask (a second prompt in the same launch, a malformed options set).
+    func failAuthorizationRequests(with error: any Error = FakeSchedulingError.requestRejected) {
+        lock.withLock { authorizationFailure = error }
+    }
+
+    func requestAuthorization(options: UNAuthorizationOptions) async throws -> Bool {
+        if let failure = lock.withLock({ authorizationFailure }) {
+            lock.withLock { authorizationCalls.append(options) }
+            throw failure
+        }
+        return lock.withLock {
+            authorizationCalls.append(options)
+            return authorizationGrant
+        }
     }
 }
 

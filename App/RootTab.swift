@@ -1,3 +1,5 @@
+import SalusModel
+
 /// The five bottom-navigation destinations.
 ///
 /// A 1:1 mirror of Android's `TopLevelDestination` list — `salus-android/app/src/main/kotlin/
@@ -43,6 +45,22 @@ enum RootTab: String, CaseIterable, Identifiable {
         case .vitals: "waveform.path.ecg" // Icons.Filled/Outlined.MonitorHeart
         case .appointments: "calendar" // Icons.Filled/Outlined.CalendarMonth
         case .more: "ellipsis.circle" // Icons.Filled/Outlined.MoreHoriz
+        }
+    }
+}
+
+extension RootTab {
+    /// Which tab a fired reminder belongs to.
+    ///
+    /// The two obvious ones are the tabs of the same name. Cycle is the third, and it is `home`
+    /// rather than a tab of its own because Android's M9 restructure removed the cycle tab and
+    /// pushes `CycleKey` onto Home's stack instead (`SalusApp.kt:189`); the iOS shell mirrors that
+    /// list, so it lands on Home here too.
+    static func hosting(_ type: ReminderType) -> RootTab {
+        switch type {
+        case .medicationDose: .medications
+        case .appointment: .appointments
+        case .cyclePeriod: .home
         }
     }
 }

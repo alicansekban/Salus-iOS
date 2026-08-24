@@ -80,6 +80,9 @@ struct RootView: View {
         .salusTheme(theme)
         // `nil` for `.system`, which leaves the window to the OS (`ThemeMode.preferredColorScheme`).
         .preferredColorScheme(themeMode.preferredColorScheme)
+        // A reminder tapped while the app was closed arrives before this view exists, so the ref
+        // waits in the router and this reads it on the first update as well as on later taps.
+        .onChange(of: root.reminderOpenRouter.pending, initial: true) { _, _ in openTappedReminder() }
         .task { await observeThemeMode() }
         .task { await observeNavigationCommands() }
         .task { await root.logSeededProfile() }
@@ -139,6 +142,13 @@ struct RootView: View {
                 PlaceholderScreen(tab: tab)
             }
         }
+    }
+
+    /// Shows the tab that owns a tapped reminder — the whole of iOS-M3's deep link. Pushing the
+    /// occurrence's own screen needs a navigation key per reminder type, which lands with M4/M5.
+    private func openTappedReminder() {
+        guard let ref = root.reminderOpenRouter.consume() else { return }
+        backStacks.switchTopLevel(RootTab.hosting(ref.type))
     }
 
     /// The store emits its current value first, then every change, so this both seeds and tracks.

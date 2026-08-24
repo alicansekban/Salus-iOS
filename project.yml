@@ -46,6 +46,11 @@ options:
 # `FeatureVitals` (the first feature package). Linking a feature here is also what compiles its
 # String Catalog — `swift test` never does, so the simulator run is the only place a missing
 # translation shows up.
+#
+# M3 adds `SalusReminder`. Linking it is what puts its two iOS-only adapters through a compiler at
+# all: `SystemAlarmKitScheduler` is behind `#if canImport(AlarmKit)` and
+# `SystemBackgroundRefreshRequester` behind `#if os(iOS)`, and the macOS host build `swift test`
+# uses compiles neither.
 packages:
   SalusDesignSystem:
     path: Packages/SalusDesignSystem
@@ -65,6 +70,8 @@ packages:
     path: Packages/SalusUI
   FeatureVitals:
     path: Packages/Features/FeatureVitals
+  SalusReminder:
+    path: Packages/SalusReminder
 
 settings:
   base:
@@ -149,6 +156,16 @@ targets:
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
           - UIInterfaceOrientationPortraitUpsideDown
+        # iOS-M3: the background half of the reminder engine — the twin of Android's 12-hour
+        # `enqueueUniquePeriodicWork` refill. `fetch` is what lets the app be woken at all;
+        # `BGTaskSchedulerPermittedIdentifiers` is what lets it register THIS task, and the string
+        # must match `ReminderBackgroundRefresh.taskIdentifier` exactly — an unlisted identifier is
+        # refused at registration and the window is then only ever refilled while the app is open.
+        # Pinned by `BackgroundRefreshSchedulerTests.taskIdentifierIsPinned`.
+        UIBackgroundModes:
+          - fetch
+        BGTaskSchedulerPermittedIdentifiers:
+          - com.alicansekban.salus.reminder.refresh
         # iOS-M3: spec's 2026-08-23 AlarmKit note, case 1. On iOS 26+ a medication dose presents
         # as a real system alarm, and AlarmKit's gate is entirely runtime — no Apple entitlement,
         # no review application (which is exactly why Critical Alerts were rejected). This purpose
@@ -181,6 +198,8 @@ targets:
         product: SalusUI
       - package: FeatureVitals
         product: FeatureVitals
+      - package: SalusReminder
+        product: SalusReminder
 
     scheme:
       testTargets: []

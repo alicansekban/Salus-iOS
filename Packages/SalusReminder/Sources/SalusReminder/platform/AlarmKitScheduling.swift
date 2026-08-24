@@ -42,6 +42,20 @@ public protocol AlarmKitScheduling: Sendable {
     func scheduledRequestCodes() async -> Set<Int32>
 }
 
+/// AlarmKit's runtime authorization, which is the whole gate on the alarm path: there is no Apple
+/// entitlement and no review application, only this prompt plus `NSAlarmKitUsageDescription`.
+///
+/// Split from ``AlarmKitScheduling`` because the two have different callers and different rules.
+/// The gateway schedules and never asks; Reminder Health (iOS-M3 Task 8) asks and never schedules.
+/// A device below iOS 26.1 has neither, and both seams say so the same way — by being absent.
+public protocol AlarmKitAuthorizing: Sendable {
+    /// Whether alarms may take over the screen right now.
+    func isAuthorized() async -> Bool
+
+    /// Shows the AlarmKit prompt if it has not been shown, and reports the resulting state.
+    func requestAuthorization() async -> Bool
+}
+
 /// The bridge between the ledger's request code and AlarmKit's `UUID` alarm id.
 ///
 /// AlarmKit is addressed by `UUID`, the ledger by `Int32`, and cancellation is handed only the
@@ -122,8 +136,20 @@ public enum ReminderAlarmIdentity {
     /// accepted degradation. Nothing else in the engine version-checks: the composition root builds
     /// this behind `#available` and the gateway routes on whether it got one.
     @available(iOS 26.1, *)
-    public struct SystemAlarmKitScheduler: AlarmKitScheduling {
+    public struct SystemAlarmKitScheduler: AlarmKitScheduling, AlarmKitAuthorizing {
         public init() {}
+
+        public func isAuthorized() async -> Bool {
+            AlarmManager.shared.authorizationState == .authorized
+        }
+
+        public func requestAuthorization() async -> Bool {
+            // Throws when the prompt cannot be shown at all — no usage description, or a request
+            // already in flight. Neither is authorization, and neither is recoverable here:
+            // Reminder Health's row simply keeps reading "not authorized".
+            let state = try? await AlarmManager.shared.requestAuthorization()
+            return state == .authorized
+        }
 
         public func schedule(
             requestCode: Int32,

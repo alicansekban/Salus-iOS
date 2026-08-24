@@ -17,17 +17,33 @@ struct SalusApp: App {
     /// `@State` rather than a `let` because SwiftUI must keep it alive across the App value's
     /// re-creations; that is also what makes `.environment(_:)` below hand every view the same
     /// instance rather than a fresh one per update.
-    @State private var compositionRoot = AppCompositionRoot()
+    @State private var compositionRoot: AppCompositionRoot
 
     @Environment(\.scenePhase) private var scenePhase
+
+    /// Built here rather than in the property's initializer for one reason: the reminder engine has
+    /// to be installed before the app finishes launching. `BGTaskScheduler.register` must happen in
+    /// this window or the first submitted request raises, and the notification-centre delegate must
+    /// exist by then or a reminder tapped from a cold start is delivered to nobody.
+    init() {
+        let compositionRoot = AppCompositionRoot()
+        _compositionRoot = State(initialValue: compositionRoot)
+        compositionRoot.startReminderEngine()
+    }
 
     var body: some Scene {
         WindowGroup {
             RootView()
                 .environment(compositionRoot)
                 .onChange(of: scenePhase) { _, phase in
-                    guard phase == .background else { return }
-                    commitPendingDeletes()
+                    switch phase {
+                    // The foreground reconcile. Opening the app is the one trigger iOS never
+                    // withholds, so it is also the engine's safety net for every background refresh
+                    // the system chose not to run.
+                    case .active: compositionRoot.reminderDidBecomeActive()
+                    case .background: commitPendingDeletes()
+                    default: break
+                    }
                 }
         }
     }
