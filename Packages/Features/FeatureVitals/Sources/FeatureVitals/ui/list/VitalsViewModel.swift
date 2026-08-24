@@ -296,7 +296,7 @@ public final class VitalsViewModel {
     ///
     /// The `"d MMM"` axis label is produced from the epoch day through a `DateFormatter` pinned to
     /// GMT and `Locale.current` — the twin of `LocalDate.ofEpochDay(…).format(ofPattern("d MMM",
-    /// Locale.getDefault()))`. Never a `Calendar`: see `VitalsLocalDateTime.swift`.
+    /// Locale.getDefault()))`. Never a `Calendar`: see `LocalDateTime.swift`.
     ///
     /// The formatter is built inside the closure rather than captured, because `xLabel` is
     /// `@Sendable` and `DateFormatter` is not.

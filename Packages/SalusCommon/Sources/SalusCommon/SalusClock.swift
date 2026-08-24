@@ -67,32 +67,17 @@ extension SalusClock {
     /// `LocalTime` is ported as a minute of day, so the editor passes `clock.minuteOfDayNow()` for
     /// today and `12 * 60` for a past day (`EditorMeasuredAt.kt:13, 36`).
     ///
-    /// This is the **second and last** instant↔day boundary in the tree, and it is here for the
-    /// same reason `today()` is: a wall-clock reading only becomes an instant through a calendar in
-    /// a zone, and doing that anywhere else would put a second `Calendar` in the tree
+    /// This is the **second and last** instant↔day boundary in the tree, and it exists for the same
+    /// reason `today()` does: a wall-clock reading only becomes an instant through a calendar in a
+    /// zone, and doing that outside the carve-out would put a second `Calendar` in the tree
     /// (`CLAUDE.md`, the `LocalDate` rule's carve-out). Everything downstream stays `epochMs`.
     ///
-    /// On a day where the clocks jump forward, a `minuteOfDay` inside the skipped hour names no
-    /// wall-clock time; `Calendar` resolves it forward past the gap, which is what
-    /// `java.time`/`kotlinx.datetime` do for the same input.
+    /// The conversion itself is `LocalDateTime.instant(in:)` in `LocalDateTimeInstant.swift`, which
+    /// iOS-M4 lifted out of this method so a caller holding a wall-clock reading rather than a clock
+    /// can run it too. This stays the clock-shaped spelling of it — the zone is the clock's, read at
+    /// call time — and the calendar is still built in exactly one place.
     public func instant(of day: LocalDate, minuteOfDay: Int) -> Date {
-        var components = DateComponents()
-        components.year = day.year
-        components.month = day.month
-        components.day = day.day
-        components.hour = minuteOfDay / 60
-        components.minute = minuteOfDay % 60
-
-        if let instant = gregorianCalendar().date(from: components) {
-            return instant
-        }
-
-        // Unreachable for a Gregorian calendar and a real zone — `date(from:)` resolves gaps rather
-        // than failing — but the API is optional and this package carries no force unwrap
-        // (`CLAUDE.md`). The fallback is the same arithmetic without the calendar: the day's UTC
-        // midnight from `epochDay`, plus the minutes, less the zone's offset at that instant.
-        let wallClock = Date(timeIntervalSince1970: TimeInterval(day.epochDay * 86400 + minuteOfDay * 60))
-        return wallClock.addingTimeInterval(-TimeInterval(timeZone().secondsFromGMT(for: wallClock)))
+        LocalDateTime(date: day, minuteOfDay: minuteOfDay).instant(in: timeZone())
     }
 
     /// `now()` as the whole milliseconds every persisted `created_at` column stores.
@@ -108,15 +93,10 @@ extension SalusClock {
 
     /// A Gregorian calendar reading in this clock's zone.
     ///
-    /// The identifier is fixed rather than taken from the device: `Calendar.current` follows the
-    /// user's region, and a device set to the Hijri or Buddhist calendar would answer with a
-    /// different year and day for the same instant. Android has no such axis — `kotlinx.datetime`
-    /// is ISO-only — so following the device here would be a behaviour difference, not a feature.
-    /// The locale is irrelevant to the numeric components read above, so none is set.
+    /// The calendar is built in `LocalDateTimeInstant.swift`, which is the one place in the tree
+    /// that constructs one; the reasoning for fixing the identifier lives with it.
     private func gregorianCalendar() -> Calendar {
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = timeZone()
-        return calendar
+        SalusCommon.gregorianCalendar(in: timeZone())
     }
 }
 

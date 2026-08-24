@@ -420,7 +420,7 @@ private let fabClearance: CGFloat = 88
                 .weight(
                     VitalsListItem.Weight(
                         id: "w1",
-                        measuredAt: VitalsLocalDateTime(
+                        measuredAt: LocalDateTime(
                             date: LocalDate(year: 2026, month: 8, day: 17),
                             minuteOfDay: 9 * 60 + 41
                         ),
@@ -431,7 +431,7 @@ private let fabClearance: CGFloat = 88
                 .weight(
                     VitalsListItem.Weight(
                         id: "w2",
-                        measuredAt: VitalsLocalDateTime(
+                        measuredAt: LocalDateTime(
                             date: LocalDate(year: 2026, month: 8, day: 15),
                             minuteOfDay: 8 * 60 + 30
                         ),

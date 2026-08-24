@@ -45,11 +45,11 @@ public enum VitalsListItem: Equatable, Hashable, Sendable, Identifiable {
     /// `VitalsUiState.kt:23-28`.
     public struct Weight: Equatable, Hashable, Sendable {
         public let id: String
-        public let measuredAt: VitalsLocalDateTime
+        public let measuredAt: LocalDateTime
         public let kilograms: Double
         public let note: String?
 
-        public init(id: String, measuredAt: VitalsLocalDateTime, kilograms: Double, note: String?) {
+        public init(id: String, measuredAt: LocalDateTime, kilograms: Double, note: String?) {
             self.id = id
             self.measuredAt = measuredAt
             self.kilograms = kilograms
@@ -60,7 +60,7 @@ public enum VitalsListItem: Equatable, Hashable, Sendable, Identifiable {
     /// `VitalsUiState.kt:30-37`.
     public struct BloodPressure: Equatable, Hashable, Sendable {
         public let id: String
-        public let measuredAt: VitalsLocalDateTime
+        public let measuredAt: LocalDateTime
         public let systolic: Int
         public let diastolic: Int
         public let pulse: Int?
@@ -68,7 +68,7 @@ public enum VitalsListItem: Equatable, Hashable, Sendable, Identifiable {
 
         public init(
             id: String,
-            measuredAt: VitalsLocalDateTime,
+            measuredAt: LocalDateTime,
             systolic: Int,
             diastolic: Int,
             pulse: Int?,
@@ -86,7 +86,7 @@ public enum VitalsListItem: Equatable, Hashable, Sendable, Identifiable {
     /// `VitalsUiState.kt:39-46`.
     public struct Glucose: Equatable, Hashable, Sendable {
         public let id: String
-        public let measuredAt: VitalsLocalDateTime
+        public let measuredAt: LocalDateTime
         public let value: Double
         public let unit: GlucoseUnit
         public let measurementContext: MeasurementContext?
@@ -94,7 +94,7 @@ public enum VitalsListItem: Equatable, Hashable, Sendable, Identifiable {
 
         public init(
             id: String,
-            measuredAt: VitalsLocalDateTime,
+            measuredAt: LocalDateTime,
             value: Double,
             unit: GlucoseUnit,
             measurementContext: MeasurementContext?,
@@ -120,7 +120,7 @@ public enum VitalsListItem: Equatable, Hashable, Sendable, Identifiable {
     }
 
     /// `VitalsUiState.kt:20`.
-    public var measuredAt: VitalsLocalDateTime {
+    public var measuredAt: LocalDateTime {
         switch self {
         case let .weight(item): item.measuredAt
         case let .bloodPressure(item): item.measuredAt

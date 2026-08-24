@@ -1,7 +1,9 @@
 // The Swift stand-in for `kotlinx.datetime.LocalDate`, which Android's `Profile.kt:3` imports and
 // which has no twin in the Swift standard library. Foundation's `Date`/`Calendar` are deliberately
-// NOT used: they carry a time zone and a locale-dependent calendar, and this package links no
+// NOT used: they carry a time zone and a locale-dependent calendar, and this file links no
 // framework at all (`CLAUDE.md`, layer rules). What is needed is a calendar date and nothing else.
+// (`LocalDateTime.swift` does import Foundation, for the zone offsets and formatters a *wall-clock*
+// reading needs; nothing in this file goes near them.)
 //
 // The conversion is Howard Hinnant's `days_from_civil` / `civil_from_days` (public domain), the
 // same proleptic Gregorian arithmetic `java.time.LocalDate` and `kotlinx.datetime.LocalDate`

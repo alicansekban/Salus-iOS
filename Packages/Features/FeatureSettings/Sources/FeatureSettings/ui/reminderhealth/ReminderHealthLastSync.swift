@@ -11,7 +11,7 @@ enum ReminderHealthLastSync {
     ///
     /// A fixed pattern, never `setLocalizedDateFormatFromTemplate`: a template reorders the
     /// components per region, which is exactly the drift this port avoids elsewhere
-    /// (`VitalsLocalDateTime.formatted(pattern:locale:)` carries the same note).
+    /// (`LocalDateTime.formatted(pattern:locale:)` carries the same note).
     static let pattern = "d MMM yyyy HH:mm"
 
     /// The line for a stamp, or the "never ran here" sentence when there is none.
@@ -34,7 +34,7 @@ enum ReminderHealthLastSync {
     /// the zone it is given, which leaves `CLAUDE.md`'s "never a second `Calendar` in the tree"
     /// rule untouched.
     static func timestamp(_ instant: Date, in zone: TimeZone, locale: Locale = .current) -> String {
-        // A fresh formatter per call, for the reason `VitalsLocalDateTime` gives: `DateFormatter`
+        // A fresh formatter per call, for the reason `LocalDateTime` gives: `DateFormatter`
         // is neither `Sendable` nor cheap to share, and this one is drawn once per screen.
         let formatter = DateFormatter()
         formatter.locale = locale
