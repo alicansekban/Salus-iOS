@@ -220,24 +220,30 @@ struct AppointmentDetailScreen: View {
         .padding(.horizontal, SalusSpacing.lg)
     }
 
-    /// `AppointmentDetailScreen.kt:302-334` — three full-width buttons.
+    /// `AppointmentDetailScreen.kt:302-334` — three full-width buttons. Compose emits them as
+    /// children of the screen's own `Column(spacedBy = md)`, so they are spaced `md` here too.
     private var actions: some View {
-        VStack(spacing: SalusSpacing.sm) {
+        VStack(spacing: SalusSpacing.md) {
             Button(action: onEdit) {
                 Text(AppointmentsStrings.detailEdit)
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
 
-            Button {
-                isAddingToCalendar = true
-            } label: {
-                Label(AppointmentsStrings.addToCalendar, systemImage: "calendar")
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.bordered)
-            // `AppointmentDetailScreen.kt:145` — nothing to propose until the bounds are derived.
-            .disabled(state.startEpochMs <= 0)
+            // Only where a calendar editor exists to present. On any other platform this is the
+            // empty view the brief calls for, rather than a button that opens nothing.
+            #if canImport(EventKitUI)
+                Button {
+                    isAddingToCalendar = true
+                } label: {
+                    Label(AppointmentsStrings.addToCalendar, systemImage: "calendar")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+                // `AppointmentDetailScreen.kt:145` — nothing to propose until the bounds are
+                // derived.
+                .disabled(state.startEpochMs <= 0)
+            #endif
 
             Button {
                 onEvent(.deleteClicked)
@@ -248,6 +254,8 @@ struct AppointmentDetailScreen: View {
             .buttonStyle(.bordered)
         }
         .controlSize(.large)
+        // `AppointmentDetailScreen.kt:309` — the block sits one step further from the section
+        // above it than the sections sit from each other.
         .padding(.top, SalusSpacing.sm)
         .padding(.horizontal, SalusSpacing.lg)
     }
@@ -279,9 +287,16 @@ struct AppointmentDetailScreen: View {
         @ViewBuilder
         private var calendarSheet: some View {
             if let calendarDraft {
-                CalendarEventEditSheet(draft: calendarDraft) { isAddingToCalendar = false }
+                CalendarEventEditSheet(draft: calendarDraft, onDismiss: dismissCalendarSheet)
                     .ignoresSafeArea()
             }
+        }
+
+        /// The binding is captured rather than `self`, so the callback is `@Sendable` and the
+        /// coordinator's main-actor hop is a compiler fact instead of a promise in a comment.
+        private var dismissCalendarSheet: @MainActor @Sendable () -> Void {
+            let isPresented = $isAddingToCalendar
+            return { isPresented.wrappedValue = false }
         }
     #endif
 
@@ -396,14 +411,6 @@ private struct ChipFlowRow {
     var indices: [Int]
     var width: CGFloat
     var height: CGFloat
-}
-
-/// Kotlin's `takeIf { it.isNotBlank() }`, which this screen asks four times
-/// (`AppointmentDetailScreen.kt:127, 217-220, 257`). `isBlank()` is "empty, or every character is
-/// whitespace" — line breaks included, which a multi-line notes field produces.
-private func nonBlank(_ text: String?) -> String? {
-    guard let text, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
-    return text
 }
 
 /// `AppointmentDetailScreen.kt:186-188`.

@@ -5,11 +5,13 @@
 //
 // **No calendar authorization is requested, and none is needed.** `EKEventEditViewController` runs
 // out of process on iOS 17+: the app never sees the user's calendars, so presenting it requires no
-// entitlement and shows no permission prompt (WWDC23, "Discover Calendar and EventKit"). The
-// `EKEventStore` below therefore exists only to give the draft `EKEvent` an owner — nothing is read
-// from it and nothing is saved through it. If this ever starts prompting, the fix is
-// `NSCalendarsWriteOnlyAccessUsageDescription` plus `requestWriteOnlyAccessToEvents()`, and that
-// would be a change to `App/`'s Info.plist strings, not to this file alone.
+// entitlement and shows no permission prompt (WWDC23, "Discover Calendar and EventKit"). Verified
+// on the simulator with an app carrying no calendar usage-description key at all — the prefilled
+// sheet came up and nothing was asked. The `EKEventStore` below therefore exists only to give the
+// draft `EKEvent` an owner: nothing is read from it and nothing is saved through it. If this ever
+// starts prompting, the fix is `NSCalendarsWriteOnlyAccessUsageDescription` plus
+// `requestWriteOnlyAccessToEvents()`, and that is a change to `App/`'s Info.plist strings, not to
+// this file alone.
 //
 // The whole file is compiled only where EventKitUI exists — iOS. `swift test` runs on a macOS host,
 // where EventKitUI is unavailable; everything else in the feature, `CalendarEventDraft` included,
@@ -25,10 +27,11 @@
     ///
     /// - Parameter onDismiss: called for **any** outcome — saved, cancelled, deleted. The presenting
     ///   view clears its `isPresented` binding there, which is what actually takes the sheet down;
-    ///   `EKEventEditViewController` never dismisses itself.
+    ///   `EKEventEditViewController` never dismisses itself. Typed `@MainActor @Sendable` because the
+    ///   coordinator that calls it is not main-actor isolated — see `Coordinator`.
     struct CalendarEventEditSheet: UIViewControllerRepresentable {
         let draft: CalendarEventDraft
-        let onDismiss: () -> Void
+        let onDismiss: @MainActor @Sendable () -> Void
 
         func makeUIViewController(context: Context) -> EKEventEditViewController {
             let eventStore = EKEventStore()
@@ -57,15 +60,17 @@
         /// Bridges the UIKit delegate back to the SwiftUI binding.
         ///
         /// Deliberately **not** `@MainActor`: `EKEventEditViewDelegate` is imported without an actor,
-        /// so a main-actor witness would not satisfy the requirement, and hopping through
-        /// `MainActor.assumeIsolated` from here would send this nonisolated object into the main
-        /// actor's domain — which is the data race Swift 6 refuses to compile. The callback is
-        /// therefore invoked directly; EventKitUI always delivers it on the main thread, and this
-        /// object is created, used and released there and nowhere else.
+        /// so a main-actor witness would not satisfy the requirement. What the callback ultimately
+        /// touches is SwiftUI `@State`, which may only be written on the main actor — so rather than
+        /// leaving that to a comment, `onDismiss` is typed `@MainActor @Sendable` and reached through
+        /// `MainActor.assumeIsolated`. The closure is copied into a local first: hopping while
+        /// capturing `self` would send this nonisolated object into the main actor's domain, which is
+        /// the data race Swift 6 refuses to compile. EventKitUI always delivers this callback on the
+        /// main thread, and `assumeIsolated` traps rather than corrupts state if that ever changes.
         final class Coordinator: NSObject, EKEventEditViewDelegate {
-            private let onDismiss: () -> Void
+            private let onDismiss: @MainActor @Sendable () -> Void
 
-            init(onDismiss: @escaping () -> Void) {
+            init(onDismiss: @escaping @MainActor @Sendable () -> Void) {
                 self.onDismiss = onDismiss
             }
 
@@ -73,7 +78,8 @@
                 _ controller: EKEventEditViewController,
                 didCompleteWith action: EKEventEditViewAction
             ) {
-                onDismiss()
+                let dismiss = onDismiss
+                MainActor.assumeIsolated { dismiss() }
             }
         }
     }

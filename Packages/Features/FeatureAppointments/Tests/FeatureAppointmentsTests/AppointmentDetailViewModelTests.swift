@@ -146,6 +146,13 @@ struct AppointmentDetailViewModelTests {
         #expect(deletes.lastRequest?.duration == .milliseconds(PendingDeleteController.undoWindowMillis))
         await waitUntil("the screen to pop") { navigator.commandLog == [.pop] }
 
+        // `AppointmentDetailViewModelTest.kt:137` — `assertEquals(1, deletes.snackbar.shown.size)`.
+        // The iOS controller publishes the snackbar on screen rather than a log of every request
+        // (`TestDeletes.swift` records why it is the real controller and not a recorder), so
+        // "exactly one" is spelled as: one is up, and taking it away brings nothing up behind it.
+        deletes.snackbar.dismiss()
+        #expect(deletes.lastRequest == nil)
+
         await deletes.closeUndoWindow()
         await waitUntil("the deferred write to commit") { repository.current().isEmpty }
         navigator.stop()

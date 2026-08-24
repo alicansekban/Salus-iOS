@@ -16,10 +16,21 @@ import Foundation
 /// The Apple Maps search link for a free-text location (`AppointmentDetailScreen.kt:371-373`).
 ///
 /// `maps://?q=…` is the twin of `geo:0,0?q=…`: no coordinates, just the text the map app searches
-/// for. The query is percent-encoded, which `Uri.encode` does on the Kotlin side.
+/// for.
 func mapsURL(for location: String) -> URL? {
-    guard let query = location.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) else {
+    guard let query = location.addingPercentEncoding(withAllowedCharacters: .salusUriEncodeAllowed) else {
         return nil
     }
     return URL(string: "maps://?q=" + query)
+}
+
+extension CharacterSet {
+    /// What `Uri.encode(_:)` leaves alone: the unreserved characters of RFC 3986, and nothing else.
+    ///
+    /// **Not `.urlQueryAllowed`**, which is the set of characters legal *anywhere* in a query
+    /// string rather than inside one of its values — it permits `& + = ? ; / ,`, so a clinic named
+    /// "Smith & Sons" would end the `q` value at the ampersand and "A+ Poliklinik" would reach Maps
+    /// as "A Poliklinik", the `+` read as a space. Percent-encoding a *value* has to be stricter
+    /// than the syntax allows, which is exactly the line Android's `Uri.encode` draws.
+    static let salusUriEncodeAllowed = CharacterSet.alphanumerics.union(CharacterSet(charactersIn: "-._~"))
 }

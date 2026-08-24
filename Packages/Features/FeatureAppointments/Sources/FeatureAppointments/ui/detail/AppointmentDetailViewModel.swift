@@ -123,20 +123,13 @@ public final class AppointmentDetailViewModel {
         state = AppointmentDetailUiState(
             isLoading: false,
             appointment: appointment,
-            healthNotes: loaded.profile?.healthNotes.flatMap(Self.nonBlank),
+            healthNotes: nonBlank(loaded.profile?.healthNotes),
             startEpochMs: startEpochMs ?? 0,
             endEpochMs: startEpochMs.map { start in
                 start + Int64(appointment?.durationMinutes ?? 0) * Self.millisPerMinute
             } ?? 0,
             showDeleteConfirm: state.showDeleteConfirm
         )
-    }
-
-    /// `takeIf { it.isNotBlank() }` (`AppointmentDetailViewModel.kt:42`). Kotlin's `isBlank()` is
-    /// "empty or every character is whitespace", which includes the line breaks a multi-line notes
-    /// field produces — hence `.whitespacesAndNewlines`, as everywhere else in this package.
-    private static func nonBlank(_ text: String) -> String? {
-        text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : text
     }
 
     /// `AppointmentDetailViewModel.kt:73-75`.
