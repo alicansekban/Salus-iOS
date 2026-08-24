@@ -12,7 +12,10 @@
 //  - the first failure on either side fails the combined stream, as `combine` cancels its siblings
 //    and rethrows;
 //  - the combined stream finishes when both sides have finished. Database observations do not
-//    finish on their own, so in practice the consumer's cancellation is what ends it.
+//    finish on their own, so in practice the consumer's cancellation is what ends it;
+//  - and it is **ordered**: pairs reach the consumer in the order they were formed. That is the
+//    property `combine` gets for free from running its collectors on one coroutine and the reason
+//    `LatestPair` runs `transform` and `yield` inside its lock — see the note on the class.
 
 import Foundation
 
@@ -32,15 +35,15 @@ func latestOfBoth<First: Sendable, Second: Sendable, Value: Sendable>(
                 try await withThrowingTaskGroup(of: Void.self) { group in
                     group.addTask {
                         for try await value in first {
-                            if let pair = latest.setFirst(value) {
-                                try continuation.yield(transform(pair.first, pair.second))
+                            try latest.setFirst(value) { first, second in
+                                try continuation.yield(transform(first, second))
                             }
                         }
                     }
                     group.addTask {
                         for try await value in second {
-                            if let pair = latest.setSecond(value) {
-                                try continuation.yield(transform(pair.first, pair.second))
+                            try latest.setSecond(value) { first, second in
+                                try continuation.yield(transform(first, second))
                             }
                         }
                     }
@@ -60,26 +63,39 @@ func latestOfBoth<First: Sendable, Second: Sendable, Value: Sendable>(
 
 /// The latest value seen on each side. `@unchecked Sendable` for `FixedSalusClock`'s reason: the
 /// two slots are mutable state shared by two child tasks, and the lock is what makes the promise
-/// true. Both setters answer with the pair to emit, so reading and updating stay one critical
-/// section — otherwise two values arriving together could emit the same pair twice and skip one.
+/// true.
+///
+/// The setters take the emission as a closure and run it **while still holding the lock**, rather
+/// than answering with a pair for the caller to emit afterwards. Forming the pair atomically is not
+/// enough: with the emission outside the lock, one child can form `(new, old)`, be descheduled
+/// inside `transform`, let the other child form and emit `(new, new)`, and then emit its stale pair
+/// last — which a `bufferingNewest(1)` consumer keeps as its current value until the next database
+/// change. That interleaving is reachable on the ordinary path, because `upsertWithReminders`
+/// commits both tables in one transaction and so wakes both observations at once. Serialising
+/// `transform` + `yield` makes the emission order the pair order, which is what Kotlin's `combine`
+/// guarantees by running both collectors on a single coroutine.
+///
+/// Holding a lock across the two calls is safe here because neither re-enters this class:
+/// `transform` is a pure mapping (record → domain) and `yield` on a `bufferingNewest(1)`
+/// continuation stores the value and, at most, resumes a consumer that is suspended elsewhere.
 private final class LatestPair<First: Sendable, Second: Sendable>: @unchecked Sendable {
     private let lock = NSLock()
     private var first: First?
     private var second: Second?
 
-    func setFirst(_ value: First) -> (first: First, second: Second)? {
-        lock.withLock {
+    func setFirst(_ value: First, emit: (First, Second) throws -> Void) rethrows {
+        try lock.withLock {
             first = value
-            guard let second else { return nil }
-            return (value, second)
+            guard let second else { return }
+            try emit(value, second)
         }
     }
 
-    func setSecond(_ value: Second) -> (first: First, second: Second)? {
-        lock.withLock {
+    func setSecond(_ value: Second, emit: (First, Second) throws -> Void) rethrows {
+        try lock.withLock {
             second = value
-            guard let first else { return nil }
-            return (first, value)
+            guard let first else { return }
+            try emit(first, value)
         }
     }
 }

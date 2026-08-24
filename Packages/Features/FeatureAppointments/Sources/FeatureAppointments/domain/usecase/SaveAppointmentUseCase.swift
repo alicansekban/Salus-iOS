@@ -66,9 +66,10 @@ public struct SaveAppointmentUseCase: Sendable {
 
         // The three fields the editor cannot touch — `specialty`, `durationMinutes`, `status` —
         // come off the stored row, so saving an edited form never silently rewrites them.
-        var existing: Appointment?
-        if let existingId {
-            existing = try await repository.getAppointment(id: existingId)
+        let existing: Appointment? = if let existingId {
+            try await repository.getAppointment(id: existingId)
+        } else {
+            nil
         }
         let appointment = Appointment(
             id: existingId ?? idGenerator.newId(),
@@ -106,13 +107,10 @@ public struct SaveAppointmentUseCase: Sendable {
         return trimmed
     }
 
-    /// `SaveAppointmentUseCase.kt:57` — `filter { it >= 0 }.distinct().sorted()`. Sorting after
-    /// de-duplicating is what makes the stored offsets ascending, which is the order the domain
-    /// model promises.
+    /// `SaveAppointmentUseCase.kt:57` — `filter { it >= 0 }.distinct().sorted()`. A `Set` is
+    /// `distinct()` without the insertion order Kotlin keeps, which costs nothing here: the very
+    /// next step sorts, and the domain model promises ascending offsets, not input order.
     private static func normalisedOffsets(_ offsets: [Int]) -> [Int] {
-        var seen = Set<Int>()
-        return offsets
-            .filter { $0 >= 0 && seen.insert($0).inserted }
-            .sorted()
+        Array(Set(offsets.filter { $0 >= 0 })).sorted()
     }
 }

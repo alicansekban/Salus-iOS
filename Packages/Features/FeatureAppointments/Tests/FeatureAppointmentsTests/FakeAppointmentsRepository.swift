@@ -47,18 +47,23 @@ final class FakeAppointmentsRepository: AppointmentsRepository, @unchecked Senda
 
     /// `FakeAppointmentsRepository.kt:26-32`.
     func observeUpcoming(from: Date) -> AsyncThrowingStream<[Appointment], any Error> {
-        stream { appointments in
+        // `zone` is read into a local first, so the closure this stores on `self.observers` captures
+        // a `TimeZone` and not the repository: `self` holding a closure that holds `self` is a cycle
+        // that only `onTermination` would break, and a stream nobody terminates would leak the fake.
+        let zone = zone
+        return stream { appointments in
             appointments.values
-                .filter { $0.status == .scheduled && $0.startsAt.instant(in: self.zone) >= from }
+                .filter { $0.status == .scheduled && $0.startsAt.instant(in: zone) >= from }
                 .sorted(by: Self.soonestFirst)
         }
     }
 
     /// `FakeAppointmentsRepository.kt:34-40`.
     func observePast(before: Date) -> AsyncThrowingStream<[Appointment], any Error> {
-        stream { appointments in
+        let zone = zone
+        return stream { appointments in
             appointments.values
-                .filter { $0.status != .scheduled || $0.startsAt.instant(in: self.zone) < before }
+                .filter { $0.status != .scheduled || $0.startsAt.instant(in: zone) < before }
                 .sorted { Self.soonestFirst($1, $0) }
         }
     }

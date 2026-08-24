@@ -2,11 +2,13 @@
 // place this feature turns a stored time-zone identifier into a zone: `AppointmentMapper.kt:22`,
 // `TimeZone.of(timeZoneId)`.
 //
-// A byte-for-byte duplicate of `FeatureVitals/IllegalTimeZoneError.swift`, and deliberately so:
-// features never depend on each other (`CLAUDE.md`), and the type is feature-local on both
-// platforms. This is the same template-sanctioned duplicate as `CancellationBox`. The two copies
-// are independent types — nothing catches one expecting the other — so the duplication costs a
-// file, not a coupling.
+// The same type as `FeatureVitals/IllegalTimeZoneError.swift`, deliberately duplicated: features
+// never depend on each other (`CLAUDE.md`), and the type is feature-local on both platforms. This
+// is the same template-sanctioned duplicate as `CancellationBox`. The declaration is identical; the
+// comments are not, because each copy cites its own feature's call site — Vitals has two
+// (`WeightEntryMapper.kt:16`, `SaveWeightEntryUseCase.kt:57`) and this one has the mapper alone.
+// The two copies are independent types — nothing catches one expecting the other — so the
+// duplication costs a file, not a coupling.
 
 /// A time-zone identifier that this platform cannot resolve.
 public enum IllegalTimeZoneError: Error, Equatable {

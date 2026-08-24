@@ -37,7 +37,8 @@ struct AppointmentMapperTests {
         reminderOffsetsMinutes: [60, 1440]
     )
 
-    /// `AppointmentMapperTest.kt:31-51`.
+    /// `AppointmentMapperTest.kt:31-51` — `toEntity writes ISO local date-time and correct epoch
+    /// cache`.
     @Test("toRecord writes ISO local date-time and correct epoch cache")
     func toRecordWritesIsoLocalDateTimeAndCorrectEpochCache() throws {
         let record = Self.appointment.toRecord(
@@ -58,7 +59,8 @@ struct AppointmentMapperTests {
         #expect(record.updatedAtEpochMs == 2)
     }
 
-    /// `AppointmentMapperTest.kt:53-64`. The ids are what makes a save a *replace*: the same
+    /// `AppointmentMapperTest.kt:53-64` — `toReminderEntities produces deterministic enabled rows`.
+    /// The ids are what makes a save a *replace*: the same
     /// offset on the same appointment always names the same row, so no generator is needed and no
     /// duplicate can accumulate.
     @Test("toReminderRecords produces deterministic enabled rows")
@@ -71,7 +73,7 @@ struct AppointmentMapperTests {
         #expect(reminders.map(\.appointmentId) == ["a1", "a1"])
     }
 
-    /// `AppointmentMapperTest.kt:66-72`.
+    /// `AppointmentMapperTest.kt:66-72` — `entity round trip preserves the domain model`.
     @Test("record round trip preserves the domain model")
     func recordRoundTripPreservesTheDomainModel() throws {
         let record = Self.appointment.toRecord(profileId: "default-profile", createdAtEpochMs: 1, updatedAtEpochMs: 2)
@@ -81,7 +83,8 @@ struct AppointmentMapperTests {
         #expect(roundTripped == Self.appointment)
     }
 
-    /// `AppointmentMapperTest.kt:74-87` — the domain model carries the *enabled* offsets, ascending,
+    /// `AppointmentMapperTest.kt:74-87` — `disabled reminders are excluded and offsets sorted`.
+    /// The domain model carries the *enabled* offsets, ascending,
     /// whatever order and state the rows are stored in.
     @Test("disabled reminders are excluded and offsets sorted")
     func disabledRemindersAreExcludedAndOffsetsSorted() throws {

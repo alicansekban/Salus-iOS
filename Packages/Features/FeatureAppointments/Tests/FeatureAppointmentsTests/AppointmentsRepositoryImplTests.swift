@@ -171,7 +171,10 @@ struct AppointmentsRepositoryImplTests {
     /// iOS-only: `AppointmentsRepositoryImpl.kt:31-35`. The nil emission is what closes the detail
     /// screen when the appointment it is showing is deleted, so it is the one emission that must
     /// not be swallowed.
-    @Test("observeAppointment emits the appointment with its offsets, then nil once it is gone")
+    @Test(
+        "observeAppointment emits the appointment with its offsets, then nil once it is gone",
+        .timeLimit(.minutes(1))
+    )
     func observeAppointmentEmitsTheAppointmentThenNilOnceItIsGone() async throws {
         let fixture = try Self.makeFixture()
         try await fixture.repository.saveAppointment(Self.appointment)
@@ -182,14 +185,59 @@ struct AppointmentsRepositoryImplTests {
 
         try await fixture.repository.deleteAppointment(id: "a1")
 
+        // Bounded rather than "drain until nil": a regression that stops emitting the deletion has
+        // to fail the assertion, not hang the suite. Two emissions is the most the delete can
+        // produce (one per observation), and the `.timeLimit` above catches a stream that stalls
+        // instead of emitting at all.
         var latest = first
-        while let emitted = try await iterator.next() {
+        for _ in 0 ..< 2 {
+            guard let emitted = try await iterator.next() else { break }
             latest = emitted
             if emitted == nil {
                 break
             }
         }
         #expect(latest == nil)
+    }
+
+    /// iOS-only, and the regression companion to `LatestOfBothTests`\'
+    /// `a slow transform never overwrites a fresher pair`, on the real path that made the ordering
+    /// bug reachable: `upsertWithReminders` commits the appointment and its reminder rows in one
+    /// transaction, so every save wakes `observeUpcoming` and `observeRemindersForProfile` at once
+    /// and `latestOfBoth` has two source emissions to order. Before the fix the value the consumer
+    /// settled on could be the pair carrying the *previous* offsets.
+    ///
+    /// The sleep is deliberate and is the thing under test: the assertion is about which emission is
+    /// the last one, and there is nothing to await for "no further emission is coming". Ten rounds
+    /// with alternating offsets, so a stale settle cannot pass by matching what was already there.
+    ///
+    /// Measured, so nobody has to guess: with the ordering fix reverted this case still *passes* —
+    /// the real `transform` is a record→domain mapping and is too fast to lose the race reliably.
+    /// The discriminating test is `LatestOfBothTests.a slow transform never overwrites a fresher
+    /// pair`, which forces the interleaving with a delay hook and fails all ten of its rounds. This
+    /// case is the end-to-end companion: it pins that a save settles on its own offsets over the
+    /// real DAO, real SQL and the real transaction that wakes both observations at once.
+    @Test("saving while observing settles on the new reminder offsets", .timeLimit(.minutes(1)))
+    func savingWhileObservingSettlesOnTheNewReminderOffsets() async throws {
+        let fixture = try Self.makeFixture()
+        try await fixture.repository.saveAppointment(Self.appointment)
+
+        var iterator = fixture.repository.observeUpcoming(from: Self.now).makeAsyncIterator()
+        let initial = try #require(try await iterator.next())
+        #expect(initial.first?.reminderOffsetsMinutes == [60, 1440])
+
+        for round in 0 ..< 10 {
+            let offsets = round.isMultiple(of: 2) ? [10080] : [60]
+            try await fixture.repository.saveAppointment(
+                Self.appointment.with(reminderOffsetsMinutes: offsets)
+            )
+            // Long enough for every emission this commit triggers to have been written into the
+            // `bufferingNewest(1)` buffer, so what is read below is what settled.
+            try await Task.sleep(nanoseconds: 100_000_000)
+
+            let settled = try #require(try await iterator.next())
+            #expect(settled.first?.reminderOffsetsMinutes == offsets)
+        }
     }
 
     private static func startsAt(_ year: Int, _ month: Int, _ day: Int) -> LocalDateTime {
