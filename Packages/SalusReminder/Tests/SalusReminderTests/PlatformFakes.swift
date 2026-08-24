@@ -14,12 +14,20 @@ import UserNotifications
 
 @testable import SalusReminder
 
+/// What a backend refused. The cases are the two real refusals the gateway has to survive: AlarmKit
+/// with no authorization, and a notification centre that rejects the request.
+enum FakeSchedulingError: Error {
+    case alarmsNotAuthorized
+    case requestRejected
+}
+
 /// The notification centre, in memory. `add` replaces by identifier exactly as
 /// `UNUserNotificationCenter` does, which is what makes re-scheduling an occurrence idempotent.
 final class FakeUserNotificationCenter: UserNotificationCenting, @unchecked Sendable {
     private let lock = NSLock()
     private var requests: [UNNotificationRequest] = []
     private var categories: Set<UNNotificationCategory> = []
+    private var addFailure: (any Error)?
 
     /// Everything the centre is holding, in insertion order.
     var pending: [UNNotificationRequest] { lock.withLock { requests } }
@@ -27,7 +35,15 @@ final class FakeUserNotificationCenter: UserNotificationCenting, @unchecked Send
     /// The last `setNotificationCategories` argument — the centre keeps only the latest set.
     var registeredCategories: Set<UNNotificationCategory> { lock.withLock { categories } }
 
+    /// Makes every subsequent `add` throw, the way the OS rejects a request it will not take.
+    func failAdds(with error: any Error = FakeSchedulingError.requestRejected) {
+        lock.withLock { addFailure = error }
+    }
+
     func add(_ request: UNNotificationRequest) async throws {
+        if let failure = lock.withLock({ addFailure }) {
+            throw failure
+        }
         lock.withLock {
             requests.removeAll { $0.identifier == request.identifier }
             requests.append(request)
@@ -77,9 +93,18 @@ final class FakeAlarmKitScheduler: AlarmKitScheduling, @unchecked Sendable {
     private var scheduled: [ScheduledAlarm] = []
     private var cancelled: [Int32] = []
     private var live: Set<Int32> = []
+    private var scheduleFailure: (any Error)?
 
+    /// Every attempt, refused ones included — so a test can tell "the gateway never asked" from
+    /// "the gateway asked and was turned down".
     var scheduleCalls: [ScheduledAlarm] { lock.withLock { scheduled } }
     var cancelCalls: [Int32] { lock.withLock { cancelled } }
+
+    /// Makes every subsequent `schedule` throw. AlarmKit refuses exactly this way when its
+    /// authorization was never granted or has been revoked in Settings.
+    func failSchedules(with error: any Error = FakeSchedulingError.alarmsNotAuthorized) {
+        lock.withLock { scheduleFailure = error }
+    }
 
     func schedule(
         requestCode: Int32,
@@ -87,6 +112,14 @@ final class FakeAlarmKitScheduler: AlarmKitScheduling, @unchecked Sendable {
         content: ReminderNotificationContent,
         ref: ReminderRef
     ) async throws {
+        if let failure = lock.withLock({ scheduleFailure }) {
+            lock.withLock {
+                scheduled.append(
+                    ScheduledAlarm(requestCode: requestCode, triggerAt: triggerAt, content: content, ref: ref)
+                )
+            }
+            throw failure
+        }
         lock.withLock {
             scheduled.append(
                 ScheduledAlarm(requestCode: requestCode, triggerAt: triggerAt, content: content, ref: ref)

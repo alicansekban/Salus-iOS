@@ -154,6 +154,113 @@ struct UserNotificationGatewayRoutingTests {
         #expect(await gateway.pendingRequestCodes() == [32])
     }
 
+    /// AlarmKit refuses when its authorization was never granted or has been revoked in Settings —
+    /// a state the user reaches without the app running. A dose must not lose its reminder over it,
+    /// so the alarm backend degrades to the same time-sensitive request iOS 17-25 gets. Losing it
+    /// would be silent: the synchronizer isolates a throwing occurrence and its ledger row already
+    /// says SCHEDULED, so nothing would reconcile it back before the next pass.
+    @Test("an AlarmKit refusal falls back to the time-sensitive request instead of losing the dose")
+    func anAlarmKitRefusalFallsBackToTheTimeSensitiveRequest() async throws {
+        let alarms = FakeAlarmKitScheduler()
+        alarms.failSchedules()
+        let gateway = fixture.gateway(alarmScheduler: alarms)
+
+        try await gateway.schedule(
+            requestCode: 34,
+            triggerAt: GatewayFixture.triggerAt,
+            content: fixture.content(title: "Metformin", text: "1 tablet", presentation: .alarm),
+            ref: fixture.ref()
+        )
+
+        // It asked, and was turned down.
+        #expect(alarms.scheduleCalls.map(\.requestCode) == [34])
+        #expect(await alarms.scheduledRequestCodes().isEmpty)
+        // And the dose still reaches the user, on the documented fallback surface.
+        let content = try #require(fixture.center.pending.first?.content)
+        #expect(fixture.center.pending.map(\.identifier) == ["34"])
+        #expect(content.interruptionLevel == .timeSensitive)
+        #expect(content.sound == UNNotificationSound(named: UNNotificationSoundName(ReminderAlarmSound.fileName)))
+        #expect(await gateway.pendingRequestCodes() == [34])
+    }
+
+    /// The ordering half of the same finding: the write comes first, so a refused alarm has not
+    /// already cost the occurrence the notification it had. Here the fallback write is refused too —
+    /// the one case where nothing new can land — and the previous reminder is still standing.
+    @Test("a refused alarm does not drop the notification the occurrence already had")
+    func aRefusedAlarmDoesNotDropTheExistingNotification() async throws {
+        let alarms = FakeAlarmKitScheduler()
+        let gateway = fixture.gateway(alarmScheduler: alarms)
+
+        try await gateway.schedule(
+            requestCode: 35,
+            triggerAt: GatewayFixture.triggerAt,
+            content: fixture.content(title: "old", presentation: .notification),
+            ref: fixture.ref()
+        )
+
+        alarms.failSchedules()
+        fixture.center.failAdds()
+        await #expect(throws: FakeSchedulingError.self) {
+            try await gateway.schedule(
+                requestCode: 35,
+                triggerAt: GatewayFixture.triggerAt,
+                content: fixture.content(title: "new", presentation: .alarm),
+                ref: fixture.ref()
+            )
+        }
+
+        #expect(fixture.center.pending.first?.content.title == "old")
+        #expect(await gateway.pendingRequestCodes() == [35])
+    }
+
+    /// The notification path's ordering: `center.add` first, `alarmScheduler.cancel` after. A
+    /// rejected request must leave the alarm the occurrence already had standing, rather than
+    /// leaving it in neither backend.
+    @Test("a rejected notification write leaves the alarm standing")
+    func aRejectedNotificationWriteLeavesTheAlarmStanding() async throws {
+        let alarms = FakeAlarmKitScheduler()
+        let gateway = fixture.gateway(alarmScheduler: alarms)
+
+        try await gateway.schedule(
+            requestCode: 36,
+            triggerAt: GatewayFixture.triggerAt,
+            content: fixture.content(presentation: .alarm),
+            ref: fixture.ref()
+        )
+
+        fixture.center.failAdds()
+        await #expect(throws: FakeSchedulingError.self) {
+            try await gateway.schedule(
+                requestCode: 36,
+                triggerAt: GatewayFixture.triggerAt,
+                content: fixture.content(presentation: .notification),
+                ref: fixture.ref()
+            )
+        }
+
+        #expect(alarms.cancelCalls.isEmpty)
+        #expect(await alarms.scheduledRequestCodes() == [36])
+        #expect(await gateway.pendingRequestCodes() == [36])
+    }
+
+    /// A refusal the gateway cannot degrade around still reaches the synchronizer, which isolates
+    /// the occurrence and reconciles it on the next pass. Swallowing it here would strand the
+    /// ledger row instead.
+    @Test("a rejected request propagates when there is nothing to fall back to")
+    func aRejectedRequestPropagates() async {
+        let gateway = fixture.gateway()
+        fixture.center.failAdds()
+
+        await #expect(throws: FakeSchedulingError.self) {
+            try await gateway.schedule(
+                requestCode: 37,
+                triggerAt: GatewayFixture.triggerAt,
+                content: fixture.content(),
+                ref: fixture.ref(.appointment, "appt-1")
+            )
+        }
+    }
+
     /// The same rule read backwards.
     @Test("switching an occurrence to a notification drops the alarm it had")
     func switchingToANotificationDropsTheAlarm() async throws {

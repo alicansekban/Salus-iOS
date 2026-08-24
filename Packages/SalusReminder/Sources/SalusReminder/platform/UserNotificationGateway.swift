@@ -124,18 +124,35 @@ public final class UserNotificationGateway: NotificationGateway {
         // two backends behind it that has to mean replacing in BOTH: a handler that changed an
         // occurrence's presentation would otherwise leave the previous backend still holding it,
         // and the user would be told twice.
+        //
+        // WRITE FIRST, THEN DROP, on both paths. The reverse order has a window in which the
+        // occurrence exists nowhere: the drop succeeds, the write throws, and the synchronizer's
+        // per-occurrence `catch` swallows it — with the ledger row already saying `SCHEDULED`, so
+        // nothing reconciles it back before the next pass. Written this way the failure mode is
+        // "the previous reminder still stands", which is recoverable and, for a dose, the only
+        // acceptable one of the two.
         if content.presentation == .alarm, let alarmScheduler {
-            await center.removePendingNotificationRequests(withIdentifiers: [String(requestCode)])
-            try await alarmScheduler.schedule(
-                requestCode: requestCode,
-                triggerAt: triggerAt,
-                content: content,
-                ref: ref
-            )
-            return
+            do {
+                try await alarmScheduler.schedule(
+                    requestCode: requestCode,
+                    triggerAt: triggerAt,
+                    content: content,
+                    ref: ref
+                )
+                await center.removePendingNotificationRequests(withIdentifiers: [String(requestCode)])
+                return
+            } catch {
+                // AlarmKit refuses when its authorization was never granted or has been revoked in
+                // Settings — a state the user reaches without the app running, and one that must
+                // not cost a dose its reminder. So the alarm backend degrades to the same
+                // time-sensitive request iOS 17-25 gets, exactly as Android's presenter degrades to
+                // a posted notification when the full-screen surface cannot be shown
+                // (`ReminderNotificationPresenter.kt:29-33`). Reminder Health (Task 8) is where the
+                // user is told the alarm permission is missing; here, silence would mean a missed
+                // dose.
+            }
         }
 
-        await alarmScheduler?.cancel(requestCodes: [requestCode])
         await registerCategoryIfChanged(actions: content.actions, for: ref.type)
         try await center.add(
             UNNotificationRequest(
@@ -144,6 +161,7 @@ public final class UserNotificationGateway: NotificationGateway {
                 trigger: trigger(at: triggerAt)
             )
         )
+        await alarmScheduler?.cancel(requestCodes: [requestCode])
         await reportOverflowIfNeeded()
     }
 
