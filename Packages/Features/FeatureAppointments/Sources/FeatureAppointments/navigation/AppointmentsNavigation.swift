@@ -52,15 +52,15 @@ extension View {
     /// `AppointmentDetailKey` rather than forcing one central
     /// `navigationDestination(for: AnyNavKey.self)` in the app target (`AnyNavKey.swift:23-29`).
     ///
-    /// **`AppointmentEditorKey` is not registered yet, on purpose.** `AppointmentEditorRoute`
-    /// arrives with the editor slice and adds its own `navigationDestination(for:)` line beside
-    /// this one. Until then the list and the detail screen still publish that key (the FAB, the
-    /// Edit button), the shell still applies this modifier, and an unregistered push is a
-    /// no-op rather than a crash — which is what an unfinished feature should look like, instead
-    /// of a placeholder screen pretending to be a destination.
+    /// The two `entry<…>` blocks Kotlin registers become two chained modifiers: SwiftUI matches
+    /// on the concrete key type, so each destination is its own line rather than a `when` over a
+    /// sealed key.
     public func appointmentsDestinations() -> some View {
         navigationDestination(for: AppointmentDetailKey.self) { key in
             AppointmentDetailRoute(appointmentId: key.id)
+        }
+        .navigationDestination(for: AppointmentEditorKey.self) { key in
+            AppointmentEditorRoute(appointmentId: key.id)
         }
     }
 }

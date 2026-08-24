@@ -12,12 +12,9 @@
 //   `viewModelOf(::AppointmentsViewModel)`  → `makeAppointmentsViewModel`.
 //
 // TODO: `AppointmentNotificationTexts` + `AppointmentReminderHandler`
-// (`AppointmentsModule.kt:32-35`) arrive with the app wiring that registers the handler, and the
-// editor's parameterised `viewModel { … }` registration (`AppointmentsModule.kt:48-56`) arrives
-// with the editor slice — it adds its own `make…ViewModel` member and the one factory line that
-// fills it, exactly as the detail slice below did. No placeholder member and no `fatalError`
-// stands in for it meanwhile: a member that cannot be called is worse than one that is not there,
-// because only the second is visible to the compiler.
+// (`AppointmentsModule.kt:32-35`) arrive with the app wiring that registers the handler. No
+// placeholder member and no `fatalError` stands in for it meanwhile: a member that cannot be
+// called is worse than one that is not there, because only the second is visible to the compiler.
 
 import SalusCommon
 import SalusDatabase
@@ -51,6 +48,10 @@ public struct AppointmentsModule {
     /// Koin's `viewModel { (appointmentId: String) -> … }` (`AppointmentsModule.kt:38-47`). The
     /// `parametersOf(appointmentId)` Koin threads through becomes the closure's one argument.
     public let makeAppointmentDetailViewModel: @MainActor (String) -> AppointmentDetailViewModel
+
+    /// Koin's `viewModel { (appointmentId: String?) -> … }` (`AppointmentsModule.kt:48-56`). The
+    /// argument is optional where the detail's is not: `nil` is a new appointment.
+    public let makeAppointmentEditorViewModel: @MainActor (String?) -> AppointmentEditorViewModel
 
     // The graph pieces the detail and editor ViewModels are built from
     // (`AppointmentsModule.kt:38-56`). They are held rather than reached for so those slices add a
@@ -113,6 +114,20 @@ public func makeAppointmentsModule(
                 navigator: navigator,
                 undoableDelete: undoableDelete,
                 clock: clock
+            )
+        },
+        makeAppointmentEditorViewModel: { appointmentId in
+            AppointmentEditorViewModel(
+                appointmentId: appointmentId,
+                repository: repository,
+                saveAppointment: SaveAppointmentUseCase(
+                    repository: repository,
+                    idGenerator: idGenerator,
+                    clock: clock
+                ),
+                clock: clock,
+                navigator: navigator,
+                undoableDelete: undoableDelete
             )
         },
         profileRepository: profileRepository,

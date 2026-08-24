@@ -73,4 +73,39 @@ struct CalendarEventDraftTests {
         #expect(draft.start == start)
         #expect(draft.end.timeIntervalSince(draft.start) == 30 * 60)
     }
+
+    /// `AppointmentEditorViewModel.kt:161-176` — the editor's payload is built from the *typed*
+    /// fields, so the doctor's name reaches the calendar even before it has been saved. Divergence
+    /// (d): this is the builder the detail screen deliberately does not share.
+    @Test("the editor draft describes the event with the doctor and the notes")
+    func theEditorDraftDescribesTheEventWithTheDoctorAndTheNotes() {
+        let start = Self.startsAt.instant(in: Self.zone)
+
+        let draft = CalendarEventDraft.forEditor(
+            title: "  Annual check-up  ",
+            doctorText: " Dr. Lee ",
+            notesText: "Bring blood test results",
+            locationText: "  City Clinic ",
+            start: start,
+            end: start.addingTimeInterval(30 * 60)
+        )
+
+        #expect(draft.title == "Annual check-up")
+        #expect(draft.notes == "Dr. Lee\nBring blood test results")
+        #expect(draft.location == "City Clinic")
+
+        // `takeIf { it.isNotEmpty() }` on both: a form the user left alone proposes no description
+        // and no location rather than an empty one.
+        let blank = CalendarEventDraft.forEditor(
+            title: "Annual check-up",
+            doctorText: "  ",
+            notesText: "",
+            locationText: " ",
+            start: start,
+            end: start.addingTimeInterval(30 * 60)
+        )
+
+        #expect(blank.notes == nil)
+        #expect(blank.location == nil)
+    }
 }
