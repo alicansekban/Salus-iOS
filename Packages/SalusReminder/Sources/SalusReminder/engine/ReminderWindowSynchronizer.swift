@@ -175,6 +175,10 @@ public final class ReminderWindowSynchronizer: Sendable {
         }
 
         let triggerMs = entry.occurrence.triggerAt.epochMilliseconds
+        if let existing, existing.triggerAtEpochMs != triggerMs {
+            // Same occurrence, new wall-clock instant (time/timezone change, edit).
+            await gateway.cancel(requestCodes: [Self.code(of: existing)])
+        }
         let row = try await ledgerRow(for: entry, existing: existing, requestCode: requestCode, triggerMs: triggerMs)
 
         try await dao.upsert(row)
@@ -188,7 +192,7 @@ public final class ReminderWindowSynchronizer: Sendable {
     }
 
     /// The ledger row this occurrence belongs in: the live one, a finished one resurrected, or a
-    /// new one.
+    /// new one. Reads; never writes.
     private func ledgerRow(
         for entry: DesiredOccurrence,
         existing: ReminderAlarmRecord?,
@@ -196,10 +200,6 @@ public final class ReminderWindowSynchronizer: Sendable {
         triggerMs: Int64
     ) async throws -> ReminderAlarmRecord {
         if let existing {
-            if existing.triggerAtEpochMs != triggerMs {
-                // Same occurrence, new wall-clock instant (time/timezone change, edit).
-                await gateway.cancel(requestCodes: [Self.code(of: existing)])
-            }
             return Self.scheduled(existing, at: triggerMs)
         }
 
