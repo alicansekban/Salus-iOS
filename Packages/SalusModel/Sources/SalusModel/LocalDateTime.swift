@@ -41,7 +41,20 @@ public struct LocalDateTime: Equatable, Hashable, Sendable {
     /// Minutes since local midnight, `0 ..< 1440`.
     public let minuteOfDay: Int
 
+    /// - Precondition: `minuteOfDay` is in `0 ..< 1440`.
+    ///
+    /// A precondition rather than a failable initialiser: every value that reaches here comes from a
+    /// time field, from `Date.wallClock(in:)` (which floors into range by construction) or from a
+    /// literal, so an out-of-range minute is a programmer error, not input to validate. Making the
+    /// initialiser failable would put a `try`/`guard` in front of every wall clock the port builds
+    /// — the same reasoning `LocalDate(year:month:day:)` records for staying non-throwing. Left
+    /// unchecked, `minuteOfDay = 1440` would serialise as `"…T24:00"`, which `isoLocalString`'s own
+    /// parser rejects: the type would write text it cannot read back.
     public init(date: LocalDate, minuteOfDay: Int) {
+        precondition(
+            (0 ..< 1440).contains(minuteOfDay),
+            "minuteOfDay must be in 0 ..< 1440, was \(minuteOfDay)"
+        )
         self.date = date
         self.minuteOfDay = minuteOfDay
     }
@@ -59,10 +72,15 @@ extension Date {
         )
     }
 
-    /// The same conversion `SalusCommon`'s `Date.epochMilliseconds` performs, repeated here because
-    /// `SalusModel` sits *below* `SalusCommon` and cannot reach it. Keeping the two byte-identical
-    /// matters: a reading floored one millisecond apart lands on the previous minute at a boundary.
-    /// `SalusCommonTests.WallClockEpochMillisecondsAgreementTests` fails if they ever drift.
+    /// The same conversion `SalusCommon`'s `Date.epochMilliseconds` performs
+    /// (`SalusCommon/EpochMilliseconds.swift`), repeated here because `SalusModel` sits *below*
+    /// `SalusCommon` and cannot reach it. It is deliberately `private` and writes no column, which
+    /// is what leaves that file's "every writer of an epoch-millisecond column goes through one
+    /// conversion" rule intact — the file header there names this twin from the other side.
+    ///
+    /// Keeping the two byte-identical still matters: a reading floored one millisecond apart lands
+    /// on the previous minute at a boundary. `SalusCommonTests`'
+    /// `WallClockEpochMillisecondsAgreementTests` fails if they ever drift.
     private var epochMillisecondsForWallClock: Int64 {
         let microseconds = (timeIntervalSince1970 * 1_000_000).rounded()
         return Int64((microseconds / 1000).rounded(.down))

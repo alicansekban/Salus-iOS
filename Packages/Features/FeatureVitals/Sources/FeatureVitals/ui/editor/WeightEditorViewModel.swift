@@ -8,6 +8,7 @@
 
 import Foundation
 import SalusCommon
+import SalusModel
 import SalusNavigation
 import SalusUI
 

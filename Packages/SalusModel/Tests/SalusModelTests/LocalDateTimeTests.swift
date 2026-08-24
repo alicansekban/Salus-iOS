@@ -31,6 +31,23 @@ typealias WallClockRow = (
     minuteOfDay: Int
 )
 
+@Suite("LocalDateTime.init(date:minuteOfDay:)")
+struct LocalDateTimeInitTests {
+    /// Both ends of the documented `0 ..< 1440` range construct and keep their value. The upper end
+    /// is the one that matters: 1439 is a real reading (23:59), 1440 is not, and an unchecked 1440
+    /// would serialise as `"…T24:00"` — text `init?(isoLocalString:)` rejects. The rejection itself
+    /// is a `precondition`, so it is deliberately not exercised here: a trap is not a test case.
+    @Test("the first and last minute of a day both construct", arguments: [0, 1439])
+    func theEndsOfTheRangeConstruct(minuteOfDay: Int) {
+        let day = LocalDate(year: 2026, month: 12, day: 31)
+
+        let value = LocalDateTime(date: day, minuteOfDay: minuteOfDay)
+
+        #expect(value.minuteOfDay == minuteOfDay)
+        #expect(value.date == day)
+    }
+}
+
 @Suite("Date.wallClock(in:)")
 struct DateWallClockTests {
     static let rows: [WallClockRow] = [

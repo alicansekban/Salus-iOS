@@ -14,6 +14,13 @@
 // The derived answers are an extension rather than protocol requirements with defaults, because
 // they are not points of variation: a clock decides *when* it is, never how a calendar reads it.
 // A fake that got them wrong would be a fake that lies about the calendar.
+//
+// One extension at the bottom is not on the clock at all: `LocalDateTime.instant(in:)`, the twin of
+// `kotlinx.datetime.LocalDateTime.toInstant(zone)`, which iOS-M4 needed for callers that hold a
+// wall-clock reading and a `tz_id` rather than a clock. It is in this file rather than beside
+// `LocalDateTime` in `SalusModel` because it is the one direction that needs a `Calendar`, and
+// `CLAUDE.md`'s carve-out is spelled "it lives in `SalusCommon/SalusClock.swift` and nowhere else".
+// `instant(of:minuteOfDay:)` forwards to it, so there is one conversion and one calendar here.
 
 import Foundation
 import SalusModel
@@ -35,7 +42,7 @@ extension SalusClock {
     ///
     /// The twin of `now().toLocalDateTime(timeZone()).date` (`SalusClock.kt:21`).
     public func today() -> LocalDate {
-        let calendar = gregorianCalendar()
+        let calendar = gregorianCalendar(in: timeZone())
         let instant = now()
         return LocalDate(
             year: calendar.component(.year, from: instant),
@@ -54,7 +61,7 @@ extension SalusClock {
     /// The twin of `now().toLocalDateTime(timeZone()).time` (`SalusClock.kt:23`), reduced to the
     /// one component the app actually persists.
     public func minuteOfDayNow() -> Int {
-        let calendar = gregorianCalendar()
+        let calendar = gregorianCalendar(in: timeZone())
         let instant = now()
         return calendar.component(.hour, from: instant) * 60 + calendar.component(.minute, from: instant)
     }
@@ -72,10 +79,10 @@ extension SalusClock {
     /// zone, and doing that outside the carve-out would put a second `Calendar` in the tree
     /// (`CLAUDE.md`, the `LocalDate` rule's carve-out). Everything downstream stays `epochMs`.
     ///
-    /// The conversion itself is `LocalDateTime.instant(in:)` in `LocalDateTimeInstant.swift`, which
-    /// iOS-M4 lifted out of this method so a caller holding a wall-clock reading rather than a clock
-    /// can run it too. This stays the clock-shaped spelling of it — the zone is the clock's, read at
-    /// call time — and the calendar is still built in exactly one place.
+    /// The conversion itself is `LocalDateTime.instant(in:)` below, which iOS-M4 lifted out of this
+    /// method so a caller holding a wall-clock reading rather than a clock can run it too. It stays
+    /// in *this file* so `CLAUDE.md`'s "it lives in `SalusCommon/SalusClock.swift` and nowhere else"
+    /// reads literally; this is the clock-shaped spelling of it, with the zone read at call time.
     public func instant(of day: LocalDate, minuteOfDay: Int) -> Date {
         LocalDateTime(date: day, minuteOfDay: minuteOfDay).instant(in: timeZone())
     }
@@ -90,14 +97,58 @@ extension SalusClock {
     public func nowEpochMilliseconds() -> Int64 {
         now().epochMilliseconds
     }
+}
 
-    /// A Gregorian calendar reading in this clock's zone.
+extension LocalDateTime {
+    /// The instant at which this wall clock is read in `zone` — the twin of
+    /// `LocalDateTime.toInstant(zone)`, which is how Android composes the timestamp an editor saves
+    /// (`feature/vitals/.../ui/editor/EditorMeasuredAt.kt:37`) and the start of an appointment.
     ///
-    /// The calendar is built in `LocalDateTimeInstant.swift`, which is the one place in the tree
-    /// that constructs one; the reasoning for fixing the identifier lives with it.
-    private func gregorianCalendar() -> Calendar {
-        SalusCommon.gregorianCalendar(in: timeZone())
+    /// The clock-free spelling of `SalusClock.instant(of:minuteOfDay:)` above, which forwards to it:
+    /// iOS-M4 needed it for callers that hold a wall-clock reading and a `tz_id` rather than a
+    /// clock. It is in this file, not beside `LocalDateTime` in `SalusModel`, because it is the
+    /// half of the type that needs the `Calendar` carve-out — and the carve-out lives in
+    /// `SalusCommon/SalusClock.swift` and nowhere else (`CLAUDE.md`, the `LocalDate` rule).
+    ///
+    /// The exact inverse of `Date.wallClock(in:)` on every reading a zone actually has. On a day
+    /// where the clocks jump forward a `minuteOfDay` inside the skipped hour names no wall-clock
+    /// time; `Calendar` resolves it forward past the gap, and a repeated reading takes the earlier
+    /// of its two offsets — both of which are what `java.time`/`kotlinx.datetime` answer for the
+    /// same input. That agreement is the point: the same input must not produce two different
+    /// instants on the two platforms.
+    public func instant(in zone: TimeZone) -> Date {
+        var components = DateComponents()
+        components.year = date.year
+        components.month = date.month
+        components.day = date.day
+        components.hour = minuteOfDay / 60
+        components.minute = minuteOfDay % 60
+
+        if let instant = gregorianCalendar(in: zone).date(from: components) {
+            return instant
+        }
+
+        // Unreachable for a Gregorian calendar and a real zone — `date(from:)` resolves gaps rather
+        // than failing — but the API is optional and this package carries no force unwrap
+        // (`CLAUDE.md`). The fallback is the same arithmetic without the calendar: the day's UTC
+        // midnight from `epochDay`, plus the minutes, less the zone's offset at that instant.
+        let wallClock = Date(timeIntervalSince1970: TimeInterval(date.epochDay * 86400 + minuteOfDay * 60))
+        return wallClock.addingTimeInterval(-TimeInterval(zone.secondsFromGMT(for: wallClock)))
     }
+}
+
+/// A Gregorian calendar reading in `zone` — the **only** `Calendar` the instant↔day carve-out builds,
+/// and `private` to this file so it cannot grow a second caller elsewhere in the package.
+///
+/// The identifier is fixed rather than taken from the device: `Calendar.current` follows the user's
+/// region, and a device set to the Hijri or Buddhist calendar would answer with a different year and
+/// day for the same instant. Android has no such axis — `kotlinx.datetime` is ISO-only — so
+/// following the device here would be a behaviour difference, not a feature. The locale is
+/// irrelevant to the numeric components read through it, so none is set.
+private func gregorianCalendar(in zone: TimeZone) -> Calendar {
+    var calendar = Calendar(identifier: .gregorian)
+    calendar.timeZone = zone
+    return calendar
 }
 
 /// The production clock: the device's own instant and zone (`SalusClock.kt:26-31`).

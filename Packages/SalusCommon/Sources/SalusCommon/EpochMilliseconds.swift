@@ -2,11 +2,19 @@
 // `Instant.fromEpochMilliseconds(_:)` and `Instant.toEpochMilliseconds()`.
 //
 // They live here, beside `SalusClock.nowEpochMilliseconds()`, because that method's rule — "every
-// writer of an epoch-millisecond column goes through here, so the seed row and a repository write
-// cannot disagree by a millisecond" — only holds if there is exactly one conversion in the tree.
+// writer of an epoch-millisecond *column* goes through here, so the seed row and a repository write
+// cannot disagree by a millisecond" — needs the column conversion to be made in exactly one place.
 // `nowEpochMilliseconds()` is now a thin call onto `epochMilliseconds` for that reason: the clock
 // decides *which* instant is stamped, this file decides how an instant becomes a column value, and
 // the second decision is made once.
+//
+// That is a rule about *columns*, and it is deliberately narrower than "there is exactly one body of
+// this arithmetic in the tree", which stopped being true in iOS-M4. `SalusModel`'s
+// `Date.wallClock(in:)` carries a byte-identical private twin, `epochMillisecondsForWallClock`,
+// because `SalusModel` sits *below* this package and cannot reach here. It writes no column — it
+// floors an instant to a day and a minute — so the guarantee above is untouched, and the two bodies
+// are pinned against each other by `SalusCommonTests`'
+// `WallClockEpochMillisecondsAgreementTests`. Change one and change the other, or that suite fails.
 //
 // This is not a *day* conversion, so `CLAUDE.md`'s `LocalDate`/`epochDay` rule does not apply and
 // no `Calendar` appears below: an epoch-millisecond column is an absolute instant, which is
