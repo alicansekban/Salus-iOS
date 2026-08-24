@@ -10,6 +10,7 @@
 // request's `userInfo`, which arrives back in the notification-centre delegate (iOS-M3 Task 6).
 
 import Foundation
+import SalusModel
 
 /// The `userInfo` keys that identify which occurrence a fired reminder was.
 public enum ReminderUserInfo {
@@ -28,5 +29,24 @@ public enum ReminderUserInfo {
             entityId: ref.entityId,
             occurrenceKey: ref.occurrenceKey
         ]
+    }
+
+    /// The inverse, applied to the `userInfo` a tapped notification hands back
+    /// (``ReminderNotificationDelegate``). It is the twin of Android's `dao.getByRequestCode`:
+    /// where Kotlin looks the occurrence up in the ledger, iOS reads it straight off the payload.
+    ///
+    /// Nil for anything this engine did not schedule — a foreign notification, a payload missing a
+    /// key, or a type name no build of ours knows. `userInfo` survives a reinstall inside the OS's
+    /// own store, so an unreadable one is an ordinary event rather than a corrupted state.
+    static func ref(from userInfo: [AnyHashable: Any]) -> ReminderRef? {
+        guard
+            let typeName = userInfo[type] as? String,
+            let reminderType = ReminderType(rawValue: typeName),
+            let entity = userInfo[entityId] as? String,
+            let occurrence = userInfo[occurrenceKey] as? String
+        else {
+            return nil
+        }
+        return ReminderRef(type: reminderType, entityId: entity, occurrenceKey: occurrence)
     }
 }
