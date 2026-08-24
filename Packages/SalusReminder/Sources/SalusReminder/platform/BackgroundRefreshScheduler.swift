@@ -239,7 +239,7 @@ final class BackgroundRefreshCompletion: @unchecked Sendable {
                 // neither is a reason to stop: the foreground triggers still refill the window, and
                 // Reminder Health is what tells the user the background half is not running.
                 Self.logger.debug(
-                    "background refresh request refused: \(String(describing: error), privacy: .public)"
+                    "background refresh request refused: \(String(describing: error), privacy: .private)"
                 )
             }
         }

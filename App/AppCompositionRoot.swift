@@ -267,7 +267,7 @@ final class AppCompositionRoot {
             let id = try await profileRepository.getProfile()?.id ?? "<none>"
             Self.logger.info("database ready, default profile id=\(id, privacy: .public)")
         } catch {
-            Self.logger.error("default profile unreadable: \(String(describing: error), privacy: .public)")
+            Self.logger.error("default profile unreadable: \(String(describing: error), privacy: .private)")
         }
     }
 
@@ -398,7 +398,7 @@ final class AppCompositionRoot {
             return try SalusDatabase(path: path, clock: clock)
         } catch {
             let reason = String(describing: error)
-            logger.critical("cannot open \(SalusDatabase.name, privacy: .public): \(reason, privacy: .public)")
+            logger.critical("cannot open \(SalusDatabase.name, privacy: .public): \(reason, privacy: .private)")
             fatalError("Salus cannot open its database (\(SalusDatabase.name)): \(reason)")
         }
     }

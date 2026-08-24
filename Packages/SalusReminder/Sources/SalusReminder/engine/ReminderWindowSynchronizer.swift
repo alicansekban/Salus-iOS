@@ -98,7 +98,7 @@ public final class ReminderWindowSynchronizer: Sendable {
             // single-row statement that either happened or did not. The log line is all the
             // reporting there is; the window is left to the next pass.
             Self.logger.error(
-                "reminder window sync aborted: \(String(describing: error), privacy: .public)"
+                "reminder window sync aborted: \(String(describing: error), privacy: .private)"
             )
         }
     }
@@ -145,7 +145,7 @@ public final class ReminderWindowSynchronizer: Sendable {
                     """
                     reminder occurrence not materialized \
                     (type=\(entry.ref.type.rawValue, privacy: .public)): \
-                    \(String(describing: error), privacy: .public)
+                    \(String(describing: error), privacy: .private)
                     """
                 )
             }
