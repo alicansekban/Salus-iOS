@@ -62,7 +62,11 @@ struct WeightEditorScreen: View {
         Form {
             Section {
                 weightField
-                EditorDateField(dateEpochDay: state.dateEpochDay) { onEvent(.dateSelected($0)) }
+                SalusDateField(
+                    title: VitalsStrings.selectDate,
+                    epochDay: state.dateEpochDay,
+                    placeholder: VitalsStrings.selectDate
+                ) { onEvent(.dateSelected($0)) }
                 noteField
             }
 
