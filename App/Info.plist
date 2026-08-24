@@ -20,6 +20,8 @@
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>NSAlarmKitUsageDescription</key>
+	<string>İlaç hatırlatmalarınızın tam ekran alarm olarak çalabilmesi için Salus'un alarm iznine ihtiyacı var.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

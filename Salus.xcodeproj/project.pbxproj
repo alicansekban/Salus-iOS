@@ -13,6 +13,7 @@
 		537EC5AA135769AF924F7DC3 /* SalusCommon in Frameworks */ = {isa = PBXBuildFile; productRef = AC3FBAE5BFB699978B2666B6 /* SalusCommon */; };
 		551793D6452E4FC23ACF2654 /* SalusNavigation in Frameworks */ = {isa = PBXBuildFile; productRef = ACCBF7E12A2FD2C767BEFFBE /* SalusNavigation */; };
 		71A7E5AF1C24B88439724AF9 /* RootTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 814A06AA9BCDD69E3C76C98E /* RootTab.swift */; };
+		913F6C91A354A0813950BD24 /* salus_alarm.caf in Resources */ = {isa = PBXBuildFile; fileRef = 80918512BF78D2B9D3F0B433 /* salus_alarm.caf */; };
 		99186A4143B93D27A5CCE3E2 /* SalusDesignSystem in Frameworks */ = {isa = PBXBuildFile; productRef = C9C72A59E0A6B87AFB4FE4FF /* SalusDesignSystem */; };
 		A016D85074A4509AC99FF2FF /* SalusModel in Frameworks */ = {isa = PBXBuildFile; productRef = 8ECECD06AD0F99DA3A276AD5 /* SalusModel */; };
 		B049FC0314FE8C521DE31994 /* SalusApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F703871BE6F4C3CF92AA8959 /* SalusApp.swift */; };
@@ -32,6 +33,7 @@
 		4F54D86E0A2A967EA71D0327 /* SalusCommon */ = {isa = PBXFileReference; lastKnownFileType = folder; name = SalusCommon; path = Packages/SalusCommon; sourceTree = SOURCE_ROOT; };
 		69A1B55BADFFC2D672DBFB8E /* Salus.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Salus.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		7E5895AE298994F9E378CD48 /* FeatureVitals */ = {isa = PBXFileReference; lastKnownFileType = folder; name = FeatureVitals; path = Packages/Features/FeatureVitals; sourceTree = SOURCE_ROOT; };
+		80918512BF78D2B9D3F0B433 /* salus_alarm.caf */ = {isa = PBXFileReference; path = salus_alarm.caf; sourceTree = "<group>"; };
 		814A06AA9BCDD69E3C76C98E /* RootTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootTab.swift; sourceTree = "<group>"; };
 		92401A60F464F47C5E0F8036 /* SalusDesignSystem */ = {isa = PBXFileReference; lastKnownFileType = folder; name = SalusDesignSystem; path = Packages/SalusDesignSystem; sourceTree = SOURCE_ROOT; };
 		A853DA3BEE5AEAF0DC4959BF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -87,9 +89,18 @@
 			);
 			sourceTree = "<group>";
 		};
+		6A392B2A08D6304DBF51378F /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				80918512BF78D2B9D3F0B433 /* salus_alarm.caf */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
 		A8A07DF35E5624B1CA8B63A8 /* App */ = {
 			isa = PBXGroup;
 			children = (
+				6A392B2A08D6304DBF51378F /* Resources */,
 				15AD79D550BC94771443016D /* AppCompositionRoot.swift */,
 				A853DA3BEE5AEAF0DC4959BF /* Info.plist */,
 				2E7A0AF160F41F13451BB006 /* PlaceholderScreen.swift */,
@@ -116,6 +127,7 @@
 			buildConfigurationList = 1BBF40E275F2BFFBBED868EF /* Build configuration list for PBXNativeTarget "Salus" */;
 			buildPhases = (
 				29E09EEA532E3D26CEB1E653 /* Sources */,
+				7757EC872D911013B66CB0C4 /* Resources */,
 				638B844B1E2F7CFD1F93FD01 /* Frameworks */,
 			);
 			buildRules = (
@@ -181,6 +193,17 @@
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		7757EC872D911013B66CB0C4 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				913F6C91A354A0813950BD24 /* salus_alarm.caf in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		29E09EEA532E3D26CEB1E653 /* Sources */ = {

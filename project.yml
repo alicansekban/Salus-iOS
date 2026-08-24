@@ -86,6 +86,12 @@ targets:
     platform: iOS
     deploymentTarget: "17.0"
 
+    # `App` is walked whole, so `App/Resources/salus_alarm.caf` is picked up as a bundle resource
+    # without an entry of its own: XcodeGen puts a file it has no compiler for into the Resources
+    # build phase, and Xcode copies that phase to the bundle ROOT — which is the only place
+    # `UNNotificationSound(named:)` and AlarmKit look for a custom sound. Verify after any change
+    # to this block with:
+    #     grep -c salus_alarm.caf Salus.xcodeproj/project.pbxproj    # 4: file ref, build file, both phases
     sources:
       - path: App
 
@@ -132,6 +138,18 @@ targets:
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
           - UIInterfaceOrientationPortraitUpsideDown
+        # iOS-M3: spec's 2026-08-23 AlarmKit note, case 1. On iOS 26+ a medication dose presents
+        # as a real system alarm, and AlarmKit's gate is entirely runtime — no Apple entitlement,
+        # no review application (which is exactly why Critical Alerts were rejected). This purpose
+        # string IS the other half of that gate: without it the authorization prompt never appears
+        # and every dose silently falls back to the time-sensitive notification path.
+        #
+        # Turkish, because §6.4 makes `tr` the development language and the fallback locale, and
+        # `DEVELOPMENT_LANGUAGE` above says so. An `en.lproj/InfoPlist.strings` peer is owed before
+        # the English build ships — tracked in the iOS-M3 execution record.
+        NSAlarmKitUsageDescription:
+          İlaç hatırlatmalarınızın tam ekran alarm olarak çalabilmesi için Salus'un alarm iznine
+          ihtiyacı var.
 
     dependencies:
       - package: SalusDesignSystem
