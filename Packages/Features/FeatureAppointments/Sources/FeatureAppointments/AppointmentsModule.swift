@@ -13,11 +13,11 @@
 //
 // TODO: `AppointmentNotificationTexts` + `AppointmentReminderHandler`
 // (`AppointmentsModule.kt:32-35`) arrive with the app wiring that registers the handler, and the
-// two parameterised `viewModel { … }` registrations (`AppointmentsModule.kt:38-56`) arrive with
-// the detail and editor slices — each adds its own `make…ViewModel` member and the one factory
-// line that fills it. No placeholder member and no `fatalError` stands in for them meanwhile: a
-// member that cannot be called is worse than one that is not there, because only the second is
-// visible to the compiler.
+// editor's parameterised `viewModel { … }` registration (`AppointmentsModule.kt:48-56`) arrives
+// with the editor slice — it adds its own `make…ViewModel` member and the one factory line that
+// fills it, exactly as the detail slice below did. No placeholder member and no `fatalError`
+// stands in for it meanwhile: a member that cannot be called is worse than one that is not there,
+// because only the second is visible to the compiler.
 
 import SalusCommon
 import SalusDatabase
@@ -47,6 +47,10 @@ public struct AppointmentsModule {
 
     /// Koin's `viewModelOf(::AppointmentsViewModel)` (`AppointmentsModule.kt:37`).
     public let makeAppointmentsViewModel: @MainActor () -> AppointmentsViewModel
+
+    /// Koin's `viewModel { (appointmentId: String) -> … }` (`AppointmentsModule.kt:38-47`). The
+    /// `parametersOf(appointmentId)` Koin threads through becomes the closure's one argument.
+    public let makeAppointmentDetailViewModel: @MainActor (String) -> AppointmentDetailViewModel
 
     // The graph pieces the detail and editor ViewModels are built from
     // (`AppointmentsModule.kt:38-56`). They are held rather than reached for so those slices add a
@@ -100,6 +104,16 @@ public func makeAppointmentsModule(
         },
         makeAppointmentsViewModel: {
             AppointmentsViewModel(repository: repository, pendingDeletes: pendingDeletes, clock: clock)
+        },
+        makeAppointmentDetailViewModel: { appointmentId in
+            AppointmentDetailViewModel(
+                appointmentId: appointmentId,
+                repository: repository,
+                profileRepository: profileRepository,
+                navigator: navigator,
+                undoableDelete: undoableDelete,
+                clock: clock
+            )
         },
         profileRepository: profileRepository,
         clock: clock,

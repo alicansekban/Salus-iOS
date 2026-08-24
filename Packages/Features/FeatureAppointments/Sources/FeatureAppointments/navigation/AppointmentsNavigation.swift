@@ -52,13 +52,15 @@ extension View {
     /// `AppointmentDetailKey` rather than forcing one central
     /// `navigationDestination(for: AnyNavKey.self)` in the app target (`AnyNavKey.swift:23-29`).
     ///
-    /// **It registers nothing yet, on purpose.** The two Routes the keys above name —
-    /// `AppointmentDetailRoute` and `AppointmentEditorRoute` — arrive with the detail and editor
-    /// slices, and each adds its own `navigationDestination(for:)` line here. Until then the list
-    /// still publishes both keys (a row tap, the FAB), the shell still applies this modifier, and
-    /// an unregistered push is a no-op rather than a crash — which is what an unfinished feature
-    /// should look like, instead of a placeholder screen pretending to be a destination.
+    /// **`AppointmentEditorKey` is not registered yet, on purpose.** `AppointmentEditorRoute`
+    /// arrives with the editor slice and adds its own `navigationDestination(for:)` line beside
+    /// this one. Until then the list and the detail screen still publish that key (the FAB, the
+    /// Edit button), the shell still applies this modifier, and an unregistered push is a
+    /// no-op rather than a crash — which is what an unfinished feature should look like, instead
+    /// of a placeholder screen pretending to be a destination.
     public func appointmentsDestinations() -> some View {
-        self
+        navigationDestination(for: AppointmentDetailKey.self) { key in
+            AppointmentDetailRoute(appointmentId: key.id)
+        }
     }
 }
