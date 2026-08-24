@@ -1,19 +1,13 @@
 // Ported from `feature/appointments/src/main/kotlin/com/alicansekban/salus/feature/appointments/
 // ui/list/AppointmentsViewModel.kt`.
 //
-// How the Kotlin flow graph is spelled in Swift, piece by piece:
+// How the Kotlin flow graph is spelled in Swift:
 //
-//   `combine(observeUpcoming(now), observePast(now), pendingDeletes.pendingIds) { … }` — two of the
-//   three sources are `AsyncThrowingStream`s and the third is an `@Observable` property, so there
-//   is no single operator to reach for. Each is observed on its own and all three write into
-//   `republish()`, which is what `combine`'s lambda was: the latest of each, folded into one state.
-//   `combine` emits nothing until *every* source has produced a value, which is why `republish()`
-//   returns early while either `loadedUpcoming` or `loadedPast` is nil — a `pendingIds` change
-//   arriving before the first repository emission must not paint a half-empty agenda over the
-//   initial loading state.
-//
-//   `pendingDeletes.pendingIds` is not a stream at all: it is an `@Observable` property, so it is
-//   read inside `withObservationTracking`, whose `onChange` fires **once** and must therefore
+//   `combine(observeUpcoming(now), observePast(now), pendingDeletes.pendingIds) { … }` — the two
+//   repository arms are `AsyncThrowingStream`s and go through `latestOfBoth`, this package's
+//   `combine`-of-two, which already emits nothing until both sides have produced a value and pairs
+//   every later emission with the other's latest. The third arm is an `@Observable` property, so it
+//   is read inside `withObservationTracking`, whose `onChange` fires **once** and must therefore
 //   re-register itself. `onChange` also runs *before* the new value is stored, which is why the
 //   re-registration hops through a `Task { @MainActor }` and why a test reads the list through
 //   `waitUntil` rather than straight after a delete. This is `VitalsViewModel.trackPendingDeletes`,
@@ -22,20 +16,20 @@
 //   `.stateIn(scope, WhileSubscribed(5_000), AppointmentsUiState())` — `@Observable` has no
 //   subscription-count hook, so the observation runs from `init` to `deinit` instead of starting
 //   and stopping with the UI. The initial value is the same `AppointmentsUiState()`, and `deinit`
-//   cancels both collections through `CancellationBox`.
+//   cancels the collection through `CancellationBox`.
 //
 // **ONE BEHAVIOURAL DIVERGENCE, deliberate and recorded.** Kotlin hangs the whole graph off
 // `isPastExpanded.flatMapLatest { … }` (`AppointmentsViewModel.kt:29-32`), so every tap on
-// "show/hide past" tears the two collections down and reopens them with a **fresh** `clock.now()`
-// and `clock.today()`. Here `now` and `todayEpochDay` are captured once, in `init`, and the toggle
-// only flips a flag and republishes. Two reasons: the flag is presentation state that the
-// repository query does not depend on — restarting two database observations to redraw a
-// disclosure arrow is a side effect of how `flatMapLatest` was reached for, not a behaviour anyone
-// asked for — and a restart would drop the agenda back to its loading state mid-interaction, which
-// on Android is hidden by `stateIn` holding the last value and here would be visible. What Android
-// buys with it is a clock refresh; the same refresh arrives on iOS the way it does everywhere in
-// this port, by the Route rebuilding the ViewModel when the screen is entered again. Neither
-// platform refreshes `now` while the list sits open.
+// "show/hide past" tears the collections down and reopens them with a **fresh** `clock.now()` and
+// `clock.today()`. Here `now` and `todayEpochDay` are captured once, in `init`, and the toggle only
+// flips a flag and republishes. Two reasons: the flag is presentation state that the repository
+// query does not depend on — restarting two database observations to redraw a disclosure arrow is a
+// side effect of how `flatMapLatest` was reached for, not a behaviour anyone asked for — and a
+// restart would drop the agenda back to its loading state mid-interaction, which on Android is
+// hidden by `stateIn` holding the last value and here would be visible. What Android buys with it
+// is a clock refresh; the same refresh arrives on iOS the way it does everywhere in this port, by
+// the Route rebuilding the ViewModel when the screen is entered again. Neither platform refreshes
+// `now` while the list sits open.
 
 import Foundation
 import Observation
@@ -60,14 +54,14 @@ public final class AppointmentsViewModel {
     /// `AppointmentsViewModel.kt:27`.
     private var isPastExpanded = false
 
-    /// What each window has emitted, or nil while it has emitted nothing yet — the state `combine`
-    /// is in before all of its sources have produced a value.
-    private var loadedUpcoming: [Appointment]?
-    private var loadedPast: [Appointment]?
+    /// The latest pair the two windows have formed, or nil while `latestOfBoth` has emitted nothing
+    /// — the state `combine` is in before all of its sources have produced a value. A `pendingIds`
+    /// change arriving before that first pair must not paint a half-empty agenda over the initial
+    /// loading state, which is what `republish()`'s `guard` is for.
+    private var loaded: (upcoming: [Appointment], past: [Appointment])?
 
-    /// The two collections. Boxed so `deinit` can cancel them — see `CancellationBox`.
-    private let upcomingTask = CancellationBox()
-    private let pastTask = CancellationBox()
+    /// The collection. Boxed so `deinit` can cancel it — see `CancellationBox`.
+    private let observation = CancellationBox()
 
     public init(
         repository: any AppointmentsRepository,
@@ -82,8 +76,7 @@ public final class AppointmentsViewModel {
     }
 
     deinit {
-        upcomingTask.cancel()
-        pastTask.cancel()
+        observation.cancel()
     }
 
     /// `AppointmentsViewModel.kt:70-74`.
@@ -97,31 +90,27 @@ public final class AppointmentsViewModel {
 
     private func start() {
         trackPendingDeletes()
-        observe(repository.observeUpcoming(from: now), into: upcomingTask) { viewModel, items in
-            viewModel.loadedUpcoming = items
-        }
-        observe(repository.observePast(before: now), into: pastTask) { viewModel, items in
-            viewModel.loadedPast = items
-        }
-    }
-
-    /// One arm of `combine`: every emission is stored, then the three latest values are folded.
-    private func observe(
-        _ stream: AsyncThrowingStream<[Appointment], any Error>,
-        into box: CancellationBox,
-        store: @escaping @MainActor (AppointmentsViewModel, [Appointment]) -> Void
-    ) {
-        box.replace(with: Task { [weak self] in
+        let pairs = latestOfBoth(
+            repository.observeUpcoming(from: now),
+            repository.observePast(before: now)
+        ) { ($0, $1) }
+        observation.replace(with: Task { [weak self] in
             do {
-                for try await items in stream {
+                for try await (upcoming, past) in pairs {
                     guard let self else { return }
-                    store(self, items)
+                    loaded = (upcoming, past)
                     republish()
                 }
             } catch {
-                // A failing `Flow` cancels its collector on Android and the screen keeps whatever
-                // it last drew; the same happens here. Nothing is swallowed that the user could
-                // have acted on — there is no retry affordance on either platform.
+                // A failing `Flow` cancels its collector on Android and the screen keeps whatever it
+                // last drew; the same happens here, and it is `VitalsViewModel`'s house pattern —
+                // there is no retry affordance on either platform, so there is nothing the user
+                // could act on. Said plainly, because it has one visible edge: a failure *before*
+                // the first pair leaves `loaded` nil, so `state.isLoading` stays true and the screen
+                // spins forever rather than showing an error. Android's spinner is equally
+                // permanent (`stateIn`'s initial value is the loading state and the cancelled flow
+                // never replaces it), so this is the ported behaviour and not a dropped case. A
+                // real error state is a product decision both platforms would take together.
             }
         })
     }
@@ -146,12 +135,12 @@ public final class AppointmentsViewModel {
     /// Rows vanish the moment a delete is confirmed and come back on undo, without a repository
     /// round trip in either direction.
     private func republish() {
-        guard let loadedUpcoming, let loadedPast else { return }
+        guard let loaded else { return }
         let pending = pendingDeletes.pendingIds
         state = AppointmentsUiState(
             isLoading: false,
-            upcoming: Self.groupIntoDays(Self.listItems(loadedUpcoming, without: pending)),
-            past: Self.listItems(loadedPast, without: pending),
+            upcoming: Self.groupIntoDays(Self.listItems(loaded.upcoming, without: pending)),
+            past: Self.listItems(loaded.past, without: pending),
             isPastExpanded: isPastExpanded,
             todayEpochDay: todayEpochDay
         )

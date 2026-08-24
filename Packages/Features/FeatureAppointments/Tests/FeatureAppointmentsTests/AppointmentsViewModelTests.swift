@@ -112,6 +112,46 @@ struct AppointmentsViewModelTests {
         #expect(loaded.upcoming.isEmpty)
         #expect(loaded.past.isEmpty)
     }
+
+    /// **No Kotlin twin — an Android gap, not an iOS extra.** `AppointmentsViewModelTest.kt` never
+    /// exercises the `pendingIds` arm of its own `combine`, even though `AppointmentsViewModel.kt:36`
+    /// carries it; the iOS arm is additionally a `withObservationTracking` registration that fires
+    /// **once** and re-registers itself, so a single change proves nothing and a silent break would
+    /// look exactly like a working list until the second delete. The four steps below are therefore
+    /// four separate `pendingIds` changes, and cover both lists the filter is applied to.
+    @Test("pending deletes hide rows in both lists and undo brings them back")
+    func pendingDeletesHideRowsInBothListsAndUndoBringsThemBack() async {
+        repository.setAppointments(
+            appointment("soon", startsIn: 1 * .day),
+            appointment("past", startsIn: -3 * .day)
+        )
+        let viewModel = viewModel()
+        await waitUntil("the first emission") { !viewModel.state.isLoading }
+
+        // The real wiring, not `controller.schedule` by hand: this is what the detail and editor
+        // screens call. The commit never runs — `TestDeletes`' window stays shut for the whole test
+        // — which is the point: the row leaves the list on the *pending* id alone, with no
+        // repository round trip.
+        deletes.undoableDelete("past", message: AppointmentsStrings.deleted) { [repository] in
+            try? await repository.deleteAppointment(id: "past")
+        }
+        await waitUntil("the past row to go") { viewModel.state.past.isEmpty }
+        #expect(viewModel.state.upcoming.flatMap { section in section.items.map(\.id) } == ["soon"])
+
+        deletes.undoLast()
+        await waitUntil("the past row to come back") { viewModel.state.past.map(\.id) == ["past"] }
+
+        deletes.undoableDelete("soon", message: AppointmentsStrings.deleted) { [repository] in
+            try? await repository.deleteAppointment(id: "soon")
+        }
+        await waitUntil("the upcoming row to go") { viewModel.state.upcoming.isEmpty }
+        #expect(viewModel.state.past.map(\.id) == ["past"])
+
+        deletes.undoLast()
+        await waitUntil("the upcoming row to come back") {
+            viewModel.state.upcoming.flatMap { section in section.items.map(\.id) } == ["soon"]
+        }
+    }
 }
 
 /// Kotlin's `1.days` / `6.hours` (`kotlin.time.Duration.Companion`), as the seconds a
