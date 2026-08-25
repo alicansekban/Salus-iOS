@@ -310,9 +310,15 @@ Run by Alican on his **iPhone 14 Pro Max** (iOS 26, AlarmKit available), Debug b
       system default.
 - [x] **5. AlarmKit refused** — with the permission switched off in Settings the dose arrived as a
       time-sensitive notification with the alarm sound.
-- [ ] **6. OS-driven background launch and expiration** — not yet run (needs the two lldb commands
-      from section 8 on the device).
-- [ ] **7. The reminder survives a reboot** — not yet run.
+- [x] **6. OS-driven background launch and expiration** — `_simulateLaunchForTaskWithIdentifier:`
+      advanced the last-sync stamp. A pass completes in well under a second, so a separate
+      expiration simulation answers *"not currently being simulated"*; issuing launch and expiration
+      in one lldb expression ran without error and without terminating the app. (The expiration
+      handler itself is pinned off device by `BackgroundRefreshTaskBodyTests`.)
+- [x] **7. The reminder survives a reboot** — armed ten minutes out with
+      `-SalusDebugReminderLeadMinutes 10`, Xcode stopped, phone rebooted and unlocked once; the alarm
+      fired on time.
 
-Items 6-7 stay owed before iOS-M5 ships the medication handler.
+**Section 9 is complete (7/7).** The M3a prerequisite for iOS-M5 is closed; the designed alarm sound
+(`salus_alarm.caf` is still the generated placeholder) remains owed before release.
 
