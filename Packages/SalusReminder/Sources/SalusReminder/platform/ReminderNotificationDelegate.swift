@@ -51,8 +51,9 @@ public final class ReminderNotificationDelegate: NSObject, UNUserNotificationCen
     private let onOpen: @Sendable (ReminderRef) -> Void
 
     /// - Parameter onOpen: called on a plain tap, with the occurrence the notification was about.
-    ///   In iOS-M3 the app layer routes it to the matching tab root; the detail-screen push arrives
-    ///   with the M4/M5 navigation keys.
+    ///   The app layer switches to the tab that hosts the type and then pushes the detail key it has
+    ///   — an appointment lands on its detail screen since M4; a dose and a cycle period stop at the
+    ///   tab root until M5 and M6 give them a key to name.
     public init(
         handlerRegistry: ReminderHandlerRegistry,
         synchronizer: any ReminderWindowSyncing,
@@ -64,41 +65,81 @@ public final class ReminderNotificationDelegate: NSObject, UNUserNotificationCen
         super.init()
     }
 
+    /// The framework's own spelling of "the user answered a notification", taken in its
+    /// completion-handler form rather than the `async` one.
+    ///
+    /// Not a style choice. UIKit finishes a response inside the completion block — the block reaches
+    /// `-[UIApplication _updateSnapshotAndStateRestorationWithAction:windowScene:]`, which traps with
+    /// `NSInternalInconsistencyException "Call must be made on main thread"` — while the `async`
+    /// requirement hands that block to a compiler-generated `@objc` thunk which calls it on whatever
+    /// executor the async function last resumed on. That was the iOS-M3 defect: every tap on a Salus
+    /// notification killed the app. Isolating the whole delegate to `@MainActor` would put the
+    /// thunk's own resume back on the main thread, but it does not compile under Swift 6 — the
+    /// requirement is not isolated, so `UNUserNotificationCenter`, `UNNotificationResponse` and
+    /// `UNNotification` would each have to cross an isolation boundary and none of them is
+    /// `Sendable`. Holding the block by hand is the shape that is left, and it is the honest one:
+    /// which thread the block is called on is this type's promise, so it is made in code here rather
+    /// than inferred from an annotation.
     public func userNotificationCenter(
         _: UNUserNotificationCenter,
-        didReceive response: UNNotificationResponse
-    ) async {
-        await respond(
+        didReceive response: UNNotificationResponse,
+        withCompletionHandler completionHandler: @escaping () -> Void
+    ) {
+        respond(
             to: response.notification.request.content.userInfo,
-            actionIdentifier: response.actionIdentifier
+            actionIdentifier: response.actionIdentifier,
+            completionHandler: completionHandler
         )
     }
 
     public func userNotificationCenter(
         _: UNUserNotificationCenter,
-        willPresent _: UNNotification
-    ) async -> UNNotificationPresentationOptions {
+        willPresent _: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
         // Returns `foregroundPresentationOptions` for every notification the OS hands this
         // delegate, not only ones the reminder engine scheduled — deliberate, because the engine
         // is the app's only notification scheduler today. If another subsystem ever posts its own
         // notifications, add a `ReminderUserInfo.ref(from:)` guard here so a non-reminder
         // notification does not inherit this engine's presentation choice.
-        Self.foregroundPresentationOptions
+        //
+        // Answered synchronously, on the thread the OS called this on: the main-thread invariant
+        // the other method has to work for holds here for free.
+        completionHandler(Self.foregroundPresentationOptions)
     }
 
-    /// The decision behind ``userNotificationCenter(_:didReceive:)``, taken on the two values that
-    /// method reads off the response.
+    /// The decision behind ``userNotificationCenter(_:didReceive:withCompletionHandler:)``, taken on
+    /// the two values that method reads off the response, plus the block it has to finish with.
     ///
     /// It exists as a seam because `UNNotificationResponse` and `UNNotification` both declare
     /// `init NS_UNAVAILABLE`: a test cannot build one, and the alternative — reaching for the private
     /// `responseWithNotification:actionIdentifier:` initializer — would pin the suite to an
     /// implementation detail of the framework. So the framework method stays a one-line forward and
-    /// everything worth asserting lives on this side of it.
-    func respond(to userInfo: [AnyHashable: Any], actionIdentifier: String) async {
-        // A notification we did not schedule, or one from a build whose keys have since changed:
-        // there is no occurrence to react to, so nothing is dispatched and nothing is refilled.
-        guard let ref = ReminderUserInfo.ref(from: userInfo) else { return }
+    /// everything worth asserting, the main-thread promise included, lives on this side of it.
+    func respond(
+        to userInfo: [AnyHashable: Any],
+        actionIdentifier: String,
+        completionHandler: @escaping () -> Void
+    ) {
+        // Parsed here, on the thread the framework called us on, because a `userInfo` dictionary is
+        // not `Sendable` and must not cross into the task below. A payload that names no occurrence
+        // — a notification we did not schedule, or one from a build whose keys have since changed —
+        // reads as `nil`: nothing is dispatched and nothing is refilled, but the response is still
+        // finished, because iOS holds the app awake until the block is called.
+        let ref = ReminderUserInfo.ref(from: userInfo)
+        // UIKit's block, non-`Sendable` only because that is how an Objective-C block imports. It is
+        // called exactly once, from the main actor, after the reaction below has finished.
+        nonisolated(unsafe) let completion = completionHandler
+        Task {
+            if let ref {
+                await respond(to: ref, actionIdentifier: actionIdentifier)
+            }
+            await MainActor.run { completion() }
+        }
+    }
 
+    /// The engine's reaction to one occurrence the user has answered.
+    func respond(to ref: ReminderRef, actionIdentifier: String) async {
         guard actionIdentifier != UNNotificationDefaultActionIdentifier else {
             // A tap on the body is navigation, not a reaction. Nothing about the occurrence changed,
             // so no handler runs and the window has nothing to refill.

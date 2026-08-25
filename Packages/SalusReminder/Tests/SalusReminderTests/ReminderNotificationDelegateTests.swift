@@ -3,9 +3,10 @@
 // (the window is refilled after the event, whatever the event turned out to be).
 //
 // Everything here goes through the delegate's internal seam rather than through
-// `userNotificationCenter(_:didReceive:)`. `UNNotificationResponse` and `UNNotification` both declare
-// `init NS_UNAVAILABLE`, so a test cannot build the arguments the framework methods take; the two
-// framework methods are one line each and forward to the seam, which holds the whole decision.
+// `userNotificationCenter(_:didReceive:withCompletionHandler:)`. `UNNotificationResponse` and
+// `UNNotification` both declare `init NS_UNAVAILABLE`, so a test cannot build the arguments the
+// framework methods take; the two framework methods are one line each and forward to the seam, which
+// holds the whole decision — the completion block's main thread included.
 
 import Foundation
 import SalusModel
@@ -110,6 +111,25 @@ struct DelegateFixture {
     func userInfo(for ref: ReminderRef) -> [AnyHashable: Any] {
         ReminderUserInfo.payload(for: ref)
     }
+
+    /// Drives the delegate exactly as `userNotificationCenter(_:didReceive:withCompletionHandler:)`
+    /// does — payload in, completion block awaited — so an assertion that follows always runs after
+    /// the reaction has finished.
+    ///
+    /// - Returns: whether the completion block was called on the main thread, which is the one thing
+    ///   UIKit asserts about it.
+    @discardableResult
+    func respond(
+        _ delegate: ReminderNotificationDelegate,
+        to userInfo: [AnyHashable: Any],
+        actionIdentifier: String
+    ) async -> Bool {
+        await withCheckedContinuation { continuation in
+            delegate.respond(to: userInfo, actionIdentifier: actionIdentifier) {
+                continuation.resume(returning: Thread.isMainThread)
+            }
+        }
+    }
 }
 
 @Suite("ReminderNotificationDelegate")
@@ -126,7 +146,7 @@ struct ReminderNotificationDelegateTests {
         let ref = fixture.ref()
         let delegate = fixture.delegate(handlers: [fixture.handler()])
 
-        await delegate.respond(to: fixture.userInfo(for: ref), actionIdentifier: "TAKEN")
+        await fixture.respond(delegate, to: fixture.userInfo(for: ref), actionIdentifier: "TAKEN")
 
         #expect(fixture.log.recorded == [.action(ref, "TAKEN"), .sync])
     }
@@ -139,7 +159,11 @@ struct ReminderNotificationDelegateTests {
         let ref = fixture.ref(.appointment, "appt-4", "2026-10-02T09:30")
         let delegate = fixture.delegate(handlers: [fixture.handler(.appointment)])
 
-        await delegate.respond(to: fixture.userInfo(for: ref), actionIdentifier: UNNotificationDismissActionIdentifier)
+        await fixture.respond(
+            delegate,
+            to: fixture.userInfo(for: ref),
+            actionIdentifier: UNNotificationDismissActionIdentifier
+        )
 
         #expect(fixture.log.recorded == [.action(ref, ReminderActionIds.dismiss), .sync])
     }
@@ -150,7 +174,7 @@ struct ReminderNotificationDelegateTests {
     func actionWithoutHandlerStillSyncs() async {
         let delegate = fixture.delegate(handlers: [])
 
-        await delegate.respond(to: fixture.userInfo(for: fixture.ref()), actionIdentifier: "TAKEN")
+        await fixture.respond(delegate, to: fixture.userInfo(for: fixture.ref()), actionIdentifier: "TAKEN")
 
         #expect(fixture.log.recorded == [.sync])
     }
@@ -162,7 +186,7 @@ struct ReminderNotificationDelegateTests {
         let ref = fixture.ref()
         let delegate = fixture.delegate(handlers: [fixture.handler(failing: HandlerFailure())])
 
-        await delegate.respond(to: fixture.userInfo(for: ref), actionIdentifier: "SNOOZE")
+        await fixture.respond(delegate, to: fixture.userInfo(for: ref), actionIdentifier: "SNOOZE")
 
         #expect(fixture.log.recorded == [.action(ref, "SNOOZE"), .sync])
     }
@@ -170,14 +194,18 @@ struct ReminderNotificationDelegateTests {
     // MARK: - Opening the app
 
     /// Tapping the notification body is navigation, not a reaction: no handler runs and no sync is
-    /// requested. M3 routes the ref to the matching tab root; the detail-screen push arrives with the
-    /// M4/M5 navigation keys.
+    /// requested. The app layer switches to the tab that hosts the type and pushes the detail key it
+    /// has — an appointment since M4, a dose and a cycle period once M5 and M6 name theirs.
     @Test("a default tap only hands the ref to the open callback")
     func defaultTapRoutesToOnOpen() async {
         let ref = fixture.ref(.cyclePeriod, "cycle-1", "2026-09-14")
         let delegate = fixture.delegate(handlers: [fixture.handler(.cyclePeriod)])
 
-        await delegate.respond(to: fixture.userInfo(for: ref), actionIdentifier: UNNotificationDefaultActionIdentifier)
+        await fixture.respond(
+            delegate,
+            to: fixture.userInfo(for: ref),
+            actionIdentifier: UNNotificationDefaultActionIdentifier
+        )
 
         #expect(fixture.log.recorded == [.open(ref)])
     }
@@ -207,10 +235,47 @@ struct ReminderNotificationDelegateTests {
 
         for userInfo in unreadable {
             let delegate = fixture.delegate(handlers: [fixture.handler()])
-            await delegate.respond(to: userInfo, actionIdentifier: "TAKEN")
-            await delegate.respond(to: userInfo, actionIdentifier: UNNotificationDefaultActionIdentifier)
+            await fixture.respond(delegate, to: userInfo, actionIdentifier: "TAKEN")
+            await fixture.respond(delegate, to: userInfo, actionIdentifier: UNNotificationDefaultActionIdentifier)
         }
 
+        #expect(fixture.log.recorded.isEmpty)
+    }
+
+    // MARK: - The main-thread invariant
+
+    /// UIKit finishes a notification response inside the completion block — the block reaches
+    /// `-[UIApplication _updateSnapshotAndStateRestorationWithAction:windowScene:]`, which traps with
+    /// `NSInternalInconsistencyException "Call must be made on main thread"` if it is called from
+    /// anywhere else. The engine's own reaction is `async` and resumes on the cooperative pool, so
+    /// hopping back is the delegate's job, and this test is the only thing standing behind it.
+    @Test("the completion handler is called on the main thread, whatever executor the reaction ran on")
+    func completionHandlerRunsOnTheMainThread() async {
+        let delegate = fixture.delegate(handlers: [fixture.handler()])
+
+        let onMainThread = await fixture.respond(
+            delegate,
+            to: fixture.userInfo(for: fixture.ref()),
+            actionIdentifier: "TAKEN"
+        )
+
+        #expect(onMainThread)
+    }
+
+    /// The response has to be finished even when there is nothing to react to: iOS keeps the app
+    /// awake until the block is called, and a payload it cannot read is the one path that dispatches
+    /// nothing at all.
+    @Test("a payload that names no occurrence still finishes the response")
+    func unreadablePayloadStillCallsTheCompletionHandler() async {
+        let delegate = fixture.delegate(handlers: [fixture.handler()])
+
+        let onMainThread = await fixture.respond(
+            delegate,
+            to: ["some.other.app": "hello"],
+            actionIdentifier: "TAKEN"
+        )
+
+        #expect(onMainThread)
         #expect(fixture.log.recorded.isEmpty)
     }
 
