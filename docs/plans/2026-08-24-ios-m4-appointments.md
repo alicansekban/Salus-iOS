@@ -338,7 +338,7 @@ SHAs are the ones on `m4-appointments` after rebase, not the side-branch ones th
 | 10b — notification response on the main thread (M3 bug) | 1 — `ccd66b6` | Clean first time |
 | 11 — this record, `scripts/m4-manual-qa.md`, the two doc edits | 1 — `c72ff2c` | — |
 | 12 — list row delete (divergence (p)) + the three Kotlin cases | 1 — `f6dbc35` | — |
-| Final review fix wave — `SalusDateField` picker parity + this record's numbers | 2 — `89ef72e`, docs `DOCS_SHA` | Whole-branch review, 7 findings → 1 round |
+| Final review fix wave — `SalusDateField` picker parity + this record's numbers | 2 — `89ef72e`, docs `d598f32` | Whole-branch review, 7 findings → 1 round |
 
 Two integration checks ran mid-flight — after T1/T2/T3/T6 merged (`e5381f6`) and after T4/T5/T7
 (`44e38c1`) and T8/T9/T10 (`723fc50`) — each `24/24 packages passed`.
