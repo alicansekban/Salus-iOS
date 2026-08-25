@@ -1,3 +1,4 @@
+import FeatureAppointments
 import FeatureSettings
 import FeatureVitals
 import Foundation
@@ -82,6 +83,11 @@ final class AppCompositionRoot {
     /// `UndoableDelete` built over `pendingDelete` + `snackbar`, so nothing here re-creates either.
     let vitalsModule: VitalsModule
 
+    /// `appointmentsModule` (`feature/appointments/.../di/AppointmentsModule.kt`), built once and
+    /// handed to the appointments tab through the environment. It also owns the reminder handler
+    /// the registry below is built with, so the engine and the screens read one repository.
+    let appointmentsModule: AppointmentsModule
+
     /// `settingsModule` (`feature/settings/.../di/SettingsModule.kt`), built once and handed to the
     /// More tab through the environment. `settingsModule` is built from local values at
     /// construction, not from the three reminder properties below — those `let`s exist to keep the
@@ -160,9 +166,35 @@ final class AppCompositionRoot {
         self.pendingDelete = pendingDelete
         self.navigator = navigator
         self.snackbar = snackbar
+        // The one cycle in the graph, broken here. `makeReminderGraph` builds the handler registry
+        // and the scheduler together as one immutable value, the appointment handler needs the
+        // repository, and the repository needs a scheduler — so the module is built first against
+        // a relay, and the relay is pointed at the real scheduler once there is one. See
+        // `ReminderSchedulerRelay`.
+        let reminderRelay = ReminderSchedulerRelay()
+        // The locals above rather than `self.…` wherever one exists: the instance is not whole yet,
+        // so Swift lets this read only the stored properties already assigned — `profileRepository`
+        // and, once this statement returns, `appointmentsModule`.
+        appointmentsModule = makeAppointmentsModule(
+            appointmentDao: AppointmentDao(database: database),
+            profileRepository: profileRepository,
+            reminderScheduler: reminderRelay,
+            clock: clock,
+            idGenerator: idGenerator,
+            pendingDeletes: pendingDelete,
+            snackbar: snackbar,
+            navigator: navigator
+        )
         // `reminderModule` (`ReminderModule.kt:18-28`), assembled in one place — see
         // `makeReminderGraph`. The five properties below are five views of that one sub-graph.
-        let reminder = Self.makeReminderGraph(database: database, clock: clock, idGenerator: idGenerator)
+        let reminder = Self.makeReminderGraph(
+            database: database,
+            clock: clock,
+            idGenerator: idGenerator,
+            // `single<ReminderHandler>(named(APPOINTMENT))` (`AppointmentsModule.kt:32-35`) reaching
+            // `getAll()` — the registry is what Koin's qualified lookup becomes here.
+            handlers: Self.debugHandlers(clock: clock) + [appointmentsModule.reminderHandler]
+        )
         systemReminderEnvironment = reminder.environment
         reminderEnvironment = reminder.environment
         reminderAuthorization = reminder.environment
@@ -171,9 +203,11 @@ final class AppCompositionRoot {
         reminderScheduler = reminder.scheduler
         reminderOpenRouter = reminder.openRouter
         reminderDelegate = reminder.delegate
+        // Now that there is a scheduler, everything the module already handed out starts working.
+        // Nothing has called `requestSync()` in between — see `ReminderSchedulerRelay` for why a
+        // call that did would still be correct.
+        reminderRelay.bind(reminder.scheduler)
 
-        // The locals above rather than `self.…`: `vitalsModule` is still uninitialised here, so the
-        // instance is not whole yet and Swift will not let this read its own stored properties.
         vitalsModule = makeVitalsModule(
             vitalsDao: VitalsDao(database: database),
             clock: clock,
@@ -281,7 +315,8 @@ final class AppCompositionRoot {
     private static func makeReminderGraph(
         database: SalusDatabase,
         clock: any SalusClock,
-        idGenerator: any IdGenerator
+        idGenerator: any IdGenerator,
+        handlers: [any ReminderHandler]
     ) -> ReminderGraph {
         let alarmKit = makeAlarmKitBackend()
         let notificationCenter = SystemUserNotificationCenter()
@@ -291,10 +326,10 @@ final class AppCompositionRoot {
             backgroundRefreshAvailable: isBackgroundRefreshAvailable()
         )
         let syncState = UserDefaultsReminderSyncStateStore()
-        // `getAll()` with nothing registered yet: the medication, appointment and cycle handlers
-        // arrive with M4/M5/M6, and the engine reconciles an empty window until they do. A Debug
-        // build can install one fake handler in their place — see `debugHandlers`.
-        let handlerRegistry = ReminderHandlerRegistry(all: debugHandlers(clock: clock))
+        // `getAll()`: the appointment handler landed with M4; the medication and cycle handlers
+        // arrive with M5/M6, and the engine reconciles without them until they do. A Debug build
+        // may add one fake handler alongside — see `debugHandlers`.
+        let handlerRegistry = ReminderHandlerRegistry(all: handlers)
         let scheduler = BackgroundRefreshScheduler(
             synchronizer: ReminderWindowSynchronizer(
                 dao: ReminderAlarmDao(database: database),
@@ -337,8 +372,8 @@ final class AppCompositionRoot {
         )
     }
 
-    /// The handlers a Debug build may add to the empty registry — today exactly one, and only when
-    /// the app was launched with ``DebugReminderHandler/leadMinutesKey``.
+    /// The handlers a Debug build may add alongside the real ones — today exactly one, and only
+    /// when the app was launched with ``DebugReminderHandler/leadMinutesKey``.
     ///
     /// It exists because the acceptance criteria (`docs/plans/2026-08-23-ios-m3-reminder-engine.md`)
     /// are about a reminder surviving a force-quit, a timezone change and a cold period, and none of
@@ -412,8 +447,8 @@ final class AppCompositionRoot {
 /// the shell because a notification tapped from a cold start arrives before any view is on screen —
 /// the ref has to survive until something is there to route it.
 ///
-/// iOS-M3 routes to the owning tab's root and no further. The push onto the detail screen needs a
-/// navigation key per reminder type, which arrives with M4/M5.
+/// iOS-M3 routed to the owning tab's root and no further; M4 pushes the appointment's detail
+/// screen on top of it, and M5 adds the dose.
 @MainActor
 @Observable
 final class ReminderOpenRouter {

@@ -10,11 +10,9 @@
 //   `factoryOf(::SaveAppointmentUseCase)`   → `makeSaveAppointmentUseCase`, a closure, so every
 //                                             call gets a fresh one exactly as `factory` does.
 //   `viewModelOf(::AppointmentsViewModel)`  → `makeAppointmentsViewModel`.
-//
-// TODO: `AppointmentNotificationTexts` + `AppointmentReminderHandler`
-// (`AppointmentsModule.kt:32-35`) arrive with the app wiring that registers the handler. No
-// placeholder member and no `fatalError` stands in for it meanwhile: a member that cannot be
-// called is worse than one that is not there, because only the second is visible to the compiler.
+//   `single<AppointmentNotificationTexts>`  → built inline below and handed straight to the
+//   + `single<ReminderHandler>(named)`         handler; neither is needed anywhere else, so the
+//                                             `reminderHandler` property is the only export.
 
 import SalusCommon
 import SalusDatabase
@@ -41,6 +39,15 @@ public struct AppointmentsModule {
 
     /// Koin's `factoryOf(::SaveAppointmentUseCase)` (`AppointmentsModule.kt:31`).
     public let makeSaveAppointmentUseCase: @MainActor () -> SaveAppointmentUseCase
+
+    /// Koin's `single<ReminderHandler>(named(ReminderType.APPOINTMENT.name))`
+    /// (`AppointmentsModule.kt:32-35`). Exposed as the protocol because its one consumer is the
+    /// composition root's `ReminderHandlerRegistry`, which names no feature type.
+    ///
+    /// It is built here rather than by the app so the handler and the repository it reads are the
+    /// same object graph: a handler over a second repository would answer the engine from a
+    /// different in-memory view of the same table.
+    public let reminderHandler: any ReminderHandler
 
     /// Koin's `viewModelOf(::AppointmentsViewModel)` (`AppointmentsModule.kt:37`).
     public let makeAppointmentsViewModel: @MainActor () -> AppointmentsViewModel
@@ -96,6 +103,14 @@ public func makeAppointmentsModule(
         repository: repository,
         navigator: navigator,
         makeSaveAppointmentUseCase: makeSaveAppointmentUseCase,
+        // `AppointmentsModule.kt:32-35`. `LocalizedAppointmentNotificationTexts()` takes its
+        // locale default, which is the device locale — the twin of Android reading
+        // `context.resources.configuration.locales[0]`.
+        reminderHandler: AppointmentReminderHandler(
+            repository: repository,
+            clock: clock,
+            texts: LocalizedAppointmentNotificationTexts()
+        ),
         makeAppointmentsViewModel: {
             AppointmentsViewModel(repository: repository, pendingDeletes: pendingDeletes, clock: clock)
         },

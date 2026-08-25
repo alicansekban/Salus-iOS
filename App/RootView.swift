@@ -1,3 +1,4 @@
+import FeatureAppointments
 import FeatureSettings
 import FeatureVitals
 import SalusDesignSystem
@@ -93,8 +94,9 @@ struct RootView: View {
     /// puts the feature's **concrete** key into the path, so each feature package registers its own
     /// `navigationDestination(for:)` in a `…Destinations()` modifier applied here — the twin of
     /// Android's `vitalsEntries` / `homeEntries` `NavEntry` providers. The shell therefore never
-    /// names a key; `vitalsDestinations()` and `settingsDestinations()` below are those modifiers,
-    /// and the three remaining tabs keep their placeholder until their feature lands.
+    /// names a key; `vitalsDestinations()`, `appointmentsDestinations()` and
+    /// `settingsDestinations()` below are those modifiers, and the two remaining tabs keep their
+    /// placeholder until their feature lands.
     private func tabStack(for tab: RootTab) -> some View {
         navigationStack(for: tab)
             // The app's one snackbar host, applied *inside* the tab's content region rather than
@@ -138,6 +140,16 @@ struct RootView: View {
             // the editor.
             .environment(\.vitalsModule, root.vitalsModule)
 
+        case .appointments:
+            NavigationStack(path: backStacks.binding(for: tab)) {
+                AppointmentsRoute()
+                    .appointmentsDestinations()
+            }
+            // On the stack, not inside its root: a pushed `AppointmentDetailKey` or
+            // `AppointmentEditorKey` destination is rendered by the stack, so an environment value
+            // set on the root view would not reach either.
+            .environment(\.appointmentsModule, root.appointmentsModule)
+
         case .more:
             NavigationStack(path: backStacks.binding(for: tab)) {
                 // TODO(M8): the settings hub replaces this placeholder. Until it lands the tab's
@@ -159,11 +171,27 @@ struct RootView: View {
         }
     }
 
-    /// Shows the tab that owns a tapped reminder — the whole of iOS-M3's deep link. Pushing the
-    /// occurrence's own screen needs a navigation key per reminder type, which lands with M4/M5.
+    /// Shows a tapped reminder's occurrence: the tab that owns it, then the screen itself.
+    ///
+    /// iOS-M3 routed to the tab root; M4 pushes the appointment detail; M5 adds the dose. The push
+    /// has to follow the tab switch, because `TabBackStacks.push` appends to whichever stack is
+    /// *selected*.
+    ///
+    /// **An iOS-only behaviour** (global constraints, decision 2). Android's
+    /// `ReminderNotificationPresenter` builds a launcher intent and stops there, so a tapped
+    /// appointment reminder lands on whatever screen the app was last on; the ref carries the
+    /// entity id on both platforms, and iOS spends it.
     private func openTappedReminder() {
         guard let ref = root.reminderOpenRouter.consume() else { return }
         backStacks.switchTopLevel(RootTab.hosting(ref.type))
+        switch ref.type {
+        case .appointment:
+            backStacks.push(AnyNavKey(AppointmentDetailKey(id: ref.entityId)))
+        // The cycle and dose screens are M6's and M5's; until they exist there is no key to name,
+        // and the tab root is where the tap lands.
+        case .cyclePeriod, .medicationDose:
+            break
+        }
     }
 
     /// The store emits its current value first, then every change, so this both seeds and tracks.
