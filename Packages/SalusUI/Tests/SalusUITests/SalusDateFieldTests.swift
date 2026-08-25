@@ -48,3 +48,54 @@ struct SalusDateFieldTests {
         #expect(SalusDateFieldBinding.epochDay(from: Date(timeIntervalSince1970: -86400)) == -1)
     }
 }
+
+/// Which face the field draws, and — the point of the whole arrangement — that merely opening the
+/// picker is not a choice. Kotlin's `DatePickerDialog` opens on a month and still requires the OK
+/// button (`EditorDateField.kt:47-61`); Cancel leaves the editor's `dateEpochDay` null and the
+/// editor's own validation intact, which is what `.picker(seed:)` preserves here.
+@Suite("SalusDateFieldState.displayMode")
+struct SalusDateFieldStateTests {
+    @Test("nothing picked and the picker closed draws the placeholder button")
+    func closedWithNoValueIsThePlaceholder() {
+        let mode = SalusDateFieldState.displayMode(epochDay: nil, isPicking: false, seedEpochDay: 20678)
+
+        #expect(mode == .placeholder)
+    }
+
+    @Test("opening the picker shows the wheel at the seed, and records nothing")
+    func openingShowsTheWheelAtTheSeed() {
+        let mode = SalusDateFieldState.displayMode(epochDay: nil, isPicking: true, seedEpochDay: 20678)
+
+        // The seed is what the wheel *shows*. The day it would report is still nil — the mode says
+        // `picker`, never `bound`, so nothing downstream can mistake it for a chosen day.
+        #expect(mode == .picker(seed: 20678))
+    }
+
+    @Test("a chosen day binds the field, whether or not the picker was opened")
+    func aChosenDayBindsTheField() {
+        #expect(
+            SalusDateFieldState.displayMode(epochDay: 20682, isPicking: false, seedEpochDay: 20678)
+                == .bound(epochDay: 20682)
+        )
+        #expect(
+            SalusDateFieldState.displayMode(epochDay: 20682, isPicking: true, seedEpochDay: 20678)
+                == .bound(epochDay: 20682)
+        )
+    }
+
+    @Test("the epoch itself is a chosen day, not an absent one")
+    func dayZeroIsAValue() {
+        let mode = SalusDateFieldState.displayMode(epochDay: 0, isPicking: false, seedEpochDay: 20678)
+
+        #expect(mode == .bound(epochDay: 0))
+    }
+
+    /// A caller that clears the day is starting over; a picker left open would resume at the draft
+    /// the last pick left behind instead of at the seed.
+    @Test("clearing the day closes the picker, changing it does not")
+    func clearingTheDayClosesThePicker() {
+        #expect(SalusDateFieldState.clearsPicker(whenValueBecomes: nil))
+        #expect(!SalusDateFieldState.clearsPicker(whenValueBecomes: 20682))
+        #expect(!SalusDateFieldState.clearsPicker(whenValueBecomes: 0))
+    }
+}

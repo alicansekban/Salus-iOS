@@ -65,7 +65,14 @@ struct WeightEditorScreen: View {
                 SalusDateField(
                     title: VitalsStrings.selectDate,
                     epochDay: state.dateEpochDay,
-                    placeholder: VitalsStrings.selectDate
+                    placeholder: VitalsStrings.selectDate,
+                    // Where the wheel opens before a day is set, Kotlin's
+                    // `initialSelectedDateMillis` slot (`EditorDateField.kt:48`). The ViewModel
+                    // fills `dateEpochDay` at init on a new entry and from the loaded entry
+                    // otherwise (`WeightEditorViewModel.kt:35-54`), so the fallback only stands in
+                    // for the window before a loaded entry arrives — and seeding the wheel records
+                    // nothing until it is turned.
+                    seedEpochDay: state.dateEpochDay ?? 0
                 ) { onEvent(.dateSelected($0)) }
                 noteField
             }

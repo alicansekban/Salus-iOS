@@ -228,7 +228,14 @@ struct AppointmentEditorScreen: View {
                 SalusDateField(
                     title: AppointmentsStrings.selectDate,
                     epochDay: state.dateEpochDay,
-                    placeholder: AppointmentsStrings.selectDate
+                    placeholder: AppointmentsStrings.selectDate,
+                    // Where the wheel opens before a day is set, Kotlin's
+                    // `initialSelectedDateMillis` slot (`EditorDateField.kt:48`). The ViewModel
+                    // sets `dateEpochDay` to today at init on a new appointment and to the loaded
+                    // one otherwise (`AppointmentEditorViewModel.kt:46-72`), so the fallback only
+                    // stands in for the window before a loaded appointment arrives — and seeding
+                    // the wheel records nothing until it is turned.
+                    seedEpochDay: state.dateEpochDay ?? 0
                 ) { onEvent(.dateSelected($0)) }
                     .labelsHidden()
                     .frame(maxWidth: .infinity, alignment: .leading)

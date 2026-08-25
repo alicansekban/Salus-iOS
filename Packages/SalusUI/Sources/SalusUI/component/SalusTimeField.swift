@@ -64,30 +64,40 @@ public struct SalusTimeField: View {
     }
 
     public var body: some View {
-        switch SalusTimeFieldState.displayMode(
-            minuteOfDay: minuteOfDay,
-            isPicking: isPicking,
-            seedMinuteOfDay: seedMinuteOfDay
-        ) {
-        case .placeholder:
-            // Kotlin's `OutlinedButton { Text(appointments_select_time) }`
-            // (`AppointmentEditorScreen.kt:281-286`). Opening the picker is all it does.
-            Button(placeholder) { isPicking = true }
-                .buttonStyle(.bordered)
+        Group {
+            switch SalusTimeFieldState.displayMode(
+                minuteOfDay: minuteOfDay,
+                isPicking: isPicking,
+                seedMinuteOfDay: seedMinuteOfDay
+            ) {
+            case .placeholder:
+                // Kotlin's `OutlinedButton { Text(appointments_select_time) }`
+                // (`AppointmentEditorScreen.kt:281-286`). Opening the picker is all it does.
+                Button(placeholder) { isPicking = true }
+                    .buttonStyle(.bordered)
 
-        case let .picker(seed):
-            DatePicker(title, selection: draftSelection(seededAt: seed), displayedComponents: .hourAndMinute)
-                .environment(\.timeZone, .gmt)
-                // The OK button (`AppointmentEditorScreen.kt:373-380`): the value leaves this view
-                // when the wheel moves, and never merely because it was opened.
-                .onChange(of: draft) { _, picked in
-                    guard let picked else { return }
-                    onChange(SalusTimeFieldBinding.minuteOfDay(from: picked))
-                }
+            case let .picker(seed):
+                DatePicker(title, selection: draftSelection(seededAt: seed), displayedComponents: .hourAndMinute)
+                    .environment(\.timeZone, .gmt)
+                    // The OK button (`AppointmentEditorScreen.kt:373-380`): the value leaves this
+                    // view when the wheel moves, and never merely because it was opened.
+                    .onChange(of: draft) { _, picked in
+                        guard let picked else { return }
+                        onChange(SalusTimeFieldBinding.minuteOfDay(from: picked))
+                    }
 
-        case let .bound(minuteOfDay):
-            DatePicker(title, selection: selection(for: minuteOfDay), displayedComponents: .hourAndMinute)
-                .environment(\.timeZone, .gmt)
+            case let .bound(minuteOfDay):
+                DatePicker(title, selection: selection(for: minuteOfDay), displayedComponents: .hourAndMinute)
+                    .environment(\.timeZone, .gmt)
+            }
+        }
+        // A caller that clears the time is starting over, so the picker closes and its draft goes
+        // with it: without this, the next tap would resume at the time the last picker left behind
+        // instead of at the seed.
+        .onChange(of: minuteOfDay) { _, value in
+            guard SalusTimeFieldState.clearsPicker(whenValueBecomes: value) else { return }
+            isPicking = false
+            draft = nil
         }
     }
 
@@ -127,6 +137,12 @@ enum SalusTimeFieldState {
             return .bound(minuteOfDay: minuteOfDay)
         }
         return isPicking ? .picker(seed: seedMinuteOfDay) : .placeholder
+    }
+
+    /// Whether a change in the bound time must close the picker and drop its draft. Only a cleared
+    /// field does: a time that merely changed is drawn by the bound wheel anyway.
+    static func clearsPicker(whenValueBecomes minuteOfDay: Int?) -> Bool {
+        minuteOfDay == nil
     }
 }
 

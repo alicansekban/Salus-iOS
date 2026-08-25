@@ -103,4 +103,13 @@ struct SalusTimeFieldStateTests {
 
         #expect(mode == .bound(minuteOfDay: 0))
     }
+
+    /// A caller that clears the time is starting over; a picker left open would resume at the draft
+    /// the last pick left behind instead of at the seed.
+    @Test("clearing the time closes the picker, changing it does not")
+    func clearingTheTimeClosesThePicker() {
+        #expect(SalusTimeFieldState.clearsPicker(whenValueBecomes: nil))
+        #expect(!SalusTimeFieldState.clearsPicker(whenValueBecomes: 630))
+        #expect(!SalusTimeFieldState.clearsPicker(whenValueBecomes: 0))
+    }
 }
