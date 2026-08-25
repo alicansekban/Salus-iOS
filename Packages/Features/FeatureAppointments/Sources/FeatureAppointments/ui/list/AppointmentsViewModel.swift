@@ -19,7 +19,7 @@
 //   cancels the collection through `CancellationBox`.
 //
 // **ONE BEHAVIOURAL DIVERGENCE, deliberate and recorded.** Kotlin hangs the whole graph off
-// `isPastExpanded.flatMapLatest { … }` (`AppointmentsViewModel.kt:29-32`), so every tap on
+// `isPastExpanded.flatMapLatest { … }` (`AppointmentsViewModel.kt:33-36`), so every tap on
 // "show/hide past" tears the collections down and reopens them with a **fresh** `clock.now()` and
 // `clock.today()`. Here `now` and `todayEpochDay` are captured once, in `init`, and the toggle only
 // flips a flag and republishes. Two reasons: the flag is presentation state that the repository
@@ -34,25 +34,30 @@
 import Foundation
 import Observation
 import SalusCommon
+import SalusUI
 
-/// Drives the appointments agenda (`AppointmentsViewModel.kt:22-83`).
+/// Drives the appointments agenda (`AppointmentsViewModel.kt:23-94`).
 @MainActor
 @Observable
 public final class AppointmentsViewModel {
-    /// `AppointmentsViewModel.kt:29` — what the screen draws.
+    /// `AppointmentsViewModel.kt:33` — what the screen draws.
     public private(set) var state = AppointmentsUiState()
 
     private let repository: any AppointmentsRepository
     private let pendingDeletes: PendingDeleteController
+    private let undoableDelete: UndoableDelete
 
-    /// `AppointmentsViewModel.kt:30-31` — read once, when the observation opens, and used for both
+    /// `AppointmentsViewModel.kt:35-36` — read once, when the observation opens, and used for both
     /// window bounds so "upcoming" and "past" stay a partition rather than two windows that can
     /// drift apart by the microseconds between two `now()` calls.
     private let now: Date
     private let todayEpochDay: Int
 
-    /// `AppointmentsViewModel.kt:27`.
+    /// `AppointmentsViewModel.kt:30`.
     private var isPastExpanded = false
+
+    /// `AppointmentsViewModel.kt:31` — the id whose confirmation dialog is open, or nil.
+    private var pendingDeleteId: String?
 
     /// The latest pair the two windows have formed, or nil while `latestOfBoth` has emitted nothing
     /// — the state `combine` is in before all of its sources have produced a value. A `pendingIds`
@@ -66,10 +71,12 @@ public final class AppointmentsViewModel {
     public init(
         repository: any AppointmentsRepository,
         pendingDeletes: PendingDeleteController,
+        undoableDelete: UndoableDelete,
         clock: any SalusClock
     ) {
         self.repository = repository
         self.pendingDeletes = pendingDeletes
+        self.undoableDelete = undoableDelete
         now = clock.now()
         todayEpochDay = clock.todayEpochDay()
         start()
@@ -79,12 +86,39 @@ public final class AppointmentsViewModel {
         observation.cancel()
     }
 
-    /// `AppointmentsViewModel.kt:70-74`.
+    /// `AppointmentsViewModel.kt:63-80`.
     public func onEvent(_ event: AppointmentsEvent) {
         switch event {
         case .togglePastSection:
             isPastExpanded.toggle()
             republish()
+
+        case let .deleteRequested(id):
+            pendingDeleteId = id
+            republish()
+
+        case .deleteDismissed:
+            pendingDeleteId = nil
+            republish()
+
+        case .deleteConfirmed:
+            confirmDelete()
+        }
+    }
+
+    /// `AppointmentsViewModel.kt:71-77`.
+    ///
+    /// Same hold-for-undo path as the detail screen; the list filters the id out through
+    /// `pendingIds` until the window closes or the user undoes. Nothing else happens — the list
+    /// does not navigate, because the row that was deleted is the only thing that leaves.
+    private func confirmDelete() {
+        guard let id = pendingDeleteId else { return }
+        pendingDeleteId = nil
+        republish()
+        undoableDelete(id, message: AppointmentsStrings.deleted) { [repository] in
+            // Swallowed as everywhere else in this feature: the commit runs after the undo window
+            // closes, by which time there is nobody left to tell.
+            try? await repository.deleteAppointment(id: id)
         }
     }
 
@@ -117,7 +151,7 @@ public final class AppointmentsViewModel {
 
     /// Re-registers itself after every change, because `withObservationTracking` fires once.
     ///
-    /// This is the `pendingIds` arm of the `combine` (`AppointmentsViewModel.kt:36`).
+    /// This is the `pendingIds` arm of the `combine` (`AppointmentsViewModel.kt:40`).
     private func trackPendingDeletes() {
         withObservationTracking {
             _ = pendingDeletes.pendingIds
@@ -130,24 +164,31 @@ public final class AppointmentsViewModel {
         }
     }
 
-    /// `combine`'s lambda (`AppointmentsViewModel.kt:37-49`).
+    /// `combine`'s lambda (`AppointmentsViewModel.kt:42-54`).
     ///
     /// Rows vanish the moment a delete is confirmed and come back on undo, without a repository
     /// round trip in either direction.
     private func republish() {
         guard let loaded else { return }
         let pending = pendingDeletes.pendingIds
+        let upcomingItems = Self.listItems(loaded.upcoming, without: pending)
+        let pastItems = Self.listItems(loaded.past, without: pending)
         state = AppointmentsUiState(
             isLoading: false,
-            upcoming: Self.groupIntoDays(Self.listItems(loaded.upcoming, without: pending)),
-            past: Self.listItems(loaded.past, without: pending),
+            upcoming: Self.groupIntoDays(upcomingItems),
+            past: pastItems,
             isPastExpanded: isPastExpanded,
-            todayEpochDay: todayEpochDay
+            todayEpochDay: todayEpochDay,
+            // `(upcomingItems + pastItems).firstOrNull { it.id == confirmingId }`
+            // (`AppointmentsViewModel.kt:53`): a row that has already left the list — deleted
+            // elsewhere while its dialog was open — closes the dialog rather than asking about
+            // something that is no longer there.
+            pendingDelete: (upcomingItems + pastItems).first { $0.id == pendingDeleteId }
         )
     }
 
     /// `filterNot { it.id in pendingIds }.map { it.toListItem() }`
-    /// (`AppointmentsViewModel.kt:41-45`, `:77-83`).
+    /// (`AppointmentsViewModel.kt:45-46`, `:87-93`).
     private static func listItems(
         _ appointments: [Appointment],
         without pending: Set<String>
@@ -165,7 +206,7 @@ public final class AppointmentsViewModel {
             }
     }
 
-    /// `AppointmentsViewModel.kt:76-79`. The repository already sorts soonest first, so grouping
+    /// `AppointmentsViewModel.kt:82-85`. The repository already sorts soonest first, so grouping
     /// preserves that order.
     ///
     /// Kotlin's `groupBy` returns a `LinkedHashMap`, whose iteration order is first-encounter of

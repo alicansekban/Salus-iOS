@@ -1,10 +1,12 @@
 // Ported from `feature/appointments/src/test/kotlin/com/alicansekban/salus/feature/appointments/
-// ui/list/AppointmentsViewModelTest.kt` — all four cases, by name.
+// ui/list/AppointmentsViewModelTest.kt` — all seven cases, by name.
 //
-// Two mechanical differences from the Kotlin, both already settled elsewhere in this port:
+// Three mechanical differences from the Kotlin, all already settled elsewhere in this port:
 // Turbine's `state.test { awaitItem() }` becomes reading `viewModel.state` after `waitUntil`,
-// because the iOS state is an `@Observable` property rather than a `StateFlow`; and
-// `MainDispatcherRule` has no twin — `@MainActor` on the suite is the whole mechanism.
+// because the iOS state is an `@Observable` property rather than a `StateFlow`;
+// `MainDispatcherRule` has no twin — `@MainActor` on the suite is the whole mechanism; and
+// `advanceUntilIdle()` closing the undo window becomes `TestDeletes.closeUndoWindow()`, the gate
+// that stands in for `runTest`'s virtual scheduler.
 
 import Foundation
 import SalusCommon
@@ -17,7 +19,7 @@ import Testing
 @Suite("AppointmentsViewModel")
 @MainActor
 struct AppointmentsViewModelTests {
-    /// `AppointmentsViewModelTest.kt:34-36` — the same instant and zone.
+    /// `AppointmentsViewModelTest.kt:36-38` — the same instant and zone.
     private static let now = Date(timeIntervalSince1970: 1_755_000_000)
     private static let zone = FixedSalusClock.defaultZone
 
@@ -25,12 +27,17 @@ struct AppointmentsViewModelTests {
     private let repository = FakeAppointmentsRepository(zone: AppointmentsViewModelTests.zone)
     private let deletes = TestDeletes()
 
-    /// `AppointmentsViewModelTest.kt:58`.
+    /// `AppointmentsViewModelTest.kt:192-197`.
     private func viewModel() -> AppointmentsViewModel {
-        AppointmentsViewModel(repository: repository, pendingDeletes: deletes.controller, clock: clock)
+        AppointmentsViewModel(
+            repository: repository,
+            pendingDeletes: deletes.controller,
+            undoableDelete: deletes.undoableDelete,
+            clock: clock
+        )
     }
 
-    /// `AppointmentsViewModelTest.kt:40-54`. Kotlin's `Duration` argument becomes seconds, which is
+    /// `AppointmentsViewModelTest.kt:41-54`. Kotlin's `Duration` argument becomes seconds, which is
     /// what `Date.addingTimeInterval` takes; `toLocalDateTime(zone)` is `Date.wallClock(in:)`.
     private func appointment(_ id: String, startsIn seconds: TimeInterval) -> Appointment {
         Appointment(
@@ -48,7 +55,7 @@ struct AppointmentsViewModelTests {
         )
     }
 
-    /// `AppointmentsViewModelTest.kt:56-79`.
+    /// `AppointmentsViewModelTest.kt:56-77`.
     @Test("upcoming sorted soonest first and past collapsed by default")
     func upcomingSortedSoonestFirstAndPastCollapsedByDefault() async {
         repository.setAppointments(
@@ -66,7 +73,7 @@ struct AppointmentsViewModelTests {
         #expect(loaded.isPastExpanded == false)
     }
 
-    /// `AppointmentsViewModelTest.kt:81-98`.
+    /// `AppointmentsViewModelTest.kt:80-95`.
     @Test("toggle event expands and collapses the past section")
     func toggleEventExpandsAndCollapsesThePastSection() async {
         repository.setAppointments(appointment("past", startsIn: -1 * .day))
@@ -82,7 +89,7 @@ struct AppointmentsViewModelTests {
         #expect(viewModel.state.isPastExpanded == false)
     }
 
-    /// `AppointmentsViewModelTest.kt:100-121`.
+    /// `AppointmentsViewModelTest.kt:98-116`.
     @Test("upcoming is grouped into one section per calendar day")
     func upcomingIsGroupedIntoOneSectionPerCalendarDay() async {
         repository.setAppointments(
@@ -101,7 +108,7 @@ struct AppointmentsViewModelTests {
         #expect(loaded.upcoming[0].epochDay == loaded.todayEpochDay + 1)
     }
 
-    /// `AppointmentsViewModelTest.kt:123-136`.
+    /// `AppointmentsViewModelTest.kt:119-130`.
     @Test("empty repository yields empty sections")
     func emptyRepositoryYieldsEmptySections() async {
         let viewModel = viewModel()
@@ -111,6 +118,69 @@ struct AppointmentsViewModelTests {
 
         #expect(loaded.upcoming.isEmpty)
         #expect(loaded.past.isEmpty)
+    }
+
+    /// `AppointmentsViewModelTest.kt:133-149`.
+    @Test("delete request asks for confirmation and dismissing it deletes nothing")
+    func deleteRequestAsksForConfirmationAndDismissingItDeletesNothing() async {
+        repository.setAppointments(appointment("soon", startsIn: 1 * .day))
+        let viewModel = viewModel()
+        await waitUntil("the first emission") { !viewModel.state.isLoading }
+
+        viewModel.onEvent(.deleteRequested("soon"))
+        #expect(viewModel.state.pendingDelete?.title == "Checkup soon")
+
+        viewModel.onEvent(.deleteDismissed)
+        #expect(viewModel.state.pendingDelete == nil)
+
+        // `AppointmentsViewModelTest.kt:147-148` — nothing was scheduled and nothing was offered.
+        #expect(deletes.controller.pendingIds.isEmpty)
+        #expect(deletes.lastRequest == nil)
+    }
+
+    /// `AppointmentsViewModelTest.kt:152-170`.
+    @Test("confirmed delete hides the row at once and writes when the undo window closes")
+    func confirmedDeleteHidesTheRowAtOnceAndWritesWhenTheUndoWindowCloses() async {
+        repository.setAppointments(appointment("soon", startsIn: 1 * .day))
+        let viewModel = viewModel()
+        await waitUntil("the first emission") { !viewModel.state.isLoading }
+
+        viewModel.onEvent(.deleteRequested("soon"))
+        viewModel.onEvent(.deleteConfirmed)
+        await waitUntil("the row to go and the dialog to close") {
+            viewModel.state.upcoming.isEmpty && viewModel.state.pendingDelete == nil
+        }
+
+        // The row is gone, but nothing is written until the window closes.
+        #expect(repository.current().count == 1)
+        // `AppointmentsViewModelTest.kt:164` — `assertEquals(1, deletes.snackbar.shown.size)`, in
+        // the shape `AppointmentDetailViewModelTests` already settled on: the iOS controller
+        // publishes the snackbar that is up rather than a log of every request, so "exactly one" is
+        // spelled as one being up and nothing coming up behind it when it is taken away.
+        #expect(deletes.lastRequest?.message == AppointmentsStrings.deleted)
+        deletes.snackbar.dismiss()
+        #expect(deletes.lastRequest == nil)
+
+        await deletes.closeUndoWindow()
+        await waitUntil("the deferred write to commit") { repository.current().isEmpty }
+    }
+
+    /// `AppointmentsViewModelTest.kt:173-190`.
+    @Test("undo within the window brings the row back without a write")
+    func undoWithinTheWindowBringsTheRowBackWithoutAWrite() async {
+        repository.setAppointments(appointment("soon", startsIn: 1 * .day))
+        let viewModel = viewModel()
+        await waitUntil("the first emission") { !viewModel.state.isLoading }
+
+        viewModel.onEvent(.deleteRequested("soon"))
+        viewModel.onEvent(.deleteConfirmed)
+        await waitUntil("the row to go") { viewModel.state.upcoming.isEmpty }
+
+        deletes.undoLast()
+        await waitUntil("the row to come back") { viewModel.state.upcoming.count == 1 }
+
+        await deletes.closeUndoWindow()
+        #expect(repository.current().count == 1)
     }
 
     /// **No Kotlin twin — an Android gap, not an iOS extra.** `AppointmentsViewModelTest.kt` never

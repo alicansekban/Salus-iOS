@@ -142,11 +142,11 @@
 **Interfaces (produces):**
 - Keys: `public struct AppointmentsKey: Hashable, Sendable`, `AppointmentDetailKey(id: String)`, `AppointmentEditorKey(id: String?)`; `public extension View { func appointmentsDestinations() -> some View }` registering detail + editor routes (`VitalsNavigation.swift` pattern; no callbacks — the feature has no cross-feature moves).
 - `@MainActor public struct AppointmentsModule { repository: any AppointmentsRepository; navigator: Navigator; reminderHandler: any ReminderHandler; makeSaveAppointmentUseCase: @MainActor () -> SaveAppointmentUseCase; makeAppointmentsViewModel: @MainActor () -> AppointmentsViewModel; makeAppointmentDetailViewModel: @MainActor (String) -> AppointmentDetailViewModel; makeAppointmentEditorViewModel: @MainActor (String?) -> AppointmentEditorViewModel }`; `@MainActor public func makeAppointmentsModule(appointmentDao:profileRepository:reminderScheduler:clock:idGenerator:pendingDeletes:snackbar:navigator:) -> AppointmentsModule`; `EnvironmentValues.appointmentsModule: AppointmentsModule?`. This task ships the struct with `repository`, `navigator`, `reminderHandler`, `makeSaveAppointmentUseCase` and `makeAppointmentsViewModel` only; Tasks 8 and 9 each **add** their own `make…ViewModel` member and its factory line (no placeholder members, no `fatalError`).
-- `AppointmentsUiState { isLoading = true; upcoming: [AppointmentDaySection]; past: [AppointmentListItem]; isPastExpanded = false; todayEpochDay = 0; var hasNothing }`, `AppointmentListItem { id, title, doctorName?, location?, startsAt: LocalDateTime }`, `AppointmentDaySection { epochDay: Int; items }`, `AppointmentsEvent.togglePastSection`, `offsetLabel(_ minutes: Int) -> String` (60 → hour, 1440 → day, else week — Kotlin's `offsetLabelRes`).
-- `AppointmentsViewModel(repository:pendingDeletes:clock:)` — `now = clock.now()` at start, merges `observeUpcoming(from: now)`, `observePast(before: now)` and `pendingDeletes.pendingIds` (`withObservationTracking` re-registration, `VitalsViewModel` pattern); pending ids filtered from both lists; upcoming grouped by `startsAt.date.epochDay` preserving repo order; `todayEpochDay = clock.todayEpochDay()`.
-- Screen (`AppointmentsRoute` public + `AppointmentsScreen` internal): `SalusScreenHeader(title:)`, `ProgressView` while loading, `SalusEmptyState(systemImage: "calendar", title: empty, accent: .appointments, actionLabel: add, onAction:)` when `hasNothing`, else `ScrollView` + `LazyVStack(pinnedViews: .sectionHeaders)`: `appointments_no_upcoming` line when upcoming is empty; per day a pinned header (`Bugün`/`Yarın`/`"EEEE, d MMMM"`), `SalusCard(onTap:)` rows: time `"HH:mm"` in the appointments accent, 64 pt wide; title; `person` / `mappin.and.ellipse` detail rows when present. Past block: `appointments_past_header(count)` + show/hide `Button`, rows only when expanded. `SalusFab("plus")` bottom-trailing, 16 pt; bottom content padding 88. Row tap → `navigator.navigate(AppointmentDetailKey(id:))`; FAB/empty action → `AppointmentEditorKey(id: nil)`.
+- `AppointmentsUiState { isLoading = true; upcoming: [AppointmentDaySection]; past: [AppointmentListItem]; isPastExpanded = false; todayEpochDay = 0; var hasNothing }`, `AppointmentListItem { id, title, doctorName?, location?, startsAt: LocalDateTime }`, `AppointmentDaySection { epochDay: Int; items }`, `AppointmentsEvent.togglePastSection` (**Task 12 added `pendingDelete` plus `deleteRequested`/`deleteDismissed`/`deleteConfirmed`** — this line under-specified the state against `AppointmentsUiState.kt`), `offsetLabel(_ minutes: Int) -> String` (60 → hour, 1440 → day, else week — Kotlin's `offsetLabelRes`).
+- `AppointmentsViewModel(repository:pendingDeletes:clock:)` (**Task 12 inserted `undoableDelete:` before `clock:`, Kotlin's order**) — `now = clock.now()` at start, merges `observeUpcoming(from: now)`, `observePast(before: now)` and `pendingDeletes.pendingIds` (`withObservationTracking` re-registration, `VitalsViewModel` pattern); pending ids filtered from both lists; upcoming grouped by `startsAt.date.epochDay` preserving repo order; `todayEpochDay = clock.todayEpochDay()`.
+- Screen (`AppointmentsRoute` public + `AppointmentsScreen` internal): `SalusScreenHeader(title:)`, `ProgressView` while loading, `SalusEmptyState(systemImage: "calendar", title: empty, accent: .appointments, actionLabel: add, onAction:)` when `hasNothing`, else `ScrollView` + `LazyVStack(pinnedViews: .sectionHeaders)`: `appointments_no_upcoming` line when upcoming is empty; per day a pinned header (`Bugün`/`Yarın`/`"EEEE, d MMMM"`), `SalusCard` rows (**Task 12: not `SalusCard(onTap:)` — the row gained a trash `Button`, so it follows `VitalsRow`'s disjoint-targets shape**): time `"HH:mm"` in the appointments accent, 64 pt wide; title; `person` / `mappin.and.ellipse` detail rows when present; trailing trash button. Past block: `appointments_past_header(count)` + show/hide `Button`, rows only when expanded. `SalusFab("plus")` bottom-trailing, 16 pt; bottom content padding 88. Row tap → `navigator.navigate(AppointmentDetailKey(id:))`; FAB/empty action → `AppointmentEditorKey(id: nil)`.
 
-- [ ] Port the 4-case VM table by name; `#Preview` for empty/loaded/expanded. `swift test` green, app builds (tab still placeholder until Task 10). Commit.
+- [ ] Port the 4-case VM table by name; `#Preview` for empty/loaded/expanded. **The Kotlin table holds 7, not 4** — the count here was wrong, and the three delete cases it hid were ported by Task 12. `swift test` green, app builds (tab still placeholder until Task 10). Commit.
 
 ### Task 8: Calendar bridge + detail screen
 
@@ -201,7 +201,7 @@
 - Modify: this plan (execution record: divergences (a)–(e) + decisions (1)–(4), deferred findings, Android follow-ups), `docs/ios-feature-template.md` (add: `SalusPillButton` → `Button` styles line; `LocalDateTime` now lives in `SalusModel`; `SalusDateField`/`SalusTimeField`/`SalusFilterChip` in the mapping table; EventKitUI `#if canImport` rule), `salus-android/docs/ios-v1-plan.md` **is not touched** — Android follow-ups are listed here for the user
 - Create: `scripts/m4-manual-qa.md` (self-serve manual script: CRUD round trip, offsets → pending requests, notification tap deep link, add-to-calendar sheet, maps link, undo window)
 
-**Acceptance (milestone from spec §10, iOS-M4):** *CRUD, multiple reminder offsets, EventKit "add to calendar".* Evidence table: one automated pointer per Android test table (7 files / 38 names verified against the files), plus the manual script's tick marks.
+**Acceptance (milestone from spec §10, iOS-M4):** *CRUD, multiple reminder offsets, EventKit "add to calendar".* Evidence table: one automated pointer per Android test table (7 files / 38 names verified against the files — **the real denominator is 41; the three the count missed were ported by Task 12**), plus the manual script's tick marks.
 
 **Android follow-ups to hand over (start numbering after the last taken `A` in §11 — re-check, M2 and M3 both found their assumed numbers used):** (i) notification tap should deep-link to the appointment detail (iOS does); (ii) unify the calendar payload — detail sends `notes`, editor sends `doctor + notes`; (iii) `appointments_upcoming_header`, `appointments_ok`, `appointments_cancel` are dead string keys; (iv) the iOS-only `LocalDateTime` ISO/`instant(in:)` cases and the DAO partition/cascade cases have no Android twin (same shape as A8/M3's note).
 
@@ -234,7 +234,7 @@ Two controller sessions were lost to restarts (during Task 9's review and during
 implementation); both agents resumed from their transcripts and the T10 worktree's uncommitted
 wiring survived. Neither is a fix round and neither is counted as one.
 
-Two tasks were added to the plan during execution:
+Three tasks were added to the plan during execution:
 
 - **Task 10b** — a *pre-existing iOS-M3 crash*, not M4 work. Tapping any notification killed the app:
   `ReminderNotificationDelegate.userNotificationCenter(_:didReceive:)` was spelled `async`, so it
@@ -244,6 +244,9 @@ Two tasks were added to the plan during execution:
   the tap crashes.
 - **`ReminderSchedulerRelay`** (inside Task 10) — the composition-root cycle the pre-flight scan
   predicted, resolved as ruling 5 below.
+- **Task 12** — the parity fix for divergence (p), which the Task 11 sweep found: the appointments
+  list's per-row delete, and the three Kotlin cases the plan's 4-case count had hidden. Added rather
+  than deferred, because the alternative was carrying an unrecorded-difference bug into iOS-M5.
 
 ### `scripts/ci.sh`, run end to end on the Task 11 worktree
 
@@ -273,7 +276,8 @@ The Release build the acceptance asks for is green too, and silent:
 
 iOS-M4's criterion from spec §10 is *CRUD, multiple reminder offsets, EventKit "add to calendar"*.
 The plan's evidence contract was one automated pointer per Android test table — **7 Kotlin files,
-38 names** — plus the manual script's tick marks. Every name below was read out of the Swift file it
+38 names**, which the sweep corrected to **41** and Task 12 then closed — plus the manual script's
+tick marks. Every name below was read out of the Swift file it
 lives in, not copied from a task report.
 
 | Kotlin table | iOS twin | Cases | Pointer |
@@ -282,13 +286,14 @@ lives in, not copied from a task report.
 | `data/AppointmentsRepositoryImplTest.kt` | `AppointmentsRepositoryImplTests.swift` | 4 ported (+3 iOS-only) | **`save persists appointment with reminder rows and requests a sync`** and **`saving again replaces reminder rows and keeps createdAt`** — the whole-replacement contract the offsets depend on, over the **real** `AppointmentDao` on `SalusDatabase.inMemory` |
 | `domain/usecase/SaveAppointmentUseCaseTest.kt` | `SaveAppointmentUseCaseTests.swift` | 4 ported | **`new appointment gets generated id and normalized fields`** (offsets `filter { $0 >= 0 }` → distinct → sorted) and **`update preserves id duration status and specialty`** — the three fields no editor can touch |
 | `reminder/AppointmentReminderHandlerTest.kt` | `AppointmentReminderHandlerTests.swift` | 8 ported (+3 iOS-only) | **`occurrences apply each offset with stable keys`** — the *multiple reminder offsets* criterion at its source: one `ReminderOccurrence` per enabled offset, key `"<id>\|<offset>"`, stable across calls (**`occurrence computation is deterministic across calls`**) and clipped by the window (**`triggers outside the window are excluded`**) |
-| `ui/list/AppointmentsViewModelTest.kt` | `AppointmentsViewModelTests.swift` | 4 of the file's 7 (+1 iOS-only) | **`upcoming sorted soonest first and past collapsed by default`** and **`upcoming is grouped into one section per calendar day`**. The three the plan did not scope are divergence (p) below |
+| `ui/list/AppointmentsViewModelTest.kt` | `AppointmentsViewModelTests.swift` | 7 of 7 (+1 iOS-only) | **`upcoming sorted soonest first and past collapsed by default`** and **`upcoming is grouped into one section per calendar day`**; the row-delete flow the sweep found unported and Task 12 closed — **`delete request asks for confirmation and dismissing it deletes nothing`**, **`confirmed delete hides the row at once and writes when the undo window closes`**, **`undo within the window brings the row back without a write`** (divergence (p)) |
 | `ui/detail/AppointmentDetailViewModelTest.kt` | `AppointmentDetailViewModelTests.swift` | 7 ported | **`calendar bounds come from the wall-clock start and the duration`** — the EventKit criterion's data half; **`confirming defers the write, closes the screen and offers undo`** and **`undo cancels the deletion the popped screen started`** — delete + undo |
 | `ui/editor/AppointmentEditorViewModelTest.kt` | `AppointmentEditorViewModelTests.swift` | 7 ported | **`add to calendar emits intent data derived from the edited fields`** — the EventKit criterion from the editor, asserting the draft off *unsaved* text; **`new editor defaults to today with one-day reminder preselected`** pins the `1440` default |
 
-**38 names ported by name, as contracted.** The count is honest but the denominator moved: the
-Kotlin list-VM file holds **7** cases, not the 4 the plan's table counted, and the extra three are
-its row-delete flow — see divergence (p). Nothing else in the seven files is unported.
+**41 names ported by name.** The plan contracted 38, and the sweep found the denominator was
+never 38: the Kotlin list-VM file holds **7** cases, not the 4 the plan's table counted, and the
+extra three are its row-delete flow — see divergence (p). Task 12 ported them, so the seven Kotlin
+files are now 41 of 41. Nothing in them is unported.
 
 The iOS-only rows, which have no Kotlin twin and are the Android follow-up in item 5 below:
 
@@ -327,6 +332,7 @@ SHAs are the ones on `m4-appointments` after rebase, not the side-branch ones th
 | 10 — app wiring, tab, handler registration, deep link | 1 — `723fc50` | Clean first time |
 | 10b — notification response on the main thread (M3 bug) | 1 — `ccd66b6` | Clean first time |
 | 11 — this record, `scripts/m4-manual-qa.md`, the two doc edits | see the branch tip | — |
+| 12 — list row delete (divergence (p)) + the three Kotlin cases | see the branch tip | — |
 
 Two integration checks ran mid-flight — after T1/T2/T3/T6 merged (`e5381f6`) and after T4/T5/T7
 (`44e38c1`) and T8/T9/T10 (`723fc50`) — each `24/24 packages passed`.
@@ -412,8 +418,9 @@ they happened; (o) and (p) were added by this sweep.
   Android's `onReceive` has no equivalent hazard. Recorded here because the file now differs from
   the shape iOS-M3 shipped. (`@MainActor` plus `@preconcurrency UNUserNotificationCenterDelegate`
   also compiles; the explicit hop was chosen as the more legible of the two.)
-- **(p) The iOS appointment list has no row delete; Android's does.** Found by this sweep, not
-  decided during execution. `AppointmentsScreen.kt:269-272` puts a trash `IconButton` on every row,
+- **(p) The iOS appointment list had no row delete; Android's does. — CLOSED BY TASK 12, no
+  divergence remains.** Found by the Task 11 sweep, not decided during execution.
+  `AppointmentsScreen.kt:269-272` puts a trash `IconButton` on every row,
   wired to `AppointmentsEvent.DeleteRequested/DeleteDismissed/DeleteConfirmed`, and
   `AppointmentsViewModelTest.kt` pins that flow in three cases —
   `delete request asks for confirmation and dismissing it deletes nothing`,
@@ -423,10 +430,15 @@ they happened; (o) and (p) were added by this sweep.
   implementer nor the reviewer had anything to compare against. **CRUD is still complete** — delete
   is reachable from the detail screen and from the editor, and the list's *pending-delete hiding*
   works (it is what `pending deletes hide rows in both lists and undo brings them back` covers) —
-  so this is a missing affordance and three unported cases, not a broken criterion. Under the port
-  rules an unrecorded difference is a bug, so it is recorded here and left for the user to rule on:
-  close it in iOS-M5 (which touches the same `UndoableDelete` path for medications) or accept it as
-  a deliberate platform difference.
+  so this was a missing affordance and three unported cases, not a broken criterion. Under the port
+  rules an unrecorded difference is a bug, so rather than carry it as one, **Task 12 ported it**:
+  `AppointmentsUiState.pendingDelete`, the three events, `AppointmentsViewModel(…, undoableDelete:,
+  clock:)`, the row's trash `Button` and the list's `salusConfirmDialog`, plus the three Kotlin cases
+  by name. Two shape notes, neither a behaviour difference: the row is a plain `SalusCard` with the
+  open-gesture and the trash button as **siblings**, because `SalusCard(onTap:)` is a `Button` and a
+  nested one would never receive the tap (`VitalsRow` settled this in iOS-M2); and Kotlin's
+  `state.pendingDelete?.let { SalusConfirmDialog(…) }` becomes SwiftUI's `Binding<Bool>` alert, whose
+  setter reports a system-driven dismissal back as `deleteDismissed`. No ruling is owed.
 
 Anything else that differs from `:feature:appointments` is a bug, not a port decision.
 
@@ -589,7 +601,6 @@ already taken.
   §7 (the maps link with `&` and `+` in the location), §8 (Dynamic Type on the chip row and the
   date/time pair), §10 (the TR/EN pass and the third-language fallback). None of them is load-bearing
   for the acceptance criterion; all of them are cheap.
-- **A ruling on divergence (p)** — close the list's row delete in M5, or accept it.
 - **The `--ff-only` merge and the push** (ruling 8).
 - **Carried from iOS-M3, still open and still owed before M5 ships the medication handler**: the M3a
   on-device checklist (`scripts/m3-manual-qa.md` §9) and the simulator taps in its sections 2-7, plus

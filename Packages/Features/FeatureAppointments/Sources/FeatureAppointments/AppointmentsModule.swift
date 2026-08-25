@@ -112,7 +112,12 @@ public func makeAppointmentsModule(
             texts: LocalizedAppointmentNotificationTexts()
         ),
         makeAppointmentsViewModel: {
-            AppointmentsViewModel(repository: repository, pendingDeletes: pendingDeletes, clock: clock)
+            AppointmentsViewModel(
+                repository: repository,
+                pendingDeletes: pendingDeletes,
+                undoableDelete: undoableDelete,
+                clock: clock
+            )
         },
         makeAppointmentDetailViewModel: { appointmentId in
             AppointmentDetailViewModel(

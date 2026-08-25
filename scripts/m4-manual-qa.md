@@ -85,6 +85,19 @@ because a row that renders is not yet a row that was written.
   sqlite3 "$DB" 'select count(*) from appointments; select count(*) from appointment_reminders;'
   ```
   *Expected:* `0` and `0` — the reminder rows cascade with the appointment.
+- [ ] **2.5b Delete from a list row.** Create another appointment (**2.1** again, any title), then
+  tap the **trash icon** on its row in the list — not the row itself.
+  *Expected:* the row does **not** open the detail screen (the two targets are disjoint by layout,
+  which is the whole point of the shape), and the same confirm dialog appears,
+  *"<title> silinsin mi?"* / *"Randevu ve hatırlatıcıları birlikte silinir."*
+  Tap **Vazgeç**: the dialog closes, the row is still there, and
+  `select count(*) from appointments;` is unchanged. Tap the trash again and confirm with **Sil**:
+  the row disappears **at once**, the list stays put (nothing pops — the list is already where the
+  user is), and the *"Randevu silindi"* snackbar offers **Geri al**. Tap **Geri al** within five
+  seconds; the row comes back and the count never moved. Then delete it once more and let the
+  window expire — the count drops by one.
+  With VoiceOver on, the row announces as a button ("open") and the trash button announces
+  separately as **Sil**.
 - [ ] **2.6 Past section.** Create one appointment in the past (any date before today) and one
   tomorrow. *Expected:* the past one is **not** in the upcoming list; a **Geçmiş (1)** header
   appears with a **Göster** button; tapping it expands the section and the button becomes **Gizle**.
@@ -207,9 +220,9 @@ Divergence (b): the delete snackbar dies with the undo window — its duration i
 `PendingDeleteController.undoWindowMillis` (**5000 ms**) rather than Material's default, so the
 offer never outlives the thing it offers. Android still has the mismatch (follow-up A10).
 
-**Where deletes start.** On iOS an appointment is deleted from the **detail screen** or from the
-**editor**, never from a list row — the iOS list has no trash affordance, which is divergence (p)
-in the execution record. So both checks below begin on the detail screen.
+**Where deletes start.** An appointment is deleted from the **detail screen**, from the **editor**,
+or from a **list row's trash icon** (divergence (p), closed by Task 12 — §2.5b walks the row path).
+The checks below begin on the detail screen because that is the path with a screen pop in it.
 
 - [ ] **6.1 Undo inside the window.** Open an appointment → **Sil** → confirm → tap **Geri al**
   within five seconds.

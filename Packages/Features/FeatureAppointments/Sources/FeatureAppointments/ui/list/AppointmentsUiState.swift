@@ -10,7 +10,7 @@ import SalusModel
 /// One row of the agenda (`AppointmentsUiState.kt:7-13`).
 ///
 /// `Identifiable` is what `items(items = section.items, key = { it.id })`
-/// (`AppointmentsScreen.kt:157`) asks for on Android; `ForEach` asks for it here.
+/// (`AppointmentsScreen.kt:170`) asks for on Android; `ForEach` asks for it here.
 public struct AppointmentListItem: Equatable, Hashable, Sendable, Identifiable {
     public let id: String
     public let title: String
@@ -39,7 +39,7 @@ public struct AppointmentListItem: Equatable, Hashable, Sendable, Identifiable {
 /// holds; an agenda is the shape that matches the data.
 ///
 /// `Identifiable` on the day is Kotlin's `stickyHeader(key = "header-${section.epochDay}")`
-/// (`AppointmentsScreen.kt:150`): the day is what makes a section unique on both platforms.
+/// (`AppointmentsScreen.kt:163`): the day is what makes a section unique on both platforms.
 public struct AppointmentDaySection: Equatable, Hashable, Sendable, Identifiable {
     public let epochDay: Int
     public let items: [AppointmentListItem]
@@ -59,8 +59,14 @@ public struct AppointmentsUiState: Equatable, Sendable {
     public var past: [AppointmentListItem]
     public var isPastExpanded: Bool
     /// Lets the header read "Today"/"Tomorrow" without the UI asking for the time itself
-    /// (`AppointmentsUiState.kt:33`).
+    /// (`AppointmentsUiState.kt:31`).
     public var todayEpochDay: Int
+    /// The appointment whose delete confirmation is open; nil when none is
+    /// (`AppointmentsUiState.kt:33`).
+    ///
+    /// The row itself rather than its id, so the dialog can put the title in its question without
+    /// looking the appointment up again — exactly what Kotlin's `pendingDelete` carries.
+    public var pendingDelete: AppointmentListItem?
 
     /// `AppointmentsUiState.kt:35`.
     public var hasNothing: Bool { upcoming.isEmpty && past.isEmpty }
@@ -70,17 +76,29 @@ public struct AppointmentsUiState: Equatable, Sendable {
         upcoming: [AppointmentDaySection] = [],
         past: [AppointmentListItem] = [],
         isPastExpanded: Bool = false,
-        todayEpochDay: Int = 0
+        todayEpochDay: Int = 0,
+        pendingDelete: AppointmentListItem? = nil
     ) {
         self.isLoading = isLoading
         self.upcoming = upcoming
         self.past = past
         self.isPastExpanded = isPastExpanded
         self.todayEpochDay = todayEpochDay
+        self.pendingDelete = pendingDelete
     }
 }
 
-/// Everything the screen can ask the ViewModel to do (`AppointmentsUiState.kt:38-40`).
+/// Everything the screen can ask the ViewModel to do (`AppointmentsUiState.kt:38-47`).
 public enum AppointmentsEvent: Equatable, Sendable {
     case togglePastSection
+
+    /// Opens the confirmation for the row's trash icon; nothing is deleted until confirmed
+    /// (`AppointmentsUiState.kt:41-42`).
+    case deleteRequested(String)
+
+    /// `AppointmentsUiState.kt:44`.
+    case deleteDismissed
+
+    /// `AppointmentsUiState.kt:46`.
+    case deleteConfirmed
 }
