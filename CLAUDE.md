@@ -76,16 +76,24 @@ Milestone plans live in `docs/plans/`. Toolchain and CI usage: `README.md`.
   use `Foundation.Date`, `Calendar` or `DateComponents` for a *day* — they carry a time zone and a
   user calendar, which is exactly the drift the port is avoiding. `Date` stays for absolute instants
   only (`epochMs + tz_id`).
-  - **The one carve-out is the instant↔day conversion itself**, which has no other correct form:
-    turning a `Date` into the day it falls on in a zone needs a calendar. It lives in
-    `SalusCommon/SalusClock.swift` and nowhere else — `today()`, `todayEpochDay()` and
-    `minuteOfDayNow()`, each reading a fixed *Gregorian* `Calendar` in the clock's zone (never
-    `Calendar.current`, which follows the device's region and would answer a different year for
-    the same instant). The day→instant direction is the same boundary read backwards and the
-    **second and last** member of the carve-out: `instant(of:minuteOfDay:)`, the twin of
+  - **The carve-out is the instant↔day conversion itself**, which has no other correct form:
+    turning a `Date` into the day it falls on in a zone needs a calendar. Both directions live in
+    `SalusCommon/SalusClock.swift` — `today()`, `todayEpochDay()` and `minuteOfDayNow()` reading
+    a fixed *Gregorian* `Calendar` in the clock's zone (never `Calendar.current`, which follows the
+    device's region and would answer a different year for the same instant), and the same boundary
+    read backwards in `instant(of:minuteOfDay:)` / `LocalDateTime.instant(in:)`, the twin of
     `LocalDateTime(date, time).toInstant(zone)` that composes an editor's saved timestamp
     (`EditorMeasuredAt.kt:37`). Everything downstream of that boundary is `LocalDate` / `epochDay`
-    integer math: a second `Calendar` anywhere else in the tree is the finding this rule is for.
+    integer math.
+  - **There is exactly one other sanctioned `Calendar` in the tree, and it is not in this file's
+    gift**: `SalusReminder/platform/UserNotificationGateway.swift`'s `trigger(at:)`, which
+    decomposes an occurrence instant into the wall-clock `DateComponents` that
+    `UNCalendarNotificationTrigger` demands — the API takes components, not a `Date`, so there is
+    no way to schedule without one. It is pre-existing (iOS-M3) and it reads the same fixed
+    Gregorian calendar in the reminder's zone. **Two files, `SalusClock.swift` and
+    `UserNotificationGateway.swift`, and no third**: a `Calendar` anywhere else in the tree is the
+    finding this rule is for. Recorded here in iOS-M4 because both files used to call themselves
+    the last one.
   — *enforcement:
   `Packages/SalusModel/Tests/SalusModelTests/LocalDateTests.swift` + review.*
 - **The composition root owns the singletons; there is no container.** `App/AppCompositionRoot.swift`

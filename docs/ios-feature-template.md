@@ -77,6 +77,8 @@ Packages/Features/Feature<Name>/
      │                   (VitalsRepositoryImpl.swift, WeightEntryMapper.swift)
      ├─ ui/<screen>/     Per screen: <Screen>UiState.swift (UiState + Event [+ Effect])
      │                   + <Screen>ViewModel.swift + <Screen>Screen.swift (Route + Screen)
+     ├─ ui/<bridge>/     Optional: a system-framework bridge used by more than one screen
+     │                   (M4's ui/calendar/ — CalendarEventDraft.swift + CalendarEventEditSheet.swift)
      ├─ navigation/      Hashable & Sendable keys + `func <name>Destinations() -> some View`
      ├─ Resources/       Localizable.xcstrings (tr source + en)
      ├─ <Name>Strings.swift    typed accessors over Bundle.module
@@ -90,6 +92,20 @@ Where Android puts `domain/` purity under a `salus.jvm.library` convention plugi
 review plus the SwiftLint custom rules — `no_ui_framework_in_domain` scopes to `SalusModel` and
 `SalusCommon`, so a feature's own `domain/` is a review rule. A `import SwiftUI` under `domain/`
 is a finding.
+
+**A UIKit-only system framework is reached from `ui/` only, and always behind `#if canImport`.**
+`swift test` builds a package for the *macOS host*, so a bare `import EventKitUI` (or any other
+iOS-only framework) breaks every test run in the package even though the app target builds fine.
+The rule M4 settled: keep the pure part framework-free and testable, and wrap the view part.
+
+- The payload is a plain `Sendable` struct with static builders, in a file that imports nothing but
+  `Foundation` — `ui/calendar/CalendarEventDraft.swift` — so `CalendarEventDraftTests` asserts it on
+  the host with no framework in sight.
+- The `UIViewControllerRepresentable` wrapper and every call site that mentions it sit inside
+  `#if canImport(EventKitUI)` … `#endif` (`ui/calendar/CalendarEventEditSheet.swift:20`,
+  `AppointmentDetailScreen.swift:86`, `AppointmentEditorScreen.swift:45`). What is left out on the
+  host is the *button and the sheet*, never the state or the ViewModel behaviour.
+- `domain/` and `data/` import no system UI framework at all, `#if` or not.
 
 ## UDF state types (in `<Screen>UiState.swift` — never `<X>Contract.swift`)
 
@@ -113,6 +129,12 @@ is a finding.
   `Packages/Features/FeatureSettings/Sources/FeatureSettings/ui/reminderhealth/`
   (`ReminderHealthViewModel.swift`, `ReminderHealthScreen.swift`); the app layer's
   `ReminderOpenRouter` is the same shape one layer up.
+  M4's `AppointmentEditorEffect.addToCalendar(CalendarEventDraft)` is the second and shows what
+  qualifies: **presenting a system sheet is UI work, so it is an Effect; going to another screen is
+  not, so it is a `Navigator` call** — the same ViewModel does both, and the delete path pops
+  through the navigator while the calendar path publishes a `pendingEffect`
+  (`ui/editor/AppointmentEditorViewModel.swift:30`, `:141-142`, `:223`; drained at
+  `AppointmentEditorScreen.swift:79`).
 
 ViewModel rules:
 
@@ -131,6 +153,16 @@ ViewModel rules:
   `PendingDeleteController.pendingIds`) has no `combine` twin: re-register
   `withObservationTracking` after every change and re-publish
   (`VitalsViewModel.swift:189` and `:202`).
+- **Two async streams are combined with `latestOfBoth`, the Kotlin `combine` twin.** M4 needed it
+  three times over (repository, list VM, detail VM) so it exists as a real combinator rather than a
+  hand-rolled pair of tasks per call site:
+  `Packages/Features/FeatureAppointments/Sources/FeatureAppointments/data/LatestOfBoth.swift`.
+  It emits nothing until **both** sides have produced a value, fails the combined stream if either
+  side fails, and — the property a hand-rolled version keeps getting wrong — holds its lock across
+  *both* the transform and the yield, so a slow transform can never overwrite a fresher pair
+  (`LatestOfBothTests.swift`, three cases). It lives in `data/` because that is where its first
+  caller is; hoist it to a core package when a second feature wants it. **Do not re-hand-roll one**
+  — a ViewModel that combines two DB streams reuses this.
 
 ## Shell and navigation-container rule (MANDATORY)
 
@@ -269,8 +301,10 @@ inside its root view, or a pushed destination would not see it.
   without its ported table is an unfinished port. A table that exists only on iOS is an Android gap
   — open it in `salus-android/docs/ios-v1-plan.md` §11 in the same milestone.
 - `scripts/test-packages.sh <PackageName>` narrows the run; `scripts/ci.sh` is the gate.
-- After adding a *file* to a path dependency, a warm checkout can fail with a stale
-  `Packages/*/.build`. Run `scripts/clean.sh`.
+- After adding **or deleting** a *file* in a path dependency, a warm checkout can fail with a stale
+  `Packages/*/.build` — "missing inputs" for a file that is no longer there is the same stale-cache
+  failure as an unseen new one, and M4's Task 1 hit it by *moving* `LocalDateTime` out of
+  `FeatureVitals`. Run `scripts/clean.sh`.
 
 ## Charts
 
@@ -291,14 +325,24 @@ is epoch-day, and conversion/downsampling happens in the ViewModel
 
 ### Material → SwiftUI mappings this slice settled
 
-Recorded so nobody re-improvises them. Full tables in the iOS-M2 task 3 and task 6 reports.
+Recorded so nobody re-improvises them. Full tables in the iOS-M2 task 3 and task 6 reports, and
+the iOS-M4 task 6, 8 and 9 reports for the rows marked *(M4)*.
 
 | Android | iOS |
 | --- | --- |
 | Vico `CartesianChartHost` + `CartesianChartModelProducer` | Swift Charts `Chart { }` — the marks *are* the data, so the producer and its `LaunchedEffect` disappear |
 | `LineCartesianLayer` + `AreaFill` + `Brush.verticalGradient` | `LineMark` + `AreaMark` + `LinearGradient` |
 | `CartesianValueFormatter` | `AxisMarks { AxisValueLabel { … } }` calling `model.xLabel` / `model.yLabel` |
-| `FilterChip` / `SingleChoiceSegmentedButtonRow` | `Picker(…).pickerStyle(.segmented)` with an **empty** label — `design-tokens.md` has no chip spec, so no `SalusFilterChip` exists |
+| `SingleChoiceSegmentedButtonRow` (one of N, a range selector) | `Picker(…).pickerStyle(.segmented)` with an **empty** label |
+| `FilterChip` (multi-select, M4's reminder offsets) *(M4)* | `SalusUI.SalusFilterChip(label:isSelected:action:)` — `secondaryContainer` fill when selected, outline when not, 48 pt minimum touch target, Dynamic-Type-scaled |
+| `AssistChip` / status pill *(M4)* | `SalusUI.SalusStatusChip(label:accent:)`, tinted from a `FeatureAccent?` |
+| `SalusSectionHeader` (core/ui) *(M4)* | `SalusUI.SalusSectionHeader(title:action:)` — `titleLarge` / `onSurface`, optional trailing action. A *group label* inside a form is **not** this: it is a plain `Text` at `titleSmall` / `onSurface` |
+| `SalusPillButton` (core/ui) *(M4)* | `Button` + `.buttonStyle(.borderedProminent)` for the default filled form, `.bordered` for `tonal = true`. There is no `SalusPillButton` view: the two Material styles are exactly the two SwiftUI button styles, and `CircleShape` is what `.bordered*` already draws |
+| `DatePickerDialog` over an `epochDay` *(M4)* | `SalusUI.SalusDateField(label:epochDay:)` — the binding converts on the UTC boundary, never `Calendar.current` |
+| `TimePickerDialog` over a `minuteOfDay` *(M4)* | `SalusUI.SalusTimeField(label:minuteOfDay:seedMinuteOfDay:)` — `nil` draws a placeholder button and **commits nothing** until the wheel actually moves, which is how a Compose dialog's Cancel behaves; `seedMinuteOfDay` is required so the caller, not the component, owns the Kotlin `?: 9` default |
+| `kotlinx.datetime.LocalDateTime` *(M4)* | `SalusModel.LocalDateTime` (`LocalDate` + `minuteOfDay`), with `isoLocalString` / `init?(isoLocalString:)` writing exactly what Kotlin's `toString()` writes, and `instant(in:)` in `SalusCommon/SalusClock.swift`. It moved out of `FeatureVitals` the moment a second feature needed it — do not copy it into a feature |
+| `Intent(ACTION_INSERT, CalendarContract.Events.CONTENT_URI)` *(M4)* | `EKEventEditViewController` in a `UIViewControllerRepresentable`, prefilled and confirmed by the user. The system sheet carries its own calendar chooser, so nothing replaces the chooser Android's intent picker gave you — and on iOS 17+ it needs **no** usage description and raises **no** permission prompt (measured on a simulator, iOS-M4 task 8) |
+| `Intent(ACTION_VIEW, "geo:0,0?q=…")` *(M4)* | `URL(string: "maps://?q=" + query)`; `Uri.encode` is `addingPercentEncoding(withAllowedCharacters: .salusUriEncodeAllowed)` — unreserved characters only. **Never `.urlQueryAllowed`**, which leaves `& + = ? ; / ,` alone and truncates a clinic named "Smith & Sons" at the ampersand |
 | `LazyColumn` + `contentPadding` | `ScrollView` + `LazyVStack` + `.padding` |
 | `CircularProgressIndicator` | `ProgressView()` |
 | `TopAppBar` | `.navigationTitle(_:)` + `.toolbar { ToolbarItem(placement: .primaryAction) }` |
