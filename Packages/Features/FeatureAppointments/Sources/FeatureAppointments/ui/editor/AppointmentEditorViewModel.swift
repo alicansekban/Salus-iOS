@@ -158,9 +158,12 @@ public final class AppointmentEditorViewModel {
     /// what is saved is what was on screen when the button was tapped.
     private func save() {
         let current = state
+        // Set before the task, not inside it: Kotlin's `viewModelScope` runs on `Main.immediate`,
+        // so `_state.update { isSaving = true }` has already happened when `save()` returns and the
+        // button is disabled on the very frame it was tapped.
+        state.isSaving = true
         Task { [weak self] in
             guard let self else { return }
-            state.isSaving = true
             do {
                 let result = try await saveAppointment(
                     existingId: appointmentId,

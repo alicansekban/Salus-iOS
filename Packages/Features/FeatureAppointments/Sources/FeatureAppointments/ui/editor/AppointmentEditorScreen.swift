@@ -22,12 +22,11 @@
 //     `OutlinedButton`s show the *value* and nothing else, and a `DatePicker` label in half a row
 //     would push the wheel off the edge. The title is still what VoiceOver reads — `labelsHidden`
 //     hides the label from the eye only.
-//   * `SalusTimeField` draws a non-interactive placeholder while `minuteOfDay` is nil, which is
-//     right for the Vitals editors (whose date is seeded on the first frame) but a dead end here:
-//     a new appointment starts with no time at all. So the nil case is drawn as a button that
-//     seeds `09:00` — Kotlin's own `rememberTimePickerState(initialHour = … ?: 9)`
-//     (`AppointmentEditorScreen.kt:368-369`), which is the one thing that did not survive the
-//     dialog collapsing into the field. See this task's report: the seed belongs in `SalusUI`.
+//   * A new appointment starts with no time, so `SalusTimeField` is handed the seed its wheel opens
+//     at — `seedMinuteOfDay: 9 * 60`, Kotlin's `initialHour = … ?: 9`
+//     (`AppointmentEditorScreen.kt:368-369`). Seeding the *wheel* is not choosing a time: until the
+//     user turns it, `minuteOfDay` stays nil and `appointments_missing_datetime` still fires, which
+//     is what Kotlin's Cancel button does.
 
 import SalusCommon
 import SalusDesignSystem
@@ -234,7 +233,15 @@ struct AppointmentEditorScreen: View {
                     .labelsHidden()
                     .frame(maxWidth: .infinity, alignment: .leading)
 
-                timeField
+                SalusTimeField(
+                    title: AppointmentsStrings.selectTime,
+                    minuteOfDay: state.minuteOfDay,
+                    placeholder: AppointmentsStrings.selectTime,
+                    // `rememberTimePickerState(initialHour = initialMinuteOfDay?.div(60) ?: 9, …)`
+                    // (`AppointmentEditorScreen.kt:367-370`).
+                    seedMinuteOfDay: Self.seedMinuteOfDay
+                ) { onEvent(.timeSelected($0)) }
+                    .labelsHidden()
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
             if state.showMissingDateTime {
@@ -243,31 +250,16 @@ struct AppointmentEditorScreen: View {
         }
     }
 
-    /// `AppointmentEditorScreen.kt:281-286` plus the `?: 9` seed of `:368-369` — see the header.
-    @ViewBuilder
-    private var timeField: some View {
-        if state.minuteOfDay == nil {
-            Button(AppointmentsStrings.selectTime) { onEvent(.timeSelected(Self.defaultMinuteOfDay)) }
-                .buttonStyle(.bordered)
-        } else {
-            SalusTimeField(
-                title: AppointmentsStrings.selectTime,
-                minuteOfDay: state.minuteOfDay,
-                placeholder: AppointmentsStrings.selectTime
-            ) { onEvent(.timeSelected($0)) }
-                .labelsHidden()
-        }
-    }
-
-    /// `AppointmentEditorScreen.kt:302-323`. The group label is a plain `Text`, not
+    /// `AppointmentEditorScreen.kt:302-323`. The group label is a plain `titleSmall` `Text`, not
     /// `SalusSectionHeader`: that component is the `titleLarge` screen-section title the detail
-    /// uses, where this is the small label Kotlin writes inline above the chip row.
+    /// uses, where this is the small label Kotlin writes inline above the chip row — with no colour
+    /// override, so it takes `onSurface` like every other `Text` on the screen.
     private var reminderOffsetsSection: some View {
         VStack(alignment: .leading, spacing: SalusSpacing.xs) {
             Text(AppointmentsStrings.remindersLabel)
-                .font(SalusTypography.labelLarge.font)
-                .tracking(SalusTypography.labelLarge.tracking)
-                .foregroundStyle(theme.colorScheme.onSurfaceVariant)
+                .font(SalusTypography.titleSmall.font)
+                .tracking(SalusTypography.titleSmall.tracking)
+                .foregroundStyle(theme.colorScheme.onSurface)
             HStack(spacing: SalusSpacing.sm) {
                 ForEach(ReminderOffsets.options, id: \.self) { offsetMinutes in
                     SalusFilterChip(
@@ -331,8 +323,9 @@ struct AppointmentEditorScreen: View {
             .foregroundStyle(theme.colorScheme.error)
     }
 
-    /// `AppointmentEditorScreen.kt:368-369` — where the time picker opens when nothing is set yet.
-    private static let defaultMinuteOfDay = 9 * 60
+    /// `AppointmentEditorScreen.kt:368-369` — where the time wheel opens when nothing is set yet.
+    /// Where it *opens*, not what it reports: nothing is chosen until the wheel is turned.
+    private static let seedMinuteOfDay = 9 * 60
 }
 
 // MARK: - Previews

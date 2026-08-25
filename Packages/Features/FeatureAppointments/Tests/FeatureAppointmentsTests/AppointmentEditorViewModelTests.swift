@@ -197,7 +197,12 @@ struct AppointmentEditorViewModelTests {
         viewModel.onEvent(.addToCalendarClicked)
 
         let effect = try #require(viewModel.consumeEffect())
-        guard case let .addToCalendar(draft) = effect else { return }
+        guard case let .addToCalendar(draft) = effect else {
+            // One case today; the `else` is what stops a second one from being added silently and
+            // this test from passing without asserting anything.
+            Issue.record("expected an addToCalendar effect, got \(effect)")
+            return
+        }
         let expectedBegin = Self.startsAt.instant(in: Self.zone)
         #expect(draft.title == "Dental checkup")
         #expect(draft.location == "Clinic A")

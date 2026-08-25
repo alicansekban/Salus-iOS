@@ -62,3 +62,45 @@ struct SalusTimeFieldTests {
         #expect(SalusTimeFieldBinding.minuteOfDay(from: date) == 0)
     }
 }
+
+/// Which face the field draws, and — the point of the whole arrangement — that merely opening the
+/// picker is not a choice. Kotlin seeds `rememberTimePickerState` at 9 and still requires the OK
+/// button (`AppointmentEditorScreen.kt:367-380`); Cancel leaves the editor's `minuteOfDay` null and
+/// the "pick a date and time" error intact, which is what `.picker(seed:)` preserves here.
+@Suite("SalusTimeFieldState.displayMode")
+struct SalusTimeFieldStateTests {
+    @Test("nothing picked and the picker closed draws the placeholder button")
+    func closedWithNoValueIsThePlaceholder() {
+        let mode = SalusTimeFieldState.displayMode(minuteOfDay: nil, isPicking: false, seedMinuteOfDay: 540)
+
+        #expect(mode == .placeholder)
+    }
+
+    @Test("opening the picker shows the wheel at the seed, and records nothing")
+    func openingShowsTheWheelAtTheSeed() {
+        let mode = SalusTimeFieldState.displayMode(minuteOfDay: nil, isPicking: true, seedMinuteOfDay: 540)
+
+        // The seed is what the wheel *shows*. The state it would report is still nil — the mode
+        // says `picker`, never `bound`, so nothing downstream can mistake it for a chosen time.
+        #expect(mode == .picker(seed: 540))
+    }
+
+    @Test("a chosen time binds the field, whether or not the picker was opened")
+    func aChosenTimeBindsTheField() {
+        #expect(
+            SalusTimeFieldState.displayMode(minuteOfDay: 630, isPicking: false, seedMinuteOfDay: 540)
+                == .bound(minuteOfDay: 630)
+        )
+        #expect(
+            SalusTimeFieldState.displayMode(minuteOfDay: 630, isPicking: true, seedMinuteOfDay: 540)
+                == .bound(minuteOfDay: 630)
+        )
+    }
+
+    @Test("midnight is a chosen time, not an absent one")
+    func midnightIsAValue() {
+        let mode = SalusTimeFieldState.displayMode(minuteOfDay: 0, isPicking: false, seedMinuteOfDay: 540)
+
+        #expect(mode == .bound(minuteOfDay: 0))
+    }
+}

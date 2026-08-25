@@ -52,17 +52,6 @@ public struct AppointmentsModule {
     /// Koin's `viewModel { (appointmentId: String?) -> … }` (`AppointmentsModule.kt:48-56`). The
     /// argument is optional where the detail's is not: `nil` is a new appointment.
     public let makeAppointmentEditorViewModel: @MainActor (String?) -> AppointmentEditorViewModel
-
-    // The graph pieces the detail and editor ViewModels are built from
-    // (`AppointmentsModule.kt:38-56`). They are held rather than reached for so those slices add a
-    // factory closure and nothing else — `makeAppointmentsModule`'s parameter list is already the
-    // full one Koin resolves, and a signature that changes once per slice is a signature every
-    // caller has to be revisited for. Not `public`: nothing outside the package builds a ViewModel,
-    // and each is already reachable where it is owned (the composition root passed them in).
-    let profileRepository: any ProfileRepository
-    let clock: any SalusClock
-    let idGenerator: any IdGenerator
-    let undoableDelete: UndoableDelete
 }
 
 // The eight parameters are the eight things Koin resolves inside `appointmentsModule`
@@ -96,13 +85,17 @@ public func makeAppointmentsModule(
         clock: clock
     )
     let undoableDelete = UndoableDelete(pendingDeletes: pendingDeletes, snackbar: snackbar)
+    // `factoryOf(::SaveAppointmentUseCase)` (`AppointmentsModule.kt:31`), named once so the
+    // exported factory and the editor's own use case cannot drift apart. Still a `factory`: every
+    // call builds a fresh instance, exactly as Koin does.
+    let makeSaveAppointmentUseCase: @MainActor () -> SaveAppointmentUseCase = {
+        SaveAppointmentUseCase(repository: repository, idGenerator: idGenerator, clock: clock)
+    }
 
     return AppointmentsModule(
         repository: repository,
         navigator: navigator,
-        makeSaveAppointmentUseCase: {
-            SaveAppointmentUseCase(repository: repository, idGenerator: idGenerator, clock: clock)
-        },
+        makeSaveAppointmentUseCase: makeSaveAppointmentUseCase,
         makeAppointmentsViewModel: {
             AppointmentsViewModel(repository: repository, pendingDeletes: pendingDeletes, clock: clock)
         },
@@ -120,20 +113,12 @@ public func makeAppointmentsModule(
             AppointmentEditorViewModel(
                 appointmentId: appointmentId,
                 repository: repository,
-                saveAppointment: SaveAppointmentUseCase(
-                    repository: repository,
-                    idGenerator: idGenerator,
-                    clock: clock
-                ),
+                saveAppointment: makeSaveAppointmentUseCase(),
                 clock: clock,
                 navigator: navigator,
                 undoableDelete: undoableDelete
             )
-        },
-        profileRepository: profileRepository,
-        clock: clock,
-        idGenerator: idGenerator,
-        undoableDelete: undoableDelete
+        }
     )
 }
 
