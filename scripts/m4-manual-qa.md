@@ -348,3 +348,10 @@ keys including the seven-day band of step 3.2. Section 5's *no permission prompt
 task 8 with a probe app. Section 4's push was executed in task 10b; **section 4.2 — the tap — has
 never been run**, because the build host has no Accessibility trust and `simctl` has no tap
 primitive. It is the one open item of iOS-M4's done criterion.
+
+## What was executed on a device (2026-08-25)
+
+Run by Alican on his iPhone 14 Pro Max (iOS 26) right after the merge: the appointment CRUD round
+trip, the reminder banner, **§4.2 — tapping the banner landed on the appointment's detail screen**,
+add-to-calendar, and undo were all confirmed working. The Dynamic Type checks in §8 were not run.
+

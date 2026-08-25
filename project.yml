@@ -142,6 +142,10 @@ targets:
         ASSETCATALOG_COMPILER_APPICON_NAME: ""
         GENERATE_INFOPLIST_FILE: NO
         CODE_SIGN_STYLE: Automatic
+        # The Apple Developer team the app signs with — added 2026-08-25 for the first on-device
+        # run (iPhone 14 Pro Max, the iOS-M3a checklist). It lives here, not in the pbxproj Xcode
+        # writes it into, because `xcodegen generate` regenerates the project from this file.
+        DEVELOPMENT_TEAM: MSK744V99M
 
     # The Time Sensitive Notifications capability. It is auto-approved — Xcode adds it to the
     # profile, no Apple application, which is exactly why the spec chose it over Critical Alerts —

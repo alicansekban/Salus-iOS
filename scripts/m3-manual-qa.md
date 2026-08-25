@@ -295,3 +295,24 @@ engine walked end to end from the launch argument to the ledger — `debug-medic
 Everything that needs a tap or a wait — the banner itself, the action tap, the Settings toggles, the
 Reminder Health cards — is written from the code and the strings that produce it and has **not**
 been observed. Section 9 has not been run at all.
+
+## What was executed on a device (2026-08-25, after iOS-M4)
+
+Run by Alican on his **iPhone 14 Pro Max** (iOS 26, AlarmKit available), Debug build from Xcode with
+`-SalusDebugReminderLeadMinutes 1` / `2` in the scheme's launch arguments. Section 9, items 1-5:
+
+- [x] **1. AlarmKit authorization prompt** — granted from Reminder Health.
+- [x] **2. A real AlarmKit schedule** — `debug reminder armed for … as ALARM` in the console; the dose
+      took over the lock screen one minute after launch.
+- [x] **3. A real AlarmKit cancel** — a second launch inside the lead time withdrew the first
+      occurrence; only the re-armed one fired.
+- [x] **4. The `.caf` sound on the AlarmKit path** — the bundled placeholder pattern played, not the
+      system default.
+- [x] **5. AlarmKit refused** — with the permission switched off in Settings the dose arrived as a
+      time-sensitive notification with the alarm sound.
+- [ ] **6. OS-driven background launch and expiration** — not yet run (needs the two lldb commands
+      from section 8 on the device).
+- [ ] **7. The reminder survives a reboot** — not yet run.
+
+Items 6-7 stay owed before iOS-M5 ships the medication handler.
+
