@@ -6,7 +6,8 @@ import Testing
 
 /// The twin of Android's `feature/appointments/src/main/res/values/strings.xml` (`tr`, the source
 /// language) and `values-en/strings.xml`, and the drift detector between them: all 46 keys and
-/// both of their translations are pinned here, copied from the XML.
+/// both of their translations are pinned here, copied from the XML — apart from the one recorded
+/// divergence, `appointment_status_scheduled`, whose row below carries the reason it differs.
 ///
 /// Three of the keys — `appointments_upcoming_header`, `appointments_ok`, `appointments_cancel` —
 /// are carried even though no Android code reads them. Key-set parity is what makes this table a
@@ -23,7 +24,8 @@ import Testing
 ///
 /// The parity mechanics — loading, the key-set pin, the locale check — live in
 /// `SalusTesting.StringCatalogParity`, so this suite is only this feature's application of them
-/// plus the half no shared helper can own: the Android-verbatim values.
+/// plus the half no shared helper can own: the values themselves, Android's own apart from the
+/// one recorded divergence.
 @Suite("FeatureAppointments strings")
 struct AppointmentsStringsTests {
     /// Every key `:feature:appointments` owns, with both translations, copied from the XML. A new
@@ -289,7 +291,7 @@ struct AppointmentsStringsTests {
     }
 
     @Test(
-        "the values are Android-verbatim (feature/appointments/res/values*/strings.xml)",
+        "the values match res/values*/strings.xml, apart from the one recorded divergence",
         arguments: samples
     )
     func valuesAreAndroidVerbatim(sample: AppointmentStringSample) throws {

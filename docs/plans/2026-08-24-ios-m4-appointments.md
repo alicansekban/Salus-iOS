@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking. Executor subagents run on **Opus** (user preference). Compact plan: contracts and behaviour, not source code — the named Kotlin files are the spec. Read `CLAUDE.md`, `docs/ios-feature-template.md` (MANDATORY rules, follow to the letter) and the M2/M3 plans' execution records first. Independent tasks may run in parallel implementers (own worktree + side branch `m4-appointments-tN`, rebased onto `m4-appointments` before review). Branch: `m4-appointments`.
 
-**Goal:** `FeatureAppointments` — the third feature package: appointment CRUD (list / detail / editor), multiple reminder offsets driven through the M3 engine by a real `AppointmentReminderHandler`, and "add to calendar" through EventKitUI — with the seven Android test tables (38 cases) ported by name and green.
+**Goal:** `FeatureAppointments` — the third feature package: appointment CRUD (list / detail / editor), multiple reminder offsets driven through the M3 engine by a real `AppointmentReminderHandler`, and "add to calendar" through EventKitUI — with the seven Android test tables (41 cases) ported by name and green.
 
 **Architecture:** Twin of Android `:feature:appointments`. Persistence is already there (M1: `AppointmentRecord`, `AppointmentReminderRecord`, migrations, indices) — M4 adds `AppointmentDao` in `SalusDatabase`, then the feature package exactly as the template lays it out: `domain/{model,repository,usecase}`, `data/`, `ui/{list,detail,editor,calendar}`, `navigation/`, `AppointmentsStrings`, `AppointmentsModule`. The reminder handler is the first real `ReminderHandler` the M3 registry hosts: it turns every `SCHEDULED` future appointment × enabled offset into a `ReminderOccurrence` (key `"<id>|<offset>"`) and bakes `NOTIFICATION`-presentation content. Two shared pieces are lifted out of `FeatureVitals` because a second feature now needs them: `LocalDateTime` (→ `SalusModel`) and the epoch-day date field (→ `SalusUI`, joined by a time field and the chips this feature needs).
 
@@ -201,7 +201,7 @@
 - Modify: this plan (execution record: divergences (a)–(e) + decisions (1)–(4), deferred findings, Android follow-ups), `docs/ios-feature-template.md` (add: `SalusPillButton` → `Button` styles line; `LocalDateTime` now lives in `SalusModel`; `SalusDateField`/`SalusTimeField`/`SalusFilterChip` in the mapping table; EventKitUI `#if canImport` rule), `salus-android/docs/ios-v1-plan.md` **is not touched** — Android follow-ups are listed here for the user
 - Create: `scripts/m4-manual-qa.md` (self-serve manual script: CRUD round trip, offsets → pending requests, notification tap deep link, add-to-calendar sheet, maps link, undo window)
 
-**Acceptance (milestone from spec §10, iOS-M4):** *CRUD, multiple reminder offsets, EventKit "add to calendar".* Evidence table: one automated pointer per Android test table (7 files / 38 names verified against the files — **the real denominator is 41; the three the count missed were ported by Task 12**), plus the manual script's tick marks.
+**Acceptance (milestone from spec §10, iOS-M4):** *CRUD, multiple reminder offsets, EventKit "add to calendar".* Evidence table: one automated pointer per Android test table (7 files / 41 names verified against the files — **the plan contracted 38; the three the count missed were found by the sweep and ported by Task 12**), plus the manual script's tick marks.
 
 **Android follow-ups to hand over (start numbering after the last taken `A` in §11 — re-check, M2 and M3 both found their assumed numbers used):** (i) notification tap should deep-link to the appointment detail (iOS does); (ii) unify the calendar payload — detail sends `notes`, editor sends `doctor + notes`; (iii) `appointments_upcoming_header`, `appointments_ok`, `appointments_cancel` are dead string keys; (iv) the iOS-only `LocalDateTime` ISO/`instant(in:)` cases and the DAO partition/cascade cases have no Android twin (same shape as A8/M3's note).
 
@@ -248,26 +248,31 @@ Three tasks were added to the plan during execution:
   list's per-row delete, and the three Kotlin cases the plan's 4-case count had hidden. Added rather
   than deferred, because the alternative was carrying an unrecorded-difference bug into iOS-M5.
 
-### `scripts/ci.sh`, run end to end on the Task 11 worktree
+### `scripts/ci.sh`, run end to end at the branch tip
 
 ```
 # 1/5  toolchain    ==> Toolchain matches README.md.        (Xcode 26.4.1 / 17E202, SwiftLint 0.65.0, SwiftFormat 0.62.1)
-# 2/5  lint         0/292 files require formatting, 11 files skipped.
+# 2/5  lint         0/292 files require formatting, 12 files skipped.
                     Done linting! Found 0 violations, 0 serious in 292 files.
 # 3/5  custom rules PASS  no_ui_framework_in_domain fired on Packages/SalusModel/…/LintFixtureDoNotCommit.swift
                     PASS  no_ui_framework_in_domain stayed quiet on Packages/SalusUI/…/LintFixtureDoNotCommit.swift
                     PASS  no_charts_in_features fired on Packages/Features/FeatureVitals/…/LintFixtureDoNotCommit.swift
                     PASS  no_charts_in_features stayed quiet on Packages/SalusUI/…/LintFixtureDoNotCommit.swift
                     ==> every custom rule fired in scope and stayed quiet outside it.
-# 4/5  test         ==> summary: 24/24 packages passed          (536 tests)
+# 4/5  test         ==> summary: 24/24 packages passed          (545 tests)
 # 5/5  build        ** BUILD SUCCEEDED **
 ==> CI pipeline passed.
 ```
 
-**536 tests across 24 packages**, up from iOS-M3's 430. Where the 106 new ones live:
-`FeatureAppointments` 62 (new package), `SalusReminder` 97 (+5: the relay's 3 and the delegate's 2),
+**545 tests across 24 packages**, up from iOS-M3's 430. Where the 115 new ones live:
+`FeatureAppointments` 65 (new package), `SalusReminder` 97 (+5: the relay's 3 and the delegate's 2),
 `SalusDatabase` 51 (+14, `AppointmentDaoTests`), `SalusModel` 61 (+`LocalDateTimeTests`),
-`SalusCommon` 22 (+`LocalDateTimeInstantTests`), `SalusUI` 53 (+ the date/time field bindings).
+`SalusCommon` 22 (+`LocalDateTimeInstantTests`), `SalusUI` 59 (+ the date/time field bindings and
+the two fields' display modes).
+
+Measured at the branch tip, not on an intermediate worktree: the earlier figure of 536 was read on
+the Task 11 worktree, Task 12's row-delete cases added 3, and the final fix wave's date/time field
+cases added 6.
 
 The Release build the acceptance asks for is green too, and silent:
 `xcodebuild … -configuration Release build` → `** BUILD SUCCEEDED **`, **0 warnings**.
@@ -331,8 +336,9 @@ SHAs are the ones on `m4-appointments` after rebase, not the side-branch ones th
 | 9 — editor screen | 2 — `e8dd210`, fix `7fb76f4` | Approved with fixes (1 Important) → 1 round |
 | 10 — app wiring, tab, handler registration, deep link | 1 — `723fc50` | Clean first time |
 | 10b — notification response on the main thread (M3 bug) | 1 — `ccd66b6` | Clean first time |
-| 11 — this record, `scripts/m4-manual-qa.md`, the two doc edits | see the branch tip | — |
-| 12 — list row delete (divergence (p)) + the three Kotlin cases | see the branch tip | — |
+| 11 — this record, `scripts/m4-manual-qa.md`, the two doc edits | 1 — `c72ff2c` | — |
+| 12 — list row delete (divergence (p)) + the three Kotlin cases | 1 — `f6dbc35` | — |
+| Final review fix wave — `SalusDateField` picker parity + this record's numbers | 2 — `89ef72e`, docs `DOCS_SHA` | Whole-branch review, 7 findings → 1 round |
 
 Two integration checks ran mid-flight — after T1/T2/T3/T6 merged (`e5381f6`) and after T4/T5/T7
 (`44e38c1`) and T8/T9/T10 (`723fc50`) — each `24/24 packages passed`.
@@ -590,7 +596,7 @@ already taken.
 
 | Half | State |
 | --- | --- |
-| Automated | **Met.** 38 Kotlin cases ported by name across the seven tables plus the iOS-only rows above; `scripts/ci.sh` green end to end — 24/24 packages, 536 tests, lint and custom-rule gates clean, `** BUILD SUCCEEDED **` — and the Release build green with 0 warnings. |
+| Automated | **Met.** 41 Kotlin cases ported by name across the seven tables plus the iOS-only rows above; `scripts/ci.sh` green end to end — 24/24 packages, 545 tests, lint and custom-rule gates clean, `** BUILD SUCCEEDED **` — and the Release build green with 0 warnings. |
 | Manual, executed | **Met, by Task 10 on a simulator** and written up in `scripts/m4-manual-qa.md`: the create → list → detail → edit → delete/undo round trip, the undo window in both directions, and the three occurrence keys `<id>\|60` / `<id>\|1440` / `<id>\|10080` in the alarm ledger (including the narrow seven-day band in which all three land inside the window at once). Task 8 measured the EventKitUI sheet appearing prefilled with **no** usage description and **no** permission prompt. Task 10b delivered the notification and saw the banner. |
 | Manual, **pending the user's tap** | **One item: §4.2 of `scripts/m4-manual-qa.md` — tapping the notification banner and landing on the appointment's detail screen.** The push, the payload and the delegate path are all verified; the *tap* is not, because the build host has no Accessibility trust and `xcrun simctl` has no tap primitive. The payload recipe is in §4 verbatim. This is decision (2)'s only unproven step, and it is why the `--ff-only` merge is held for the user rather than done here. |
 
