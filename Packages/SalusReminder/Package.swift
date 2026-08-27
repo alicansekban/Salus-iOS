@@ -6,6 +6,9 @@ import PackageDescription
 
 let package = Package(
     name: "SalusReminder",
+    // Turkish is the default AND the fallback (spec §6.4): a device set to neither TR nor EN reads
+    // the engine's own copy in Turkish, exactly as Android's `values/` default does.
+    defaultLocalization: "tr",
     // Inherited test-host concession: this package links `SalusDatabase`, which must declare
     // macOS 14 to satisfy GRDB's macOS 10.15 floor on the host build. A dependent that names no
     // macOS platform is treated as macOS 10.13 and cannot link it. iOS 17 stays the ship target.
@@ -28,6 +31,9 @@ let package = Package(
                 .product(name: "SalusCommon", package: "SalusCommon"),
                 .product(name: "SalusDatabase", package: "SalusDatabase"),
                 .product(name: "SalusNotifications", package: "SalusNotifications")
+            ],
+            resources: [
+                .process("Resources")
             ]
         ),
         .testTarget(

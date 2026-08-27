@@ -15,23 +15,15 @@
 //  * the occurrence identity travels in `userInfo` rather than in a request code, so the dao lookup
 //    Kotlin does is a parse (``ReminderUserInfo/ref(from:)``).
 //
-// Which leaves the two things this type genuinely owns: the delegation ORDER (handler first, refill
-// second) and the deep-link seam for a plain tap.
+// Which leaves the three things this type genuinely owns: reading the occurrence identity off the
+// payload, translating the framework's own action identifiers into the engine's, and the deep-link
+// seam for a plain tap. The reaction itself — delegate to the handler, then refill, in that order —
+// moved to ``ReminderActionDispatcher`` in iOS-M5, when the alarm surface became answerable and
+// needed the identical body from a different process.
 
 import Foundation
 import SalusModel
 import UserNotifications
-
-/// The one thing the delegate needs from ``ReminderWindowSynchronizer``: refill the window.
-///
-/// A protocol rather than the concrete type because the delegate's whole contract is *when* the
-/// refill happens relative to the handler, and pinning an order needs a double that records it.
-public protocol ReminderWindowSyncing: Sendable {
-    /// Reconciles the rolling reminder window. Never throws — see the synchronizer's delta 5.
-    func sync() async
-}
-
-extension ReminderWindowSynchronizer: ReminderWindowSyncing {}
 
 /// Receives every user interaction with a fired reminder, and decides what the engine does about it.
 ///
@@ -46,8 +38,12 @@ public final class ReminderNotificationDelegate: NSObject, UNUserNotificationCen
     /// looking at a different tab would never see.
     static let foregroundPresentationOptions: UNNotificationPresentationOptions = [.banner, .sound, .list]
 
-    private let handlerRegistry: ReminderHandlerRegistry
-    private let synchronizer: any ReminderWindowSyncing
+    /// The engine's reaction to an answered occurrence, shared verbatim with the alarm surface —
+    /// which asks the same question about the same occurrence, in a different process, through a
+    /// request code. Built here rather than injected because the composition root's existing call
+    /// hands over the two collaborators it is made of, and because this surface never sees a
+    /// request code: its occurrence identity arrives in `userInfo`, so it needs no ledger.
+    private let dispatcher: ReminderActionDispatcher
     private let onOpen: @Sendable (ReminderRef) -> Void
 
     /// - Parameter onOpen: called on a plain tap, with the occurrence the notification was about.
@@ -59,8 +55,11 @@ public final class ReminderNotificationDelegate: NSObject, UNUserNotificationCen
         synchronizer: any ReminderWindowSyncing,
         onOpen: @escaping @Sendable (ReminderRef) -> Void
     ) {
-        self.handlerRegistry = handlerRegistry
-        self.synchronizer = synchronizer
+        dispatcher = ReminderActionDispatcher(
+            alarmDao: nil,
+            registry: handlerRegistry,
+            synchronizer: synchronizer
+        )
         self.onOpen = onOpen
         super.init()
     }
@@ -154,21 +153,10 @@ public final class ReminderNotificationDelegate: NSObject, UNUserNotificationCen
             ? ReminderActionIds.dismiss
             : actionIdentifier
 
-        // Kotlin's `handler?.onAction(...)`: an unregistered type is a no-op.
-        if let handler = handlerRegistry.forType(ref.type) {
-            do {
-                try await handler.onAction(ref: ref, actionId: actionId)
-            } catch {
-                // The OS discards whatever we throw and there is no UI to report to, so a feature
-                // that failed while reacting is absorbed here. The refill below still runs: it is a
-                // property of the event having happened, not of the handler having succeeded, and
-                // skipping it would leave the window short by one occurrence until the next sync.
-            }
-        }
-
-        // `HandleReminderActionUseCase.kt:23` — a snooze materializes its new occurrence through the
-        // handler, so the refill has to come AFTER the handler wrote it. §6.1's "refill after every
-        // notification action" trigger.
-        await synchronizer.sync()
+        // Everything that is left — delegate to the owning handler, swallow whatever it throws, then
+        // refill (`HandleReminderActionUseCase.kt:19-23`; a snooze materializes its new occurrence
+        // inside `onAction`, so the refill has to come after it) — is the dispatcher's, and is the
+        // same body the alarm surface runs.
+        await dispatcher.perform(ref: ref, actionId: actionId)
     }
 }

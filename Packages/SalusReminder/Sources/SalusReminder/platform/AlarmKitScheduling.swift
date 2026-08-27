@@ -7,17 +7,18 @@
 // `NSAlarmKitUsageDescription`. Alarms scheduled this way are NOT pending notifications, so they do
 // not spend the 64-slot budget §6.1's window math is written against.
 //
-// Two things are deliberately absent, both because they cannot be proven here:
+// One thing is deliberately absent, because it cannot be proven here: the whole framework half is
+// behind `#if canImport(AlarmKit)`. AlarmKit is iOS-only, and `swift test` builds this package for
+// macOS, where the module does not exist. The seam and its identity math are outside the guard and
+// ARE tested; the adapter compiles in the iOS build and its real behaviour is validated on device
+// in iOS-M5 (the plan's M3a).
 //
-//  * The whole framework half is behind `#if canImport(AlarmKit)`. AlarmKit is iOS-only, and
-//    `swift test` builds this package for macOS, where the module does not exist. The seam and its
-//    identity math are outside the guard and ARE tested; the adapter compiles in the iOS build and
-//    its real behaviour is validated on device in iOS-M5 (the plan's M3a).
-//  * The alarm's buttons are the system's. `AlarmPresentation.Alert` has a default stop button that
-//    iOS localizes itself, and a custom secondary button would need an `AppIntents`
-//    `LiveActivityIntent` — a fire-time hook this milestone does not have. The handler's actions
-//    still reach the user on the fallback path (they are notification actions there); wiring them
-//    into the alarm surface is iOS-M5's, together with the on-device validation.
+// The second absence — the alarm's buttons — is PAID as of iOS-M5. iOS-M3 shipped an alarm that
+// rang and could not be answered: `schedule` dropped `content.actions`, and a dose whose only
+// answer is "open the app and find it" is a dose that goes unrecorded. What was missing was the
+// fire-time hook, an `AppIntents` `LiveActivityIntent`; ``AlarmActionIntentProvider`` is the seam
+// the app target now fulfils, and the mapping onto the two buttons AlarmKit gives an alert is
+// ``SystemAlarmKitScheduler/schedule(requestCode:triggerAt:content:ref:)``'s doc comment.
 
 import Foundation
 
@@ -103,6 +104,7 @@ public enum ReminderAlarmIdentity {
 
     import ActivityKit
     import AlarmKit
+    import AppIntents
     import SwiftUI
 
     /// The occurrence identity, carried on the alarm the way ``ReminderUserInfo`` carries it on a
@@ -126,18 +128,38 @@ public enum ReminderAlarmIdentity {
     /// `AlarmManager.shared` is resolved per call rather than stored, which is what lets this be a
     /// `Sendable` struct over a class that is not.
     ///
-    /// **iOS 26.1, not 26.0**, and the half-version is deliberate. Apple changed the alarm alert's
-    /// buttons in 26.1: `AlarmPresentation.Alert` gained an initializer that omits the stop button
-    /// — iOS supplies and localizes it — and deprecated the one that demands it. On 26.0 the only
-    /// initializer available takes an app-supplied `AlarmButton`, i.e. a piece of user-facing copy
-    /// this package has no string catalog for and would have to invent in two languages for a
-    /// version window that closed in October 2025. A 26.0 device therefore takes the same
-    /// time-sensitive fallback iOS 17-25 do, which the spec's AlarmKit note already describes as an
-    /// accepted degradation. Nothing else in the engine version-checks: the composition root builds
-    /// this behind `#available` and the gateway routes on whether it got one.
-    @available(iOS 26.1, *)
+    /// **iOS 26.0, and it used to be 26.1.** Apple changed the alarm alert's buttons in 26.1:
+    /// `AlarmPresentation.Alert` gained an initializer that omits the stop button — iOS supplies
+    /// and localizes it — and deprecated the one that demands it. iOS-M3 shipped the 26.1 gate
+    /// because on 26.0 the only initializer available takes an app-supplied `AlarmButton`, i.e. a
+    /// piece of user-facing copy this package had no string catalog for. It has one now
+    /// (``ReminderStrings/alarmDismiss``, the twin of the label Android's `AlarmService.kt:87`
+    /// appends), so the reason is spent and a 26.0 device rings a real alarm instead of taking the
+    /// time-sensitive fallback iOS 17-25 do. The one branch that survives is which of the two
+    /// initializers builds the alert, in ``schedule(requestCode:triggerAt:content:ref:)``.
+    ///
+    /// Nothing else in the engine version-checks: the composition root builds this behind
+    /// `#available` and the gateway routes on whether it got one.
+    @available(iOS 26.0, *)
     public struct SystemAlarmKitScheduler: AlarmKitScheduling, AlarmKitAuthorizing {
-        public init() {}
+        private let intents: (any AlarmActionIntentProvider)?
+        private let dismissLabel: String
+
+        /// - Parameters:
+        ///   - intents: mints the `AppIntents` the alert's buttons run. Optional because the
+        ///     concrete provider is the app target's — it is an `AppIntent`, whose metadata is
+        ///     extracted at app build time — and a package that shipped a stand-in would be
+        ///     shipping a button that does nothing. Without one the alarm still rings and still
+        ///     stops; it just carries no answer, which is iOS-M3's behaviour exactly.
+        ///   - dismissLabel: the stop button's copy on iOS 26.0. Ignored from 26.1 up, where the
+        ///     system supplies and localizes that button itself.
+        public init(
+            intents: (any AlarmActionIntentProvider)? = nil,
+            dismissLabel: String = ReminderStrings.alarmDismiss
+        ) {
+            self.intents = intents
+            self.dismissLabel = dismissLabel
+        }
 
         public func isAuthorized() async -> Bool {
             AlarmManager.shared.authorizationState == .authorized
@@ -151,30 +173,89 @@ public enum ReminderAlarmIdentity {
             return state == .authorized
         }
 
+        /// An alert has exactly two buttons, and this is what the engine's answers map onto.
+        ///
+        /// **Stop** is mandatory and is ``ReminderActionIds/dismiss``: the noise ends and the
+        /// occurrence stays unresolved, which is the only safe reading of a button the OS may draw
+        /// in its own words. It is never mapped to the handler's first action — a user silencing an
+        /// alarm must not be recorded as having taken a dose.
+        ///
+        /// **Secondary** is optional and is `content.actions.first`, the answer that resolves the
+        /// occurrence (`AlarmScreen.kt:144` draws it as the primary, un-tonal one). It is
+        /// drawn only when there is an intent behind it, and `secondaryButtonBehavior: .custom` is
+        /// what makes pressing it run that intent and end the alert rather than start a countdown.
+        ///
+        /// Three things Android's alarm surface has do not survive the mapping, and there is no
+        /// slot for them: `content.text` (an alert shows a title only), any action past the first,
+        /// and — from iOS 26.1 — the stop button's own copy.
         public func schedule(
             requestCode: Int32,
             triggerAt: Date,
             content: ReminderNotificationContent,
             ref: ReminderRef
         ) async throws {
-            // `content.title` is a runtime string the handler already localized; wrapping it as a
-            // `LocalizedStringResource` looks it up, misses, and falls back to the string itself,
-            // which is the intended result. AlarmKit takes nothing else.
-            let alert = AlarmPresentation.Alert(title: LocalizedStringResource(stringLiteral: content.title))
+            // Nothing is drawn without a provider: a `.custom` secondary button with no intent
+            // behind it is a button that does nothing, which is worse than the button being absent.
+            let secondaryAction = intents == nil ? nil : content.actions.first
+            let secondaryButton = secondaryAction.map { action in
+                AlarmButton(
+                    text: LocalizedStringResource(stringLiteral: action.label),
+                    textColor: .white,
+                    systemImageName: "checkmark"
+                )
+            }
+            let secondaryIntent = secondaryAction.flatMap { action in
+                intents?.actionIntent(requestCode: requestCode, actionId: action.id)
+            }
             let attributes = AlarmAttributes(
-                presentation: AlarmPresentation(alert: alert),
+                presentation: AlarmPresentation(alert: alert(titled: content.title, secondary: secondaryButton)),
                 metadata: ReminderAlarmMetadata(ref: ref),
                 tintColor: Color.accentColor
             )
             let configuration = AlarmManager.AlarmConfiguration.alarm(
                 schedule: .fixed(triggerAt),
                 attributes: attributes,
+                stopIntent: intents?.stopIntent(requestCode: requestCode),
+                secondaryIntent: secondaryIntent,
                 sound: .named(ReminderAlarmSound.fileName)
             )
 
             _ = try await AlarmManager.shared.schedule(
                 id: ReminderAlarmIdentity.alarmId(for: requestCode),
                 configuration: configuration
+            )
+        }
+
+        /// The alert, built through whichever of the two initializers this OS has.
+        ///
+        /// `title` is a runtime string the handler already localized; wrapping it as a
+        /// `LocalizedStringResource` looks it up, misses, and falls back to the string itself,
+        /// which is the intended result. AlarmKit takes nothing else.
+        ///
+        /// From 26.1 the stop button is the system's — it has no parameter, and the `stopButton`
+        /// property Apple left behind is documented as no longer used. On 26.0 it is mandatory and
+        /// app-supplied, so ``ReminderStrings/alarmDismiss`` fills it; that initializer is
+        /// deprecated *at* 26.1, which is exactly the branch it is called from.
+        private func alert(titled title: String, secondary: AlarmButton?) -> AlarmPresentation.Alert {
+            let title = LocalizedStringResource(stringLiteral: title)
+            let behavior: AlarmPresentation.Alert.SecondaryButtonBehavior? = secondary == nil ? nil : .custom
+
+            if #available(iOS 26.1, *) {
+                return AlarmPresentation.Alert(
+                    title: title,
+                    secondaryButton: secondary,
+                    secondaryButtonBehavior: behavior
+                )
+            }
+            return AlarmPresentation.Alert(
+                title: title,
+                stopButton: AlarmButton(
+                    text: LocalizedStringResource(stringLiteral: dismissLabel),
+                    textColor: .white,
+                    systemImageName: "xmark"
+                ),
+                secondaryButton: secondary,
+                secondaryButtonBehavior: behavior
             )
         }
 

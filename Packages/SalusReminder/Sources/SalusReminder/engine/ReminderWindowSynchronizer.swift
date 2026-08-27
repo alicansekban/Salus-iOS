@@ -359,3 +359,16 @@ public final class ReminderWindowSynchronizer: Sendable {
         }
     }
 }
+
+/// The one thing an answered reminder needs from ``ReminderWindowSynchronizer``: refill the window.
+///
+/// A protocol rather than the concrete type because what its callers promise is *when* the refill
+/// happens relative to the handler, and pinning an order needs a double that records it. Declared
+/// here rather than beside the notification delegate — where it lived until iOS-M5 — because
+/// ``ReminderActionDispatcher`` is its caller now and the engine must not reach into `platform/`.
+public protocol ReminderWindowSyncing: Sendable {
+    /// Reconciles the rolling reminder window. Never throws — see the synchronizer's delta 5.
+    func sync() async
+}
+
+extension ReminderWindowSynchronizer: ReminderWindowSyncing {}

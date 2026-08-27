@@ -52,6 +52,37 @@ struct UserNotificationGatewayRoutingTests {
         #expect(content.sound != UNNotificationSound.default)
     }
 
+    /// The fallback is not just a quieter alarm: it is the whole answerable surface on a device with
+    /// no AlarmKit, so the dose's own answers have to survive the fall. A dose that rings with no way
+    /// to record it from the notification is a dose the user resolves by opening the app, or not at
+    /// all — and both answers must run without bringing the app to the front, exactly as Android
+    /// answers them in a BroadcastReceiver.
+    @Test("an alarm falling back to a notification keeps the handler's actions as background buttons")
+    func alarmFallbackKeepsTheHandlersActions() async throws {
+        let actions = [
+            ReminderAction(id: "taken", label: "Aldım"),
+            ReminderAction(id: "snooze", label: "Ertele")
+        ]
+
+        try await fixture.gateway().schedule(
+            requestCode: 24,
+            triggerAt: GatewayFixture.triggerAt,
+            content: fixture.content(actions: actions, presentation: .alarm),
+            ref: fixture.ref()
+        )
+
+        let expectedIdentifier = ReminderNotificationCategories.identifier(for: .medicationDose)
+        let category = try #require(fixture.center.registeredCategories.first { $0.identifier == expectedIdentifier })
+        #expect(category.actions.map(\.identifier) == ["taken", "snooze"])
+        #expect(category.actions.map(\.title) == ["Aldım", "Ertele"])
+        // `.foreground` would launch the app to answer a dose; its absence is what makes these the
+        // twin of Android's receiver-handled actions.
+        #expect(category.actions.allSatisfy { !$0.options.contains(.foreground) })
+        // The swipe-away has to keep reaching the engine on this path too — it is the only way to
+        // silence the notification without answering it.
+        #expect(category.options.contains(.customDismissAction))
+    }
+
     /// The custom sound has to name the file that is actually in the bundle. iOS ignores a sound it
     /// cannot find — or one longer than 30 s — and plays the default instead, silently.
     @Test("the alarm sound names the bundled file")
@@ -406,9 +437,13 @@ struct UserNotificationGatewayRoutingTests {
         #expect(UserNotificationGateway.systemPendingBudget == 64)
         #expect(ReminderWindowConfig.ios.maxOccurrences == 60)
     }
+}
 
-    // MARK: - AlarmKit identity
-
+/// The request-code ↔ `UUID` bridge, which is the gateway's collaborator rather than the gateway:
+/// nothing here touches a notification centre or an alarm backend. A suite of its own since iOS-M5,
+/// when the routing suite outgrew the type-body budget it had been sharing with it.
+@Suite("ReminderAlarmIdentity")
+struct ReminderAlarmIdentityTests {
     /// Cancellation is handed a request code long after the process that scheduled the alarm has
     /// died, so AlarmKit's `UUID` has to be recomputable from it rather than remembered — the same
     /// bargain the request code itself strikes with the occurrence identity.
