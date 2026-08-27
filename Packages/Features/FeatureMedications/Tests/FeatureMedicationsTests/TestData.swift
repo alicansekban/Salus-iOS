@@ -5,6 +5,7 @@
 // `testSchedule(recurrence: .daysOfWeek, daysOfWeekMask: 0b101)` on either platform is
 // describing the same schedule. Kotlin's named-argument defaults map onto Swift's directly.
 
+import SalusCommon
 import SalusModel
 
 @testable import FeatureMedications
@@ -83,4 +84,15 @@ func testLog(
         doseAmount: doseAmount,
         note: nil
     )
+}
+
+/// The twin of Kotlin's `IdGenerator { "generated-id" }` SAM lambda
+/// (`IntakeActionUseCasesTest.kt:30`): an id source that cannot vary, so the seeded log's id is
+/// an assertable value rather than a fresh UUID.
+struct FixedIdGenerator: IdGenerator {
+    let id: String
+
+    func newId() -> String {
+        id
+    }
 }
