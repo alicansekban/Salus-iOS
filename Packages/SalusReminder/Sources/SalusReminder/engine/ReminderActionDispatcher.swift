@@ -52,7 +52,7 @@ public struct ReminderActionDispatcher: Sendable {
     }
 
     /// The alarm surface's entry point: all the OS hands back is the code the alarm was scheduled
-    /// under (`HandleReminderActionUseCase.kt:18`).
+    /// under (`HandleReminderActionUseCase.kt:19`).
     public func perform(requestCode: Int32, actionId: String) async {
         if let ref = await ref(of: requestCode) {
             await dispatch(ref: ref, actionId: actionId)
@@ -89,7 +89,8 @@ public struct ReminderActionDispatcher: Sendable {
         }
     }
 
-    /// Kotlin's `handler?.onAction(...)`: an unregistered type is a no-op.
+    /// Kotlin's `handler?.onAction(...)` (`HandleReminderActionUseCase.kt:20-21`): an unregistered
+    /// type is a no-op.
     private func dispatch(ref: ReminderRef, actionId: String) async {
         guard let handler = registry.forType(ref.type) else { return }
 
