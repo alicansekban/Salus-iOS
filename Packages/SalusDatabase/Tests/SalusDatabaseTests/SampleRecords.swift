@@ -100,6 +100,9 @@ enum SampleRecords {
         startDateEpochDay: 20685,
         endDateEpochDay: 20800,
         isActive: true,
+        // Deliberately not the `true` default: a sample that matches the column's DEFAULT would
+        // read back correctly even if the record never wrote the column.
+        remindersEnabled: false,
         createdAtEpochMs: 3,
         updatedAtEpochMs: 4
     )

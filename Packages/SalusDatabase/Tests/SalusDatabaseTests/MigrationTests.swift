@@ -100,6 +100,35 @@ struct MigrationTests {
         }
     }
 
+    /// `MigrationTest.kt:90-110`. The default is the point: a medication written before the
+    /// upgrade never asked to be silenced, so it must come out of the migration still ringing.
+    @Test("3 to 4 adds reminders_enabled and existing medications keep ringing")
+    func threeToFourAddsRemindersEnabledAndExistingMedicationsKeepRinging() throws {
+        let queue = try DatabaseQueue()
+        try migrator.migrate(queue, upTo: "v3")
+
+        // The Kotlin test inserts the owning profile first; `"v1"` already seeded that exact row
+        // here, so the medication's foreign key has something to point at without it.
+        try queue.write { db in
+            try db.execute(
+                sql: """
+                INSERT INTO medications \
+                (id, profile_id, name, form, color_token, start_date, is_active, created_at, updated_at) \
+                VALUES ('med-1', 'default-profile', 'Aspirin', 'TABLET', 'primary', 0, 1, 1, 1)
+                """
+            )
+        }
+
+        try migrator.migrate(queue, upTo: "v4")
+
+        try queue.read { db in
+            let row = try #require(try Row.fetchOne(db, sql: "SELECT * FROM medications WHERE id = 'med-1'"))
+            #expect(row["reminders_enabled"] as Int? == 1)
+            // Nothing else moved: the row is the one the v3 database held.
+            #expect(row["name"] as String? == "Aspirin")
+        }
+    }
+
     /// Not in the Kotlin test, because Room's `onCreate` callback cannot run twice. GRDB's
     /// migrator decides for itself what still needs applying, and this pins that it decides
     /// correctly: an app that launches twice must not end up with two default profiles.
@@ -116,7 +145,7 @@ struct MigrationTests {
         let after = try queue.read(SchemaSnapshot.init)
         #expect(after == before)
         #expect(after.profileCount == 1)
-        #expect(after.appliedMigrations == ["v1", "v2", "v3"])
+        #expect(after.appliedMigrations == ["v1", "v2", "v3", "v4"])
     }
 
     /// The seeded row is what every other table's `profile_id` points at, so it is worth pinning

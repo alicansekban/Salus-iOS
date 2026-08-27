@@ -20,6 +20,8 @@ public struct MedicationRecord: Codable, FetchableRecord, PersistableRecord, Sen
     public let startDateEpochDay: Int
     public let endDateEpochDay: Int?
     public let isActive: Bool
+    /// Whether this medication's dose reminders ring. Added in v4; existing rows kept ringing.
+    public let remindersEnabled: Bool
     public let createdAtEpochMs: Int64
     public let updatedAtEpochMs: Int64
 
@@ -37,6 +39,7 @@ public struct MedicationRecord: Codable, FetchableRecord, PersistableRecord, Sen
         case startDateEpochDay = "start_date"
         case endDateEpochDay = "end_date"
         case isActive = "is_active"
+        case remindersEnabled = "reminders_enabled"
         case createdAtEpochMs = "created_at"
         case updatedAtEpochMs = "updated_at"
     }
@@ -55,6 +58,7 @@ public struct MedicationRecord: Codable, FetchableRecord, PersistableRecord, Sen
         startDateEpochDay: Int,
         endDateEpochDay: Int?,
         isActive: Bool,
+        remindersEnabled: Bool = true,
         createdAtEpochMs: Int64,
         updatedAtEpochMs: Int64
     ) {
@@ -71,6 +75,7 @@ public struct MedicationRecord: Codable, FetchableRecord, PersistableRecord, Sen
         self.startDateEpochDay = startDateEpochDay
         self.endDateEpochDay = endDateEpochDay
         self.isActive = isActive
+        self.remindersEnabled = remindersEnabled
         self.createdAtEpochMs = createdAtEpochMs
         self.updatedAtEpochMs = updatedAtEpochMs
     }

@@ -5,7 +5,7 @@
 // migrate a fresh database up to `"v{n}"`, then read back its tables, columns, indices and
 // foreign keys with the SQLite pragmas and check them against `{n}.json`.
 //
-// Fixtures: `Resources/RoomSchemas/{1,2,3}.json`, verbatim copies of the Android export
+// Fixtures: `Resources/RoomSchemas/{1,2,3,4}.json`, verbatim copies of the Android export
 // (see the README beside them).
 
 import Foundation
@@ -68,6 +68,11 @@ extension RoomEntity {
     var resolvedCreateStatements: [String] {
         ([createSql] + (indices ?? []).map(\.createSql))
             .map { $0.replacingOccurrences(of: "${TABLE_NAME}", with: tableName) }
+    }
+
+    /// Just the table's own DDL, placeholder resolved.
+    var resolvedCreateSql: String {
+        createSql.replacingOccurrences(of: "${TABLE_NAME}", with: tableName)
     }
 }
 
@@ -132,7 +137,13 @@ struct RoomSchemaParityTests {
         "grdb_migrations"
     ]
 
-    @Test("the migrated schema matches Room's export", arguments: [1, 2, 3])
+    /// The column `"v4"` adds and the one it lands behind, in the words 4.json uses for them:
+    /// `Migrations.kt`'s `ADD COLUMN reminders_enabled INTEGER NOT NULL DEFAULT 1` as Room
+    /// spells it inside a `CREATE TABLE`.
+    private static let isActiveColumnSql = "`is_active` INTEGER NOT NULL, "
+    private static let remindersEnabledColumnSql = "`reminders_enabled` INTEGER NOT NULL DEFAULT 1, "
+
+    @Test("the migrated schema matches Room's export", arguments: [1, 2, 3, 4])
     func migratedSchemaMatchesRoomExport(version: Int) throws {
         let expected = try Self.loadRoomSchema(version: version)
         #expect(expected.database.version == version)
@@ -170,12 +181,41 @@ struct RoomSchemaParityTests {
         #expect(SalusMigrations.v3Statement == aiSummaries.resolvedCreateStatements[0])
     }
 
+    /// `"v4"` is an `ALTER TABLE`, so Room ships no `createSql` for it — but 4.json still exports
+    /// the full DDL of every table, and so does 3.json. This holds the two side by side character
+    /// for character: every table's v4 `createSql` must be its v3 one unchanged, and `medications`
+    /// must differ by exactly the column `v4Statement` adds, in Room's own spelling of it. That is
+    /// what makes a one-statement `ALTER TABLE` a complete port of the 3 → 4 bump — a second table
+    /// changing shape in the same Android bump, or this one changing by more than that column,
+    /// fails here rather than reaching a user's upgrade.
+    @Test("the v4 DDL is the v3 DDL plus exactly one column")
+    func v4DdlIsV3PlusOneColumn() throws {
+        var v3ByTable: [String: String] = [:]
+        for entity in try Self.loadRoomSchema(version: 3).database.entities {
+            v3ByTable[entity.tableName] = entity.resolvedCreateSql
+        }
+
+        let v4Entities = try Self.loadRoomSchema(version: 4).database.entities
+        #expect(Set(v4Entities.map(\.tableName)) == Set(v3ByTable.keys), "v4 adds or drops a table")
+
+        for entity in v4Entities {
+            var expected = try #require(v3ByTable[entity.tableName], "4.json declares a table 3.json does not")
+            if entity.tableName == "medications" {
+                expected = expected.replacingOccurrences(
+                    of: Self.isActiveColumnSql,
+                    with: Self.isActiveColumnSql + Self.remindersEnabledColumnSql
+                )
+            }
+            #expect(entity.resolvedCreateSql == expected, "\(entity.tableName) DDL differs at v4")
+        }
+    }
+
     /// The records exist so every feature finds its table already proven. This is the cheap half
     /// of that promise: the column names a record encodes are exactly the table's columns — no
     /// typo in a `CodingKeys` case, no column a record silently forgets.
     @Test("every record's columns are exactly its table's columns")
     func recordColumnsMatchRoomExport() throws {
-        let expected = try Self.loadRoomSchema(version: 3)
+        let expected = try Self.loadRoomSchema(version: 4)
         let columnsByTable = Dictionary(
             uniqueKeysWithValues: expected.database.entities.map { entity in
                 (entity.tableName, Set(entity.fields.map(\.columnName)))
@@ -189,7 +229,7 @@ struct RoomSchemaParityTests {
         for sample in SampleRecords.all {
             let tableColumns = try #require(
                 columnsByTable[sample.tableName],
-                "record for table \(sample.tableName), which 3.json does not declare"
+                "record for table \(sample.tableName), which 4.json does not declare"
             )
             let encoded = try sample.encodedColumns()
             #expect(

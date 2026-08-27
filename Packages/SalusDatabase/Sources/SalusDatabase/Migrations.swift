@@ -173,6 +173,11 @@ enum SalusMigrations {
     PRIMARY KEY(`period_type`, `start_epoch_day`, `language`))
     """
 
+    /// 3 → 4 (`Migrations.kt:42-50`): reminders can be silenced per medication. Existing rows keep
+    /// ringing — the only safe default for a health app — so the column is NOT NULL with a default
+    /// of 1, and the statement is the Kotlin one character for character.
+    static let v4Statement = "ALTER TABLE medications ADD COLUMN reminders_enabled INTEGER NOT NULL DEFAULT 1"
+
     /// Builds the migrator. `eraseDatabaseOnSchemaChange` stays off: this is a health log with no
     /// backend to restore from, so a schema mismatch must fail loudly rather than delete the data.
     ///
@@ -193,6 +198,10 @@ enum SalusMigrations {
 
         migrator.registerMigration("v3") { db in
             try db.execute(sql: v3Statement)
+        }
+
+        migrator.registerMigration("v4") { db in
+            try db.execute(sql: v4Statement)
         }
 
         return migrator
