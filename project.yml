@@ -60,6 +60,10 @@ options:
 # — `swift test` never does — and, once the later M4 tasks land, its EventKit/EventKitUI
 # add-to-calendar sheet, which sits behind `#if canImport(EventKitUI)` and so is invisible to the
 # macOS host build.
+#
+# M5 adds `FeatureMedications`, the fourth feature package. Linking it compiles its String Catalog
+# — `swift test` never does — and, once the later M5 tasks land, its AlarmKit dose surface, which
+# sits behind `#if canImport(AlarmKit)` and so is invisible to the macOS host build.
 packages:
   SalusDesignSystem:
     path: Packages/SalusDesignSystem
@@ -83,6 +87,8 @@ packages:
     path: Packages/Features/FeatureSettings
   FeatureAppointments:
     path: Packages/Features/FeatureAppointments
+  FeatureMedications:
+    path: Packages/Features/FeatureMedications
   SalusReminder:
     path: Packages/SalusReminder
 
@@ -226,6 +232,8 @@ targets:
         product: FeatureSettings
       - package: FeatureAppointments
         product: FeatureAppointments
+      - package: FeatureMedications
+        product: FeatureMedications
       - package: SalusReminder
         product: SalusReminder
 
