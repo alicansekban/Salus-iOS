@@ -144,57 +144,29 @@ final class AppCompositionRoot {
     var vitalsQuickEntry: any VitalsQuickEntry { vitalsModule.makeSaveWeightEntryUseCase() }
 
     init() {
-        let clock = SystemSalusClock()
-        let database = Self.openDatabase(clock: clock)
-        let appLockFlagStore = KeychainAppLockFlagStore()
-        let profileDao = ProfileDao(database: database)
+        let infrastructure = Self.makeInfrastructure()
+        clock = infrastructure.clock
+        idGenerator = infrastructure.idGenerator
+        database = infrastructure.database
+        profileDao = infrastructure.profileDao
+        appLockFlagStore = infrastructure.appLockFlagStore
+        preferences = infrastructure.preferences
+        aiUsage = infrastructure.aiUsage
+        profileRepository = infrastructure.profileRepository
+        pendingDelete = infrastructure.pendingDelete
+        navigator = infrastructure.navigator
+        snackbar = infrastructure.snackbar
 
-        let idGenerator = UUIDIdGenerator()
-        let pendingDelete = PendingDeleteController()
-        let navigator = Navigator()
-        let snackbar = SalusSnackbarController()
+        // One line per module, which is the point of the split: a feature added in a later
+        // milestone costs a `let` above and an assignment here, not a paragraph of wiring.
+        let modules = Self.makeFeatureModules(infrastructure: infrastructure)
+        vitalsModule = modules.vitals
+        appointmentsModule = modules.appointments
+        settingsModule = modules.settings
 
-        self.clock = clock
-        self.idGenerator = idGenerator
-        self.database = database
-        self.profileDao = profileDao
-        self.appLockFlagStore = appLockFlagStore
-        preferences = SalusPreferencesDataSource(defaults: .standard, appLockFlagStore: appLockFlagStore)
-        aiUsage = AiUsageDataSource(defaults: .standard)
-        // The root's own DAO, so the app builds exactly one over this database (Koin's `get()`).
-        profileRepository = makeProfileRepository(profileDao: profileDao, clock: clock)
-        self.pendingDelete = pendingDelete
-        self.navigator = navigator
-        self.snackbar = snackbar
-        // The one cycle in the graph, broken here. `makeReminderGraph` builds the handler registry
-        // and the scheduler together as one immutable value, the appointment handler needs the
-        // repository, and the repository needs a scheduler — so the module is built first against
-        // a relay, and the relay is pointed at the real scheduler once there is one. See
-        // `ReminderSchedulerRelay`.
-        let reminderRelay = ReminderSchedulerRelay()
-        // The locals above rather than `self.…` wherever one exists: the instance is not whole yet,
-        // so Swift lets this read only the stored properties already assigned — `profileRepository`
-        // and, once this statement returns, `appointmentsModule`.
-        appointmentsModule = makeAppointmentsModule(
-            appointmentDao: AppointmentDao(database: database),
-            profileRepository: profileRepository,
-            reminderScheduler: reminderRelay,
-            clock: clock,
-            idGenerator: idGenerator,
-            pendingDeletes: pendingDelete,
-            snackbar: snackbar,
-            navigator: navigator
-        )
         // `reminderModule` (`ReminderModule.kt:18-28`), assembled in one place — see
-        // `makeReminderGraph`. The five properties below are five views of that one sub-graph.
-        let reminder = Self.makeReminderGraph(
-            database: database,
-            clock: clock,
-            idGenerator: idGenerator,
-            // `single<ReminderHandler>(named(APPOINTMENT))` (`AppointmentsModule.kt:32-35`) reaching
-            // `getAll()` — the registry is what Koin's qualified lookup becomes here.
-            handlers: Self.debugHandlers(clock: clock) + [appointmentsModule.reminderHandler]
-        )
+        // `makeReminderGraph`. The properties below are eight views of that one sub-graph.
+        let reminder = modules.reminder
         systemReminderEnvironment = reminder.environment
         reminderEnvironment = reminder.environment
         reminderAuthorization = reminder.environment
@@ -203,26 +175,6 @@ final class AppCompositionRoot {
         reminderScheduler = reminder.scheduler
         reminderOpenRouter = reminder.openRouter
         reminderDelegate = reminder.delegate
-        // Now that there is a scheduler, everything the module already handed out starts working.
-        // Nothing has called `requestSync()` in between — see `ReminderSchedulerRelay` for why a
-        // call that did would still be correct.
-        reminderRelay.bind(reminder.scheduler)
-
-        vitalsModule = makeVitalsModule(
-            vitalsDao: VitalsDao(database: database),
-            clock: clock,
-            idGenerator: idGenerator,
-            pendingDeletes: pendingDelete,
-            snackbar: snackbar,
-            navigator: navigator
-        )
-        settingsModule = makeSettingsModule(
-            reminderEnvironment: reminder.environment,
-            reminderAuthorization: reminder.environment,
-            reminderSyncState: reminder.syncState,
-            clock: clock,
-            alarmKitSupported: reminder.alarmKitSupported
-        )
     }
 
     /// Everything the reminder engine needs installed before the app finishes launching.
@@ -305,110 +257,88 @@ final class AppCompositionRoot {
         }
     }
 
-    /// `reminderModule` (`ReminderModule.kt:18-28`), built in its own dependency order: the AlarmKit
-    /// backend first — its presence is the "iOS 26.1+" answer every layer below routes on — then the
-    /// environment and gateway over it, then the synchronizer, and last the two types that funnel
-    /// events into it.
+    /// `commonModule`, `databaseModule`, `dataStoreModule`, `profileModule` and `appModule` in one
+    /// value: the process-lifetime singletons everything else is built over.
     ///
-    /// A function rather than more lines in `init` because it is a graph of its own: nothing in it
-    /// is reachable from the rest of the app except through the five properties above.
-    private static func makeReminderGraph(
-        database: SalusDatabase,
-        clock: any SalusClock,
-        idGenerator: any IdGenerator,
-        handlers: [any ReminderHandler]
-    ) -> ReminderGraph {
-        let alarmKit = makeAlarmKitBackend()
-        let notificationCenter = SystemUserNotificationCenter()
-        let environment = SystemReminderEnvironment(
-            center: notificationCenter,
-            alarmKit: alarmKit.authorizing,
-            backgroundRefreshAvailable: isBackgroundRefreshAvailable()
-        )
-        let syncState = UserDefaultsReminderSyncStateStore()
-        // `getAll()`: the appointment handler landed with M4; the medication and cycle handlers
-        // arrive with M5/M6, and the engine reconciles without them until they do. A Debug build
-        // may add one fake handler alongside — see `debugHandlers`.
-        let handlerRegistry = ReminderHandlerRegistry(all: handlers)
-        let scheduler = BackgroundRefreshScheduler(
-            synchronizer: ReminderWindowSynchronizer(
-                dao: ReminderAlarmDao(database: database),
-                gateway: UserNotificationGateway(
-                    center: notificationCenter,
-                    alarmScheduler: alarmKit.scheduling
-                ),
-                handlerRegistry: handlerRegistry,
-                environment: environment,
-                clock: clock,
-                idGenerator: idGenerator,
-                config: .ios
-            ),
-            backgroundRefresh: SystemBackgroundRefreshRequester(),
-            syncState: syncState,
-            clock: clock
-        )
-        let openRouter = ReminderOpenRouter()
-
-        return ReminderGraph(
-            environment: environment,
-            // The authorizing seam's presence IS the "iOS 26.1+" answer, and this is the one place
-            // in the app that knows it. Reminder Health needs the same fact to decide whether to
-            // draw the AlarmKit row, so it is carried out of here rather than re-derived from a
-            // second `#available`.
-            alarmKitSupported: alarmKit.authorizing != nil,
-            syncState: syncState,
-            scheduler: scheduler,
-            openRouter: openRouter,
-            delegate: ReminderNotificationDelegate(
-                handlerRegistry: handlerRegistry,
-                // The scheduler, not the synchronizer underneath it: every trigger in the app goes
-                // through the one coalescing funnel, so a notification action's refill cannot run
-                // concurrently with the foreground or background pass it landed in the middle of.
-                synchronizer: scheduler,
-                onOpen: { ref in
-                    Task { @MainActor in openRouter.open(ref) }
-                }
-            )
+    /// The database opens first because every store below reads it and because a store that cannot
+    /// open is a fatal launch failure — see `openDatabase`.
+    private static func makeInfrastructure() -> Infrastructure {
+        let clock = SystemSalusClock()
+        let database = openDatabase(clock: clock)
+        let appLockFlagStore = KeychainAppLockFlagStore()
+        // The root's own DAO, so the app builds exactly one over this database (Koin's `get()`).
+        let profileDao = ProfileDao(database: database)
+        return Infrastructure(
+            clock: clock,
+            idGenerator: UUIDIdGenerator(),
+            database: database,
+            profileDao: profileDao,
+            appLockFlagStore: appLockFlagStore,
+            preferences: SalusPreferencesDataSource(defaults: .standard, appLockFlagStore: appLockFlagStore),
+            aiUsage: AiUsageDataSource(defaults: .standard),
+            profileRepository: makeProfileRepository(profileDao: profileDao, clock: clock),
+            pendingDelete: PendingDeleteController(),
+            navigator: Navigator(),
+            snackbar: SalusSnackbarController()
         )
     }
 
-    /// The handlers a Debug build may add alongside the real ones — today exactly one, and only
-    /// when the app was launched with ``DebugReminderHandler/leadMinutesKey``.
+    /// Every feature module, each the twin of a Koin feature module and each built exactly once,
+    /// together with the reminder sub-graph they were wired against.
     ///
-    /// It exists because the acceptance criteria (`docs/plans/2026-08-23-ios-m3-reminder-engine.md`)
-    /// are about a reminder surviving a force-quit, a timezone change and a cold period, and none of
-    /// that can be walked on a device while every handler is still owed by a later milestone. A
-    /// Release build has neither this list nor the type in it: both are `#if DEBUG`.
-    private static func debugHandlers(clock: any SalusClock) -> [any ReminderHandler] {
-        #if DEBUG
-            if let handler = DebugReminderHandler(clock: clock) {
-                return [handler]
-            }
-        #endif
-        return []
-    }
+    /// A function rather than a run of statements in `init` because the reminder engine and the
+    /// modules that feed it are the one cycle in the app's graph, and this is where it is broken.
+    /// Everything here is a local, so a module is reachable from the next one without the
+    /// half-initialized-`self` dance `init` would otherwise have to do.
+    private static func makeFeatureModules(infrastructure: Infrastructure) -> FeatureModules {
+        let database = infrastructure.database
+        let clock = infrastructure.clock
+        let idGenerator = infrastructure.idGenerator
+        // The one cycle in the graph, broken here. `makeReminderGraph` builds the handler registry
+        // and the scheduler together as one immutable value, the appointment handler needs the
+        // repository, and the repository needs a scheduler — so the module is built first against
+        // a relay, and the relay is pointed at the real scheduler once there is one. See
+        // `ReminderSchedulerRelay`.
+        let reminderRelay = ReminderSchedulerRelay()
+        let appointments = makeAppointmentsModule(
+            appointmentDao: AppointmentDao(database: database),
+            profileRepository: infrastructure.profileRepository,
+            reminderScheduler: reminderRelay,
+            clock: clock,
+            idGenerator: idGenerator,
+            pendingDeletes: infrastructure.pendingDelete,
+            snackbar: infrastructure.snackbar,
+            navigator: infrastructure.navigator
+        )
+        let reminder = makeReminderGraph(
+            database: database,
+            clock: clock,
+            idGenerator: idGenerator,
+            // `single<ReminderHandler>(named(APPOINTMENT))` (`AppointmentsModule.kt:32-35`) reaching
+            // `getAll()` — the registry is what Koin's qualified lookup becomes here.
+            handlers: debugHandlers(clock: clock) + [appointments.reminderHandler]
+        )
+        // Now that there is a scheduler, everything the module already handed out starts working.
+        // Nothing has called `requestSync()` in between — see `ReminderSchedulerRelay` for why a
+        // call that did would still be correct.
+        reminderRelay.bind(reminder.scheduler)
 
-    /// The AlarmKit backend, or a pair of nils below the version that has one.
-    ///
-    /// The one place in the app that names an OS version. `SystemAlarmKitScheduler` fulfils both
-    /// seams, so it is built once and handed out twice — the gateway routes on the scheduling half
-    /// being present, Reminder Health on the authorizing half.
-    private static func makeAlarmKitBackend() -> (
-        scheduling: (any AlarmKitScheduling)?,
-        authorizing: (any AlarmKitAuthorizing)?
-    ) {
-        // iOS 26.1 rather than 26.0 — see `SystemAlarmKitScheduler`'s doc comment.
-        if #available(iOS 26.1, *) {
-            let backend = SystemAlarmKitScheduler()
-            return (backend, backend)
-        }
-        return (nil, nil)
-    }
-
-    /// `UIApplication.backgroundRefreshStatus`, sampled here because it is main-actor-only and
-    /// `ReminderEnvironment.backgroundRefreshAvailable()` is neither `async` nor isolated.
-    private static func isBackgroundRefreshAvailable() -> Bool {
-        UIApplication.shared.backgroundRefreshStatus == .available
+        let vitals = makeVitalsModule(
+            vitalsDao: VitalsDao(database: database),
+            clock: clock,
+            idGenerator: idGenerator,
+            pendingDeletes: infrastructure.pendingDelete,
+            snackbar: infrastructure.snackbar,
+            navigator: infrastructure.navigator
+        )
+        let settings = makeSettingsModule(
+            reminderEnvironment: reminder.environment,
+            reminderAuthorization: reminder.environment,
+            reminderSyncState: reminder.syncState,
+            clock: clock,
+            alarmKitSupported: reminder.alarmKitSupported
+        )
+        return FeatureModules(reminder: reminder, vitals: vitals, appointments: appointments, settings: settings)
     }
 
     /// Opens `<Application Support>/salus.db`, creating the directory first.
@@ -439,40 +369,26 @@ final class AppCompositionRoot {
     }
 }
 
-/// Where a tapped reminder notification waits for the shell.
-///
-/// The delegate runs off the main actor and knows only the occurrence; the tab bar lives in
-/// `RootView` and knows only tabs. This is the one value between them: the delegate publishes,
-/// `RootView` observes and consumes. It exists as a type of its own rather than as a closure into
-/// the shell because a notification tapped from a cold start arrives before any view is on screen —
-/// the ref has to survive until something is there to route it.
-///
-/// iOS-M3 routed to the owning tab's root and no further; M4 pushes the appointment's detail
-/// screen on top of it, and M5 adds the dose.
-@MainActor
-@Observable
-final class ReminderOpenRouter {
-    /// The occurrence waiting to be shown, if any.
-    private(set) var pending: ReminderRef?
-
-    func open(_ ref: ReminderRef) {
-        pending = ref
-    }
-
-    /// Takes the pending occurrence and clears it, so a tab switch happens once per tap.
-    func consume() -> ReminderRef? {
-        defer { pending = nil }
-        return pending
-    }
+/// The process-lifetime singletons, handed back from `makeInfrastructure` in one piece.
+private struct Infrastructure {
+    let clock: any SalusClock
+    let idGenerator: any IdGenerator
+    let database: SalusDatabase
+    let profileDao: ProfileDao
+    let appLockFlagStore: any AppLockFlagStore
+    let preferences: SalusPreferencesDataSource
+    let aiUsage: AiUsageDataSource
+    let profileRepository: any ProfileRepository
+    let pendingDelete: PendingDeleteController
+    let navigator: Navigator
+    let snackbar: SalusSnackbarController
 }
 
-/// The reminder engine's sub-graph, handed back from `makeReminderGraph` in one piece.
-private struct ReminderGraph {
-    let environment: SystemReminderEnvironment
-    /// Whether this OS has AlarmKit at all — see `makeAlarmKitBackend`.
-    let alarmKitSupported: Bool
-    let syncState: any ReminderSyncStateStore
-    let scheduler: BackgroundRefreshScheduler
-    let openRouter: ReminderOpenRouter
-    let delegate: ReminderNotificationDelegate
+/// The feature modules, handed back from `makeFeatureModules` in one piece with the reminder
+/// sub-graph they were wired against. A milestone that adds a feature adds one field here.
+private struct FeatureModules {
+    let reminder: ReminderGraph
+    let vitals: VitalsModule
+    let appointments: AppointmentsModule
+    let settings: SettingsModule
 }

@@ -11,6 +11,7 @@
 		0E32E65689FF17CEBD1E46D5 /* FeatureVitals in Frameworks */ = {isa = PBXBuildFile; productRef = 5FBA7A24FA520BFB0BB3288E /* FeatureVitals */; };
 		1102517D43A6643370219A27 /* AppCompositionRoot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15AD79D550BC94771443016D /* AppCompositionRoot.swift */; };
 		1F0578B19CE4AC5AB5CCC17F /* DebugReminderHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C21605CC5C2E2D933AFE62F /* DebugReminderHandler.swift */; };
+		20CE1EC6D03BC4A4DE7B0C06 /* AppCompositionRoot+Reminder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 837A905B9212600BCAD4F423 /* AppCompositionRoot+Reminder.swift */; };
 		23F65989585616FBE8ED64EA /* SalusReminder in Frameworks */ = {isa = PBXBuildFile; productRef = A5B22EB0FD372492463281EC /* SalusReminder */; };
 		3321C284993CDAECC785BB87 /* SalusDatabase in Frameworks */ = {isa = PBXBuildFile; productRef = 23E6F4A762A65FDBF66C5851 /* SalusDatabase */; };
 		537EC5AA135769AF924F7DC3 /* SalusCommon in Frameworks */ = {isa = PBXBuildFile; productRef = AC3FBAE5BFB699978B2666B6 /* SalusCommon */; };
@@ -43,6 +44,7 @@
 		80918512BF78D2B9D3F0B433 /* salus_alarm.caf */ = {isa = PBXFileReference; path = salus_alarm.caf; sourceTree = "<group>"; };
 		814A06AA9BCDD69E3C76C98E /* RootTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootTab.swift; sourceTree = "<group>"; };
 		814D8ECF9C6A2402529D7DF1 /* Salus.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Salus.entitlements; sourceTree = "<group>"; };
+		837A905B9212600BCAD4F423 /* AppCompositionRoot+Reminder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppCompositionRoot+Reminder.swift"; sourceTree = "<group>"; };
 		92401A60F464F47C5E0F8036 /* SalusDesignSystem */ = {isa = PBXFileReference; lastKnownFileType = folder; name = SalusDesignSystem; path = Packages/SalusDesignSystem; sourceTree = SOURCE_ROOT; };
 		A853DA3BEE5AEAF0DC4959BF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		ABE62DF92DB777EA452EBEAF /* SalusModel */ = {isa = PBXFileReference; lastKnownFileType = folder; name = SalusModel; path = Packages/SalusModel; sourceTree = SOURCE_ROOT; };
@@ -121,6 +123,7 @@
 				3B1306692224BD06CE0E55BF /* InfoPlist.strings */,
 				6A392B2A08D6304DBF51378F /* Resources */,
 				15AD79D550BC94771443016D /* AppCompositionRoot.swift */,
+				837A905B9212600BCAD4F423 /* AppCompositionRoot+Reminder.swift */,
 				4C21605CC5C2E2D933AFE62F /* DebugReminderHandler.swift */,
 				A853DA3BEE5AEAF0DC4959BF /* Info.plist */,
 				2E7A0AF160F41F13451BB006 /* PlaceholderScreen.swift */,
@@ -240,6 +243,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				20CE1EC6D03BC4A4DE7B0C06 /* AppCompositionRoot+Reminder.swift in Sources */,
 				1102517D43A6643370219A27 /* AppCompositionRoot.swift in Sources */,
 				1F0578B19CE4AC5AB5CCC17F /* DebugReminderHandler.swift in Sources */,
 				FC66D0CB66008FBFBFEB19A3 /* PlaceholderScreen.swift in Sources */,
