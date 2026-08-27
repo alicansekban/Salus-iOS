@@ -1,9 +1,12 @@
 // Ported from `core/ui/.../component/SalusEmptyState.kt:29-72`.
 //
 // Kotlin composes two other `:core:ui` components here — `SalusIconBadge` (`SalusEmptyState.kt:45`)
-// and `SalusPillButton` (`:69`). Neither is part of the iOS-M2 component set (they arrive with the
+// and `SalusPillButton` (`:69`). Neither was part of the iOS-M2 component set (they arrive with the
 // feature that first needs them on their own), so both appear below as private views rather than
-// as public API this milestone does not owe. Their dimensions are cited to the Kotlin they copy.
+// as public API this milestone did not owe. Their dimensions are cited to the Kotlin they copy.
+// `SalusIconBadge` has since shipped (iOS-M5) — but in its *default* 40/22 size, which is not the
+// 72/32 one this file draws, so the private badge below stays until a caller needs the large one
+// as public API too.
 
 import SalusDesignSystem
 import SwiftUI
