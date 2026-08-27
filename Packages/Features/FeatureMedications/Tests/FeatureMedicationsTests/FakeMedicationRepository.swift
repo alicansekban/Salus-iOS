@@ -59,6 +59,11 @@ final class FakeMedicationRepository: MedicationRepository, @unchecked Sendable 
         mutate { state in state.medications = items }
     }
 
+    /// The twin of assigning to `logs.value` (`Fakes.kt:22`).
+    func setLogs(_ items: [IntakeLog]) {
+        mutate { state in state.logs = items }
+    }
+
     /// The twin of reading `medications.value`.
     var medications: [MedicationWithSchedules] {
         lock.withLock { state.medications }
