@@ -20,14 +20,12 @@
 //   `single { MedicationReminderHandler(…) }` → built inline below and handed straight out; the
 //     `bind ReminderHandler::class`             engine's registry is its only consumer.
 //
-// **Two of Koin's factories have no property here yet, and that is the slice boundary, not a
-// gap.** `factoryOf(::SaveMedicationUseCase)` and `viewModel { MedicationEditorViewModel(…) }`
-// need a type iOS-M5 **Task 12** creates:
+//   `viewModel { MedicationEditorViewModel(…) }` → `makeMedicationEditorViewModel`, a closure over the
+//                                               medication being edited, or nil for a new one;
+//                                               `factoryOf(::SaveMedicationUseCase)` is built inside
+//                                               it — the editor is its only consumer.
 //
-//     public let makeMedicationEditorViewModel: @MainActor (String?) -> MedicationEditorViewModel
-//
-// That line, and the `SaveMedicationUseCase` the editor needs, are added by the task that brings
-// its type. `DeleteMedicationUseCase` and `SnoozeDoseUseCase` are built here already —
+// `DeleteMedicationUseCase` and `SnoozeDoseUseCase` are built here already —
 // Koin declares them as factories, but their only consumers so far are inside this file, so they
 // stay local rather than becoming exported closures nothing calls.
 
@@ -74,6 +72,11 @@ public struct MedicationsModule {
     /// (`MedicationsModule.kt:39-49`). The medication id is the one thing Koin takes as a
     /// parameter rather than resolving, so it is the closure's one argument.
     public let makeMedicationDetailViewModel: @MainActor (String) -> MedicationDetailViewModel
+
+    /// Koin's `viewModel { MedicationEditorViewModel(…) }` (`MedicationsModule.kt:47-58`). The
+    /// parameter is the medication being edited, or nil for a new one — Koin's
+    /// `parametersOf(medicationId)`.
+    public let makeMedicationEditorViewModel: @MainActor (String?) -> MedicationEditorViewModel
 }
 
 // The seven parameters are the seven things Koin resolves inside `medicationsModule`
@@ -154,6 +157,24 @@ public func makeMedicationsModule(
                 undoableDelete: undoableDelete,
                 reminderScheduler: reminderScheduler,
                 clock: clock
+            )
+        },
+        // `MedicationsModule.kt:47-58`. `factoryOf(::SaveMedicationUseCase)` (`:28`) is built here
+        // rather than exported: the editor is its only consumer, so a second closure nothing else
+        // calls would be a name without a reader.
+        makeMedicationEditorViewModel: { medicationId in
+            MedicationEditorViewModel(
+                medicationId: medicationId,
+                repository: repository,
+                saveMedication: SaveMedicationUseCase(
+                    repository: repository,
+                    reminderScheduler: reminderScheduler
+                ),
+                deleteMedication: deleteMedication,
+                clock: clock,
+                idGenerator: idGenerator,
+                navigator: navigator,
+                undoableDelete: undoableDelete
             )
         }
     )

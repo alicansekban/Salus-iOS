@@ -65,25 +65,7 @@ extension View {
             MedicationDetailRoute(medicationId: key.id)
         }
         .navigationDestination(for: MedicationEditorKey.self) { key in
-            MedicationEditorPlaceholder(id: key.id)
+            MedicationEditorRoute(medicationId: key.id)
         }
-    }
-}
-
-// MARK: - Placeholders
-
-// The destination below stands in for `MedicationEditorRoute` (iOS-M5 **Task 12**), which is the
-// task that deletes it; the detail's twin was deleted by Task 11, which brought
-// `MedicationDetailRoute`. It is here rather than absent on purpose: an unregistered
-// `navigationDestination` is a push that lands on a blank screen with no way back, and the failure
-// would only show up in the app, after Task 13 wires the tab. A placeholder that names its key
-// makes a premature push obvious instead.
-
-/// Replaced by `MedicationEditorRoute` in iOS-M5 Task 12.
-private struct MedicationEditorPlaceholder: View {
-    let id: String?
-
-    var body: some View {
-        Text(verbatim: "MedicationEditorKey(id: \(id ?? "nil"))")
     }
 }
