@@ -108,8 +108,8 @@ Milestone plans live in `docs/plans/`. Toolchain and CI usage: `README.md`.
     the intent needs a rendezvous point it can reach by name. The bridge is that point and nothing
     else: `AppCompositionRoot` binds the `ReminderActionDispatcher` it built into it, and the bridge
     forwards to that one dispatcher. It is not a locator — nothing else is ever resolved from it,
-    and nothing outside `App/Reminder/` names it. Any *other* `shared` is the finding this rule is
-    for.
+    and the only names outside `App/Reminder/` are the composition root's single `bind` line and
+    its comments. Any *other* `shared` is the finding this rule is for.
   — *enforcement: review of any `static` mutable state or new `shared` accessor.*
 - **Features never depend on each other.** A `Packages/Features/Feature*/Package.swift` may
   depend on core packages only — never on another `Feature*`. Cross-feature navigation stays a
