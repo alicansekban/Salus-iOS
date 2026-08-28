@@ -146,6 +146,7 @@ public enum ReminderAlarmIdentity {
     public struct SystemAlarmKitScheduler: AlarmKitScheduling, AlarmKitAuthorizing {
         private let intents: (any AlarmActionIntentProvider)?
         private let dismissLabel: String
+        private let tintColor: Color
 
         /// - Parameters:
         ///   - intents: mints the `AppIntents` the alert's buttons run. Optional because the
@@ -155,12 +156,23 @@ public enum ReminderAlarmIdentity {
         ///     stops; it just carries no answer, which is iOS-M3's behaviour exactly.
         ///   - dismissLabel: the stop button's copy on iOS 26.0. Ignored from 26.1 up, where the
         ///     system supplies and localizes that button itself.
+        ///   - tintColor: the alert's accent, which AlarmKit paints its buttons with. Injected
+        ///     rather than read from the environment because this type is a background scheduler,
+        ///     not a view: it runs from a sync with no SwiftUI environment around it, so the one
+        ///     place that can resolve the theme is the composition root. Android's twin colours the
+        ///     same buttons with the *medications* feature accent (`AlarmScreen.kt:143-150`, whose
+        ///     `SalusPillButton(accent = MaterialTheme.salusColors.medications)` fills the
+        ///     un-tonal button with `accent.accent`), so that is the value to hand in — not
+        ///     `Color.accentColor`, which this app has no asset for and which therefore resolved
+        ///     to the system blue until iOS-M5's post-QA fix.
         public init(
             intents: (any AlarmActionIntentProvider)? = nil,
-            dismissLabel: String = ReminderStrings.alarmDismiss
+            dismissLabel: String = ReminderStrings.alarmDismiss,
+            tintColor: Color
         ) {
             self.intents = intents
             self.dismissLabel = dismissLabel
+            self.tintColor = tintColor
         }
 
         public func isAuthorized() async -> Bool {
@@ -212,7 +224,7 @@ public enum ReminderAlarmIdentity {
             let attributes = AlarmAttributes(
                 presentation: AlarmPresentation(alert: alert(titled: content.title, secondary: secondaryButton)),
                 metadata: ReminderAlarmMetadata(ref: ref),
-                tintColor: Color.accentColor
+                tintColor: tintColor
             )
             let configuration = AlarmManager.AlarmConfiguration.alarm(
                 schedule: .fixed(triggerAt),

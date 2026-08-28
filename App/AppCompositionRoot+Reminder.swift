@@ -1,6 +1,7 @@
 import Observation
 import SalusCommon
 import SalusDatabase
+import SalusDesignSystem
 import SalusReminder
 import UIKit
 
@@ -124,10 +125,25 @@ extension AppCompositionRoot {
         // comment for why this used to say 26.1 and no longer does. On 26.0 the stop button is
         // app-supplied, hence `dismissLabel`; from 26.1 up iOS draws and localizes it and the
         // label is ignored.
+        //
+        // The tint is the *medications* feature accent, the colour Android's `AlarmScreen.kt:143-150`
+        // gives the same buttons — an alarm is always a dose, so it wears the medications green and
+        // not the app's primary. It is a constructor argument rather than an environment read
+        // because the scheduler is a background type: it runs from a sync with no SwiftUI
+        // environment around it, so the theme is resolved here, once.
+        //
+        // Two deliberate simplifications, both about there being exactly one tint per scheduled
+        // alarm. The light palette is chosen on purpose: the alert is drawn by the system, on the
+        // lock screen, from an attribute frozen at sync time, so it cannot follow the device
+        // switching to dark — one accent serves both appearances. And the premium palette is not
+        // consulted at all; `SalusTheme.resolve` defaults it to `.classic`, which is what the shell
+        // pins too until iOS-M9 wires the stored `premium_theme` into the root (`RootView.swift`).
         if #available(iOS 26.0, *) {
+            let medicationsAccent = SalusTheme.resolve(systemIsDark: false).extendedColors.medications.accent
             let backend = SystemAlarmKitScheduler(
                 intents: AppAlarmIntents(),
-                dismissLabel: ReminderStrings.alarmDismiss
+                dismissLabel: ReminderStrings.alarmDismiss,
+                tintColor: medicationsAccent
             )
             return (backend, backend)
         }

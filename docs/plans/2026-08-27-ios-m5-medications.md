@@ -862,3 +862,10 @@ found no way out of — an **iOS-only divergence**, because every numeric field 
 carry the `ImeAction.Next` / `ImeAction.Done` its fields declare, so `MedicationEditorScreen.kt`
 needs no such affordance and has none. The appointments and vitals editors are candidates for the
 same modifier and did not get it — a deferred consistency item.
+
+A second commit: the AlarmKit alert's tint is the **medications feature accent** rather than
+`Color.accentColor`, which the app has no asset for and which therefore drew the system blue —
+`SystemAlarmKitScheduler.init` now takes the colour and the composition root resolves it once
+(`SalusTheme.resolve(systemIsDark: false).extendedColors.medications.accent`), the parity being
+Android's `AlarmScreen.kt:143-150`; the premium palette is deferred to iOS-M9, when the stored
+`premium_theme` reaches the root.
