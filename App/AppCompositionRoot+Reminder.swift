@@ -134,10 +134,11 @@ extension AppCompositionRoot {
         //
         // Two deliberate simplifications, both about there being exactly one tint per scheduled
         // alarm. The light palette is chosen on purpose: the alert is drawn by the system, on the
-        // lock screen, from an attribute frozen at sync time, so it cannot follow the device
-        // switching to dark — one accent serves both appearances. And the premium palette is not
-        // consulted at all; `SalusTheme.resolve` defaults it to `.classic`, which is what the shell
-        // pins too until iOS-M9 wires the stored `premium_theme` into the root (`RootView.swift`).
+        // lock screen, from an attribute frozen at sync time, so it cannot follow the appearance —
+        // neither the device switching to dark nor a stored `theme_mode = DARK` — so one accent
+        // serves both. And the premium palette is not an input here: feature accents are
+        // premium-independent on both platforms (spec §4.5, `SalusTheme.extendedColors(dark:)`),
+        // so wiring `premium_theme` into the root in iOS-M9 changes nothing about this tint.
         if #available(iOS 26.0, *) {
             let medicationsAccent = SalusTheme.resolve(systemIsDark: false).extendedColors.medications.accent
             let backend = SystemAlarmKitScheduler(

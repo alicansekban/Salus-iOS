@@ -867,5 +867,6 @@ A second commit: the AlarmKit alert's tint is the **medications feature accent**
 `Color.accentColor`, which the app has no asset for and which therefore drew the system blue —
 `SystemAlarmKitScheduler.init` now takes the colour and the composition root resolves it once
 (`SalusTheme.resolve(systemIsDark: false).extendedColors.medications.accent`), the parity being
-Android's `AlarmScreen.kt:143-150`; the premium palette is deferred to iOS-M9, when the stored
-`premium_theme` reaches the root.
+Android's `AlarmScreen.kt:143-150`. The light palette is frozen on purpose (the system draws the
+alert from an attribute set at sync time); the premium palette is not an input — feature accents
+are premium-independent on both platforms (spec §4.5), so iOS-M9 changes nothing here.
