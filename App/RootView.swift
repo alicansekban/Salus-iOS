@@ -1,4 +1,5 @@
 import FeatureAppointments
+import FeatureMedications
 import FeatureSettings
 import FeatureVitals
 import SalusDesignSystem
@@ -38,6 +39,13 @@ struct RootView: View {
     /// The stored `theme_mode`, mirrored out of `SalusPreferencesDataSource` by the `.task` below.
     /// Seeded with the same default the store returns before anything has been written.
     @State private var themeMode: ThemeMode = .default
+
+    /// The appointment detail a tapped reminder last pushed, and how deep the appointments stack was
+    /// left by that push — the two halves of "is this key still on top?".
+    ///
+    /// `NavigationPath` is opaque: it exposes a count and nothing else, so the only way to know what
+    /// is on top of a stack is to remember what was put there. Hence a memo rather than a read.
+    @State private var reminderPushedAppointment: PushedAppointmentDetail?
 
     /// `Theme.kt:99-104`. The premium palette is pinned to `.classic` until M9 wires entitlement:
     /// the stored `premium_theme` is what the user *selected*, and `SalusTheme.resolve` wants what
@@ -94,9 +102,9 @@ struct RootView: View {
     /// puts the feature's **concrete** key into the path, so each feature package registers its own
     /// `navigationDestination(for:)` in a `…Destinations()` modifier applied here — the twin of
     /// Android's `vitalsEntries` / `homeEntries` `NavEntry` providers. The shell therefore never
-    /// names a key; `vitalsDestinations()`, `appointmentsDestinations()` and
-    /// `settingsDestinations()` below are those modifiers, and the two remaining tabs keep their
-    /// placeholder until their feature lands.
+    /// names a key; `medicationsDestinations()`, `vitalsDestinations()`,
+    /// `appointmentsDestinations()` and `settingsDestinations()` below are those modifiers, and the
+    /// one remaining tab keeps its placeholder until its feature lands.
     private func tabStack(for tab: RootTab) -> some View {
         navigationStack(for: tab)
             // The app's one snackbar host, applied *inside* the tab's content region rather than
@@ -126,6 +134,16 @@ struct RootView: View {
     @ViewBuilder
     private func navigationStack(for tab: RootTab) -> some View {
         switch tab {
+        case .medications:
+            NavigationStack(path: backStacks.binding(for: tab)) {
+                MedicationsRoute()
+                    .medicationsDestinations()
+            }
+            // On the stack, not inside its root: a pushed `MedicationDetailKey` or
+            // `MedicationEditorKey` destination is rendered by the stack, so an environment value
+            // set on the root view would not reach either.
+            .environment(\.medicationsModule, root.medicationsModule)
+
         case .vitals:
             NavigationStack(path: backStacks.binding(for: tab)) {
                 VitalsRoute(onOpenTrends: {
@@ -173,9 +191,8 @@ struct RootView: View {
 
     /// Shows a tapped reminder's occurrence: the tab that owns it, then the screen itself.
     ///
-    /// iOS-M3 routed to the tab root; M4 pushes the appointment detail; M5 adds the dose. The push
-    /// has to follow the tab switch, because `TabBackStacks.push` appends to whichever stack is
-    /// *selected*.
+    /// iOS-M3 routed to the tab root; M4 pushes the appointment detail. The push has to follow the
+    /// tab switch, because `TabBackStacks.push` appends to whichever stack is *selected*.
     ///
     /// **An iOS-only behaviour** (global constraints, decision 2). Android's
     /// `ReminderNotificationPresenter` builds a launcher intent and stops there, so a tapped
@@ -186,12 +203,28 @@ struct RootView: View {
         backStacks.switchTopLevel(RootTab.hosting(ref.type))
         switch ref.type {
         case .appointment:
-            backStacks.push(AnyNavKey(AppointmentDetailKey(id: ref.entityId)))
-        // The cycle and dose screens are M6's and M5's; until they exist there is no key to name,
-        // and the tab root is where the tap lands.
+            pushAppointmentDetail(id: ref.entityId)
+        // A dose stops at the medications tab root, and that is a decision rather than an omission
+        // (M5, decision 3): a dose ref's `entityId` is its SCHEDULE's id, and no screen is addressed
+        // by one — `MedicationDetailKey` wants the medication. The cycle screen is M6's, and until
+        // it exists there is no key to name.
         case .cyclePeriod, .medicationDose:
             break
         }
+    }
+
+    /// Pushes the appointment's detail, unless that same detail is what the last tap already left on
+    /// top of the appointments stack.
+    ///
+    /// Without the guard, answering the same reminder twice — two taps on a notification iOS has not
+    /// yet cleared, or a tap arriving while the app was already showing that appointment — stacks a
+    /// second identical screen the user then has to dismiss twice. Deferred out of M4; the memo is
+    /// what M4 lacked.
+    private func pushAppointmentDetail(id: String) {
+        let depth = backStacks.path(for: .appointments).count
+        guard reminderPushedAppointment != PushedAppointmentDetail(id: id, depth: depth) else { return }
+        backStacks.push(AnyNavKey(AppointmentDetailKey(id: id)))
+        reminderPushedAppointment = PushedAppointmentDetail(id: id, depth: depth + 1)
     }
 
     /// The store emits its current value first, then every change, so this both seeds and tracks.
@@ -205,12 +238,27 @@ struct RootView: View {
     /// touches the stack.
     private func observeNavigationCommands() async {
         for await command in root.navigator.commands {
+            // Anything a feature pushes onto the appointments stack invalidates the memo: it is now
+            // that key on top, not the detail a reminder put there. A pop needs no line — it moves
+            // the depth the memo is matched against, so it can never leave a stale match behind.
+            if case .navigate = command, backStacks.selection == .appointments {
+                reminderPushedAppointment = nil
+            }
             switch command {
             case let .navigate(key): backStacks.push(key)
             case .pop: backStacks.pop()
             }
         }
     }
+}
+
+/// Which appointment detail a reminder tap pushed, and the stack depth it left behind.
+///
+/// A type of its own rather than a tuple so the comparison in `pushAppointmentDetail` is one
+/// equality against one value; both fields have to match for the push to be a duplicate.
+private struct PushedAppointmentDetail: Equatable {
+    let id: String
+    let depth: Int
 }
 
 #Preview("Light") {

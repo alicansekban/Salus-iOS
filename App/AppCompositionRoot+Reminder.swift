@@ -35,13 +35,17 @@ extension AppCompositionRoot {
             backgroundRefreshAvailable: isBackgroundRefreshAvailable()
         )
         let syncState = UserDefaultsReminderSyncStateStore()
-        // `getAll()`: the appointment handler landed with M4; the medication and cycle handlers
-        // arrive with M5/M6, and the engine reconciles without them until they do. A Debug build
-        // may add one fake handler alongside — see `debugHandlers`.
+        // `getAll()`: the appointment and medication handlers landed with M4 and M5; the cycle
+        // handler arrives with M6, and the engine reconciles without it until it does. A Debug
+        // build may add one fake handler alongside — see `debugHandlers`.
         let handlerRegistry = ReminderHandlerRegistry(all: handlers)
+        // Hoisted out of the synchronizer's argument list because the alarm dispatcher below reads
+        // the same ledger: one DAO over this database, handed to both, rather than two handles that
+        // could drift apart the day the DAO grows state.
+        let alarmDao = ReminderAlarmDao(database: database)
         let scheduler = BackgroundRefreshScheduler(
             synchronizer: ReminderWindowSynchronizer(
-                dao: ReminderAlarmDao(database: database),
+                dao: alarmDao,
                 gateway: UserNotificationGateway(
                     center: notificationCenter,
                     alarmScheduler: alarmKit.scheduling
@@ -68,6 +72,16 @@ extension AppCompositionRoot {
             syncState: syncState,
             scheduler: scheduler,
             openRouter: openRouter,
+            // The alarm surface's half of `HandleReminderActionUseCase`. It needs the ledger — an
+            // `AppIntent` knows only the request code the alarm was scheduled under — where the
+            // delegate's own dispatcher, built inside `ReminderNotificationDelegate`, does not.
+            // `scheduler`, not the synchronizer under it, for the same reason the delegate takes
+            // the scheduler: every refill in the app goes through the one coalescing funnel.
+            actionDispatcher: ReminderActionDispatcher(
+                alarmDao: alarmDao,
+                registry: handlerRegistry,
+                synchronizer: scheduler
+            ),
             delegate: ReminderNotificationDelegate(
                 handlerRegistry: handlerRegistry,
                 // The scheduler, not the synchronizer underneath it: every trigger in the app goes
@@ -106,9 +120,15 @@ extension AppCompositionRoot {
         scheduling: (any AlarmKitScheduling)?,
         authorizing: (any AlarmKitAuthorizing)?
     ) {
-        // iOS 26.1 rather than 26.0 — see `SystemAlarmKitScheduler`'s doc comment.
-        if #available(iOS 26.1, *) {
-            let backend = SystemAlarmKitScheduler()
+        // iOS 26.0, which is where AlarmKit itself starts — see `SystemAlarmKitScheduler`'s doc
+        // comment for why this used to say 26.1 and no longer does. On 26.0 the stop button is
+        // app-supplied, hence `dismissLabel`; from 26.1 up iOS draws and localizes it and the
+        // label is ignored.
+        if #available(iOS 26.0, *) {
+            let backend = SystemAlarmKitScheduler(
+                intents: AppAlarmIntents(),
+                dismissLabel: ReminderStrings.alarmDismiss
+            )
             return (backend, backend)
         }
         return (nil, nil)
@@ -129,8 +149,9 @@ extension AppCompositionRoot {
 /// the shell because a notification tapped from a cold start arrives before any view is on screen —
 /// the ref has to survive until something is there to route it.
 ///
-/// iOS-M3 routed to the owning tab's root and no further; M4 pushes the appointment's detail
-/// screen on top of it, and M5 adds the dose.
+/// iOS-M3 routed to the owning tab's root and no further; M4 pushes the appointment's detail screen
+/// on top of it. A dose stays at the tab root (M5, decision 3): its `entityId` is the *schedule*'s
+/// id, and no screen in the app is addressed by one.
 @MainActor
 @Observable
 final class ReminderOpenRouter {
@@ -156,5 +177,8 @@ struct ReminderGraph {
     let syncState: any ReminderSyncStateStore
     let scheduler: BackgroundRefreshScheduler
     let openRouter: ReminderOpenRouter
+    /// What an answered ALARM runs through. The notification surface has its own, built inside
+    /// `ReminderNotificationDelegate` over the occurrence identity it is handed directly.
+    let actionDispatcher: ReminderActionDispatcher
     let delegate: ReminderNotificationDelegate
 }

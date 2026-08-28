@@ -1,4 +1,5 @@
 import FeatureAppointments
+import FeatureMedications
 import FeatureSettings
 import FeatureVitals
 import Foundation
@@ -88,6 +89,12 @@ final class AppCompositionRoot {
     /// the registry below is built with, so the engine and the screens read one repository.
     let appointmentsModule: AppointmentsModule
 
+    /// `medicationsModule` (`feature/medications/.../di/MedicationsModule.kt`), built once and
+    /// handed to the medications tab through the environment. Like the appointments module it owns
+    /// the reminder handler the registry below is built with, so the dose engine and the screens
+    /// read one repository.
+    let medicationsModule: MedicationsModule
+
     /// `settingsModule` (`feature/settings/.../di/SettingsModule.kt`), built once and handed to the
     /// More tab through the environment. `settingsModule` is built from local values at
     /// construction, not from the three reminder properties below — those `let`s exist to keep the
@@ -126,6 +133,11 @@ final class AppCompositionRoot {
     /// layer can do: re-sample `UIApplication.backgroundRefreshStatus`, which is main-actor-only.
     private let systemReminderEnvironment: SystemReminderEnvironment
 
+    /// What an alarm's buttons run through, once ``startReminderEngine()`` has handed it to
+    /// ``AlarmActionBridge``. Held here because the graph owns it: the bridge keeps a reference,
+    /// not ownership, and an intent that arrives before the bind waits for this value.
+    private let alarmActionDispatcher: ReminderActionDispatcher
+
     /// `UNUserNotificationCenter.delegate` is a **weak** reference, so the graph is what keeps the
     /// delegate alive. Dropping this property would silently stop every reminder action from
     /// reaching its handler.
@@ -142,6 +154,12 @@ final class AppCompositionRoot {
     /// repository. Nothing consumes it yet; onboarding's "current weight" step (M6) is the caller
     /// this exists for, and exposing it here is what keeps that step from opening a second graph.
     var vitalsQuickEntry: any VitalsQuickEntry { vitalsModule.makeSaveWeightEntryUseCase() }
+
+    /// `factoryOf(::MarkDoseTakenUseCase)` bound as `DoseActions` (`MedicationsModule.kt:30`), a
+    /// computed property for the same reason: it ports a Koin `factory`, so every caller gets a
+    /// fresh use case over the one repository. Home's "next dose" card (M7) is the caller this
+    /// exists for, and exposing it here is what keeps that card from opening a second graph.
+    var doseActions: any DoseActions { medicationsModule.makeMarkDoseTakenUseCase() }
 
     init() {
         let infrastructure = Self.makeInfrastructure()
@@ -162,6 +180,7 @@ final class AppCompositionRoot {
         let modules = Self.makeFeatureModules(infrastructure: infrastructure)
         vitalsModule = modules.vitals
         appointmentsModule = modules.appointments
+        medicationsModule = modules.medications
         settingsModule = modules.settings
 
         // `reminderModule` (`ReminderModule.kt:18-28`), assembled in one place — see
@@ -174,6 +193,7 @@ final class AppCompositionRoot {
         backgroundRefreshScheduler = reminder.scheduler
         reminderScheduler = reminder.scheduler
         reminderOpenRouter = reminder.openRouter
+        alarmActionDispatcher = reminder.actionDispatcher
         reminderDelegate = reminder.delegate
     }
 
@@ -192,6 +212,13 @@ final class AppCompositionRoot {
     /// third trigger, the foreground reconcile, is ``reminderDidBecomeActive()``.
     func startReminderEngine() {
         UNUserNotificationCenter.current().delegate = reminderDelegate
+
+        // An alarm's buttons run an `AppIntent`, which the system instantiates and which therefore
+        // cannot be handed the graph in an `init` — see `AlarmActionBridge`. This is the bind, done
+        // as early as the process has a graph at all: iOS may have launched the app for no reason
+        // other than to run that intent, and an intent that got there first is waiting on it.
+        let dispatcher = alarmActionDispatcher
+        Task { await AlarmActionBridge.shared.bind(dispatcher) }
 
         if !ReminderBackgroundRefresh.registerTask(runningSyncOn: backgroundRefreshScheduler) {
             // Registration fails when the identifier is missing from
@@ -310,13 +337,28 @@ final class AppCompositionRoot {
             snackbar: infrastructure.snackbar,
             navigator: infrastructure.navigator
         )
+        // Built against the same relay and for the same reason: the dose handler needs the
+        // repository, and the repository needs a scheduler.
+        let medications = makeMedicationsModule(
+            medicationDao: MedicationDao(database: database),
+            reminderScheduler: reminderRelay,
+            clock: clock,
+            idGenerator: idGenerator,
+            pendingDeletes: infrastructure.pendingDelete,
+            snackbar: infrastructure.snackbar,
+            navigator: infrastructure.navigator
+        )
         let reminder = makeReminderGraph(
             database: database,
             clock: clock,
             idGenerator: idGenerator,
-            // `single<ReminderHandler>(named(APPOINTMENT))` (`AppointmentsModule.kt:32-35`) reaching
-            // `getAll()` — the registry is what Koin's qualified lookup becomes here.
-            handlers: debugHandlers(clock: clock) + [appointments.reminderHandler]
+            // `single<ReminderHandler>(named(APPOINTMENT))` (`AppointmentsModule.kt:32-35`) and its
+            // `named(MEDICATION)` twin (`MedicationsModule.kt:35-38`) reaching `getAll()` — the
+            // registry is what Koin's qualified lookup becomes here.
+            handlers: debugHandlers(clock: clock) + [
+                appointments.reminderHandler,
+                medications.reminderHandler
+            ]
         )
         // Now that there is a scheduler, everything the module already handed out starts working.
         // Nothing has called `requestSync()` in between — see `ReminderSchedulerRelay` for why a
@@ -338,7 +380,13 @@ final class AppCompositionRoot {
             clock: clock,
             alarmKitSupported: reminder.alarmKitSupported
         )
-        return FeatureModules(reminder: reminder, vitals: vitals, appointments: appointments, settings: settings)
+        return FeatureModules(
+            reminder: reminder,
+            vitals: vitals,
+            appointments: appointments,
+            medications: medications,
+            settings: settings
+        )
     }
 
     /// Opens `<Application Support>/salus.db`, creating the directory first.
@@ -390,5 +438,6 @@ private struct FeatureModules {
     let reminder: ReminderGraph
     let vitals: VitalsModule
     let appointments: AppointmentsModule
+    let medications: MedicationsModule
     let settings: SettingsModule
 }
