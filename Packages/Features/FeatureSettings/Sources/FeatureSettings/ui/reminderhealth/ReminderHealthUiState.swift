@@ -16,7 +16,7 @@ public struct ReminderHealthUiState: Equatable, Sendable {
     public var isLoading: Bool
     public var notificationsEnabled: Bool
 
-    /// Whether this OS has AlarmKit at all — iOS 26.1 and up, where `SystemAlarmKitScheduler`
+    /// Whether this OS has AlarmKit at all — iOS 26.0 and up, where `SystemAlarmKitScheduler`
     /// exists (`AppCompositionRoot.makeAlarmKitBackend`).
     ///
     /// Not in the Kotlin, and not a fourth question either: it is the iOS spelling of the
@@ -74,9 +74,9 @@ public struct ReminderHealthUiState: Equatable, Sendable {
 
     /// `ReminderHealthUiState.kt:10-14`, over the rows this platform draws.
     ///
-    /// AlarmKit counts only where it exists: below iOS 26.1 `alarmKitAuthorized()` answers a
+    /// AlarmKit counts only where it exists: below iOS 26.0 `alarmKitAuthorized()` answers a
     /// permanent false and the row is not drawn, so counting it would make every device on iOS 17
-    /// through 26.0 unhealthy for a reason its user cannot act on. Android's twin is the same
+    /// through 25 unhealthy for a reason its user cannot act on. Android's twin is the same
     /// bargain read from the other side — `canUseFullScreenAlarms()` answers *true* below API 34,
     /// where the permission is granted at install time.
     public var allHealthy: Bool {

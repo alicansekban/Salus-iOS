@@ -228,11 +228,13 @@ struct MedicationHistorySection: View {
                         .foregroundStyle(theme.colorScheme.onSurfaceVariant)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 } else {
-                    // The item is the identity: a day, a minute, a status and a dose name one
-                    // record, and the ViewModel has already dropped every log that is not this
-                    // medication's.
-                    ForEach(history, id: \.self) { item in
-                        row(item)
+                    // Position is the identity, not the value. Two schedules of one medication
+                    // can share a minute — the editor seeds 08:00 and the add button re-adds that
+                    // seed — so when both doses are recorded the two rows are *equal*
+                    // `IntakeHistoryItem`s, and `id: \.self` would hand SwiftUI one id for two
+                    // rows. The offset into the already-sorted list cannot collide.
+                    ForEach(Array(history.enumerated()), id: \.offset) { indexed in
+                        row(indexed.element)
                     }
                 }
             }

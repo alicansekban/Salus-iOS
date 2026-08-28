@@ -298,6 +298,9 @@ In ledger order. Each says what it costs if it turns out to be wrong.
    `AlarmPresentation.Alert` initializer demands app-supplied localized copy that `SalusReminder`
    has no string catalog to host. 26.0 devices take the documented time-sensitive fallback, and the
    routing itself stays version-free — the gateway routes on whether it was handed a scheduler.
+   **Superseded in iOS-M5 Task 8:** the floor is now iOS 26.0. `SalusReminder` gained the string
+   catalog whose absence forced this, so a 26.0 device rings a real alarm with an app-supplied
+   "Kapat"; from 26.1 up iOS draws and localizes the stop button itself.
    *Cost if wrong:* 26.0-only devices miss full-screen alarms until a catalog lands in
    `SalusReminder`; the fallback is the designed degradation, so nothing is lost.
 4. **The Time Sensitive Notifications entitlement was added beyond the brief's file list**
@@ -478,7 +481,8 @@ any of them.
 - **The M3a on-device checklist** — `scripts/m3-manual-qa.md` §9. Seven items: the AlarmKit
   authorization prompt in both languages, a real AlarmKit schedule and a real cancel, the `.caf`
   sound on the AlarmKit path, the refusal fallback, OS-driven background launch and expiration, and
-  a reboot. Needs an unlocked iPhone on iOS 26.1+. Owed before iOS-M5 ships the medication handler.
+  a reboot. Needs an unlocked iPhone on iOS 26.0+ (26.1 as written; see divergence 3). Owed before
+  iOS-M5 ships the medication handler.
 - **The designed alarm sound.** `App/Resources/salus_alarm.caf` is still the placeholder generated
   by `scripts/generate-alarm-sound.sh`; a designed ≤ 30 s asset is owed before release.
 - **The simulator taps** — sections 2-7 of the manual QA script.

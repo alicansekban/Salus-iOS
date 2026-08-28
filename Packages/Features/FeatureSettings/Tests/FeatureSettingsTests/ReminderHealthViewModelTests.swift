@@ -24,7 +24,7 @@
 //                                                         one for "the prompt said no, open
 //                                                         Settings".
 //
-//   iOS-only: `AlarmKit is not counted where there is no AlarmKit` — below iOS 26.1 the row is not
+//   iOS-only: `AlarmKit is not counted where there is no AlarmKit` — below iOS 26.0 the row is not
 //   drawn, so counting its permanent `false` would paint a permanently unhealthy screen with
 //   nothing to fix on it. Android has no twin: `canUseFullScreenAlarms()` answers true below the
 //   API level that can revoke it.
@@ -119,7 +119,7 @@ struct ReminderHealthViewModelTests {
         #expect(model.state.allHealthy == false)
     }
 
-    /// No Android twin: below iOS 26.1 there is no AlarmKit at all, `alarmKitAuthorized()` answers
+    /// No Android twin: below iOS 26.0 there is no AlarmKit at all, `alarmKitAuthorized()` answers
     /// a permanent false, and the row is not drawn. Counting it would paint an unhealthy screen
     /// with nothing on it to fix.
     @Test("AlarmKit is not counted where there is no AlarmKit")

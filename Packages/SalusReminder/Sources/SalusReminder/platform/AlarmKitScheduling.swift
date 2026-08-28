@@ -48,7 +48,9 @@ public protocol AlarmKitScheduling: Sendable {
 ///
 /// Split from ``AlarmKitScheduling`` because the two have different callers and different rules.
 /// The gateway schedules and never asks; Reminder Health (iOS-M3 Task 8) asks and never schedules.
-/// A device below iOS 26.1 has neither, and both seams say so the same way — by being absent.
+/// A device below iOS 26.0 has neither — `SystemAlarmKitScheduler` is `@available(iOS 26.0, *)` —
+/// and both seams say so the same way, by being absent. The 26.1 line is about the alert's stop
+/// button only: iOS supplies it from 26.1 up, the app supplies "Kapat" on 26.0.
 public protocol AlarmKitAuthorizing: Sendable {
     /// Whether alarms may take over the screen right now.
     func isAuthorized() async -> Bool

@@ -10,7 +10,7 @@
 //    nobody knows whether it was.
 //  * `alarmKitAuthorized()` routes on the presence of the AlarmKit seam, exactly as
 //    `UserNotificationGateway` routes on the presence of the alarm scheduler — so a case says
-//    "this device is iOS 26.1+" by injecting a double instead of faking an availability check.
+//    "this device is iOS 26.0+" by injecting a double instead of faking an availability check.
 //  * `backgroundRefreshAvailable()` is a snapshot the app layer samples, because
 //    `UIApplication.backgroundRefreshStatus` is main-actor-only and this seam is not.
 
@@ -73,7 +73,7 @@ struct SystemReminderEnvironmentTests {
         let environment = makeEnvironment()
 
         #expect(await environment.alarmKitAuthorized() == false)
-        // And the fix button below iOS 26.1 must not pretend it did something.
+        // And the fix button below iOS 26.0 must not pretend it did something.
         #expect(await environment.requestAlarmKitAuthorization() == false)
     }
 

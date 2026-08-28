@@ -14,7 +14,7 @@ import UIKit
 /// target — `makeAlarmKitBackend` stays `private`, because only this file calls it.
 extension AppCompositionRoot {
     /// `reminderModule` (`ReminderModule.kt:18-28`), built in its own dependency order: the AlarmKit
-    /// backend first — its presence is the "iOS 26.1+" answer every layer below routes on — then the
+    /// backend first — its presence is the "iOS 26.0+" answer every layer below routes on — then the
     /// environment and gateway over it, then the synchronizer, and last the two types that funnel
     /// events into it.
     ///
@@ -64,7 +64,7 @@ extension AppCompositionRoot {
 
         return ReminderGraph(
             environment: environment,
-            // The authorizing seam's presence IS the "iOS 26.1+" answer, and this is the one place
+            // The authorizing seam's presence IS the "iOS 26.0+" answer, and this is the one place
             // in the app that knows it. Reminder Health needs the same fact to decide whether to
             // draw the AlarmKit row, so it is carried out of here rather than re-derived from a
             // second `#available`.

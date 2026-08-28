@@ -254,6 +254,8 @@ struct AppointmentDetailScreen: View {
             .buttonStyle(.bordered)
         }
         .controlSize(.large)
+        // What makes a `SalusPillButton` a pill — Kotlin's `shape = CircleShape`.
+        .buttonBorderShape(.capsule)
         // `AppointmentDetailScreen.kt:309` — the block sits one step further from the section
         // above it than the sections sit from each other.
         .padding(.top, SalusSpacing.sm)
@@ -351,6 +353,9 @@ private struct OpenMapsButton: View {
             Label(AppointmentsStrings.detailOpenMaps, systemImage: "map")
         }
         .buttonStyle(.bordered)
+        // `AppointmentDetailScreen.kt:237` is a `SalusPillButton` too — tonal, with a map icon —
+        // so it takes the same pill as the action block above.
+        .buttonBorderShape(.capsule)
     }
 }
 

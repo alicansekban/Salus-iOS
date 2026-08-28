@@ -231,7 +231,8 @@ OS drives it.
 ## 9. M3a — the on-device checklist
 
 None of this can be done on a simulator. It is owed before iOS-M5 ships the medication handler.
-Needs an unlocked iPhone on iOS 26.1 or newer, run from Xcode.
+Needs an unlocked iPhone on iOS 26.0 or newer, run from Xcode. (The gate was 26.1 when iOS-M3
+shipped; iOS-M5 Task 8 lowered it to 26.0 — see that plan's divergence list.)
 
 - [ ] **AlarmKit authorization prompt.** Reminder Health → **Tam ekran ilaç alarmları** → **Düzelt**
       shows the system prompt, and the sentence in it is `NSAlarmKitUsageDescription` — Turkish on a

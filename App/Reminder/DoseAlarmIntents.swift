@@ -51,7 +51,10 @@
 
         func perform() async throws -> some IntentResult {
             await AlarmActionBridge.shared.perform(
-                requestCode: Int32(requestCode),
+                // Truncating, not trapping: this body runs on the lock screen, where a trap is a
+                // crash, and the value round-trips from the `Int32` the app scheduled
+                // (`@Parameter` has no `Int32` form, so it travels as an `Int`).
+                requestCode: Int32(truncatingIfNeeded: requestCode),
                 actionId: ReminderActionIds.dismiss
             )
             return .result()
@@ -85,7 +88,10 @@
 
         func perform() async throws -> some IntentResult {
             await AlarmActionBridge.shared.perform(
-                requestCode: Int32(requestCode),
+                // Truncating, not trapping: this body runs on the lock screen, where a trap is a
+                // crash, and the value round-trips from the `Int32` the app scheduled
+                // (`@Parameter` has no `Int32` form, so it travels as an `Int`).
+                requestCode: Int32(truncatingIfNeeded: requestCode),
                 actionId: actionId
             )
             return .result()

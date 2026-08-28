@@ -14,6 +14,12 @@
 // detail suite carries: Kotlin asserts only that one snackbar was shown, because Android's undo
 // snackbar is indefinite. The iOS controller publishes the snackbar that is *up*, so "exactly one"
 // is spelled as one being up and nothing coming up behind it when it is taken away.
+//
+// One whole case is added rather than ported — `history can hold two equal items when two schedules
+// share a minute` — by the final review of iOS-M5. It pins the *reachability* half of the view's
+// row-identity fix: `MedicationHistorySection` keys its rows by position because the ViewModel can
+// legitimately publish two equal `IntakeHistoryItem`s. Kotlin has no twin because Compose's
+// `items(list)` is already keyed by index unless a `key` is given.
 
 import Foundation
 import SalusCommon
@@ -139,6 +145,36 @@ struct MedicationDetailViewModelTests {
         #expect(history.dropFirst().first?.epochDay == Self.todayEpoch)
         #expect(history.dropFirst().first?.minuteOfDay == 8 * 60)
         #expect(history.last?.epochDay == Self.todayEpoch - 1)
+        navigator.stop()
+    }
+
+    /// No Kotlin twin — added by the final review of iOS-M5, and the reason
+    /// ``MedicationHistorySection`` keys its rows by position instead of by value.
+    ///
+    /// Two schedules of one medication can share a minute (the editor seeds 08:00 and the add
+    /// button re-adds that seed), so when both doses are recorded the two history rows carry the
+    /// same day, minute, status and dose amount — they are *equal* values, and a `ForEach` keyed
+    /// on the item itself would draw one row for the two of them.
+    @Test("history can hold two equal items when two schedules share a minute")
+    func historyCanHoldTwoEqualItemsWhenTwoSchedulesShareAMinute() async {
+        repository.setMedications([
+            MedicationWithSchedules(
+                medication: testMedication(),
+                schedules: [testSchedule(id: "sch-1"), testSchedule(id: "sch-2")]
+            )
+        ])
+        repository.setLogs([
+            testLog(id: "log-a", scheduleId: "sch-1", epochDay: Self.todayEpoch, minuteOfDay: 8 * 60),
+            testLog(id: "log-b", scheduleId: "sch-2", epochDay: Self.todayEpoch, minuteOfDay: 8 * 60)
+        ])
+
+        let viewModel = viewModel()
+
+        await waitUntil("the first emission") { !viewModel.state.isLoading }
+        let history = viewModel.state.history
+
+        #expect(history.count == 2)
+        #expect(history.first == history.last)
         navigator.stop()
     }
 

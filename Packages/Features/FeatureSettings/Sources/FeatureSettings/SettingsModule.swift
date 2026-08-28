@@ -29,7 +29,7 @@ public struct SettingsModule {
 /// a second call rather than a mutated global.
 ///
 /// - Parameter alarmKitSupported: whether this OS has AlarmKit. The composition root already
-///   decides that once, behind the single `#available(iOS 26.1, *)` in the app
+///   decides that once, behind the single `#available(iOS 26.0, *)` in the app
 ///   (`AppCompositionRoot.makeAlarmKitBackend`), and passes the answer on rather than letting a
 ///   second `#available` appear down here.
 @MainActor

@@ -125,7 +125,7 @@ public final class ReminderHealthViewModel {
         await refresh()
     }
 
-    /// The same for AlarmKit. Below iOS 26.1 there is nothing to authorize and the row that sends
+    /// The same for AlarmKit. Below iOS 26.0 there is nothing to authorize and the row that sends
     /// this event is not drawn, so the request answers false and the user is sent to Settings only
     /// where Settings has something to show.
     private func requestAlarmKit() async {

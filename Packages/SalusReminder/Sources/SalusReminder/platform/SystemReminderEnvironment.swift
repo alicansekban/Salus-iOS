@@ -24,8 +24,10 @@ public protocol ReminderAuthorizationRequesting: Sendable {
     func requestNotificationAuthorization() async -> Bool
 
     /// The same for AlarmKit, whose prompt is what lets a medication dose take over the screen.
-    /// Always false below iOS 26.1, where there is no AlarmKit to authorize and the dose takes the
-    /// documented time-sensitive fallback.
+    /// Always false below iOS 26.0: `SystemAlarmKitScheduler` is `@available(iOS 26.0, *)`, so
+    /// below that there is no AlarmKit to authorize and the dose takes the documented
+    /// time-sensitive fallback. (What 26.1 changes is only the alert's stop button — the system
+    /// supplies it from 26.1 up, the app supplies "Kapat" on 26.0.)
     func requestAlarmKitAuthorization() async -> Bool
 }
 
@@ -47,7 +49,7 @@ public final class SystemReminderEnvironment: ReminderEnvironment, @unchecked Se
     /// - Parameters:
     ///   - center: the notification centre seam.
     ///   - alarmKit: the AlarmKit authorization backend, or nil where there is none. Its presence
-    ///     IS the "iOS 26.1+" answer, exactly as the alarm scheduler's presence is for
+    ///     IS the "iOS 26.0+" answer, exactly as the alarm scheduler's presence is for
     ///     ``UserNotificationGateway`` — the composition root builds one behind `#available`, so
     ///     nothing below this line version-checks.
     ///   - backgroundRefreshAvailable: the app layer's sample of
@@ -78,7 +80,7 @@ public final class SystemReminderEnvironment: ReminderEnvironment, @unchecked Se
 
     /// The iOS replacement for `canUseFullScreenAlarms()` (`AndroidReminderEnvironment.kt:29-33`):
     /// there, a permission that only exists from API 34; here, a framework that only exists from
-    /// iOS 26.1 plus a runtime authorization inside it.
+    /// iOS 26.0 plus a runtime authorization inside it.
     public func alarmKitAuthorized() async -> Bool {
         await alarmKit?.isAuthorized() ?? false
     }

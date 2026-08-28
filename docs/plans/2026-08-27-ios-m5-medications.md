@@ -444,6 +444,10 @@ Grouped by where they were found. Each is at its call site in the source as well
 - **The generator's comparator is total** — `(epochDay, minuteOfDay, scheduleId)`. Kotlin's
   `sortedWith(compareBy(...))` is stable and Swift's `sorted(by:)` is not, and that triple is the
   idempotency key.
+- **`DoseOccurrenceGenerator` sorts with `scheduleId` as a third key where Kotlin's stable sort
+  preserves insertion order for day+minute ties.** Both platforms are deterministic and both agree
+  on the *set* of occurrences; only the order *within* a tie can differ, and only for two schedules
+  of the same medication at the same minute. Documented in-file, at the comparator.
 - **`DoseOccurrenceKey.decode` passes `omittingEmptySubsequences: false`.** Swift's `split` drops
   empty parts, which would read `"20514|"` as one part and reject it for the wrong reason.
 - **The use cases' `Result` is `Equatable, Sendable`** where the plan spelled only `Equatable`. A
@@ -489,6 +493,13 @@ Grouped by where they were found. Each is at its call site in the source as well
 - **`static let openAppWhenRun` / `static let title` on the intents, not `static var`.** Forced by
   Swift 6 strict concurrency; both are get-only protocol requirements, so a `let` witnesses them.
 - **`isDiscoverable = false`** on both intents — they are reaction hooks, not Shortcuts actions.
+- **`App/Reminder/AlarmActionBridge.swift` is the one sanctioned `static let shared` in the tree.**
+  CLAUDE.md's composition-root rule says a type takes its dependencies in `init`; an `AppIntent`
+  cannot, because the system instantiates it through the protocol's own `init()`, in a process iOS
+  may have launched for nothing but that one intent — there is no call site to inject the graph
+  through. The bridge is a rendezvous point rather than a service locator: the only thing that ever
+  passes through it is the `ReminderActionDispatcher` the composition root built and bound, and the
+  bridge only forwards to it. Named as a carve-out in CLAUDE.md by the final-review fix wave below.
 - **`ReminderAlarmDao` is hoisted to a `let` inside `makeReminderGraph`**, not to a property on
   `AppCompositionRoot` as the brief said. Nothing outside that function reads it; the *dispatcher* is
   what the root needs, and it is a stored `let`. A root property with no consumer would be dead
@@ -514,8 +525,10 @@ Grouped by where they were found. Each is at its call site in the source as well
   missed → error and pending → warning (ruling 6). The `chipStatus` doc comment says so out loud so
   nobody "fixes" it back.
 - **The detail's two actions keep `.buttonBorderShape(.capsule)`** (ruling 7): Android's
-  `SalusPillButton` *is* a pill. iOS-M4's `AppointmentDetailScreen` does not carry it, so the two
-  detail screens draw slightly different button shapes until that one-line parity fix lands.
+  `SalusPillButton` *is* a pill. iOS-M4's `AppointmentDetailScreen` did not carry it; the
+  final-review fix wave below added it there — to the action block and to `OpenMapsButton`, which is
+  a `SalusPillButton` on Android too (`AppointmentDetailScreen.kt:237`) — so both detail screens now
+  draw the same shape.
 - **`sortSwitchCases` reorders `MedicationForm.systemImage`'s arms** alphabetically (`.drop`,
   `.syrup` before `.injection`). The arms and their answers are Kotlin's; only the source order moved,
   and the lint rule is why.
@@ -808,10 +821,33 @@ otherwise.
 - **`CancellationBox`, `latestOfBoth` and `mapped` promoted to `SalusCommon`** — a post-M5 chore
   (ruling 8). Three byte-identical copies each across `FeatureAppointments` and `FeatureMedications`,
   sanctioned by the template only for as long as nobody has spent an hour on the core package.
-- **`AppointmentDetailScreen`'s capsule parity** — one modifier line, iOS-M4's detail actions to
-  match iOS-M5's (ruling 7).
 - **The milestone-wide `await Task.yield()` in the undo tests.** The "no write" assertions in the
   list, detail and editor suites are not drained before they are read. They pass today because the
   write is deferred by a real timer, not because the assertion waited for anything.
 - **The Android follow-ups above**, numbered by the user into `docs/ios-v1-plan.md` §11 after
   iOS-M4's seven.
+
+### Final-review fix wave
+
+One commit on top of `bc0dbbd` — `fix(m5): final-review wave — row identity, pill parity, intent
+conversions, 26.1 comments`, the branch tip — carrying the six findings of the final whole-branch
+review and nothing else. (1)
+`MedicationHistorySection` keyed its rows `id: \.self`, and two schedules sharing a minute make two
+recorded doses two *equal* `IntakeHistoryItem`s — one SwiftUI id for two rows; it keys by position
+now, and `MedicationDetailViewModelTests` gained the reachability case that pins the ViewModel
+publishing two equal items. (2) iOS-M4's `AppointmentDetailScreen` gained
+`.buttonBorderShape(.capsule)` on the action block and on `OpenMapsButton` — both are
+`SalusPillButton`s on Android (`AppointmentDetailScreen.kt:237`, `:299-317`) — so the two detail
+screens finally draw the same shape. (3) `DoseAlarmIntents` converts the request code with
+`Int32(truncatingIfNeeded:)`: a trap inside a lock-screen intent is a crash, and the value
+round-trips from an `Int32` the app scheduled. (4) `App/Reminder/AlarmActionBridge.swift` is now
+recorded as the one sanctioned `static let shared`, in CLAUDE.md's composition-root rule and in the
+alarm-surface divergence list above. (5) The "26.1" comments left behind when the AlarmKit gate moved
+to 26.0 were rewritten to the current fact — `SystemAlarmKitScheduler` is `@available(iOS 26.0, *)`,
+and 26.1 only decides whether the stop button is the system's or the app's "Kapat" — across the six
+sites the review named plus the rest of the tree's now-false mentions (`FeatureSettings`, the
+`SalusReminder` tests, the iOS-M3 plan and its manual-QA script). Comments and docs only. (6) The
+domain divergence list above gained the `DoseOccurrenceGenerator` tie-break line.
+
+`scripts/lint.sh`, `scripts/test-packages.sh FeatureMedications FeatureAppointments SalusReminder
+SalusTesting` (4/4, 292 tests) and `scripts/build-app.sh` are green on the wave.

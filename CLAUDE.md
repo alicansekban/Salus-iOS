@@ -101,6 +101,15 @@ Milestone plans live in `docs/plans/`. Toolchain and CI usage: `README.md`.
   (`AppModules.kt`) — and it holds each as a `let`. No global, no `static let shared`, no service
   locator: `SalusApp` creates the instance and injects it with `.environment(_:)`, so a test builds
   its own graph. A type that needs a dependency takes it in `init`; it never reaches for one.
+  - **There is exactly one sanctioned `static let shared`, and it is
+    `App/Reminder/AlarmActionBridge.swift`** (iOS-M5). An `AppIntent` is instantiated by the
+    *system*, through the `init()` the protocol requires, in a process iOS may have launched for no
+    other reason than to run that one intent — there is no call site to inject the graph through, so
+    the intent needs a rendezvous point it can reach by name. The bridge is that point and nothing
+    else: `AppCompositionRoot` binds the `ReminderActionDispatcher` it built into it, and the bridge
+    forwards to that one dispatcher. It is not a locator — nothing else is ever resolved from it,
+    and nothing outside `App/Reminder/` names it. Any *other* `shared` is the finding this rule is
+    for.
   — *enforcement: review of any `static` mutable state or new `shared` accessor.*
 - **Features never depend on each other.** A `Packages/Features/Feature*/Package.swift` may
   depend on core packages only — never on another `Feature*`. Cross-feature navigation stays a
