@@ -62,7 +62,7 @@ extension View {
     /// sealed key.
     public func medicationsDestinations() -> some View {
         navigationDestination(for: MedicationDetailKey.self) { key in
-            MedicationDetailPlaceholder(id: key.id)
+            MedicationDetailRoute(medicationId: key.id)
         }
         .navigationDestination(for: MedicationEditorKey.self) { key in
             MedicationEditorPlaceholder(id: key.id)
@@ -72,20 +72,12 @@ extension View {
 
 // MARK: - Placeholders
 
-// The two destinations below stand in for `MedicationDetailRoute` (iOS-M5 **Task 11**) and
-// `MedicationEditorRoute` (iOS-M5 **Task 12**), which are the tasks that delete them. They are here
-// rather than absent on purpose: an unregistered `navigationDestination` is a push that lands on a
-// blank screen with no way back, and the failure would only show up in the app, after Task 13 wires
-// the tab. A placeholder that names its key makes a premature push obvious instead.
-
-/// Replaced by `MedicationDetailRoute` in iOS-M5 Task 11.
-private struct MedicationDetailPlaceholder: View {
-    let id: String
-
-    var body: some View {
-        Text(verbatim: "MedicationDetailKey(id: \(id))")
-    }
-}
+// The destination below stands in for `MedicationEditorRoute` (iOS-M5 **Task 12**), which is the
+// task that deletes it; the detail's twin was deleted by Task 11, which brought
+// `MedicationDetailRoute`. It is here rather than absent on purpose: an unregistered
+// `navigationDestination` is a push that lands on a blank screen with no way back, and the failure
+// would only show up in the app, after Task 13 wires the tab. A placeholder that names its key
+// makes a premature push obvious instead.
 
 /// Replaced by `MedicationEditorRoute` in iOS-M5 Task 12.
 private struct MedicationEditorPlaceholder: View {

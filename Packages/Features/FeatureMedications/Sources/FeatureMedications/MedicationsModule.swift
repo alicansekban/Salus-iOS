@@ -14,18 +14,20 @@
 //                                               composition root exposes it as that protocol over
 //                                               the same factory.
 //   `viewModelOf(::MedicationsViewModel)`     → `makeMedicationsViewModel`.
+//   `viewModel { params -> MedicationDetail…}`→ `makeMedicationDetailViewModel`, a closure over the
+//                                               one thing Koin passes as a parameter rather than
+//                                               resolving: the medication id.
 //   `single { MedicationReminderHandler(…) }` → built inline below and handed straight out; the
 //     `bind ReminderHandler::class`             engine's registry is its only consumer.
 //
-// **Three of Koin's factories have no property here yet, and that is the slice boundary, not a
-// gap.** `factoryOf(::SaveMedicationUseCase)`, `viewModel { MedicationDetailViewModel(…) }` and
-// `viewModel { MedicationEditorViewModel(…) }` need types iOS-M5 **Tasks 11 and 12** create:
+// **Two of Koin's factories have no property here yet, and that is the slice boundary, not a
+// gap.** `factoryOf(::SaveMedicationUseCase)` and `viewModel { MedicationEditorViewModel(…) }`
+// need a type iOS-M5 **Task 12** creates:
 //
-//     public let makeMedicationDetailViewModel: @MainActor (String) -> MedicationDetailViewModel
 //     public let makeMedicationEditorViewModel: @MainActor (String?) -> MedicationEditorViewModel
 //
-// Those two lines, and the `SaveMedicationUseCase` the editor needs, are added by the tasks that
-// bring their types. `DeleteMedicationUseCase` and `SnoozeDoseUseCase` are built here already —
+// That line, and the `SaveMedicationUseCase` the editor needs, are added by the task that brings
+// its type. `DeleteMedicationUseCase` and `SnoozeDoseUseCase` are built here already —
 // Koin declares them as factories, but their only consumers so far are inside this file, so they
 // stay local rather than becoming exported closures nothing calls.
 
@@ -67,6 +69,11 @@ public struct MedicationsModule {
 
     /// Koin's `viewModelOf(::MedicationsViewModel)` (`MedicationsModule.kt:39`).
     public let makeMedicationsViewModel: @MainActor () -> MedicationsViewModel
+
+    /// Koin's `viewModel { params -> MedicationDetailViewModel(params.get(), …) }`
+    /// (`MedicationsModule.kt:39-49`). The medication id is the one thing Koin takes as a
+    /// parameter rather than resolving, so it is the closure's one argument.
+    public let makeMedicationDetailViewModel: @MainActor (String) -> MedicationDetailViewModel
 }
 
 // The seven parameters are the seven things Koin resolves inside `medicationsModule`
@@ -135,6 +142,17 @@ public func makeMedicationsModule(
                 pendingDeletes: pendingDeletes,
                 deleteMedication: deleteMedication,
                 undoableDelete: undoableDelete,
+                clock: clock
+            )
+        },
+        makeMedicationDetailViewModel: { medicationId in
+            MedicationDetailViewModel(
+                medicationId: medicationId,
+                repository: repository,
+                deleteMedication: deleteMedication,
+                navigator: navigator,
+                undoableDelete: undoableDelete,
+                reminderScheduler: reminderScheduler,
                 clock: clock
             )
         }
