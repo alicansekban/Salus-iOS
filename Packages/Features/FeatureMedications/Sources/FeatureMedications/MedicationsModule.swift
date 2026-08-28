@@ -148,36 +148,87 @@ public func makeMedicationsModule(
                 clock: clock
             )
         },
-        makeMedicationDetailViewModel: { medicationId in
-            MedicationDetailViewModel(
-                medicationId: medicationId,
-                repository: repository,
-                deleteMedication: deleteMedication,
-                navigator: navigator,
-                undoableDelete: undoableDelete,
-                reminderScheduler: reminderScheduler,
-                clock: clock
-            )
-        },
-        // `MedicationsModule.kt:47-58`. `factoryOf(::SaveMedicationUseCase)` (`:28`) is built here
-        // rather than exported: the editor is its only consumer, so a second closure nothing else
-        // calls would be a name without a reader.
-        makeMedicationEditorViewModel: { medicationId in
-            MedicationEditorViewModel(
-                medicationId: medicationId,
-                repository: repository,
-                saveMedication: SaveMedicationUseCase(
-                    repository: repository,
-                    reminderScheduler: reminderScheduler
-                ),
-                deleteMedication: deleteMedication,
-                clock: clock,
-                idGenerator: idGenerator,
-                navigator: navigator,
-                undoableDelete: undoableDelete
-            )
-        }
+        makeMedicationDetailViewModel: detailViewModelFactory(
+            repository: repository,
+            deleteMedication: deleteMedication,
+            navigator: navigator,
+            undoableDelete: undoableDelete,
+            reminderScheduler: reminderScheduler,
+            clock: clock
+        ),
+        makeMedicationEditorViewModel: editorViewModelFactory(
+            repository: repository,
+            deleteMedication: deleteMedication,
+            reminderScheduler: reminderScheduler,
+            clock: clock,
+            idGenerator: idGenerator,
+            navigator: navigator,
+            undoableDelete: undoableDelete
+        )
     )
+}
+
+// The two factories below were inline closures in the `return` above until the detail and the
+// editor were both wired and its body ran past the 60-line limit. Nothing about the graph moved:
+// each is the closure that was there, with the values it closed over spelled as parameters, so the
+// same instances are shared and every one is still built per call, exactly as Koin's `viewModel`
+// does. The zero-argument `makeMedicationsViewModel` stays inline — it is the short one, and the
+// limit is not a reason to move what already fits. Both keep the parameter-count waiver above for
+// the reason it was taken: this list *is* what Koin's `get()` resolves inside `medicationsModule`.
+
+/// Koin's `viewModel { params -> MedicationDetailViewModel(params.get(), …) }`
+/// (`MedicationsModule.kt:39-49`).
+@MainActor
+private func detailViewModelFactory(
+    repository: any MedicationRepository,
+    deleteMedication: DeleteMedicationUseCase,
+    navigator: Navigator,
+    undoableDelete: UndoableDelete,
+    reminderScheduler: any ReminderScheduler,
+    clock: any SalusClock
+) -> @MainActor (String) -> MedicationDetailViewModel {
+    { medicationId in
+        MedicationDetailViewModel(
+            medicationId: medicationId,
+            repository: repository,
+            deleteMedication: deleteMedication,
+            navigator: navigator,
+            undoableDelete: undoableDelete,
+            reminderScheduler: reminderScheduler,
+            clock: clock
+        )
+    }
+}
+
+/// Koin's `viewModel { MedicationEditorViewModel(…) }` (`MedicationsModule.kt:47-58`).
+///
+/// `factoryOf(::SaveMedicationUseCase)` (`:28`) is built in here rather than exported: the editor
+/// is its only consumer, so a second closure nothing else calls would be a name without a reader.
+@MainActor
+private func editorViewModelFactory(
+    repository: any MedicationRepository,
+    deleteMedication: DeleteMedicationUseCase,
+    reminderScheduler: any ReminderScheduler,
+    clock: any SalusClock,
+    idGenerator: any IdGenerator,
+    navigator: Navigator,
+    undoableDelete: UndoableDelete
+) -> @MainActor (String?) -> MedicationEditorViewModel {
+    { medicationId in
+        MedicationEditorViewModel(
+            medicationId: medicationId,
+            repository: repository,
+            saveMedication: SaveMedicationUseCase(
+                repository: repository,
+                reminderScheduler: reminderScheduler
+            ),
+            deleteMedication: deleteMedication,
+            clock: clock,
+            idGenerator: idGenerator,
+            navigator: navigator,
+            undoableDelete: undoableDelete
+        )
+    }
 }
 
 // swiftlint:enable function_parameter_count
