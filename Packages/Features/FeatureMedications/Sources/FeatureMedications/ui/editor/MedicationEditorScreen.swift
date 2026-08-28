@@ -160,6 +160,15 @@ struct MedicationEditorScreen: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(SalusSpacing.lg)
         }
+        // Divergence: iOS-only, with no line in `MedicationEditorScreen.kt` behind it. Every
+        // numeric field here is `.decimalPad` / `.numberPad`, and neither pad draws a return key,
+        // so the keyboard has no "Done" to press — where Compose's number IMEs still carry the
+        // `ImeAction.Next` / `ImeAction.Done` the Kotlin fields declare. The two lines below give
+        // the keyboard the two ways down the platform expects: a tap, and a drag over the form.
+        // Both belong on the `ScrollView` itself; the file comment on
+        // `salusDismissesKeyboardOnTap()` records the layouts that were measured and do nothing.
+        .salusDismissesKeyboardOnTap()
+        .scrollDismissesKeyboard(.interactively)
     }
 
     /// `MedicationEditorScreen.kt:259-273` — the five errors and their five strings.

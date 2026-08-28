@@ -851,3 +851,14 @@ domain divergence list above gained the `DoseOccurrenceGenerator` tie-break line
 
 `scripts/lint.sh`, `scripts/test-packages.sh FeatureMedications FeatureAppointments SalusReminder
 SalusTesting` (4/4, 292 tests) and `scripts/build-app.sh` are green on the wave.
+
+### Post-QA fix (2026-08-28)
+
+One commit after the final-review wave: the medication editor's `ScrollView` gained
+`salusDismissesKeyboardOnTap()` (new in `SalusUI/component/`) plus
+`.scrollDismissesKeyboard(.interactively)`, so a tap or a drag closes a keyboard the manual pass
+found no way out of — an **iOS-only divergence**, because every numeric field here is
+`.decimalPad` / `.numberPad`, neither pad draws a return key, and Compose's number IMEs still
+carry the `ImeAction.Next` / `ImeAction.Done` its fields declare, so `MedicationEditorScreen.kt`
+needs no such affordance and has none. The appointments and vitals editors are candidates for the
+same modifier and did not get it — a deferred consistency item.
