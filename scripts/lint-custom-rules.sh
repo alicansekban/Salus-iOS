@@ -103,6 +103,15 @@ check "no_charts_in_features" \
     "Packages/SalusUI/Sources/SalusUI/LintFixtureDoNotCommit.swift" \
     "@preconcurrency import Charts"
 
+# Guard 3: features must not set tab-bar visibility — the shell owns it
+# (App/RootView.swift, Android's `showBottomBar` twin). The `.hidden` spelling is
+# planted because that is the one a feature actually reaches for when it wants
+# the full height for its own screen.
+check "no_tab_bar_toolbar_in_features" \
+    "Packages/Features/FeatureVitals/Sources/FeatureVitals/LintFixtureDoNotCommit.swift" \
+    "Packages/SalusUI/Sources/SalusUI/LintFixtureDoNotCommit.swift" \
+    ".toolbar(.hidden, for: .tabBar)"
+
 echo
 if [ "$failures" -gt 0 ]; then
     echo "==> $failures check(s) failed: a custom rule is not doing its job."

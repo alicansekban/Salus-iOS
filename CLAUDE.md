@@ -47,7 +47,11 @@ Milestone plans live in `docs/plans/`. Toolchain and CI usage: `README.md`.
   `NavigationStack`, so every pushed destination — detail, editor, Cycle, Reminder health, anything
   a future feature pushes — gets the full height, exactly as Android's `showBottomBar`
   (`SalusApp.kt:133-136`) does. A feature never writes `.toolbar(…, for: .tabBar)` itself.
-  — *enforcement: review; the modifier appearing in `Packages/Features/` is the finding.*
+  — *enforcement: `.swiftlint.yml` custom rule `no_tab_bar_toolbar_in_features` (severity: error),
+  `included:` scoped to `Packages/Features/`, matching both the `.toolbar(_:for:)` and
+  `.toolbarVisibility(_:for:)` spellings whose arguments name `for: .tabBar`; proven to actually
+  fire by `scripts/lint-custom-rules.sh`, which plants a fixture inside the scope and an identical
+  one outside it. Both run in `scripts/ci.sh`. The shell's own line is outside the scope, by design.*
 - **`docs/ios-feature-template.md` is the reference for every new feature**, written from the
   shipped `FeatureVitals` and the section-for-section twin of
   `salus-android/docs/architecture/feature-template.md`. Copy its shape — package manifest,

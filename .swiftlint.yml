@@ -231,4 +231,39 @@ custom_rules:
     included:
       - "Packages/Features/.*\\.swift"
 
+  # The tab bar belongs to the shell. `App/RootView.swift` applies
+  # `.toolbar(backStacks.isAtRoot(tab) ? .visible : .hidden, for: .tabBar)` to
+  # each tab's `NavigationStack`, so every pushed destination gets the full
+  # height — the twin of Android's `showBottomBar` (`SalusApp.kt:133-136`).
+  # A feature that sets the visibility itself takes that decision away from the
+  # shell for one screen: the bar then depends on which screen you arrived at
+  # rather than on how deep the stack is, and the two rules fight on pop.
+  #
+  # The regex matches the modifier by its ARGUMENTS, not by an import: what is
+  # forbidden is naming `.tabBar` as the placement of a visibility call.
+  #   \.toolbar(Visibility)?\(   both spellings — `.toolbar(_:for:)` and the
+  #                              iOS 18 `.toolbarVisibility(_:for:)`.
+  #   [^)\n]*                    the arguments, on the SAME line (no nested
+  #                              parens, no wrap): a deliberately narrow match,
+  #                              since a regex has no way to balance parens and
+  #                              a greedy one would swallow whole expressions.
+  #                              A hand-wrapped call is a review finding.
+  #   for:\s*\.tabBar            the placement that makes it the shell's.
+  # `.toolbarBackground(…, for: .tabBar)` is intentionally NOT matched: that is
+  # styling, and the shell's own two lines are outside this scope anyway.
+  no_tab_bar_toolbar_in_features:
+    name: "Tab Bar Visibility In Feature Package"
+    regex: '\.toolbar(Visibility)?\([^)\n]*for:\s*\.tabBar'
+    excluded_match_kinds:
+      - comment
+      - doccomment
+      - string
+    message: "Tab-bar visibility is the shell's: App/RootView.swift hides the bar on every pushed destination via backStacks.isAtRoot(tab). A feature must never set .toolbar(…, for: .tabBar) itself."
+    severity: error
+    # The same `--path` warning as above applies verbatim: lint the repo, or
+    # pass files positionally. `scripts/lint-custom-rules.sh` proves this rule
+    # actually fires, with a planted fixture.
+    included:
+      - "Packages/Features/.*\\.swift"
+
 reporter: "xcode"
