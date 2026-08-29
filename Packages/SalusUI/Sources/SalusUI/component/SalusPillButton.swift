@@ -1,19 +1,20 @@
 // Ported from `core/ui/.../component/SalusPillButton.kt:38-101`.
 //
-// Kotlin reaches for Material's `Button` / `FilledTonalButton` with `shape = CircleShape`; the
-// SwiftUI twin of that pair is `.borderedProminent` / `.bordered` worn as a capsule. That mapping
-// already exists three times over, inlined at the two detail-screen action rows shipped in
-// iOS-M4/M5 (`AppointmentDetailScreen.swift:226-259`, `MedicationDetailSections.swift:275-292`) and
-// at this package's own empty-state action (`SalusEmptyState.swift:87-99`, which hand-draws the
-// same pill rather than wearing a button style); a third feature needs it in iOS-M6, so it is
-// lifted here. All three keep their inlined copies on purpose — migrating them is deferred by the
-// M6 plan's ruling 3, not forgotten.
+// The pill is hand-drawn — `.buttonStyle(.plain)` over a `SalusShapes.pill` background — rather
+// than worn as one of SwiftUI's bordered button styles, and the reason is the touch target.
+// Kotlin hangs `heightIn(min = SalusTouchTarget.min)` on the *container*
+// (`SalusPillButton.kt:67`, passed as the button's own `Modifier` at `:71` and `:86`), so the drawn
+// pill is 48 dp and its clickable surface is the same 48 dp. `.bordered` / `.borderedProminent`
+// size their background to whatever label they are handed and pad around it, so the floor cannot
+// sit on their container: put it on the label and the pill draws 48 plus twice the style's padding,
+// well past the 48 that `design-tokens.md:382` asks for by name ("use 48 to stay identical to
+// Android"). Drawing the capsule ourselves is the one placement that gets both axes right at once,
+// and it is what `SalusEmptyState.swift:89-99` already does for this very Kotlin button.
 //
-// `.buttonBorderShape(.capsule)`, not `.clipShape(SalusShapes.pill)`: the bordered styles draw
-// their own background and border, and clipping that to a capsule would cut the corners off a
-// rounded rectangle rather than round the shape the style draws. `buttonBorderShape` is the
-// modifier that makes the style *draw* the pill `design-tokens.md` §6 maps `CircleShape` onto, and
-// it is what the two call sites that wear a button style already use.
+// The bordered mapping this supersedes is inlined in three places, and all three keep their copies
+// on purpose — migrating them is deferred by the M6 plan's ruling 3, not forgotten:
+// `AppointmentDetailScreen.swift:226-259`, `MedicationDetailSections.swift:275-292`, and this
+// package's own empty-state action (`SalusEmptyState.swift:87-99`, already hand-drawn).
 
 import SalusDesignSystem
 import SwiftUI
@@ -55,26 +56,6 @@ public struct SalusPillButton: View {
     }
 
     public var body: some View {
-        styledButton
-            .tint(containerColor)
-            // `shape = CircleShape` (`SalusPillButton.kt:73`, `:88`).
-            .buttonBorderShape(.capsule)
-            .controlSize(.large)
-            // Kotlin passes `enabled` to the button; SwiftUI's twin is the environment flag, which
-            // dims the label the way Material's disabled colors do.
-            .disabled(!enabled)
-    }
-
-    @ViewBuilder
-    private var styledButton: some View {
-        if tonal {
-            button.buttonStyle(.bordered)
-        } else {
-            button.buttonStyle(.borderedProminent)
-        }
-    }
-
-    private var button: some View {
         Button(action: action) {
             HStack(spacing: SalusSpacing.sm) {
                 if let systemImage {
@@ -85,38 +66,50 @@ public struct SalusPillButton: View {
                     .font(SalusTypography.labelLarge.font)
                     .tracking(SalusTypography.labelLarge.tracking)
             }
-            .foregroundStyle(contentColor)
-            // `heightIn(min = SalusTouchTarget.min)` (`SalusPillButton.kt:67`) — a floor, not a
-            // height, and it belongs *inside* the label: a bordered button style sizes its
-            // background to its content and does not expand into the proposal, so a frame around
-            // the styled button would only pad the box and leave dead space above and below the
-            // tappable area. On the label it grows the style's own background, which is what makes
-            // the clickable surface itself at least this tall — the guarantee Kotlin gets by
-            // hanging `heightIn` on the Button's own `Modifier`. Same placement as
-            // `SalusFilterChip.swift:50-53` and `SalusEmptyState.swift:90-96`.
+            // `ButtonDefaults.ContentPadding`'s 24 dp horizontal, which Kotlin inherits without
+            // naming it — the same `SalusSpacing.xl` the empty state's pill already uses.
+            .padding(.horizontal, SalusSpacing.xl)
+            // `heightIn(min = SalusTouchTarget.min)` (`SalusPillButton.kt:67`), on the container as
+            // Kotlin has it: the pill *draws* 48 pt and is hittable across exactly that, rather
+            // than drawing short and reserving dead space around itself.
             .frame(minHeight: SalusTouchTarget.min)
+            .foregroundStyle(contentColor)
+            // `shape = CircleShape` (`:73`, `:88`) filled with `containerColor` (`:76`, `:91`).
+            .background(SalusShapes.pill.fill(containerColor))
+            .contentShape(.rect)
         }
+        .buttonStyle(.plain)
+        // Kotlin passes `enabled` to the button, which swaps in `ButtonDefaults`' disabled colors;
+        // this draws those colors itself (below) and keeps the flag for everything else it governs
+        // — the tap, VoiceOver's disabled trait, focus.
+        .disabled(!enabled)
     }
 
     private var colors: SalusColorScheme { theme.colorScheme }
 
     /// Kotlin's `containerColor` (`SalusPillButton.kt:76`, `:91`), with `ButtonDefaults`' own
     /// values — `primary` filled, `secondaryContainer` tonal — standing in for the `accent == null`
-    /// rows. SwiftUI paints `.borderedProminent` with the tint solidly, as `Button` does; it paints
-    /// `.bordered` with a softened wash of it, which is its own rendering of the same tonal idea
-    /// Material fills flat.
+    /// rows.
     private var containerColor: Color {
+        guard enabled else { return colors.onSurface.opacity(Self.disabledContainerAlpha) }
         guard let accent else { return tonal ? colors.secondaryContainer : colors.primary }
         return tonal ? accent.container : accent.accent
     }
 
-    /// Kotlin's `contentColor` (`SalusPillButton.kt:77`, `:92`). Set on the label rather than left
-    /// to the style, so the accent rows carry the `onAccent` / `onContainer` role Kotlin names
-    /// instead of a color derived from the tint.
+    /// Kotlin's `contentColor` (`SalusPillButton.kt:77`, `:92`), with `onPrimary` /
+    /// `onSecondaryContainer` for the `accent == null` rows.
     private var contentColor: Color {
+        guard enabled else { return colors.onSurface.opacity(Self.disabledContentAlpha) }
         guard let accent else { return tonal ? colors.onSecondaryContainer : colors.onPrimary }
         return tonal ? accent.onContainer : accent.onAccent
     }
+
+    /// Material's disabled button alphas, laid over `onSurface`, which `ButtonDefaults`
+    /// (`buttonColors()` / `filledTonalButtonColors()`) applies for every M3 button and Kotlin
+    /// therefore never spells. A `.plain` button draws its own container, so they are spelled here.
+    /// Material component values, not `design-tokens.md` tokens — the doc carries no disabled row.
+    private static let disabledContainerAlpha = 0.12
+    private static let disabledContentAlpha = 0.38
 
     /// `private val ButtonIconSize = 18.dp` (`SalusPillButton.kt:101`) — a Material component
     /// dimension that lives in the Kotlin file, not a token `design-tokens.md` carries.
@@ -131,7 +124,7 @@ public struct SalusPillButton: View {
             // The two rows of `SalusPillButtonPreview` (`SalusPillButton.kt:104-115`).
             SalusPillButton(text: "Log period", systemImage: "plus", action: {})
             SalusPillButton(text: "View details", tonal: true, action: {})
-            // The accent rows, which Kotlin's preview does not draw.
+            // The accent and disabled rows, which Kotlin's preview does not draw.
             SalusPillButton(text: "Log period", accent: theme.extendedColors.cycle, action: {})
             SalusPillButton(
                 text: "View details",
@@ -143,6 +136,6 @@ public struct SalusPillButton: View {
         }
         .padding(SalusSpacing.lg)
     }
-    .frame(height: 440)
+    .frame(height: 360)
     .salusTheme(theme)
 }
