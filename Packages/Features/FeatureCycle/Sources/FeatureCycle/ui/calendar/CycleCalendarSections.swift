@@ -26,13 +26,16 @@
 //
 // ONE DIVERGENCE, the weekday strip (iOS-M6 divergence (f)). Kotlin walks `DayOfWeek.entries` and
 // asks each for its `TextStyle.NARROW` display name, which is Monday-first by definition of the
-// enum. Foundation has no `DayOfWeek`; the narrow symbols come from
-// `Calendar.current.veryShortStandaloneWeekdaySymbols`, which is Sunday-first, so the array is
-// rotated by one. That is a *label* lookup, not day arithmetic — `CLAUDE.md`'s "no `Calendar` for a
-// day" rule is about the latter, and nothing here computes or shifts a date.
+// enum. Foundation has no `DayOfWeek`, so the narrow letters come from a `Calendar`, which is
+// Sunday-first and has to be rotated. That read does not live here: it is
+// `SalusUI`'s ``SalusWeekdaySymbols/narrowMondayFirst(locale:)``, the one place in the tree
+// `CLAUDE.md`'s `LocalDate` rule sanctions a `Calendar` for a localized *symbol* — fixed Gregorian,
+// the view's own locale, and never a `Date`. This file passes `@Environment(\.locale)` and draws
+// what comes back.
 
 import SalusDesignSystem
 import SalusModel
+import SalusUI
 import SwiftUI
 
 /// Chevron, month title, chevron (`CycleScreen.kt:157-184`).
@@ -87,9 +90,12 @@ struct CycleMonthHeader: View {
 /// The seven narrow weekday letters, Monday first (`CycleScreen.kt:186-203`).
 struct CycleWeekdayHeader: View {
     @Environment(\.salusTheme) private var theme
+    /// `LocalLocale.current.platformLocale` (`CycleScreen.kt:188`), the locale the letters are
+    /// named in.
+    @Environment(\.locale) private var locale
 
     var body: some View {
-        let labels = Self.labels
+        let labels = SalusWeekdaySymbols.narrowMondayFirst(locale: locale)
         HStack(spacing: 0) {
             ForEach(labels.indices, id: \.self) { index in
                 Text(labels[index])
@@ -102,14 +108,6 @@ struct CycleWeekdayHeader: View {
             }
         }
         .frame(maxWidth: .infinity)
-    }
-
-    /// Foundation's symbols are Sunday-first; the grid is Monday-first, so Sunday moves to the end.
-    /// See this file's header for why a `Calendar` is allowed to answer a label question.
-    static var labels: [String] {
-        let symbols = Calendar.current.veryShortStandaloneWeekdaySymbols
-        guard symbols.count == daysPerWeek else { return symbols }
-        return Array(symbols.dropFirst()) + symbols.prefix(1)
     }
 }
 

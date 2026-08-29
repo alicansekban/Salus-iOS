@@ -100,10 +100,22 @@ Milestone plans live in `docs/plans/`. Toolchain and CI usage: `README.md`.
     decomposes an occurrence instant into the wall-clock `DateComponents` that
     `UNCalendarNotificationTrigger` demands — the API takes components, not a `Date`, so there is
     no way to schedule without one. It is pre-existing (iOS-M3) and it reads the same fixed
-    Gregorian calendar in the reminder's zone. **Two files, `SalusClock.swift` and
-    `UserNotificationGateway.swift`, and no third**: a `Calendar` anywhere else in the tree is the
-    finding this rule is for. Recorded here in iOS-M4 because both files used to call themselves
-    the last one.
+    Gregorian calendar in the reminder's zone. **Two files for instant↔day computation,
+    `SalusClock.swift` and `UserNotificationGateway.swift`, and no third**: a `Calendar` that
+    computes, shifts or compares a day anywhere else in the tree is the finding this rule is for.
+    Recorded here in iOS-M4 because both files used to call themselves the last one.
+  - **A `Calendar` may also be read for *localized symbols only*, in exactly one place:**
+    `Packages/SalusUI/Sources/SalusUI/component/SalusWeekdaySymbols.swift` (iOS-M6), which answers
+    the seven narrow weekday letters a calendar grid heads its columns with — Kotlin gets them from
+    `DayOfWeek.getDisplayName(TextStyle.NARROW, locale)` and Foundation has no `DayOfWeek`. The
+    carve-out is narrow on purpose: a fixed `Calendar(identifier: .gregorian)` with the *caller's*
+    `locale` set (never `Calendar.current`, which follows the device's region and would answer
+    another calendar's week), reading a static symbol table and **never touching a `Date`** —
+    nothing there computes or shifts a day. A view passes its `@Environment(\.locale)`. A second
+    symbol helper, or a `Date` inside this one, is the finding. — *enforcement: review, plus
+    `SalusUITests/SalusWeekdaySymbolsTests.swift`; a `no_calendar_outside_clock` SwiftLint custom
+    rule (scoped `included:` + a `lint-custom-rules.sh` fixture, allowing exactly these three
+    files) is owed and is iOS-M7's.*
   — *enforcement:
   `Packages/SalusModel/Tests/SalusModelTests/LocalDateTests.swift` + review.*
 - **The composition root owns the singletons; there is no container.** `App/AppCompositionRoot.swift`
