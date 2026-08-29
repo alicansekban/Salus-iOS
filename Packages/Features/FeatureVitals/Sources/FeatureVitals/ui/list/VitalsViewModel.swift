@@ -1,11 +1,11 @@
 // Ported from `feature/vitals/src/main/kotlin/com/alicansekban/salus/feature/vitals/
 // ui/list/VitalsViewModel.kt`.
 //
-// **Constructor divergence, recorded on purpose.** Android's is
-// `VitalsViewModel(repository, preferences, pendingDeletes, undoableDelete, clock)`; this one omits
-// `preferences`, because `VitalsPreferences` (and `VitalsPreferencesImpl` over the `glucose_unit`
-// key in `SalusSettings`) is iOS-M7 work. M7 therefore changes this signature, not only the state
-// builders — that is the whole reason it is written down here rather than left to be discovered.
+// **Constructor parity, closed in iOS-M7.** Android's is `VitalsViewModel(repository, preferences,
+// pendingDeletes, undoableDelete, clock)` and so is this one, in the same order. iOS-M2 shipped it
+// without `preferences` because `VitalsPreferences` (and `VitalsPreferencesImpl` over the
+// `glucose_unit` key in `SalusSettings`) was M7 work; M7 brought both, so the divergence this
+// comment used to record no longer exists.
 //
 // How the Kotlin flow graph is spelled in Swift, piece by piece:
 //
@@ -19,7 +19,10 @@
 //   what `combine`'s lambda was: the latest of each, folded into one state. `combine` emits nothing
 //   until *every* source has produced a value, which is why `republish()` returns early while
 //   `loadedEntries` is nil — a pendingIds change arriving between a range switch and the new
-//   window's first emission must not repaint the list with the old window's rows.
+//   window's first emission must not repaint the list with the old window's rows. The glucose
+//   branch has a **third** source, `preferences.glucoseUnit` (`VitalsViewModel.kt:74-81`), so it
+//   also returns early while `loadedUnit` is nil: a window that emitted before the stored unit
+//   arrived would draw one repaint's worth of mg/dL rows to a reader who asked for mmol/L.
 //
 //   `.combine(pendingDeleteId) { state, id -> state.copy(pendingDeleteId = id) }` — the outer
 //   combine is `publish()`, which stamps the confirmation id onto whatever the inner state last
@@ -41,8 +44,8 @@ import SalusUI
 
 /// Drives the vitals list (`VitalsViewModel.kt:39-247`).
 ///
-/// M2 builds **weight state only**. Selecting blood pressure or glucose yields the empty state
-/// until M7 brings their repository members, their preferences and their builders.
+/// All three vital types are built here since iOS-M7: weight and blood pressure from their history
+/// plus the pending deletes, glucose from those two plus the stored display unit.
 @MainActor
 @Observable
 public final class VitalsViewModel {
@@ -50,6 +53,7 @@ public final class VitalsViewModel {
     public private(set) var state = VitalsUiState()
 
     private let repository: any VitalsRepository
+    private let preferences: any VitalsPreferences
     private let pendingDeletes: PendingDeleteController
     private let undoableDelete: UndoableDelete
     private let clock: any SalusClock
@@ -63,19 +67,29 @@ public final class VitalsViewModel {
     private var listState = VitalsUiState()
 
     /// What the current window has emitted, or nil while it has emitted nothing yet — the state
-    /// `combine` is in before all of its sources have produced a value.
-    private var loadedEntries: [WeightEntry]?
+    /// `combine` is in before all of its sources have produced a value. Tagged with the branch it
+    /// came from, so a cancelled window's last emission cannot reach the new type's builder.
+    private var loadedEntries: LoadedVitalsHistory?
+
+    /// The glucose branch's third source (`VitalsViewModel.kt:74-81`), nil on the same terms and
+    /// left nil by the other two branches, which never read it.
+    private var loadedUnit: GlucoseUnit?
 
     /// The current window's collection. Boxed so `deinit` can cancel it — see `CancellationBox`.
     private let historyTask = CancellationBox()
 
+    /// The glucose branch's unit collection, restarted and cancelled with the window it belongs to.
+    private let unitTask = CancellationBox()
+
     public init(
         repository: any VitalsRepository,
+        preferences: any VitalsPreferences,
         pendingDeletes: PendingDeleteController,
         undoableDelete: UndoableDelete,
         clock: any SalusClock
     ) {
         self.repository = repository
+        self.preferences = preferences
         self.pendingDeletes = pendingDeletes
         self.undoableDelete = undoableDelete
         self.clock = clock
@@ -84,6 +98,7 @@ public final class VitalsViewModel {
 
     deinit {
         historyTask.cancel()
+        unitTask.cancel()
     }
 
     /// `VitalsViewModel.kt:93-103`.
@@ -131,15 +146,14 @@ public final class VitalsViewModel {
         undoableDelete(id, message: VitalsStrings.entryDeleted) { [repository] in
             switch type {
             case .weight:
-                // Kotlin lets a repository failure propagate into `viewModelScope`; there is no
-                // such scope here, and a delete that failed has already been taken off the list, so
-                // the row simply comes back on the next emission.
+                // Kotlin lets a repository failure propagate into `viewModelScope`; there is no such
+                // scope here, and a delete that failed has already been taken off the list, so the
+                // row comes back on the next emission. The same holds for the two arms below.
                 try? await repository.deleteWeightEntry(id: id)
-            case .bloodGlucose, .bloodPressure:
-                // TODO(M7): `repository.deleteBloodPressureEntry` / `deleteGlucoseEntry`
-                // (`VitalsViewModel.kt:112-113`). Unreachable in M2 — neither type can produce a
-                // row to delete.
-                break
+            case .bloodPressure:
+                try? await repository.deleteBloodPressureEntry(id: id)
+            case .bloodGlucose:
+                try? await repository.deleteGlucoseEntry(id: id)
             }
         }
     }
@@ -160,38 +174,58 @@ public final class VitalsViewModel {
     /// re-runs on every appearance, to port those re-subscribe semantics by hand.
     public func restartHistoryObservation() {
         historyTask.cancel()
+        unitTask.cancel()
         // `combine` starts over: the new window has emitted nothing yet, so the previous state
         // stands until it does — which is exactly what `stateIn` holds on to across a restart.
         loadedEntries = nil
-
-        guard selectedType == .weight else {
-            // TODO(M7): `observeBloodPressureHistory` / `observeGlucoseHistory` + their builders
-            // (`VitalsViewModel.kt:66-81`). Until then the chips still switch, and the other two
-            // types show their own empty state.
-            loadedEntries = []
-            listState = VitalsUiState(
-                isLoading: false,
-                selectedType: selectedType,
-                selectedRange: selectedRange
-            )
-            publish()
-            return
-        }
+        loadedUnit = nil
 
         let until = clock.now()
         let from = until.addingTimeInterval(-Double(selectedRange.days) * secondsPerDay)
-        let history = repository.observeWeightHistory(from: from, until: until)
+
+        // The `when (type)` of `VitalsViewModel.kt:55-82`, one inner flow per type.
+        switch selectedType {
+        case .weight:
+            observe(repository.observeWeightHistory(from: from, until: until)) { .weight($0) }
+        case .bloodPressure:
+            observe(repository.observeBloodPressureHistory(from: from, until: until)) { .bloodPressure($0) }
+        case .bloodGlucose:
+            observe(repository.observeGlucoseHistory(from: from, until: until)) { .glucose($0) }
+            observeGlucoseUnit()
+        }
+    }
+
+    /// Collects one window's history into the fold, tagged with the branch that asked for it.
+    ///
+    /// `Task.isCancelled` is the second half of `flatMapLatest`: `historyTask.replace` cancels the
+    /// previous window's task, and this drops a value it had already buffered when that landed.
+    private func observe<Entry: Sendable>(
+        _ history: AsyncThrowingStream<[Entry], any Error>,
+        as tag: @escaping @Sendable ([Entry]) -> LoadedVitalsHistory
+    ) {
         historyTask.replace(with: Task { [weak self] in
             do {
                 for try await entries in history {
-                    guard let self else { return }
-                    loadedEntries = entries
+                    guard let self, !Task.isCancelled else { return }
+                    loadedEntries = tag(entries)
                     republish()
                 }
             } catch {
                 // A failing `Flow` cancels its collector on Android and the screen keeps whatever
                 // it last drew; the same happens here. Nothing is swallowed that the user could
                 // have acted on — there is no retry affordance on either platform.
+            }
+        })
+    }
+
+    /// The glucose branch's `preferences.glucoseUnit` source (`VitalsViewModel.kt:76`).
+    private func observeGlucoseUnit() {
+        let units = preferences.glucoseUnit
+        unitTask.replace(with: Task { [weak self] in
+            for await unit in units {
+                guard let self, !Task.isCancelled else { return }
+                loadedUnit = unit
+                republish()
             }
         })
     }
@@ -213,17 +247,34 @@ public final class VitalsViewModel {
         }
     }
 
-    /// The inner `combine`'s lambda: the latest window folded together with the latest pending ids.
+    /// The inner `combine`'s lambda: the latest window folded together with the latest pending ids,
+    /// and — on the glucose branch — the latest stored unit.
+    ///
+    /// `entries.filterNot { it.id in pending }` (`VitalsViewModel.kt:63, 71, 80`) is folded in here
+    /// rather than at the end so the chart and the list agree while an undo window is open.
     private func republish() {
         guard let loadedEntries else { return }
-        if selectedType == .weight {
-            let pending = pendingDeletes.pendingIds
+        let pending = pendingDeletes.pendingIds
+        switch loadedEntries {
+        case let .weight(entries):
             listState = buildWeightState(
                 range: selectedRange,
-                // `entries.filterNot { it.id in pending }` (`VitalsViewModel.kt:63`): folded in
-                // here rather than at the end so the chart and the list agree while an undo window
-                // is open.
-                entries: loadedEntries.filter { !pending.contains($0.id) }
+                entries: entries.filter { !pending.contains($0.id) }
+            )
+
+        case let .bloodPressure(entries):
+            listState = buildBloodPressureState(
+                range: selectedRange,
+                entries: entries.filter { !pending.contains($0.id) }
+            )
+
+        case let .glucose(entries):
+            // The third source has not arrived yet, so `combine` has nothing to emit.
+            guard let loadedUnit else { return }
+            listState = buildGlucoseState(
+                range: selectedRange,
+                entries: entries.filter { !pending.contains($0.id) },
+                unit: loadedUnit
             )
         }
         publish()
@@ -268,6 +319,111 @@ public final class VitalsViewModel {
             chart: Self.chartOrNull(points, yLabel: Self.decimalYLabel),
             selectedRange: range,
             latestKilograms: sortedAscending.last?.kilograms
+        )
+    }
+
+    /// `VitalsViewModel.kt:146-179`.
+    ///
+    /// `roundToInt` rounds half away from zero on a positive reading, which is what
+    /// `Double.rounded()` does; a blood pressure is never negative, where the two would part.
+    private func buildBloodPressureState(
+        range: ChartRange,
+        entries: [BloodPressureEntry]
+    ) -> VitalsUiState {
+        let zone = clock.timeZone()
+        let sortedAscending = entries.sorted { $0.measuredAt < $1.measuredAt }
+
+        // Newest first, and typed rather than erased, because `latestBloodPressure` is the first of
+        // these rows (`VitalsViewModel.kt:177`) and the state holds it as itself.
+        let rows = sortedAscending
+            .reversed()
+            .map { entry in
+                VitalsListItem.BloodPressure(
+                    id: entry.id,
+                    measuredAt: entry.measuredAt.wallClock(in: zone),
+                    systolic: Int(entry.systolic.rounded()),
+                    diastolic: Int(entry.diastolic.rounded()),
+                    pulse: entry.pulse.map { Int($0.rounded()) },
+                    note: entry.note
+                )
+            }
+
+        let measuredAt: (BloodPressureEntry) -> Date = { $0.measuredAt }
+        let systolicPoints = Self.dailyPoints(
+            sortedAscending,
+            zone: zone,
+            measuredAt: measuredAt,
+            yValue: { Float($0.systolic) }
+        )
+        let diastolicPoints = Self.dailyPoints(
+            sortedAscending,
+            zone: zone,
+            measuredAt: measuredAt,
+            yValue: { Float($0.diastolic) }
+        )
+        // `chartOrNull(systolicPoints, wholeYLabel())?.copy(secondaryPoints = diastolicPoints)`
+        // (`VitalsViewModel.kt:171`): the `MIN_CHART_POINTS` gate is the systolic series' alone,
+        // and the diastolic series is attached to whatever survived it. A struct has no `copy`.
+        let chart = Self.chartOrNull(systolicPoints, yLabel: Self.wholeYLabel).map {
+            ChartUiModel(
+                points: $0.points,
+                xLabel: $0.xLabel,
+                yLabel: $0.yLabel,
+                secondaryPoints: diastolicPoints
+            )
+        }
+
+        return VitalsUiState(
+            isLoading: false,
+            selectedType: .bloodPressure,
+            entries: rows.map(VitalsListItem.bloodPressure),
+            chart: chart,
+            selectedRange: range,
+            latestBloodPressure: rows.first
+        )
+    }
+
+    /// `VitalsViewModel.kt:181-215`. Storage is always canonical mg/dL and `unit` decides only how
+    /// a reading is written out, so rows and points are converted here and nowhere downstream.
+    private func buildGlucoseState(
+        range: ChartRange,
+        entries: [GlucoseEntry],
+        unit: GlucoseUnit
+    ) -> VitalsUiState {
+        let zone = clock.timeZone()
+        let sortedAscending = entries.sorted { $0.measuredAt < $1.measuredAt }
+
+        let rows = sortedAscending
+            .reversed()
+            .map { entry in
+                VitalsListItem.Glucose(
+                    id: entry.id,
+                    measuredAt: entry.measuredAt.wallClock(in: zone),
+                    value: GlucoseConversion.fromMgDl(entry.mgDl, unit: unit),
+                    unit: unit,
+                    measurementContext: entry.measurementContext,
+                    note: entry.note
+                )
+            }
+
+        let points = Self.dailyPoints(
+            sortedAscending,
+            zone: zone,
+            measuredAt: { $0.measuredAt },
+            yValue: { Float(GlucoseConversion.fromMgDl($0.mgDl, unit: unit)) }
+        )
+        // `VitalsViewModel.kt:207` — mg/dL readings are whole numbers to a reader, mmol/L ones are
+        // not, so the axis follows the unit rather than the series.
+        let yLabel = unit == .mgDl ? Self.wholeYLabel : Self.decimalYLabel
+
+        return VitalsUiState(
+            isLoading: false,
+            selectedType: .bloodGlucose,
+            entries: rows.map(VitalsListItem.glucose),
+            chart: Self.chartOrNull(points, yLabel: yLabel),
+            selectedRange: range,
+            latestGlucose: rows.first,
+            glucoseUnit: unit
         )
     }
 
@@ -317,6 +473,11 @@ public final class VitalsViewModel {
         String(format: "%.1f", locale: .current, Double(value))
     }
 
+    /// `VitalsViewModel.kt:242-243` — `value.roundToInt().toString()`.
+    private static let wholeYLabel: @Sendable (Float) -> String = { value in
+        String(Int(value.rounded()))
+    }
+
     /// `VitalsViewModel.kt:245-247`.
     private static let minChartPoints = 2
 }
@@ -324,3 +485,15 @@ public final class VitalsViewModel {
 /// `kotlin.time.Duration.Companion.days` applied to a `ChartRange` (`VitalsViewModel.kt:54`): exact
 /// 24-hour days, not calendar ones, on both platforms.
 private let secondsPerDay: Double = 86400
+
+/// Which inner flow of `flatMapLatest` the fold is currently holding a value from.
+///
+/// Kotlin needs no such tag: `when (type)` picks one `combine` and its emission's type is the
+/// branch. Here every branch writes into the same stored property, so the branch travels with the
+/// value rather than being re-derived from `selectedType`, which a cancelled window's last
+/// emission would read as the *new* type.
+private enum LoadedVitalsHistory: Sendable {
+    case weight([WeightEntry])
+    case bloodPressure([BloodPressureEntry])
+    case glucose([GlucoseEntry])
+}

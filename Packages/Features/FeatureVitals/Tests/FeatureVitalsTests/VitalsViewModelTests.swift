@@ -1,17 +1,12 @@
 // Ported from
 // `feature/vitals/src/test/kotlin/com/alicansekban/salus/feature/vitals/ui/list/VitalsViewModelTest.kt`.
 //
-// The Android table has seven cases. The five weight ones are below, with the Kotlin names, inputs
-// and expectations. The other two are OWED BY iOS-M7, which brings `VitalsPreferences`, the blood
-// pressure and glucose repository members and the state builders that read them:
-//
-//   * `switching to blood pressure shows its entries with a two series chart`
-//     (`VitalsViewModelTest.kt:168-198`)
-//   * `glucose entries are displayed in the preferred unit while storage stays mg dL`
-//     (`VitalsViewModelTest.kt:200-229`)
-//
-// They are named here rather than dropped so the M7 plan cannot lose them: a ported type without
-// its ported test table is an unfinished port (`CLAUDE.md`, port fidelity rules).
+// The Android table has seven cases and all seven are below, with the Kotlin names, inputs and
+// expectations. The two that iOS-M2 left owed — `switching to blood pressure shows its entries with
+// a two series chart` (`VitalsViewModelTest.kt:168-198`) and `glucose entries are displayed in the
+// preferred unit while storage stays mg dL` (`VitalsViewModelTest.kt:200-229`) — landed with
+// iOS-M7, which brought `VitalsPreferences`, the blood pressure and glucose repository members and
+// the state builders that read them. iOS carries one Android-less case on top, marked as such.
 //
 // Two mechanical differences from the Kotlin, both already settled elsewhere in this port:
 // Turbine's `state.test { awaitItem() }` becomes reading `viewModel.state` after `waitUntil`,
@@ -36,14 +31,14 @@ struct VitalsViewModelTests {
 
     private let clock = FixedSalusClock(now: VitalsViewModelTests.now, timeZone: VitalsViewModelTests.zone)
     private let repository = FakeVitalsRepository()
+    private let preferences = FakeVitalsPreferences()
     private let deletes = TestDeletes()
 
-    /// `VitalsViewModelTest.kt:46`, minus `preferences`: `VitalsPreferences` is M7 work, so M2's
-    /// constructor has five parameters where Android's has six. Recorded on purpose — M7 changes
-    /// this signature, not only the state builders.
+    /// `VitalsViewModelTest.kt:46`.
     private func viewModel() -> VitalsViewModel {
         VitalsViewModel(
             repository: repository,
+            preferences: preferences,
             pendingDeletes: deletes.controller,
             undoableDelete: deletes.undoableDelete,
             clock: clock
@@ -57,6 +52,36 @@ struct VitalsViewModelTests {
             measuredAt: Self.now.addingTimeInterval(-Double(daysAgo) * 86400),
             timeZone: Self.zone,
             kilograms: kg,
+            note: nil
+        )
+    }
+
+    /// `VitalsViewModelTest.kt:56-65`.
+    private func bloodPressureEntry(
+        _ id: String,
+        daysAgo: Int,
+        systolic: Double,
+        diastolic: Double
+    ) -> BloodPressureEntry {
+        BloodPressureEntry(
+            id: id,
+            measuredAt: Self.now.addingTimeInterval(-Double(daysAgo) * 86400),
+            timeZone: Self.zone,
+            systolic: systolic,
+            diastolic: diastolic,
+            pulse: nil,
+            note: nil
+        )
+    }
+
+    /// `VitalsViewModelTest.kt:67-74`.
+    private func glucoseEntry(_ id: String, daysAgo: Int, mgDl: Double) -> GlucoseEntry {
+        GlucoseEntry(
+            id: id,
+            measuredAt: Self.now.addingTimeInterval(-Double(daysAgo) * 86400),
+            timeZone: Self.zone,
+            mgDl: mgDl,
+            measurementContext: .fasting,
             note: nil
         )
     }
@@ -159,6 +184,66 @@ struct VitalsViewModelTests {
         await waitUntil("the undo window to pass") { deletes.controller.pendingIds.isEmpty }
         #expect(viewModel.state.entries.count == 1)
         #expect(repository.current().count == 1)
+    }
+
+    /// `VitalsViewModelTest.kt:168-198`.
+    @Test("switching to blood pressure shows its entries with a two series chart")
+    func switchingToBloodPressureShowsItsEntriesWithATwoSeriesChart() async throws {
+        repository.setEntries(entry("weight", daysAgo: 1, kg: 80.0))
+        repository.setBloodPressureEntries(
+            bloodPressureEntry("bp-old", daysAgo: 5, systolic: 130.0, diastolic: 85.0),
+            bloodPressureEntry("bp-new", daysAgo: 1, systolic: 120.0, diastolic: 80.0)
+        )
+        let viewModel = viewModel()
+        await waitUntil("the weight state") { !viewModel.state.isLoading }
+
+        viewModel.onEvent(.typeSelected(.bloodPressure))
+        await waitUntil("the blood pressure window") { viewModel.state.selectedType == .bloodPressure }
+
+        #expect(viewModel.state.entries.map(\.id) == ["bp-new", "bp-old"])
+
+        let latest = try #require(viewModel.state.latestBloodPressure)
+        #expect(latest.systolic == 120)
+        #expect(latest.diastolic == 80)
+
+        // The `MIN_CHART_POINTS` gate is applied to the systolic series only; the diastolic series
+        // is attached afterwards (`VitalsViewModel.kt:171`).
+        let chart = try #require(viewModel.state.chart)
+        #expect(chart.points.count == 2)
+        #expect(chart.secondaryPoints.count == 2)
+        #expect(chart.points.first?.y == 130)
+        #expect(chart.secondaryPoints.first?.y == 85)
+    }
+
+    /// `VitalsViewModelTest.kt:200-229`.
+    @Test("glucose entries are displayed in the preferred unit while storage stays mg dL")
+    func glucoseEntriesAreDisplayedInThePreferredUnitWhileStorageStaysMgDl() async throws {
+        // Before the ViewModel exists, so the first unit it ever sees is the stored one.
+        preferences.setGlucoseUnit(.mmolL)
+        repository.setGlucoseEntries(
+            glucoseEntry("g-old", daysAgo: 3, mgDl: 90.0),
+            glucoseEntry("g-new", daysAgo: 1, mgDl: 108.0)
+        )
+        let viewModel = viewModel()
+        await waitUntil("the weight state") { !viewModel.state.isLoading }
+
+        viewModel.onEvent(.typeSelected(.bloodGlucose))
+        await waitUntil("the glucose window") { viewModel.state.selectedType == .bloodGlucose }
+
+        #expect(viewModel.state.glucoseUnit == .mmolL)
+        #expect(viewModel.state.entries.map(\.id) == ["g-new", "g-old"])
+
+        let latest = try #require(viewModel.state.latestGlucose)
+        #expect(abs(latest.value - 108.0 / GlucoseConversion.mgDlPerMmolL) <= 1e-9)
+        #expect(latest.unit == .mmolL)
+        #expect(latest.measurementContext == .fasting)
+
+        let chart = try #require(viewModel.state.chart)
+        #expect(chart.secondaryPoints.isEmpty)
+
+        // The display unit is a preference; storage is always canonical mg/dL.
+        let stored = try #require(repository.currentGlucose().first { $0.id == "g-new" })
+        #expect(stored.mgDl == 108.0)
     }
 
     /// No Kotlin twin — this pins the hand-ported half of `WhileSubscribed`.

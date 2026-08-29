@@ -357,6 +357,7 @@ final class AppCompositionRoot {
 
         let vitals = makeVitalsModule(
             vitalsDao: VitalsDao(database: database),
+            preferences: infrastructure.preferences,
             clock: clock,
             idGenerator: idGenerator,
             pendingDeletes: infrastructure.pendingDelete,

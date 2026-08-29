@@ -15,12 +15,17 @@
 // already conforms to `SalusModel.VitalsQuickEntry`, and the feature that needs a quick entry gets
 // it from `makeSaveWeightEntryUseCase()` rather than from a second registration.
 //
-// TODO(M7): `VitalsPreferences`, the two other use cases and the two other editor ViewModels
-// (`VitalsModule.kt:24, 27-28, 43-64`).
+// `single<VitalsPreferences> { VitalsPreferencesImpl(get()) }` (`VitalsModule.kt:24`) → the
+// `preferences` property, built once from the `SalusPreferencesDataSource` the composition root
+// passes in, exactly as the repository is built from the DAO.
+//
+// TODO(M7): the two other use cases and the two other editor ViewModels
+// (`VitalsModule.kt:27-28, 43-64`).
 
 import SalusCommon
 import SalusDatabase
 import SalusNavigation
+import SalusSettings
 import SalusUI
 import SwiftUI
 
@@ -34,6 +39,12 @@ public struct VitalsModule {
     /// weight reading — the AI summary, the home sparkline — reads the same instance rather than
     /// opening a second one over the same DAO.
     public let repository: any VitalsRepository
+
+    /// Koin's `single<VitalsPreferences>` (`VitalsModule.kt:24`). Exposed for the same reason the
+    /// repository is: the glucose editor writes the display unit app-wide, so it has to be handed
+    /// the one instance the list ViewModel is already reading rather than a second one over the
+    /// same key.
+    public let preferences: any VitalsPreferences
 
     /// Publishes what the Routes and ViewModels ask for; the shell applies it.
     public let navigator: Navigator
@@ -57,6 +68,13 @@ public struct VitalsModule {
     public let makeBloodPressureEditorViewModel: @MainActor (String?) -> BloodPressureEditorViewModel
 }
 
+// The seven parameters are the seven things Koin resolves inside `vitalsModule`
+// (`VitalsModule.kt:22-65`) — `get()` reads exactly this list, and iOS-M7's `preferences` is the
+// seventh. Bundling them into a "dependencies" struct would be a second shape for the composition
+// root's own properties. The rule is waived here rather than the signature bent, exactly as
+// `makeAppointmentsModule` waives it.
+// swiftlint:disable function_parameter_count
+
 /// Builds the feature's graph — the twin of `val vitalsModule = module { … }`.
 ///
 /// Every dependency is passed in and none is reached for, so a second graph (a test, a preview) is
@@ -64,6 +82,7 @@ public struct VitalsModule {
 @MainActor
 public func makeVitalsModule(
     vitalsDao: VitalsDao,
+    preferences: SalusPreferencesDataSource,
     clock: any SalusClock,
     idGenerator: any IdGenerator,
     pendingDeletes: PendingDeleteController,
@@ -72,6 +91,9 @@ public func makeVitalsModule(
 ) -> VitalsModule {
     // `VitalsModule.kt:23` — the profile id is `VitalsRepositoryImpl`'s documented default.
     let repository = VitalsRepositoryImpl(vitalsDao: vitalsDao)
+    // `VitalsModule.kt:24`. The store stays behind the feature's own protocol: this is the only
+    // place `SalusSettings` is named in `FeatureVitals`.
+    let vitalsPreferences = VitalsPreferencesImpl(dataSource: preferences)
     let undoableDelete = UndoableDelete(pendingDeletes: pendingDeletes, snackbar: snackbar)
     let makeSaveWeightEntryUseCase: @MainActor () -> SaveWeightEntryUseCase = {
         SaveWeightEntryUseCase(repository: repository, idGenerator: idGenerator)
@@ -82,12 +104,14 @@ public func makeVitalsModule(
 
     return VitalsModule(
         repository: repository,
+        preferences: vitalsPreferences,
         navigator: navigator,
         makeSaveWeightEntryUseCase: makeSaveWeightEntryUseCase,
         makeSaveBloodPressureEntryUseCase: makeSaveBloodPressureEntryUseCase,
         makeVitalsViewModel: {
             VitalsViewModel(
                 repository: repository,
+                preferences: vitalsPreferences,
                 pendingDeletes: pendingDeletes,
                 undoableDelete: undoableDelete,
                 clock: clock
@@ -115,6 +139,8 @@ public func makeVitalsModule(
         }
     )
 }
+
+// swiftlint:enable function_parameter_count
 
 extension EnvironmentValues {
     /// How the module reaches this feature's Routes.
