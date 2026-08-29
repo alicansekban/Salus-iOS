@@ -21,6 +21,15 @@ public struct LocalDate: Equatable, Hashable, Comparable, Sendable {
     public let month: Int
     public let day: Int
 
+    /// The days in a week: 7, everywhere in the port.
+    ///
+    /// Lives here because a week's length is a fact about the proleptic Gregorian calendar this
+    /// type implements, not about any one grid that happens to draw one. Android spells it
+    /// `DAYS_PER_WEEK` twice over (`CycleViewModel.kt:212`, `CycleScreen.kt:542`) and the port had
+    /// copied it three times — `SalusWeekdaySymbols`, `CycleCalendarBuilder` and
+    /// `CycleCalendarSections` each kept a private `7` — so iOS-M7 hoisted the three into this one.
+    public static let daysPerWeek = 7
+
     /// Builds a date from its components, **normalising** a triple that names no real day.
     ///
     /// `kotlinx.datetime.LocalDate(year, month, day)` throws on such a triple. The port normalises

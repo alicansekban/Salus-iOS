@@ -97,7 +97,7 @@ enum CycleCalendarBuilder {
             daysInGrid.append(date)
             date = date.plusDays(1)
         }
-        while !daysInGrid.count.isMultiple(of: daysPerWeek) {
+        while !daysInGrid.count.isMultiple(of: LocalDate.daysPerWeek) {
             daysInGrid.append(date)
             date = date.plusDays(1)
         }
@@ -149,8 +149,8 @@ enum CycleCalendarBuilder {
         return Set(from.epochDay ... until.epochDay)
     }
 
-    // `CycleViewModel.kt:212-216`.
-    private static let daysPerWeek = 7
+    // `CycleViewModel.kt:212-216`. `DAYS_PER_WEEK` is `SalusModel.LocalDate.daysPerWeek`, which
+    // the whole port shares.
     private static let defaultPredictedPeriodDays = 5
     private static let minPredictedPeriodDays = 2
     private static let maxPredictedPeriodDays = 10

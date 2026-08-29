@@ -123,7 +123,7 @@ struct CycleCalendarGrid: View {
             // the grid to whole weeks, so the last slice is full too.
             ForEach(weekStartIndices, id: \.self) { start in
                 HStack(spacing: SalusSpacing.xs) {
-                    ForEach(cells[start ..< min(start + daysPerWeek, cells.count)]) { cell in
+                    ForEach(cells[start ..< min(start + LocalDate.daysPerWeek, cells.count)]) { cell in
                         CycleDayCellView(cell: cell) { onOpenDay(cell.epochDay) }
                     }
                 }
@@ -133,7 +133,7 @@ struct CycleCalendarGrid: View {
     }
 
     private var weekStartIndices: [Int] {
-        Array(stride(from: 0, to: cells.count, by: daysPerWeek))
+        Array(stride(from: 0, to: cells.count, by: LocalDate.daysPerWeek))
     }
 }
 
@@ -296,8 +296,6 @@ struct CycleLegendItem: View {
 private let predictedDayBackgroundAlpha = 0.25
 /// `OUT_OF_MONTH_TEXT_ALPHA` (`CycleScreen.kt:77`).
 private let outOfMonthTextAlpha = 0.3
-/// `DAYS_PER_WEEK` (`CycleScreen.kt:542`).
-private let daysPerWeek = 7
 /// `TodayBorderWidth` (`CycleScreen.kt:545`).
 private let todayBorderWidth: CGFloat = 2
 /// `MarkerBorderWidth` (`CycleScreen.kt:546`).

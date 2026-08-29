@@ -31,8 +31,9 @@ enum ReminderHealthLastSync {
     ///
     /// The zone is passed rather than taken from the device, so the reading is the clock's and a
     /// test is deterministic. No `Calendar` is constructed: `DateFormatter` renders an instant in
-    /// the zone it is given, which leaves `CLAUDE.md`'s "never a second `Calendar` in the tree"
-    /// rule untouched.
+    /// the zone it is given, which leaves `CLAUDE.md`'s `LocalDate` rule — a `Calendar` only in the
+    /// three sanctioned files, mechanically enforced by `.swiftlint.yml`'s
+    /// `no_calendar_outside_clock` — untouched.
     static func timestamp(_ instant: Date, in zone: TimeZone, locale: Locale = .current) -> String {
         // A fresh formatter per call, for the reason `LocalDateTime` gives: `DateFormatter`
         // is neither `Sendable` nor cheap to share, and this one is drawn once per screen.

@@ -19,12 +19,10 @@
 // view resolves against.
 
 import Foundation
+import SalusModel
 
 /// The localized weekday letters a calendar grid heads its columns with.
 public enum SalusWeekdaySymbols {
-    /// Days in a week; the length of every array this type answers with.
-    private static let daysPerWeek = 7
-
     /// The seven narrow standalone weekday letters in `locale`, rotated so Monday comes first.
     ///
     /// "Standalone" is the form a label uses on its own, outside a sentence — the twin of Kotlin's
@@ -40,7 +38,7 @@ public enum SalusWeekdaySymbols {
         var calendar = Calendar(identifier: .gregorian)
         calendar.locale = locale
         let symbols = calendar.veryShortStandaloneWeekdaySymbols
-        guard symbols.count == daysPerWeek else { return symbols }
+        guard symbols.count == LocalDate.daysPerWeek else { return symbols }
         return Array(symbols.dropFirst()) + symbols.prefix(1)
     }
 }

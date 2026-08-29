@@ -4,8 +4,12 @@ import Testing
 
 @testable import SalusCommon
 
-// `LocalDateTime.instant(in:)` is the twin of `kotlinx.datetime.LocalDateTime.toInstant(zone)` and
-// the only place in the tree a `Calendar` is built. iOS-M4 lifted it out of
+// `LocalDateTime.instant(in:)` is the twin of `kotlinx.datetime.LocalDateTime.toInstant(zone)`. It
+// lives in `SalusClock.swift`, one of the three files sanctioned to build a `Calendar` — the other
+// two are `SalusReminder`'s `UserNotificationGateway.swift` and `SalusUI`'s
+// `SalusWeekdaySymbols.swift`, and `.swiftlint.yml`'s `no_calendar_outside_clock` is what keeps the
+// list at three. (An earlier version of this comment called this the only such place in the tree;
+// it was already two by iOS-M3 and three by iOS-M6.) iOS-M4 lifted the extension out of
 // `SalusClock.instant(of:minuteOfDay:)`, which now forwards to it, so what has to be pinned is:
 //
 //   * the answers themselves, against reference instants computed independently (Python's
