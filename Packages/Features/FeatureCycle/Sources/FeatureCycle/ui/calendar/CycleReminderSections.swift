@@ -27,7 +27,7 @@
 // The time wheel is pinned to GMT and seeded with `minuteOfDay × 60`, exactly as
 // `SalusUI/SalusTimeField.swift` does and for its reason: `DatePicker` speaks `Date`, this state
 // speaks a minute-of-day integer, and pinning the zone bridges the two without constructing a
-// `Calendar` — which `CLAUDE.md` allows in two files, neither of them this one. The user still sees
+// `Calendar` — which `CLAUDE.md` allows in three files, none of them this one. The user still sees
 // their own locale's clock in the wheel.
 
 import SalusDesignSystem

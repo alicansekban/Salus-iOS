@@ -210,7 +210,8 @@ public final class UserNotificationGateway: NotificationGateway {
     /// The occurrence's instant, decomposed into the wall-clock components `UNCalendarNotificationTrigger`
     /// takes.
     ///
-    /// This is the second and last kind of place `Calendar` is allowed to appear in this tree
+    /// This is the second kind of place `Calendar` is allowed to appear in this tree — the third,
+    /// added in iOS-M6, is `SalusUI/SalusWeekdaySymbols.swift`'s localized-symbols read —
     /// (`CLAUDE.md`'s `LocalDate` rule, whose carve-out is the instant↔day boundary in
     /// `SalusClock`): it is a boundary conversion into an OS API that accepts nothing else, not day
     /// arithmetic. It keeps the discipline that carve-out sets — a fixed **Gregorian** calendar

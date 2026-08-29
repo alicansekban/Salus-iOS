@@ -115,7 +115,9 @@ Milestone plans live in `docs/plans/`. Toolchain and CI usage: `README.md`.
     symbol helper, or a `Date` inside this one, is the finding. — *enforcement: review, plus
     `SalusUITests/SalusWeekdaySymbolsTests.swift`; a `no_calendar_outside_clock` SwiftLint custom
     rule (scoped `included:` + a `lint-custom-rules.sh` fixture, allowing exactly these three
-    files) is owed and is iOS-M7's.*
+    files plus the two test files that build one to exercise them —
+    `SalusWeekdaySymbolsTests.swift`, `UserNotificationGatewayTests.swift`) is owed and is
+    iOS-M7's.*
   — *enforcement:
   `Packages/SalusModel/Tests/SalusModelTests/LocalDateTests.swift` + review.*
 - **The composition root owns the singletons; there is no container.** `App/AppCompositionRoot.swift`
