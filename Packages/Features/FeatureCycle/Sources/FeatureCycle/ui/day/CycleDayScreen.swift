@@ -138,13 +138,17 @@ struct CycleDayScreen: View {
     }
 
     /// `CycleDayScreen.kt:169-175`.
+    ///
+    /// `fillsWidth: true` is the `Modifier.fillMaxWidth()` at `CycleDayScreen.kt:174`, and it is
+    /// the whole width story: an outer `.frame(maxWidth: .infinity)` would only centre a
+    /// content-width capsule, since the drawn pill has to be widened from inside the component.
     private var saveButton: some View {
         SalusPillButton(
             text: CycleStrings.save,
             enabled: !state.isSaving,
-            accent: theme.extendedColors.cycle
+            accent: theme.extendedColors.cycle,
+            fillsWidth: true
         ) { onEvent(.saveClicked) }
-            .frame(maxWidth: .infinity)
     }
 }
 
