@@ -64,6 +64,12 @@ options:
 # M5 adds `FeatureMedications`, the fourth feature package. Linking it compiles its String Catalog
 # — `swift test` never does — and, once the later M5 tasks land, its AlarmKit dose surface, which
 # sits behind `#if canImport(AlarmKit)` and so is invisible to the macOS host build.
+#
+# M6 adds `FeatureCycle`, the fifth feature package. Linking it compiles its String Catalog — the
+# 56 keys of `:feature:cycle`, and `swift test` never compiles a catalog at all, so a missing or
+# mis-specified translation surfaces nowhere else — and puts the cycle screens through the iOS SDK
+# rather than the macOS host, which is where the calendar grid and the period reminder's
+# notification copy are actually built.
 packages:
   SalusDesignSystem:
     path: Packages/SalusDesignSystem
@@ -89,6 +95,8 @@ packages:
     path: Packages/Features/FeatureAppointments
   FeatureMedications:
     path: Packages/Features/FeatureMedications
+  FeatureCycle:
+    path: Packages/Features/FeatureCycle
   SalusReminder:
     path: Packages/SalusReminder
 
@@ -234,6 +242,8 @@ targets:
         product: FeatureAppointments
       - package: FeatureMedications
         product: FeatureMedications
+      - package: FeatureCycle
+        product: FeatureCycle
       - package: SalusReminder
         product: SalusReminder
 
