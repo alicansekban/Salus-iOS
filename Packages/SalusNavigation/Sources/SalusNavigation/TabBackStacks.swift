@@ -51,6 +51,16 @@ public final class TabBackStacks<Tab: Hashable & CaseIterable> {
         paths[tab] ?? NavigationPath()
     }
 
+    /// Whether `tab` sits at its root — nothing is pushed on top of its top-level screen.
+    ///
+    /// The predicate behind Android's `showBottomBar` (`SalusApp.kt:133-136`), which asks the same
+    /// question of the flattened stack: *is the key on top a top-level one?* Here each tab holds its
+    /// own path, so "on top is the top-level screen" is simply "the path is empty". The shell reads
+    /// it to decide whether the tab bar is drawn (`App/RootView.swift`).
+    public func isAtRoot(_ tab: Tab) -> Bool {
+        path(for: tab).isEmpty
+    }
+
     /// The binding the shell hands `NavigationStack(path:)`.
     ///
     /// SwiftUI writes the whole path back — a swipe-to-go-back is a write, not a call to `pop()` —

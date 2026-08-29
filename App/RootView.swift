@@ -121,6 +121,21 @@ struct RootView: View {
     /// leave the other pushing a key nothing draws.
     private func tabStack(for tab: RootTab) -> some View {
         navigationStack(for: tab)
+            // Android's `showBottomBar`, one for one (`SalusApp.kt:133-136`): "the bottom bar only
+            // exists while a top-level destination is visible; pushed detail/editor screens get the
+            // full height." Kotlin asks whether the key on top of the flattened stack is top-level;
+            // here each tab holds its own path, so the same question is `isAtRoot(tab)`.
+            //
+            // The rule lives here and only here — a feature screen never writes
+            // `.toolbar(…, for: .tabBar)` itself, so every screen pushed by every future feature
+            // inherits it. Placed on the *stack*, not inside its root: a value applied to the root
+            // view describes the root view, and SwiftUI resets it for a pushed destination, so the
+            // bar came back the moment anything was pushed. Applied to the stack it describes
+            // whatever the stack is currently showing, which is what the flag is about.
+            //
+            // System animation on purpose: no `withAnimation`, no transition — the bar slides the
+            // way every other iOS tab bar does.
+            .toolbar(backStacks.isAtRoot(tab) ? .visible : .hidden, for: .tabBar)
             // The app's one snackbar host, applied *inside* the tab's content region rather than
             // over the whole window. That placement is the whole fix: the tab bar's inset exists
             // only in here, so an overlay laid out against it lands above the bar (and above the

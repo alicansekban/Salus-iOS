@@ -156,3 +156,55 @@ struct TabBackStacksPushTests {
         #expect(stacks.path(for: .home) == NavigationPath())
     }
 }
+
+/// The predicate behind the shell's tab-bar rule — the twin of Android's `showBottomBar`
+/// (`SalusApp.kt:133-136`): the bar is drawn only while the selected tab sits at its root.
+@Suite("TabBackStacks — isAtRoot")
+@MainActor
+struct TabBackStacksIsAtRootTests {
+    @Test("every tab is at its root on a fresh holder")
+    func freshHolderIsAtRootEverywhere() {
+        let stacks = TabBackStacks<SampleTab>(initial: .home)
+
+        for tab in SampleTab.allCases {
+            #expect(stacks.isAtRoot(tab), "at root for \(tab)")
+        }
+    }
+
+    @Test("a push leaves the pushed-on tab off its root and every other tab at its root")
+    func pushLeavesOnlyThePushedTabOffItsRoot() {
+        let stacks = TabBackStacks<SampleTab>(initial: .home)
+
+        stacks.push(AnyNavKey(SampleHomeKey.detail("a")))
+
+        #expect(!stacks.isAtRoot(.home))
+        #expect(stacks.isAtRoot(.vitals))
+        #expect(stacks.isAtRoot(.more))
+    }
+
+    @Test("switching tabs answers for the tab asked about, not the selected one")
+    func answersPerTabRatherThanForTheSelection() {
+        let stacks = TabBackStacks<SampleTab>(initial: .home)
+
+        stacks.push(AnyNavKey(SampleHomeKey.detail("a")))
+        stacks.switchTopLevel(.vitals)
+
+        #expect(!stacks.isAtRoot(.home), "home keeps what was pushed onto it")
+        #expect(stacks.isAtRoot(.vitals))
+    }
+
+    @Test("popping back to the root makes the tab at-root again")
+    func popRestoresTheRoot() {
+        let stacks = TabBackStacks<SampleTab>(initial: .home)
+
+        stacks.push(AnyNavKey(SampleHomeKey.detail("a")))
+        stacks.push(AnyNavKey(SampleHomeKey.detail("b")))
+        #expect(!stacks.isAtRoot(.home))
+
+        stacks.pop()
+        #expect(!stacks.isAtRoot(.home), "still one screen deep")
+
+        stacks.pop()
+        #expect(stacks.isAtRoot(.home))
+    }
+}

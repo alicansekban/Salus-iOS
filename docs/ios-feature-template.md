@@ -187,7 +187,15 @@ Feature screens:
 
 The snackbar host is the shell's too, and there is exactly one
 (`App/RootView.swift:102` + `:114`): a feature raises a request through `SalusSnackbarController`
-and never mounts a host. The tab bar is the shell's, rendered for every tab.
+and never mounts a host.
+
+**The tab bar is the shell's: it shows only on a tab's root and is hidden on every pushed
+destination; a feature never sets `.toolbar(…, for: .tabBar)` itself** (`App/RootView.swift`, the
+twin of Android's `showBottomBar` in `SalusApp.kt:133-136`). `RootView.tabStack(for:)` applies
+`.toolbar(backStacks.isAtRoot(tab) ? .visible : .hidden, for: .tabBar)` to the tab's
+`NavigationStack`, so a detail, an editor or any future pushed screen gets the full height without
+writing a line — and a screen that sets the modifier itself is a finding, because it would fight the
+shell rather than inherit it.
 
 Reference: `VitalsScreen` (ZStack + FAB) and `WeightEditorScreen` (VStack + toolbar).
 
