@@ -117,14 +117,17 @@ Milestone plans live in `docs/plans/`. Toolchain and CI usage: `README.md`.
     the whole tree (`App/.*\.swift`, `Packages/.*\.swift`) minus an `excluded:` list of exactly
     the three sanctioned files plus the two test files that build a `Calendar` to exercise them
     (`SalusWeekdaySymbolsTests.swift`, `UserNotificationGatewayTests.swift`). It matches a
-    construction (`Calendar(`), `Calendar.current`, and a type position (`-> Calendar`,
-    `: Calendar`), while leaving identifiers that merely contain the word alone
-    (`UNCalendarNotificationTrigger`, `CycleCalendarBuilder`, `addToCalendar`). Proven to actually
-    fire by `scripts/lint-custom-rules.sh`, which plants a fixture inside the scope and asserts, in
-    that same repo-wide run, that all five carve-out files stay quiet — which is also the
+    construction (`Calendar(`), the device calendar in both spellings (`Calendar.current`,
+    `Calendar.autoupdatingCurrent`) and a type position (`-> Calendar`, `: Calendar`), while
+    leaving identifiers that merely contain the word alone (`UNCalendarNotificationTrigger`,
+    `CycleCalendarBuilder`, `addToCalendar`). Proven to actually fire by
+    `scripts/lint-custom-rules.sh`, whose planted fixture holds a construction, an
+    `autoupdatingCurrent` and a decoy line of those three identifiers, and which asserts — in one
+    repo-wide run — that the rule fires on it exactly twice and stays silent on all five carve-out
+    files. The exact count is what keeps the substring guard mechanical; the five silences are the
     measurement that `excluded:` is honoured on a *custom* rule, rather than an assumption about
     it. Plus `SalusUITests/SalusWeekdaySymbolsTests.swift`, and review for what a regex cannot see
-    (a `Calendar` reached through a `typealias` or a stored property).*
+    (a `Calendar` reached through a `typealias` or a stored property, or the ObjC `NSCalendar`).*
   — *enforcement:
   `Packages/SalusModel/Tests/SalusModelTests/LocalDateTests.swift` + review.*
 - **The composition root owns the singletons; there is no container.** `App/AppCompositionRoot.swift`

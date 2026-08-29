@@ -288,9 +288,13 @@ struct CycleLegendItem: View {
 
 // MARK: - Component dimensions
 
-// The five values `CycleScreen.kt:76-77` and `:542-547` keep beside the screen, under the same
+// The five values `CycleScreen.kt:76-77` and `:545-547` keep beside the screen, under the same
 // names. They are Material component dimensions, not `design-tokens.md` tokens, which is why they
 // live here rather than in `SalusDesignSystem`.
+//
+// `DAYS_PER_WEEK` (`CycleScreen.kt:542`) used to sit in this list; iOS-M7 hoisted it to
+// `SalusModel.LocalDate.daysPerWeek`, which the grid above reads, because a week's length is a
+// fact about the calendar rather than a dimension of this screen.
 
 /// `PREDICTED_DAY_BACKGROUND_ALPHA` (`CycleScreen.kt:76`).
 private let predictedDayBackgroundAlpha = 0.25

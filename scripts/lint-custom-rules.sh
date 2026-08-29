@@ -50,7 +50,11 @@ trap cleanup EXIT INT TERM
 
 failures=0
 
-# plant <path> <import-line>
+# plant <path> <body>
+#
+# `body` is written verbatim under a delete-on-sight header, and may be more than
+# one line — `check_carve_out` plants a multi-line body so that lines which MUST
+# trip a rule and lines which MUST NOT sit in the same file, seen by the same run.
 plant() {
     mkdir -p "$(dirname "$1")"
     printf '// Fixture planted by scripts/lint-custom-rules.sh. Delete on sight.\n%s\n' "$2" > "$1"
@@ -88,7 +92,7 @@ check() {
     rm -f "$inside" "$outside"
 }
 
-# check_carve_out <rule-id> <in-scope-file> <line> <sanctioned-file>...
+# check_carve_out <rule-id> <in-scope-file> <expected-hits> <body> <sanctioned-file>...
 #
 # The shape a carve-out rule needs, and the reason `check` above does not fit
 # it: `no_calendar_outside_clock` scopes itself with `included:` (the whole
@@ -99,21 +103,27 @@ check() {
 # the planted fixture trips. That makes them a free negative fixture nothing has
 # to plant, and it measures the half worth measuring: whether SwiftLint honours
 # `excluded:` on a CUSTOM rule (it does, on 0.65.0 — this is what proves it).
+#
+# `expected-hits` is asserted EXACTLY, not as a floor, which is what lets `body`
+# carry decoy lines: a line that must not trip the rule is proved quiet by the
+# total not moving. `check` above cannot express that — it asserts 1 and 0 on two
+# separate files.
 check_carve_out() {
     rule="$1"
     inside="$2"
-    line="$3"
-    shift 3
+    expected="$3"
+    body="$4"
+    shift 4
 
-    plant "$inside" "$line"
+    plant "$inside" "$body"
 
     output="$(swiftlint --quiet 2>/dev/null)"
     hits_inside="$(printf '%s\n' "$output" | grep -c "$inside.*($rule)")"
 
-    if [ "$hits_inside" -eq 1 ]; then
-        echo "PASS  $rule fired on $inside"
+    if [ "$hits_inside" -eq "$expected" ]; then
+        echo "PASS  $rule fired exactly $expected time(s) on $inside"
     else
-        echo "FAIL  $rule did NOT fire on $inside (expected 1 hit, got $hits_inside)"
+        echo "FAIL  $rule fired $hits_inside time(s) on $inside (expected $expected)"
         failures=$((failures + 1))
     fi
 
@@ -169,14 +179,32 @@ check "no_tab_bar_toolbar_in_features" \
 
 # Guard 4: a `Calendar` may only be built in the three sanctioned files — days
 # are `SalusModel.LocalDate` / `epochDay` everywhere else (CLAUDE.md's LocalDate
-# rule). `Calendar(identifier: .gregorian)` is planted because that is the exact
-# spelling every real carve-out uses, so a regex that misses it misses
-# everything. The negative half is the five carve-out files themselves: they
-# already build a `Calendar` in the tree, and they must stay quiet in this same
-# run or `excluded:` has stopped being honoured on a custom rule.
+# rule). Three lines are planted in ONE fixture, and the assertion is that the
+# rule fires EXACTLY twice on it:
+#
+#   1. `Calendar(identifier: .gregorian)` — the exact spelling every real
+#      carve-out uses, so a regex that misses it misses everything.
+#   2. `Calendar.autoupdatingCurrent` — the device calendar with neither a
+#      construction nor a type annotation to be caught by the other branches.
+#      Dropping it from the alternation leaves the easiest way to get a device
+#      calendar unguarded, which is exactly why it is planted rather than trusted.
+#   3. the substring decoys — `UNCalendarNotificationTrigger`, `CalendarEventDraft`,
+#      `addToCalendar`, `calendarDraft`. They must contribute ZERO hits, and the
+#      exact count of 2 is what proves it. Without this line the `\b` guard in the
+#      regex is asserted only in a YAML comment, and a future edit that drops it
+#      would light up FeatureAppointments and FeatureCycle with no test to say so.
+#
+# The negative half is the five carve-out files themselves: they already build a
+# `Calendar` in the tree, and they must stay quiet in this same run or `excluded:`
+# has stopped being honoured on a custom rule.
+calendar_fixture='let planted = Calendar(identifier: .gregorian)
+let live = Calendar.autoupdatingCurrent
+func decoy(calendarDraft: CalendarEventDraft, t: UNCalendarNotificationTrigger) { addToCalendar(t) }'
+
 check_carve_out "no_calendar_outside_clock" \
     "Packages/Features/FeatureVitals/Sources/FeatureVitals/LintFixtureDoNotCommit.swift" \
-    "let planted = Calendar(identifier: .gregorian)" \
+    2 \
+    "$calendar_fixture" \
     "Packages/SalusCommon/Sources/SalusCommon/SalusClock.swift" \
     "Packages/SalusReminder/Sources/SalusReminder/platform/UserNotificationGateway.swift" \
     "Packages/SalusUI/Sources/SalusUI/component/SalusWeekdaySymbols.swift" \

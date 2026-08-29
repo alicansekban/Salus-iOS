@@ -305,13 +305,25 @@ custom_rules:
   #                          `UNCalendarNotificationTrigger(` out: the character
   #                          before `Calendar` there is `N`, a word character, so
   #                          there is no boundary to match.
-  #   \bCalendar\.current\b  the device's calendar, forbidden even inside the
-  #                          carve-outs — it follows the device region and would
-  #                          answer a different year for the same instant.
+  #   \bCalendar\.(current|autoupdatingCurrent)\b
+  #                          the device's calendar in BOTH its spellings, forbidden
+  #                          even inside the carve-outs — each follows the device
+  #                          region and would answer another calendar's year for the
+  #                          same instant, and `autoupdatingCurrent` additionally
+  #                          changes answer mid-process when the user edits Settings.
+  #                          Both are named because neither has a construction or a
+  #                          type annotation to be caught by the other two branches:
+  #                          `let c = Calendar.autoupdatingCurrent` is a bare
+  #                          member lookup, so dropping it from this alternation
+  #                          switches the rule off for the easiest way to get a
+  #                          device calendar.
   #   (->|:)\s*Calendar\b    a type position — `-> Calendar`, `let c: Calendar`.
   # Identifiers that merely CONTAIN the word are therefore untouched:
   # `CalendarEventDraft`, `CycleCalendarBuilder`, `addToCalendar`,
-  # `calendarDraft`, and the lowercase local `calendar` inside the carve-outs.
+  # `calendarDraft`, and the lowercase local `calendar` inside the carve-outs —
+  # and that claim is mechanical, not prose: `scripts/lint-custom-rules.sh`
+  # plants a line holding all three and asserts the fixture's total hit count is
+  # unchanged by it.
   # `DateComponents` is deliberately NOT matched: it computes nothing on its own,
   # and its only construction site is inside SalusClock's own carve-out.
   #
@@ -323,14 +335,21 @@ custom_rules:
   # `// swiftlint:disable:next no_calendar_outside_clock` at each of the five
   # construction sites.
   #
-  # KNOWN LIMIT, stated for whoever reads a clean run: a `typealias C = Calendar`
-  # followed by `C(...)` is missed, as is a calendar reached through a stored
-  # property on another type. This raises the cost of the accident, not of the
-  # determined workaround — the same class of limit as
-  # `no_tab_bar_toolbar_in_features`.
+  # KNOWN LIMITS, stated for whoever reads a clean run:
+  #   * a `typealias C = Calendar` followed by `C(...)`, and a calendar reached
+  #     through a stored property on another type: a regex cannot follow a binding.
+  #   * the ObjC bridge type `NSCalendar` — `NSCalendar.current`, `NSCalendar(...)`,
+  #     `: NSCalendar`. `\bCalendar` cannot match inside `NSCalendar` (the preceding
+  #     `S` is a word character, the same boundary that keeps
+  #     `UNCalendarNotificationTrigger` out), so every branch above misses it. It is
+  #     left unmatched rather than widened to `\b(NS)?Calendar` because the tree
+  #     contains no `NSCalendar` and Swift 6 code has no reason to reach for one;
+  #     the day it does, `(NS)?` in all three branches is the whole fix.
+  # These raise the cost of the accident, not of the determined workaround — the
+  # same class of limit as `no_tab_bar_toolbar_in_features`.
   no_calendar_outside_clock:
     name: "Calendar Outside The Clock Carve-Out"
-    regex: '(\bCalendar\s*\(|\bCalendar\.current\b|(->|:)\s*Calendar\b)'
+    regex: '(\bCalendar\s*\(|\bCalendar\.(current|autoupdatingCurrent)\b|(->|:)\s*Calendar\b)'
     excluded_match_kinds:
       - comment
       - doccomment
