@@ -60,10 +60,12 @@ struct ThrowingStreamTests {
     }
 }
 
-/// The one bit the cancellation case observes, in a box both the termination handler and the test
-/// can touch. `@unchecked Sendable` for `LatestPair`'s reason: the lock is what makes the promise
-/// true.
-private final class TerminationFlag: @unchecked Sendable {
+/// The one bit a cancellation case observes, in a box both the termination handler and the test can
+/// touch. `@unchecked Sendable` for `LatestPair`'s reason: the lock is what makes the promise true.
+///
+/// Not `private`: `LatestOfAllTests` watches five of these at once for the same cancellation
+/// property, and a second copy of eighteen lines would be the thing this file exists to avoid.
+final class TerminationFlag: @unchecked Sendable {
     private let lock = NSLock()
     private var isSet = false
 

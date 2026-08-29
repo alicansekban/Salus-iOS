@@ -7,7 +7,13 @@
 // source emits the current tuple with the values in argument order, and the first failure on any
 // source fails the combined stream. The ordering guarantee is not re-tested here — every layer is
 // `latestOfBoth`, whose own suite pins it.
+//
+// A tenth case covers the one property nesting can break that a single layer cannot: a cancelled
+// consumer has to reach every source *through* the four `latestOfBoth` hops. `FeatureHome`
+// re-subscribes on every appearance, so a layer that swallowed the cancellation would strand five
+// live database observations per visit rather than leak one.
 
+import Foundation
 import Testing
 
 @testable import SalusCommon
@@ -20,6 +26,10 @@ private enum StreamFailure: Error {
 
 @Suite("latestOfThree / latestOfFour / latestOfFive")
 struct LatestOfAllTests {
+    /// How long the cancellation case waits, matching `ThrowingStreamTests`: what is asserted is
+    /// that the cancellation arrives at all, not how fast.
+    private static let cancellationDeadline: TimeInterval = 2
+
     // MARK: - Three
 
     @Test("latestOfThree emits nothing until every source has a value")
@@ -214,6 +224,51 @@ struct LatestOfAllTests {
 
         await #expect(throws: StreamFailure.unreadable) {
             for try await _ in combined {}
+        }
+    }
+
+    // MARK: - Cancellation
+
+    @Test("cancelling a latestOfFive consumer cancels all five sources")
+    func cancellingALatestOfFiveConsumerCancelsAllFiveSources() async {
+        let sources = IntSources()
+        let terminations = (0 ..< 5).map { _ in TerminationFlag() }
+        sources.first.continuation.onTermination = { _ in terminations[0].set() }
+        sources.second.continuation.onTermination = { _ in terminations[1].set() }
+        sources.third.continuation.onTermination = { _ in terminations[2].set() }
+        sources.fourth.continuation.onTermination = { _ in terminations[3].set() }
+        sources.fifth.continuation.onTermination = { _ in terminations[4].set() }
+        let combined = latestOfFive(
+            sources.first.stream,
+            sources.second.stream,
+            sources.third.stream,
+            sources.fourth.stream,
+            sources.fifth.stream
+        )
+
+        // The same box, used here for "a tuple arrived": the cancellation has to land on a fully
+        // wired chain, not on one whose inner layers have not started collecting yet.
+        let opened = TerminationFlag()
+        let consumer = Task {
+            for try await _ in combined {
+                opened.set()
+            }
+        }
+        sources.first.continuation.yield(1)
+        sources.second.continuation.yield(2)
+        sources.third.continuation.yield(3)
+        sources.fourth.continuation.yield(4)
+        sources.fifth.continuation.yield(5)
+        let arrived = await opened.becameSet(within: Self.cancellationDeadline)
+        #expect(arrived)
+
+        consumer.cancel()
+
+        // Every source, not just the outermost pair: the fifth is one hop from the consumer and the
+        // first is four, so this is the assertion that no layer swallows the cancellation.
+        for termination in terminations {
+            let reached = await termination.becameSet(within: Self.cancellationDeadline)
+            #expect(reached)
         }
     }
 }
