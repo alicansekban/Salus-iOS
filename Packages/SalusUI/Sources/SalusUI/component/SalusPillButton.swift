@@ -2,16 +2,18 @@
 //
 // Kotlin reaches for Material's `Button` / `FilledTonalButton` with `shape = CircleShape`; the
 // SwiftUI twin of that pair is `.borderedProminent` / `.bordered` worn as a capsule. That mapping
-// already exists twice, inlined at the two detail-screen action rows shipped in iOS-M4/M5
-// (`AppointmentDetailScreen.swift:226-259`, `MedicationDetailSections.swift:275-292`); a third
-// feature needs it in iOS-M6, so it is lifted here. Those two call sites keep their inlined copies
-// on purpose — migrating them is deferred by the M6 plan's ruling 3, not forgotten.
+// already exists three times over, inlined at the two detail-screen action rows shipped in
+// iOS-M4/M5 (`AppointmentDetailScreen.swift:226-259`, `MedicationDetailSections.swift:275-292`) and
+// at this package's own empty-state action (`SalusEmptyState.swift:87-99`, which hand-draws the
+// same pill rather than wearing a button style); a third feature needs it in iOS-M6, so it is
+// lifted here. All three keep their inlined copies on purpose — migrating them is deferred by the
+// M6 plan's ruling 3, not forgotten.
 //
 // `.buttonBorderShape(.capsule)`, not `.clipShape(SalusShapes.pill)`: the bordered styles draw
 // their own background and border, and clipping that to a capsule would cut the corners off a
 // rounded rectangle rather than round the shape the style draws. `buttonBorderShape` is the
 // modifier that makes the style *draw* the pill `design-tokens.md` §6 maps `CircleShape` onto, and
-// it is what both existing call sites use.
+// it is what the two call sites that wear a button style already use.
 
 import SalusDesignSystem
 import SwiftUI
@@ -61,11 +63,6 @@ public struct SalusPillButton: View {
             // Kotlin passes `enabled` to the button; SwiftUI's twin is the environment flag, which
             // dims the label the way Material's disabled colors do.
             .disabled(!enabled)
-            // `heightIn(min = SalusTouchTarget.min)` (`SalusPillButton.kt:67`) — a floor, not a
-            // height. `.controlSize(.large)` already draws taller than the floor at the default
-            // text size; the floor is what holds the touch target at the smaller Dynamic Type
-            // sizes, which is the only thing Kotlin's `heightIn(min =)` does either.
-            .frame(minHeight: SalusTouchTarget.min)
     }
 
     @ViewBuilder
@@ -89,6 +86,15 @@ public struct SalusPillButton: View {
                     .tracking(SalusTypography.labelLarge.tracking)
             }
             .foregroundStyle(contentColor)
+            // `heightIn(min = SalusTouchTarget.min)` (`SalusPillButton.kt:67`) — a floor, not a
+            // height, and it belongs *inside* the label: a bordered button style sizes its
+            // background to its content and does not expand into the proposal, so a frame around
+            // the styled button would only pad the box and leave dead space above and below the
+            // tappable area. On the label it grows the style's own background, which is what makes
+            // the clickable surface itself at least this tall — the guarantee Kotlin gets by
+            // hanging `heightIn` on the Button's own `Modifier`. Same placement as
+            // `SalusFilterChip.swift:50-53` and `SalusEmptyState.swift:90-96`.
+            .frame(minHeight: SalusTouchTarget.min)
         }
     }
 
@@ -137,6 +143,6 @@ public struct SalusPillButton: View {
         }
         .padding(SalusSpacing.lg)
     }
-    .frame(height: 360)
+    .frame(height: 440)
     .salusTheme(theme)
 }
