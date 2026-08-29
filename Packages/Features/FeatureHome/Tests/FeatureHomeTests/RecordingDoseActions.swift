@@ -1,5 +1,5 @@
 // Ported from the `private class RecordingDoseActions : DoseActions` of
-// `HomeViewModelTest.kt:60-66`.
+// `HomeViewModelTest.kt:63-69`.
 //
 // Kotlin collects `Triple<String, Int, Int>` into a `MutableList`. Swift tuples are not `Equatable`,
 // so an array of them cannot be compared to an expected array in one `#expect`; the recorded call is
@@ -13,7 +13,7 @@
 import Foundation
 import SalusModel
 
-/// A ``DoseActions`` that records instead of writing (`HomeViewModelTest.kt:60-66`).
+/// A ``DoseActions`` that records instead of writing (`HomeViewModelTest.kt:63-69`).
 final class RecordingDoseActions: DoseActions, @unchecked Sendable {
     /// One `markTaken` call — Kotlin's `Triple(scheduleId, epochDay, minuteOfDay)`.
     struct RecordedDose: Equatable, Sendable {
@@ -25,7 +25,7 @@ final class RecordingDoseActions: DoseActions, @unchecked Sendable {
     private let lock = NSLock()
     private var recorded: [RecordedDose] = []
 
-    /// `HomeViewModelTest.kt:61` — every call so far, in order.
+    /// `HomeViewModelTest.kt:64` — every call so far, in order.
     var taken: [RecordedDose] {
         lock.withLock { recorded }
     }

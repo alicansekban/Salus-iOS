@@ -1,5 +1,5 @@
 // The Swift twin of the anonymous `object : TodayRepository` over a `MutableStateFlow<TodayOverview>`
-// that `HomeViewModelTest.kt:52-58` declares inline.
+// that `HomeViewModelTest.kt:57-59` declares inline.
 //
 // Kotlin gets replay-the-current-value for free: a `MutableStateFlow` hands every new collector the
 // value it holds before it hands out any update. Swift's `AsyncThrowingStream` has no such
@@ -20,7 +20,7 @@ import Foundation
 
 @testable import FeatureHome
 
-/// An in-memory ``TodayRepository`` (`HomeViewModelTest.kt:52-58`).
+/// An in-memory ``TodayRepository`` (`HomeViewModelTest.kt:57-59`).
 ///
 /// `@unchecked Sendable` for `FakeCycleRepository`'s reason: the state is mutable, and the lock is
 /// what makes the promise true.
@@ -33,12 +33,12 @@ final class FakeTodayRepository: TodayRepository, @unchecked Sendable {
         self.overview = overview
     }
 
-    /// The twin of reading `overview.value` (`HomeViewModelTest.kt:126`).
+    /// The twin of reading `overview.value` (`HomeViewModelTest.kt:127`).
     var current: TodayOverview {
         lock.withLock { overview }
     }
 
-    /// The twin of assigning to `overview.value` (`HomeViewModelTest.kt:126-128`).
+    /// The twin of assigning to `overview.value` (`HomeViewModelTest.kt:127-129`).
     func set(_ newValue: TodayOverview) {
         let publishers = lock.withLock { () -> [@Sendable (TodayOverview) -> Void] in
             overview = newValue
@@ -49,7 +49,7 @@ final class FakeTodayRepository: TodayRepository, @unchecked Sendable {
         }
     }
 
-    /// `HomeViewModelTest.kt:53` — the current overview, then every later one.
+    /// `HomeViewModelTest.kt:58` — the current overview, then every later one.
     func observeTodayOverview() -> AsyncThrowingStream<TodayOverview, any Error> {
         AsyncThrowingStream(bufferingPolicy: .bufferingNewest(1)) { continuation in
             let token = UUID()

@@ -9,7 +9,7 @@
 // still makes; and `MainDispatcherRule` has no twin — `@MainActor` on the suite is the whole
 // mechanism.
 //
-// **One Kotlin fake has no iOS surface and that is the point.** `HomeViewModelTest.kt:76-80` gives
+// **One Kotlin fake has no iOS surface and that is the point.** `HomeViewModelTest.kt:79-83` gives
 // its `AiSummaryRepository` a `getSummary` that throws `AssertionError("Home must never request a
 // summary")`, because Android's `HomeViewModel` takes the whole repository and could call it. iOS
 // narrows the dependency to ``HomeAiSummaryAvailability``, a protocol with one property and no
@@ -39,11 +39,11 @@ import Testing
 @Suite("HomeViewModel")
 @MainActor
 struct HomeViewModelTests {
-    /// `HomeViewModelTest.kt:58` — 1_760_000_000_000 ms, which is 2025-10-09T08:53:20Z and so
+    /// `HomeViewModelTest.kt:61` — 1_760_000_000_000 ms, which is 2025-10-09T08:53:20Z and so
     /// 11:53 in `FixedSalusClock`'s own Europe/Istanbul.
     private static let now = Date(timeIntervalSince1970: 1_760_000_000)
 
-    /// `HomeViewModelTest.kt:41-51` — one pending "Aspirin" at 08:00, no appointments, cycle day 12
+    /// `HomeViewModelTest.kt:39-55` — one pending "Aspirin" at 08:00, no appointments, cycle day 12
     /// and 80 kg.
     private static let overview = TodayOverview(
         doses: [
@@ -70,13 +70,13 @@ struct HomeViewModelTests {
 
     private let clock = FixedSalusClock(now: HomeViewModelTests.now)
     private let repository = FakeTodayRepository(HomeViewModelTests.overview)
-    /// `HomeViewModelTest.kt:72` — the free credit starts unspent.
+    /// `HomeViewModelTest.kt:74` — the free credit starts unspent.
     private let freeAiCredit = FakeHomeAiSummaryAvailability(available: true)
-    /// `HomeViewModelTest.kt:82` — `PremiumStatus.FREE`.
+    /// `HomeViewModelTest.kt:86` — `PremiumStatus.FREE`.
     private let premiumStatus = FakeHomePremiumStatus(isPremium: false)
     private let doseActions = RecordingDoseActions()
 
-    /// `HomeViewModelTest.kt:90-96`.
+    /// `HomeViewModelTest.kt:94-100`.
     private func viewModel(clock: FixedSalusClock? = nil) -> HomeViewModel {
         HomeViewModel(
             repository: repository,
@@ -87,7 +87,7 @@ struct HomeViewModelTests {
         )
     }
 
-    /// Turbine's `while (state.isLoading) state = awaitItem()` (`HomeViewModelTest.kt:103-104`).
+    /// Turbine's `while (state.isLoading) state = awaitItem()` (`HomeViewModelTest.kt:107-108`).
     private func loadedState(_ viewModel: HomeViewModel) async -> HomeUiState {
         #expect(viewModel.state.isLoading, "the state before the first triple is the default")
         await waitUntil("the first loaded state") { !viewModel.state.isLoading }
@@ -96,7 +96,7 @@ struct HomeViewModelTests {
 
     // MARK: - The four Kotlin cases
 
-    /// `HomeViewModelTest.kt:99-113`.
+    /// `HomeViewModelTest.kt:102-116`.
     @Test("state mirrors the repository overview")
     func stateMirrorsTheRepositoryOverview() async {
         let viewModel = viewModel()
@@ -111,7 +111,7 @@ struct HomeViewModelTests {
         #expect(state.todayEpochDay == clock.todayEpochDay())
     }
 
-    /// `HomeViewModelTest.kt:115-130`.
+    /// `HomeViewModelTest.kt:118-132`.
     @Test("repository updates flow through to the state")
     func repositoryUpdatesFlowThroughToTheState() async {
         let viewModel = viewModel()
@@ -140,7 +140,7 @@ struct HomeViewModelTests {
         #expect(viewModel.state.doses.count == 1)
     }
 
-    /// `HomeViewModelTest.kt:132-143`.
+    /// `HomeViewModelTest.kt:134-145`.
     @Test("take dose event routes to the shared write path with today's date")
     func takeDoseEventRoutesToTheSharedWritePathWithTodaysDate() async {
         let viewModel = viewModel()
@@ -159,7 +159,7 @@ struct HomeViewModelTests {
         )
     }
 
-    /// `HomeViewModelTest.kt:145-162`.
+    /// `HomeViewModelTest.kt:147-163`.
     @Test("AI card flags follow the free credit and the entitlement")
     func aiCardFlagsFollowTheFreeCreditAndTheEntitlement() async {
         let viewModel = viewModel()
@@ -197,6 +197,10 @@ struct HomeViewModelTests {
         #expect(viewModel.state.todayEpochDay == today, "a clock that moved alone publishes nothing")
 
         viewModel.restartObservation()
+        // The documented half of the restart: the previous state stands until the new collection
+        // emits, exactly as `stateIn` holds its value across a `WhileSubscribed` re-subscribe, so a
+        // returning screen never flashes its spinner.
+        #expect(!viewModel.state.isLoading)
 
         await waitUntil("the re-captured day") { viewModel.state.todayEpochDay == today + 2 }
     }
@@ -238,7 +242,7 @@ struct HomeGreetingSample: Sendable {
     ]
 }
 
-/// The twin of `HomeViewModelTest.kt:72-80`'s `MutableStateFlow(true)` plus the anonymous
+/// The twin of `HomeViewModelTest.kt:74-84`'s `MutableStateFlow(true)` plus the anonymous
 /// `AiSummaryRepository` that exposes it — minus the `getSummary` that throws, which iOS's narrower
 /// protocol makes unreachable (see the file header).
 final class FakeHomeAiSummaryAvailability: HomeAiSummaryAvailability {
@@ -250,13 +254,13 @@ final class FakeHomeAiSummaryAvailability: HomeAiSummaryAvailability {
 
     var freeSummaryAvailable: AsyncStream<Bool> { flag.stream }
 
-    /// The twin of assigning to `freeAiCredit.value` (`HomeViewModelTest.kt:159`).
+    /// The twin of assigning to `freeAiCredit.value` (`HomeViewModelTest.kt:160`).
     func set(_ newValue: Bool) {
         flag.set(newValue)
     }
 }
 
-/// The twin of `HomeViewModelTest.kt:82-88`'s `MutableStateFlow(PremiumStatus.FREE)` plus the
+/// The twin of `HomeViewModelTest.kt:86-92`'s `MutableStateFlow(PremiumStatus.FREE)` plus the
 /// anonymous `PremiumRepository` over it, collapsed to the one boolean ``HomePremiumStatus`` asks
 /// for — `isEntitled`, which is what the ViewModel reads on both platforms.
 final class FakeHomePremiumStatus: HomePremiumStatus {
@@ -268,7 +272,7 @@ final class FakeHomePremiumStatus: HomePremiumStatus {
 
     var isPremium: AsyncStream<Bool> { flag.stream }
 
-    /// The twin of assigning to `premiumStatus.value` (`HomeViewModelTest.kt:155`).
+    /// The twin of assigning to `premiumStatus.value` (`HomeViewModelTest.kt:157`).
     func set(_ newValue: Bool) {
         flag.set(newValue)
     }

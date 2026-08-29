@@ -19,11 +19,11 @@
 // is no channel to drain and no effect type to port.
 //
 // `cycle` and `vitals` are optional **here** while `TodayOverview`'s are not, and that is Android's
-// own asymmetry (`HomeUiState.kt:19-20` vs `TodayModels.kt:54-55`): the default state — the one the
+// own asymmetry (`HomeUiState.kt:25-26` vs `TodayModels.kt:54-55`): the default state — the one the
 // screen draws before the first emission — has no snapshot to carry, so the field has to admit nil.
 // After loading they are always present.
 
-/// Which half of the day the header greets in (`HomeUiState.kt:5`).
+/// Which half of the day the header greets in (`HomeUiState.kt:11`).
 public enum HomeGreeting: Sendable {
     case morning
     case afternoon
@@ -31,13 +31,13 @@ public enum HomeGreeting: Sendable {
     case night
 }
 
-/// Everything the dashboard can ask for (`HomeUiState.kt:7-9`).
+/// Everything the dashboard can ask for (`HomeUiState.kt:13-16`).
 public enum HomeEvent: Equatable, Sendable {
-    /// The "Al" button on a pending dose row (`HomeUiState.kt:8`).
+    /// The "Al" button on a pending dose row (`HomeUiState.kt:15`).
     case takeDose(scheduleId: String, minuteOfDay: Int)
 }
 
-/// What the dashboard draws (`HomeUiState.kt:11-21`).
+/// What the dashboard draws (`HomeUiState.kt:18-30`).
 public struct HomeUiState: Equatable, Sendable {
     public var isLoading: Bool
     /// The day the header's date is formatted from, captured when the state was built.
@@ -49,9 +49,9 @@ public struct HomeUiState: Equatable, Sendable {
     public var cycle: CycleSnapshot?
     /// Non-nil once the first overview has arrived; see the file header.
     public var vitals: VitalsSnapshot?
-    /// Whether the one-off free AI summary is still unspent (`HomeUiState.kt:19`).
+    /// Whether the one-off free AI summary is still unspent (`HomeUiState.kt:28`).
     public var freeAiSummaryAvailable: Bool
-    /// Whether the user is entitled to premium (`HomeUiState.kt:20`). Pinned `false` until iOS-M9
+    /// Whether the user is entitled to premium (`HomeUiState.kt:29`). Pinned `false` until iOS-M9
     /// binds a real ``HomePremiumStatus`` — recorded divergence (d).
     public var isPremium: Bool
 

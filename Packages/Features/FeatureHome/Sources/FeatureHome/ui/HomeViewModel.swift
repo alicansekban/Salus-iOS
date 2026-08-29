@@ -104,6 +104,12 @@ public final class HomeViewModel {
     /// emits — which is what `stateIn` holds on to across a restart, so a returning screen never
     /// flashes its spinner.
     public func restartObservation() {
+        // Cancelled **before** the new sources are built, rather than left to `replace(with:)`
+        // afterwards: `observeTodayOverview()` registers its four DAO observations the moment it is
+        // called, so building first would hold two complete joins open over the same tables until
+        // `replace` got around to dropping the old task. `flatMapLatest` cancels the inner flow
+        // before it starts the next one, and so does `VitalsViewModel.restartHistoryObservation()`.
+        observation.cancel()
         // Each source is read once: all three build a fresh stream per access, so a second read
         // would open a second observation of the same data.
         let triples = latestOfThree(
