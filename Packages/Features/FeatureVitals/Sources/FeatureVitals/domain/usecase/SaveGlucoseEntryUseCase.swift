@@ -9,7 +9,7 @@ import SalusModel
 /// (`SaveGlucoseEntryUseCase.kt:15-55`).
 ///
 /// It deliberately does **not** conform to `VitalsQuickEntry`: only weight does on Android too.
-public struct SaveGlucoseEntryUseCase {
+public struct SaveGlucoseEntryUseCase: Sendable {
     /// `SaveGlucoseEntryUseCase.kt:20-24`.
     public enum Result: Equatable, Sendable {
         case saved(GlucoseEntry)

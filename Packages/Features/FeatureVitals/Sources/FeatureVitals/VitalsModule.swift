@@ -18,9 +18,6 @@
 // `single<VitalsPreferences> { VitalsPreferencesImpl(get()) }` (`VitalsModule.kt:24`) → the
 // `preferences` property, built once from the `SalusPreferencesDataSource` the composition root
 // passes in, exactly as the repository is built from the DAO.
-//
-// TODO(M7): the two other use cases and the two other editor ViewModels
-// (`VitalsModule.kt:27-28, 43-64`).
 
 import SalusCommon
 import SalusDatabase
@@ -56,6 +53,9 @@ public struct VitalsModule {
     /// Koin's `factoryOf(::SaveBloodPressureEntryUseCase)` (`VitalsModule.kt:27`).
     public let makeSaveBloodPressureEntryUseCase: @MainActor () -> SaveBloodPressureEntryUseCase
 
+    /// Koin's `factoryOf(::SaveGlucoseEntryUseCase)` (`VitalsModule.kt:28`).
+    public let makeSaveGlucoseEntryUseCase: @MainActor () -> SaveGlucoseEntryUseCase
+
     /// Koin's `viewModelOf(::VitalsViewModel)` (`VitalsModule.kt:30`).
     public let makeVitalsViewModel: @MainActor () -> VitalsViewModel
 
@@ -66,6 +66,10 @@ public struct VitalsModule {
     /// Koin's parameterised `viewModel { … }` (`VitalsModule.kt:43-53`); the argument is the id of
     /// the entry being edited, or nil for a new one.
     public let makeBloodPressureEditorViewModel: @MainActor (String?) -> BloodPressureEditorViewModel
+
+    /// Koin's parameterised `viewModel { … }` (`VitalsModule.kt:55-64`); the argument is the id of
+    /// the entry being edited, or nil for a new one.
+    public let makeGlucoseEditorViewModel: @MainActor (String?) -> GlucoseEditorViewModel
 }
 
 // The seven parameters are the seven things Koin resolves inside `vitalsModule`
@@ -101,6 +105,9 @@ public func makeVitalsModule(
     let makeSaveBloodPressureEntryUseCase: @MainActor () -> SaveBloodPressureEntryUseCase = {
         SaveBloodPressureEntryUseCase(repository: repository, idGenerator: idGenerator)
     }
+    let makeSaveGlucoseEntryUseCase: @MainActor () -> SaveGlucoseEntryUseCase = {
+        SaveGlucoseEntryUseCase(repository: repository, idGenerator: idGenerator)
+    }
 
     return VitalsModule(
         repository: repository,
@@ -108,6 +115,7 @@ public func makeVitalsModule(
         navigator: navigator,
         makeSaveWeightEntryUseCase: makeSaveWeightEntryUseCase,
         makeSaveBloodPressureEntryUseCase: makeSaveBloodPressureEntryUseCase,
+        makeSaveGlucoseEntryUseCase: makeSaveGlucoseEntryUseCase,
         makeVitalsViewModel: {
             VitalsViewModel(
                 repository: repository,
@@ -132,6 +140,17 @@ public func makeVitalsModule(
                 entryId: entryId,
                 repository: repository,
                 saveBloodPressureEntry: makeSaveBloodPressureEntryUseCase(),
+                clock: clock,
+                navigator: navigator,
+                undoableDelete: undoableDelete
+            )
+        },
+        makeGlucoseEditorViewModel: { entryId in
+            GlucoseEditorViewModel(
+                entryId: entryId,
+                repository: repository,
+                saveGlucoseEntry: makeSaveGlucoseEntryUseCase(),
+                preferences: vitalsPreferences,
                 clock: clock,
                 navigator: navigator,
                 undoableDelete: undoableDelete

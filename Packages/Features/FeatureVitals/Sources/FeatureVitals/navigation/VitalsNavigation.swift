@@ -40,8 +40,14 @@ public struct BloodPressureEditorKey: Hashable, Sendable {
     }
 }
 
-// TODO(M7): `GlucoseEditorKey` (`VitalsNavigation.kt:21-22`), plus its `navigationDestination`
-// registration below.
+/// The glucose editor, new (`entryId == nil`) or editing (`VitalsNavigation.kt:21-22`).
+public struct GlucoseEditorKey: Hashable, Sendable {
+    public let entryId: String?
+
+    public init(entryId: String?) {
+        self.entryId = entryId
+    }
+}
 
 extension View {
     /// Registers every destination this feature owns (`VitalsNavigation.kt:29-43`).
@@ -60,6 +66,9 @@ extension View {
         }
         .navigationDestination(for: BloodPressureEditorKey.self) { key in
             BloodPressureEditorRoute(entryId: key.entryId)
+        }
+        .navigationDestination(for: GlucoseEditorKey.self) { key in
+            GlucoseEditorRoute(entryId: key.entryId)
         }
     }
 }
