@@ -1,4 +1,5 @@
 import FeatureAppointments
+import FeatureCycle
 import FeatureMedications
 import FeatureSettings
 import FeatureVitals
@@ -95,6 +96,12 @@ final class AppCompositionRoot {
     /// read one repository.
     let medicationsModule: MedicationsModule
 
+    /// `cycleModule` (`feature/cycle/.../di/CycleModule.kt`), built once and handed to the two tabs
+    /// that can reach the calendar — More, which offers the row, and Home, which a tapped cycle
+    /// reminder lands on (iOS-M6 rulings 1 and 2). Cycle has no tab of its own in v1, so unlike the
+    /// three modules above this one is injected into stacks whose roots belong to nobody.
+    let cycleModule: CycleModule
+
     /// `settingsModule` (`feature/settings/.../di/SettingsModule.kt`), built once and handed to the
     /// More tab through the environment. `settingsModule` is built from local values at
     /// construction, not from the three reminder properties below — those `let`s exist to keep the
@@ -181,6 +188,7 @@ final class AppCompositionRoot {
         vitalsModule = modules.vitals
         appointmentsModule = modules.appointments
         medicationsModule = modules.medications
+        cycleModule = modules.cycle
         settingsModule = modules.settings
 
         // `reminderModule` (`ReminderModule.kt:18-28`), assembled in one place — see
@@ -323,41 +331,23 @@ final class AppCompositionRoot {
         let idGenerator = infrastructure.idGenerator
         // The one cycle in the graph, broken here. `makeReminderGraph` builds the handler registry
         // and the scheduler together as one immutable value, the appointment handler needs the
-        // repository, and the repository needs a scheduler — so the module is built first against
+        // repository, and the repository needs a scheduler — so the modules are built first against
         // a relay, and the relay is pointed at the real scheduler once there is one. See
         // `ReminderSchedulerRelay`.
         let reminderRelay = ReminderSchedulerRelay()
-        let appointments = makeAppointmentsModule(
-            appointmentDao: AppointmentDao(database: database),
-            profileRepository: infrastructure.profileRepository,
-            reminderScheduler: reminderRelay,
-            clock: clock,
-            idGenerator: idGenerator,
-            pendingDeletes: infrastructure.pendingDelete,
-            snackbar: infrastructure.snackbar,
-            navigator: infrastructure.navigator
-        )
-        // Built against the same relay and for the same reason: the dose handler needs the
-        // repository, and the repository needs a scheduler.
-        let medications = makeMedicationsModule(
-            medicationDao: MedicationDao(database: database),
-            reminderScheduler: reminderRelay,
-            clock: clock,
-            idGenerator: idGenerator,
-            pendingDeletes: infrastructure.pendingDelete,
-            snackbar: infrastructure.snackbar,
-            navigator: infrastructure.navigator
-        )
+        let scheduled = makeScheduledModules(infrastructure: infrastructure, reminderScheduler: reminderRelay)
         let reminder = makeReminderGraph(
             database: database,
             clock: clock,
             idGenerator: idGenerator,
             // `single<ReminderHandler>(named(APPOINTMENT))` (`AppointmentsModule.kt:32-35`) and its
-            // `named(MEDICATION)` twin (`MedicationsModule.kt:35-38`) reaching `getAll()` — the
-            // registry is what Koin's qualified lookup becomes here.
+            // `named(MEDICATION)` (`MedicationsModule.kt:35-38`) and `named(CYCLE)`
+            // (`CycleModule.kt:37-45`) twins reaching `getAll()` — the registry is what Koin's
+            // qualified lookup becomes here. All three the app owns are now registered.
             handlers: debugHandlers(clock: clock) + [
-                appointments.reminderHandler,
-                medications.reminderHandler
+                scheduled.appointments.reminderHandler,
+                scheduled.medications.reminderHandler,
+                scheduled.cycle.reminderHandler
             ]
         )
         // Now that there is a scheduler, everything the module already handed out starts working.
@@ -383,10 +373,58 @@ final class AppCompositionRoot {
         return FeatureModules(
             reminder: reminder,
             vitals: vitals,
-            appointments: appointments,
-            medications: medications,
+            appointments: scheduled.appointments,
+            medications: scheduled.medications,
+            cycle: scheduled.cycle,
             settings: settings
         )
+    }
+
+    /// The three modules that own a reminder handler, and are therefore built before there is a
+    /// scheduler to hand them — see the relay in ``makeFeatureModules(infrastructure:)``.
+    ///
+    /// Split out for the same reason `init` was split in M5: a milestone that adds a fourth
+    /// scheduled feature should cost one call here and one field on the result, not another ten
+    /// lines in a function already at the 60-line limit.
+    private static func makeScheduledModules(
+        infrastructure: Infrastructure,
+        reminderScheduler: ReminderSchedulerRelay
+    ) -> ScheduledModules {
+        let database = infrastructure.database
+        let clock = infrastructure.clock
+        let idGenerator = infrastructure.idGenerator
+        let appointments = makeAppointmentsModule(
+            appointmentDao: AppointmentDao(database: database),
+            profileRepository: infrastructure.profileRepository,
+            reminderScheduler: reminderScheduler,
+            clock: clock,
+            idGenerator: idGenerator,
+            pendingDeletes: infrastructure.pendingDelete,
+            snackbar: infrastructure.snackbar,
+            navigator: infrastructure.navigator
+        )
+        // The dose handler needs the repository, and the repository needs a scheduler.
+        let medications = makeMedicationsModule(
+            medicationDao: MedicationDao(database: database),
+            reminderScheduler: reminderScheduler,
+            clock: clock,
+            idGenerator: idGenerator,
+            pendingDeletes: infrastructure.pendingDelete,
+            snackbar: infrastructure.snackbar,
+            navigator: infrastructure.navigator
+        )
+        // A third variant of the same reason: the cycle handler reads the periods the calendar
+        // writes, and the calendar asks the scheduler to refill the window whenever a period
+        // starts, ends, or the reminder setting changes.
+        let cycle = makeCycleModule(
+            cycleDao: CycleDao(database: database),
+            preferences: infrastructure.preferences,
+            reminderScheduler: reminderScheduler,
+            clock: clock,
+            idGenerator: idGenerator,
+            navigator: infrastructure.navigator
+        )
+        return ScheduledModules(appointments: appointments, medications: medications, cycle: cycle)
     }
 
     /// Opens `<Application Support>/salus.db`, creating the directory first.
@@ -432,6 +470,14 @@ private struct Infrastructure {
     let snackbar: SalusSnackbarController
 }
 
+/// The modules that own a reminder handler, handed back from `makeScheduledModules` in one piece.
+/// A milestone that gives a fourth feature a reminder adds one field here.
+private struct ScheduledModules {
+    let appointments: AppointmentsModule
+    let medications: MedicationsModule
+    let cycle: CycleModule
+}
+
 /// The feature modules, handed back from `makeFeatureModules` in one piece with the reminder
 /// sub-graph they were wired against. A milestone that adds a feature adds one field here.
 private struct FeatureModules {
@@ -439,5 +485,6 @@ private struct FeatureModules {
     let vitals: VitalsModule
     let appointments: AppointmentsModule
     let medications: MedicationsModule
+    let cycle: CycleModule
     let settings: SettingsModule
 }

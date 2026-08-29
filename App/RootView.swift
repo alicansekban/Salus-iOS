@@ -1,4 +1,5 @@
 import FeatureAppointments
+import FeatureCycle
 import FeatureMedications
 import FeatureSettings
 import FeatureVitals
@@ -103,8 +104,14 @@ struct RootView: View {
     /// `navigationDestination(for:)` in a `…Destinations()` modifier applied here — the twin of
     /// Android's `vitalsEntries` / `homeEntries` `NavEntry` providers. The shell therefore never
     /// names a key; `medicationsDestinations()`, `vitalsDestinations()`,
-    /// `appointmentsDestinations()` and `settingsDestinations()` below are those modifiers, and the
-    /// one remaining tab keeps its placeholder until its feature lands.
+    /// `appointmentsDestinations()`, `settingsDestinations()` and `cycleDestinations()` below are
+    /// those modifiers, and the one remaining tab keeps its placeholder until its feature lands.
+    ///
+    /// `cycleDestinations()` is applied twice, which is the shape a feature without a tab takes:
+    /// cycle is reached from the More list and from a tapped cycle reminder, which lands on Home
+    /// (iOS-M6 rulings 1 and 2), so both of those stacks have to know how to render `CycleKey`.
+    /// SwiftUI resolves `navigationDestination(for:)` per stack, so registering it on one would
+    /// leave the other pushing a key nothing draws.
     private func tabStack(for tab: RootTab) -> some View {
         navigationStack(for: tab)
             // The app's one snackbar host, applied *inside* the tab's content region rather than
@@ -171,16 +178,36 @@ struct RootView: View {
         case .more:
             NavigationStack(path: backStacks.binding(for: tab)) {
                 // TODO(M8): the settings hub replaces this placeholder. Until it lands the tab's
-                // root carries the one row this milestone needs, so Reminder Health is reachable
-                // rather than only routable.
-                PlaceholderScreen(tab: tab) {
-                    root.navigator.navigate(ReminderHealthKey())
-                }
+                // root carries the two rows this and the last milestone need, so Reminder Health
+                // and the cycle calendar are reachable rather than only routable.
+                //
+                // Both rows push through the navigator rather than calling `backStacks.push`
+                // directly: the shell is the only thing that mutates a back stack, and a row is
+                // not the shell.
+                PlaceholderScreen(
+                    tab: tab,
+                    onOpenReminderHealth: { root.navigator.navigate(ReminderHealthKey()) },
+                    onOpenCycle: { root.navigator.navigate(CycleKey()) }
+                )
                 .settingsDestinations()
+                .cycleDestinations()
             }
-            // On the stack, not inside its root — a pushed `ReminderHealthKey` destination is
-            // rendered by the stack, so an environment value set on the root would not reach it.
+            // On the stack, not inside its root — a pushed `ReminderHealthKey` or `CycleKey`
+            // destination is rendered by the stack, so an environment value set on the root would
+            // not reach it.
             .environment(\.settingsModule, root.settingsModule)
+            .environment(\.cycleModule, root.cycleModule)
+
+        case .home:
+            NavigationStack(path: backStacks.binding(for: tab)) {
+                // TODO(M7): the home dashboard replaces this placeholder. Its cycle card pushes
+                // the same `CycleKey` the More row does, onto this stack — which is why the
+                // destinations are registered here already: a tapped cycle reminder lands on Home
+                // today (iOS-M6 ruling 2), with no card to have put it there.
+                PlaceholderScreen(tab: tab)
+                    .cycleDestinations()
+            }
+            .environment(\.cycleModule, root.cycleModule)
 
         default:
             NavigationStack(path: backStacks.binding(for: tab)) {
@@ -191,8 +218,9 @@ struct RootView: View {
 
     /// Shows a tapped reminder's occurrence: the tab that owns it, then the screen itself.
     ///
-    /// iOS-M3 routed to the tab root; M4 pushes the appointment detail. The push has to follow the
-    /// tab switch, because `TabBackStacks.push` appends to whichever stack is *selected*.
+    /// iOS-M3 routed to the tab root; M4 pushes the appointment detail and M6 the cycle calendar.
+    /// The push has to follow the tab switch, because `TabBackStacks.push` appends to whichever
+    /// stack is *selected*.
     ///
     /// **An iOS-only behaviour** (global constraints, decision 2). Android's
     /// `ReminderNotificationPresenter` builds a launcher intent and stops there, so a tapped
@@ -204,11 +232,16 @@ struct RootView: View {
         switch ref.type {
         case .appointment:
             pushAppointmentDetail(id: ref.entityId)
+        // The calendar itself, onto Home — `RootTab.hosting(.cyclePeriod)` is `.home`, because
+        // cycle has no tab of its own (iOS-M6 ruling 1). `CycleKey` carries no payload, so unlike
+        // the appointment arm above there is nothing to look up: the ref's `entityId` names the
+        // period, and the calendar shows every period there is.
+        case .cyclePeriod:
+            backStacks.push(AnyNavKey(CycleKey()))
         // A dose stops at the medications tab root, and that is a decision rather than an omission
         // (M5, decision 3): a dose ref's `entityId` is its SCHEDULE's id, and no screen is addressed
-        // by one — `MedicationDetailKey` wants the medication. The cycle screen is M6's, and until
-        // it exists there is no key to name.
-        case .cyclePeriod, .medicationDose:
+        // by one — `MedicationDetailKey` wants the medication.
+        case .medicationDose:
             break
         }
     }

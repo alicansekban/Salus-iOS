@@ -19,6 +19,16 @@ struct PlaceholderScreen: View {
     /// screen nothing can open is a screen nobody has looked at.
     var onOpenReminderHealth: (() -> Void)?
 
+    /// Pushes the cycle calendar, on the one tab that offers it.
+    ///
+    /// Only More passes this in. Home's stack can render the same key — a tapped cycle reminder
+    /// pushes it there, and M7's home card will too — but it has no row of its own to draw.
+    ///
+    /// TODO(M8): delete this along with the whole view. Cycle has no tab of its own in v1
+    /// (iOS-M6 ruling 1) — on Android it is a `MoreCard` on the settings hub
+    /// (`MoreScreen.kt:222-231`), and the hub is M8; until it exists the row lives here.
+    var onOpenCycle: (() -> Void)?
+
     /// Read, not passed. The shell resolves the theme once and injects it (`RootView.salusTheme`),
     /// the way every composable below Android's `MaterialTheme(...)` reads `MaterialTheme.colorScheme`
     /// rather than taking it as a parameter.
@@ -41,6 +51,9 @@ struct PlaceholderScreen: View {
             subtitle
             if let onOpenReminderHealth {
                 reminderHealthRow(onOpenReminderHealth)
+            }
+            if let onOpenCycle {
+                cycleRow(onOpenCycle)
             }
         }
         .frame(maxWidth: .infinity)
@@ -85,6 +98,33 @@ struct PlaceholderScreen: View {
         .padding(.top, SalusSpacing.sm)
     }
 
+    /// The cycle calendar's row: title over subtitle, the two sentences Android's `MoreCard` draws
+    /// (`MoreScreen.kt:224-229`) and the water-drop icon it draws them with.
+    ///
+    /// Unlike the Reminder Health row above, these two strings do not come from a feature package:
+    /// they are `feature/settings` copy on Android, and `FeatureSettings` on iOS is the Reminder
+    /// Health screen and nothing else yet — so the shell's own catalog carries them until M8 moves
+    /// the row into the settings hub. See `AppStrings`.
+    ///
+    /// No sex-based visibility gate: Android hides the row unless the profile has a cycle
+    /// (`MoreScreen.kt:222`, `state.showCycle`), and that gate is M8's, with the profile screen it
+    /// reads from. Until then the row is unconditional (iOS-M6 ruling 1).
+    private func cycleRow(_ onOpen: @escaping () -> Void) -> some View {
+        Button(action: onOpen) {
+            VStack(spacing: SalusSpacing.xs) {
+                Label(AppStrings.moreCycle, systemImage: "drop")
+                    .font(SalusTypography.labelLarge.font)
+                    .tracking(SalusTypography.labelLarge.tracking)
+                Text(AppStrings.moreCycleSubtitle)
+                    .font(SalusTypography.bodySmall.font)
+                    .tracking(SalusTypography.bodySmall.tracking)
+                    .multilineTextAlignment(.center)
+            }
+        }
+        .buttonStyle(.bordered)
+        .tint(colors.primary)
+    }
+
     /// The card itself: a `surfaceContainer` fill on the `background`, outlined so the two
     /// surfaces stay distinguishable in both themes rather than only in the light one.
     private var cardSurface: some View {
@@ -113,8 +153,8 @@ struct PlaceholderScreen: View {
         .salusTheme(SalusTheme.resolve(systemIsDark: false))
 }
 
-#Preview("More, with the Reminder Health row") {
-    PlaceholderScreen(tab: .more, onOpenReminderHealth: {})
+#Preview("More, with both rows") {
+    PlaceholderScreen(tab: .more, onOpenReminderHealth: {}, onOpenCycle: {})
         .salusTheme(SalusTheme.resolve(systemIsDark: false))
 }
 

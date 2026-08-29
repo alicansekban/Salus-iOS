@@ -56,6 +56,11 @@ extension RootTab {
     /// rather than a tab of its own because Android's M9 restructure removed the cycle tab and
     /// pushes `CycleKey` onto Home's stack instead (`SalusApp.kt:189`); the iOS shell mirrors that
     /// list, so it lands on Home here too.
+    ///
+    /// Since iOS-M6 the cycle answer is more than a tab: `RootView.openTappedReminder` pushes
+    /// `CycleKey` onto the stack this returns, so a tapped cycle reminder opens the calendar rather
+    /// than stopping at Home's root. That is an iOS-only behaviour — Android's tap builds a
+    /// launcher intent and goes no further (iOS-M6 divergence (c)).
     static func hosting(_ type: ReminderType) -> RootTab {
         switch type {
         case .medicationDose: .medications

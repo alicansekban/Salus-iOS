@@ -36,9 +36,9 @@ extension AppCompositionRoot {
             backgroundRefreshAvailable: isBackgroundRefreshAvailable()
         )
         let syncState = UserDefaultsReminderSyncStateStore()
-        // `getAll()`: the appointment and medication handlers landed with M4 and M5; the cycle
-        // handler arrives with M6, and the engine reconciles without it until it does. A Debug
-        // build may add one fake handler alongside — see `debugHandlers`.
+        // `getAll()`: the appointment, medication and cycle handlers, landed with M4, M5 and M6 —
+        // the three the app owns, so the registry is now complete. A Debug build may add one fake
+        // handler alongside — see `debugHandlers`.
         let handlerRegistry = ReminderHandlerRegistry(all: handlers)
         // Hoisted out of the synchronizer's argument list because the alarm dispatcher below reads
         // the same ledger: one DAO over this database, handed to both, rather than two handles that
@@ -167,8 +167,9 @@ extension AppCompositionRoot {
 /// the ref has to survive until something is there to route it.
 ///
 /// iOS-M3 routed to the owning tab's root and no further; M4 pushes the appointment's detail screen
-/// on top of it. A dose stays at the tab root (M5, decision 3): its `entityId` is the *schedule*'s
-/// id, and no screen in the app is addressed by one.
+/// on top of it, and M6 pushes the cycle calendar onto Home (iOS-M6 ruling 2). A dose stays at the
+/// tab root (M5, decision 3): its `entityId` is the *schedule*'s id, and no screen in the app is
+/// addressed by one.
 @MainActor
 @Observable
 final class ReminderOpenRouter {
