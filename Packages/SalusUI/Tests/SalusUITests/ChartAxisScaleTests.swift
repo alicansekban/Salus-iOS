@@ -165,6 +165,46 @@ struct ChartAxisScaleTests {
         #expect(domain == 0 ... 70)
     }
 
+    @Test("positive data under 10 rounds on a sub-1 base (mmol/L glucose, :53-57)")
+    func yDomainForPositiveSubOneBase() throws {
+        // Every other unit in the app rounds on a base of 10 — kg ~ 70…100, mmHg ~ 60…180,
+        // mg/dL ~ 70…180. Glucose in mmol/L is the one series that lives under 10, where
+        // `base = 10^(floor(log10(max)) - 1)` is 0.1, and the only row that exercised that base
+        // was the *negative* branch (`yDomainForNegativeData`). This is the positive twin, added
+        // before the glucose chart lands rather than after.
+        let domain = try #require(
+            ChartAxisScale.yDomain(
+                for: model([
+                    ChartPoint(xEpochDay: 20678, y: 4.2),
+                    ChartPoint(xEpochDay: 20682, y: 9.75)
+                ])
+            )
+        )
+
+        // Non-negative data starts at 0 (`:44`), and 9.75 rounds up one tenth: ceil(97.5) * 0.1.
+        #expect(domain.lowerBound == 0)
+        #expect(abs(domain.upperBound - 9.8) < Self.axisTolerance)
+
+        // A flat series on the same base. `ceil(magnitude / 0.1) * 0.1` returns
+        // 5.600000000000001 in `Double`, so the bound is compared with a tolerance rather than
+        // for equality — the rounding base is a tenth, and a tenth has no exact binary form.
+        let flat = try #require(
+            ChartAxisScale.yDomain(
+                for: model([
+                    ChartPoint(xEpochDay: 20678, y: 5.6),
+                    ChartPoint(xEpochDay: 20682, y: 5.6)
+                ])
+            )
+        )
+
+        #expect(flat.lowerBound == 0)
+        #expect(abs(flat.upperBound - 5.6) < Self.axisTolerance)
+    }
+
+    /// Tighter than the 0.1 rounding base, so it cannot hide a bound that landed on the wrong
+    /// tenth, and looser than the binary error of a tenth.
+    private static let axisTolerance: Float = 0.0001
+
     // MARK: - axis marks
 
     @Test("few points label every day that has data")
