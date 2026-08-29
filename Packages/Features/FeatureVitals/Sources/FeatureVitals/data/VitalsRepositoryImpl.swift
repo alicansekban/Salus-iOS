@@ -1,6 +1,10 @@
 // Ported from `feature/vitals/src/main/kotlin/com/alicansekban/salus/feature/vitals/
-// data/VitalsRepositoryImpl.kt`, weight members only — the blood-pressure and glucose overrides
-// (`VitalsRepositoryImpl.kt:46-86`) arrive with iOS-M7 alongside their protocol members.
+// data/VitalsRepositoryImpl.kt`, all thirteen members.
+//
+// The three types share one table and one DAO, so each half is the same four statements over a
+// different discriminator: `observeRange(type:)` mapped, `getById` filtered by type, `upsert`, and
+// `deleteById` with no type clause at all — an id is unique across the table, which is why Android
+// deletes by id alone too.
 
 import Foundation
 import SalusCommon
@@ -75,6 +79,81 @@ public final class VitalsRepositoryImpl: VitalsRepository {
     /// Deletion is by id alone, exactly as on Android: the DAO statement carries no type or
     /// profile clause, and an id is unique across the table.
     public func deleteWeightEntry(id: String) async throws {
+        try await vitalsDao.deleteById(id)
+    }
+
+    // MARK: - Blood pressure (VitalsRepositoryImpl.kt:46-65)
+
+    /// `VitalsRepositoryImpl.kt:46-54`.
+    public func observeBloodPressureHistory(
+        from: Date,
+        until: Date
+    ) -> AsyncThrowingStream<[BloodPressureEntry], any Error> {
+        let records = vitalsDao.observeRange(
+            profileId: profileId,
+            type: VitalType.bloodPressure.rawValue,
+            fromEpochMs: from.epochMilliseconds,
+            untilEpochMs: until.epochMilliseconds
+        )
+        return mapped(records) { try $0.map { record in try record.toBloodPressureEntry() } }
+    }
+
+    /// `VitalsRepositoryImpl.kt:56-57` — the type guard is what keeps a weight row from coming
+    /// back as a reading whose systolic is a body weight.
+    public func getBloodPressureEntry(id: String) async throws -> BloodPressureEntry? {
+        guard
+            let record = try await vitalsDao.getById(id),
+            record.type == VitalType.bloodPressure.rawValue
+        else {
+            return nil
+        }
+        return try record.toBloodPressureEntry()
+    }
+
+    /// `VitalsRepositoryImpl.kt:59-61`.
+    public func saveBloodPressureEntry(_ entry: BloodPressureEntry) async throws {
+        try await vitalsDao.upsert(entry.toRecord(profileId: profileId))
+    }
+
+    /// `VitalsRepositoryImpl.kt:63-65`.
+    public func deleteBloodPressureEntry(id: String) async throws {
+        try await vitalsDao.deleteById(id)
+    }
+
+    // MARK: - Glucose (VitalsRepositoryImpl.kt:67-86)
+
+    /// `VitalsRepositoryImpl.kt:67-75`.
+    public func observeGlucoseHistory(
+        from: Date,
+        until: Date
+    ) -> AsyncThrowingStream<[GlucoseEntry], any Error> {
+        let records = vitalsDao.observeRange(
+            profileId: profileId,
+            type: VitalType.bloodGlucose.rawValue,
+            fromEpochMs: from.epochMilliseconds,
+            untilEpochMs: until.epochMilliseconds
+        )
+        return mapped(records) { try $0.map { record in try record.toGlucoseEntry() } }
+    }
+
+    /// `VitalsRepositoryImpl.kt:77-78`.
+    public func getGlucoseEntry(id: String) async throws -> GlucoseEntry? {
+        guard
+            let record = try await vitalsDao.getById(id),
+            record.type == VitalType.bloodGlucose.rawValue
+        else {
+            return nil
+        }
+        return try record.toGlucoseEntry()
+    }
+
+    /// `VitalsRepositoryImpl.kt:80-82`.
+    public func saveGlucoseEntry(_ entry: GlucoseEntry) async throws {
+        try await vitalsDao.upsert(entry.toRecord(profileId: profileId))
+    }
+
+    /// `VitalsRepositoryImpl.kt:84-86`.
+    public func deleteGlucoseEntry(id: String) async throws {
         try await vitalsDao.deleteById(id)
     }
 }
