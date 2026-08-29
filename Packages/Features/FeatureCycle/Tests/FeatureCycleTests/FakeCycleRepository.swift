@@ -15,9 +15,17 @@
 // drops the last reference, and it takes the same lock — and it holds the lock for the duration of
 // arbitrary collector code. Here the mutation and the publishing are two steps: the lock is taken
 // to apply the change and copy out the observers, then released, and only then is the new snapshot
-// yielded. The window that opens is harmless in the other direction: an observation registered
-// between the two steps sees the same snapshot twice, and every collector in this package is
-// conflated and compares what it receives.
+// yielded. `stream(_:)` registers the same way — the observer goes into the table and the current
+// state is copied out under the lock, and the seed value is yielded after the lock is dropped.
+//
+// **The residual window is a stale last value, not a duplicate.** A mutation that lands between
+// the registration and the seed's yield reaches the new observer first, so the collector's buffer
+// receives the fresh snapshot and then the seed — and `bufferingNewest(1)` keeps the *last* one
+// written, which is the stale seed. The collector then sits on a value one mutation old until the
+// next write. Nothing in this package can hit it (every test registers its observation before it
+// mutates, and `waitUntil` polls rather than trusting one delivery), and closing it properly means
+// serializing every yield per subscriber behind a second lock — more machinery than a fake that no
+// test can trip should carry. Named here so the next reader does not have to re-derive it.
 //
 // Kotlin's three flows are independent, so writing a day log never wakes a period observation.
 // Here the three share a publisher, which means a derived view can re-emit an unchanged value

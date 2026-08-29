@@ -12,7 +12,7 @@
 // (`CycleEntity.kt:9`). A column for it would be a claim the database cannot take back.
 //
 // **`upsertPeriod` and `upsertDailyEntry` write with GRDB's `save`, not its `upsert`**, and that
-// is a deliberate divergence (b) rather than a slip. Both tables carry a UNIQUE index that is not
+// is a deliberate divergence (l) rather than a slip. Both tables carry a UNIQUE index that is not
 // their primary key — `(profile_id, start_date)` and `(profile_id, date)` — and the two libraries
 // part company exactly there. GRDB's `upsert` emits `ON CONFLICT DO UPDATE` with no conflict
 // target, so a *new* id landing on a taken day silently overwrites the row that is already there.
@@ -114,7 +114,7 @@ public struct CycleDao: Sendable {
     /// see the file header.
     public func upsertDailyEntry(_ entry: CycleDailyEntryRecord) async throws {
         try await database.writer.write { db in
-            try Self.saveDailyEntry(db, entry)
+            try Self.writeEntry(db, entry)
         }
     }
 
@@ -159,7 +159,7 @@ public struct CycleDao: Sendable {
     /// Android's — upsert the entry, then *replace* its links rather than merge into them.
     public func saveDailyEntry(_ entry: CycleDailyEntryRecord, links: [CycleEntrySymptomRecord]) async throws {
         try await database.writer.write { db in
-            try Self.saveDailyEntry(db, entry)
+            try Self.writeEntry(db, entry)
             try Self.replaceEntrySymptoms(db, entryId: entry.id, links: links)
         }
     }
@@ -238,10 +238,12 @@ public struct CycleDao: Sendable {
 
     // MARK: - Shared writes
 
-    /// `CycleDao.kt:28-29`, written once and run from two places: the statement of its own and the
-    /// head of `saveDailyEntry`, which cannot call the public one because that would open a second
-    /// write inside the transaction.
-    private static func saveDailyEntry(_ db: Database, _ entry: CycleDailyEntryRecord) throws {
+    /// `CycleDao.kt:28-29`, written once and run from two places: `upsertDailyEntry`'s own write
+    /// and the head of `saveDailyEntry`, which cannot call the public one because that would open
+    /// a second write inside the transaction. Named `writeEntry` rather than after either caller:
+    /// `saveDailyEntry` is the public member that writes the entry *and its links*, and two
+    /// members of one type must not share a name under different meanings.
+    private static func writeEntry(_ db: Database, _ entry: CycleDailyEntryRecord) throws {
         try entry.save(db)
     }
 

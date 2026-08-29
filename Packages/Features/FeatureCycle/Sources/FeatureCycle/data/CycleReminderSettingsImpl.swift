@@ -1,10 +1,10 @@
 // Ported 1:1 from `feature/cycle/src/main/kotlin/com/alicansekban/salus/feature/cycle/data/
 // CycleReminderSettingsImpl.kt`.
 //
-// The two divergences this file carries are the ones ``CycleReminderSettings`` already records and
-// does not repeat: `config` is a non-throwing `AsyncStream` because `UserDefaults` cannot fail the
-// way DataStore can (divergence (b) is the second half — the setters are synchronous because every
-// setter on `SalusPreferencesDataSource` is).
+// Both halves of **recorded divergence (b)** land here; ``CycleReminderSettings`` reasons them out
+// and this file does not repeat it. `config` is a non-throwing `AsyncStream` because
+// `UserDefaults` cannot fail the way DataStore can, and the setters are synchronous because every
+// setter on `SalusPreferencesDataSource` is.
 //
 // The preference store stays behind this type: nothing in `domain/` or `ui/` imports
 // `SalusSettings`, so the three Android-verbatim keys (`cycle_reminder_enabled`,
@@ -26,8 +26,13 @@ final class CycleReminderSettingsImpl: CycleReminderSettings {
     }
 
     /// `CycleReminderSettingsImpl.kt:13-19` — the whole `UserSettings` narrowed to the three
-    /// fields this feature owns, so a change to an unrelated setting cannot wake the reminder
-    /// scheduler.
+    /// fields this feature owns, which is Kotlin's plain `map` and nothing more.
+    ///
+    /// **The narrowing does not deduplicate.** Kotlin has no `distinctUntilChanged` here and
+    /// neither does this: `DefaultsValueStream` is distinct-by-content over the *whole*
+    /// `UserSettings`, so changing the theme emits a new `UserSettings` and this stream yields a
+    /// `CycleReminderConfig` equal to the one before it. Collectors are expected to tolerate that
+    /// — the scheduler's sync is idempotent — and matching Kotlin is why it is left alone.
     ///
     /// Rebuilt as an `AsyncStream` rather than mapped in place: `AsyncStream.map` answers an
     /// `AsyncMapSequence`, and the protocol promises the concrete type. `.bufferingNewest(1)` is

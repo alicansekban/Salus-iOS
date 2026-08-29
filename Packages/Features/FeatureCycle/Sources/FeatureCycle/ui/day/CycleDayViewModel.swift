@@ -140,8 +140,16 @@ public final class CycleDayViewModel {
     private func save() {
         let current = state
         let selectedIds = Set(current.symptoms.filter(\.isSelected).map(\.id))
+        // Synchronously, before the task exists. Kotlin writes it as the first statement inside
+        // `viewModelScope.launch` (`CycleDayViewModel.kt:85`), but that scope is
+        // `Dispatchers.Main.immediate`: launched from the main thread it runs the body up to the
+        // first suspension point without dispatching, so `isSaving` is true before `save()`
+        // returns. A Swift `Task` always dispatches, so the same instant is only reached by
+        // setting the flag here. It matters: the flag is what disables the button, and a frame in
+        // which a second tap is still live is a frame in which `saveTask.replace(with:)` cancels
+        // the first write (divergence (p)).
+        state.isSaving = true
         saveTask.replace(with: Task { [weak self, saveCycleDay, date] in
-            self?.state.isSaving = true
             let saved = try? await saveCycleDay(
                 date: date,
                 flow: current.flow,

@@ -97,6 +97,12 @@ struct WeightEditorScreen: View {
         // drag over the form. Both belong on the scrolling container itself; the file comment on
         // `salusDismissesKeyboardOnTap()` records the layouts that were measured and do nothing.
         // `MedicationEditorScreen` applies the same pair in the same place.
+        //
+        // **This container is a `Form`, and the modifier was measured on a `ScrollView`.** A
+        // `Form` is a `List` underneath and routes its touches differently, so the simultaneous
+        // tap gesture is not proven here by the measurement that keeps the modifier honest
+        // elsewhere — it is covered on a simulator by `scripts/m6-manual-qa.md` §3.9, which
+        // exercises this screen and a `ScrollView` editor side by side.
         .salusDismissesKeyboardOnTap()
         .scrollDismissesKeyboard(.interactively)
         .navigationTitle(state.isNew ? VitalsStrings.newTitle : VitalsStrings.editTitle)
