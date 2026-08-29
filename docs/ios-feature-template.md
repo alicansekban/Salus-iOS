@@ -144,7 +144,7 @@ ViewModel rules:
 - **There is no `stateIn(WhileSubscribed(5_000))` twin.** `@Observable` has no subscription-count
   hook, so the DB observation starts in `init` (via `start()`, `VitalsViewModel.swift:79`, `:114`)
   and is cancelled in `deinit` (`:82`). The cancellation is held in a small box so a `deinit` — which
-  cannot touch main-actor state — can still cancel it (`ui/CancellationBox.swift`).
+  cannot touch main-actor state — can still cancel it (`SalusCommon`'s `CancellationBox`).
 - The DB is the single source of truth: the source is an `AsyncThrowingStream` from the repository,
   conflated with `.bufferingNewest(1)` (Room's `Flow` conflation).
 - Inject `SalusClock` for time — never `Date()` in feature code (test determinism).
@@ -156,13 +156,15 @@ ViewModel rules:
 - **Two async streams are combined with `latestOfBoth`, the Kotlin `combine` twin.** M4 needed it
   three times over (repository, list VM, detail VM) so it exists as a real combinator rather than a
   hand-rolled pair of tasks per call site:
-  `Packages/Features/FeatureAppointments/Sources/FeatureAppointments/data/LatestOfBoth.swift`.
+  `Packages/SalusCommon/Sources/SalusCommon/LatestOfBoth.swift`, which also carries `mapped`, the
+  `Flow.map` twin a repository uses to map one DAO observation.
   It emits nothing until **both** sides have produced a value, fails the combined stream if either
   side fails, and — the property a hand-rolled version keeps getting wrong — holds its lock across
   *both* the transform and the yield, so a slow transform can never overwrite a fresher pair
-  (`LatestOfBothTests.swift`, three cases). It lives in `data/` because that is where its first
-  caller is; hoist it to a core package when a second feature wants it. **Do not re-hand-roll one**
-  — a ViewModel that combines two DB streams reuses this.
+  (`Packages/SalusCommon/Tests/SalusCommonTests/LatestOfBothTests.swift`, three cases). It lived in
+  each feature's `data/` until iOS-M6 promoted it, with `mapped` and `CancellationBox`, to
+  `SalusCommon` — the shape a helper takes once a third feature wants it. **Do not re-hand-roll
+  one** — a ViewModel that combines two DB streams reuses this.
 
 ## Shell and navigation-container rule (MANDATORY)
 

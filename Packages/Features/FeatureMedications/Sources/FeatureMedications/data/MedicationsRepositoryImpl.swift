@@ -147,7 +147,7 @@ struct MedicationsRepositoryImpl: MedicationRepository {
         fromEpochDay: Int,
         toEpochDay: Int
     ) -> AsyncThrowingStream<[IntakeLog], any Error> {
-        Self.mapped(
+        mapped(
             dao.observeIntakeLogsBetween(
                 profileId: profileId,
                 fromEpochDay: fromEpochDay,
@@ -194,31 +194,6 @@ struct MedicationsRepositoryImpl: MedicationRepository {
                 medication: record.toDomain(),
                 schedules: (schedulesByMedication[record.id] ?? []).map { $0.toDomain() }
             )
-        }
-    }
-
-    /// The twin of `Flow.map` over a DAO observation, the shape `VitalsRepositoryImpl.mapped` set.
-    /// `.bufferingNewest(1)` is repeated here because `AsyncThrowingStream` is a concrete type
-    /// rather than a protocol, so mapping means rebuilding the stream and the DAO's conflation has
-    /// to be restated. A failure of the observation finishes the mapped stream with the same error
-    /// instead of ending it silently.
-    private static func mapped<Record: Sendable, Value: Sendable>(
-        _ records: AsyncThrowingStream<Record, any Error>,
-        _ transform: @escaping @Sendable (Record) -> Value
-    ) -> AsyncThrowingStream<Value, any Error> {
-        AsyncThrowingStream(bufferingPolicy: .bufferingNewest(1)) { continuation in
-            let task = Task {
-                do {
-                    for try await record in records {
-                        continuation.yield(transform(record))
-                    }
-                    continuation.finish()
-                } catch {
-                    continuation.finish(throwing: error)
-                }
-            }
-            // A consumer that stops reading must stop the observation too.
-            continuation.onTermination = { _ in task.cancel() }
         }
     }
 }

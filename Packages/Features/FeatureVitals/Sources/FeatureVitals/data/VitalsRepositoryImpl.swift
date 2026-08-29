@@ -41,13 +41,13 @@ public final class VitalsRepositoryImpl: VitalsRepository {
             fromEpochMs: from.epochMilliseconds,
             untilEpochMs: until.epochMilliseconds
         )
-        return Self.mapped(records) { try $0.map { record in try record.toWeightEntry() } }
+        return mapped(records) { try $0.map { record in try record.toWeightEntry() } }
     }
 
     /// `VitalsRepositoryImpl.kt:30-33`.
     public func observeLatestWeight() -> AsyncThrowingStream<WeightEntry?, any Error> {
         let records = vitalsDao.observeLatest(profileId: profileId, type: VitalType.weight.rawValue)
-        return Self.mapped(records) { try $0?.toWeightEntry() }
+        return mapped(records) { try $0?.toWeightEntry() }
     }
 
     /// `VitalsRepositoryImpl.kt:35-36`.
@@ -76,30 +76,5 @@ public final class VitalsRepositoryImpl: VitalsRepository {
     /// profile clause, and an id is unique across the table.
     public func deleteWeightEntry(id: String) async throws {
         try await vitalsDao.deleteById(id)
-    }
-
-    /// The twin of `Flow.map` over a DAO observation, factored out because both observations above
-    /// would otherwise be the same fifteen lines with one expression changed. A failure of the
-    /// observation finishes the mapped stream with the same error instead of ending it silently —
-    /// and so does a failure of the mapping itself, which is what a Kotlin `Flow.map` whose lambda
-    /// throws does (`WeightEntryMapper.kt:16`, `TimeZone.of`).
-    private static func mapped<Record: Sendable, Value: Sendable>(
-        _ records: AsyncThrowingStream<Record, any Error>,
-        _ transform: @escaping @Sendable (Record) throws -> Value
-    ) -> AsyncThrowingStream<Value, any Error> {
-        AsyncThrowingStream(bufferingPolicy: .bufferingNewest(1)) { continuation in
-            let task = Task {
-                do {
-                    for try await record in records {
-                        try continuation.yield(transform(record))
-                    }
-                    continuation.finish()
-                } catch {
-                    continuation.finish(throwing: error)
-                }
-            }
-            // A consumer that stops reading must stop the observation too.
-            continuation.onTermination = { _ in task.cancel() }
-        }
     }
 }

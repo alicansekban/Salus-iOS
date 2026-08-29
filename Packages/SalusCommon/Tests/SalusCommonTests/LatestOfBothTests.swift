@@ -1,27 +1,25 @@
-// Covers `data/LatestOfBoth.swift`, the combinator that stands in for
+// Covers `LatestOfBoth.swift`'s combinator, which stands in for
 // `kotlinx.coroutines.flow.combine`. There is no Android twin and there cannot be one: Kotlin's
-// `combine` is library code with its own tests, and this file exists because Swift ships no
+// `combine` is library code with its own tests, and the combinator exists because Swift ships no
 // equivalent.
 //
 // The ordering case below is a regression test. The first version of the combinator formed the pair
 // under a lock but ran `transform` and `yield` outside it, so a child task descheduled inside
 // `transform` could emit its now-stale pair *after* the other child emitted a fresher one — and a
-// `bufferingNewest(1)` consumer keeps whatever was written last. `saveWithSchedules` commits the
-// medication and its schedule rows in one transaction, which wakes both observations at once, so
+// `bufferingNewest(1)` consumer keeps whatever was written last. A write that commits two tables in
+// one transaction (`upsertWithReminders`, `saveWithSchedules`) wakes both observations at once, so
 // the interleaving was reachable on the ordinary save path rather than only in theory.
 //
-// **The same suite as `FeatureAppointmentsTests/LatestOfBothTests.swift`**, carried over with the
-// combinator it covers (see that file's header for why the duplicate is sanctioned). Two edits:
-// the module under test, and the sample failure — appointments throws `IllegalTimeZoneError`,
-// which is a concern of that feature's mapper, so this copy throws a local `StreamFailure`.
+// One suite, moved here in iOS-M6 with the combinator: it used to be duplicated per feature
+// alongside the duplicated `latestOfBoth`.
 
 import Foundation
 import Testing
 
-@testable import FeatureMedications
+@testable import SalusCommon
 
 /// The stand-in for a source failure: any `Error` will do, and a local one keeps the case from
-/// borrowing another feature's vocabulary.
+/// borrowing a feature's vocabulary.
 private enum StreamFailure: Error {
     case unreadable
 }

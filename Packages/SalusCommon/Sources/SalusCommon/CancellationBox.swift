@@ -6,11 +6,12 @@
 // the observation task an `init` started would otherwise live. Holding it here instead is what lets
 // `deinit { observation.cancel() }` compile without `nonisolated(unsafe)`.
 //
-// **Byte-for-byte the same helper as `FeatureVitals/ui/CancellationBox.swift`, on purpose.** The
-// feature template names it as the mechanism every `@Observable` ViewModel uses
-// (`docs/ios-feature-template.md:125`) and sanctions this one duplicate: features never depend on
-// each other, so a shared home would mean moving it into a core package — a change that belongs to
-// whichever milestone needs a third copy, not to this one.
+// It lived as a byte-identical copy in `FeatureVitals`, `FeatureAppointments` and
+// `FeatureMedications` until iOS-M6: features never depend on each other, so the template
+// sanctioned the duplicate and named the third copy as the moment it moves
+// (`docs/plans/2026-08-27-ios-m5-medications.md`, ruling 8). This is that move. It belongs in
+// `SalusCommon` rather than `SalusUI` because it is plain Swift concurrency — no UI framework — and
+// the domain-layer rule holds.
 
 import Foundation
 
@@ -18,13 +19,15 @@ import Foundation
 ///
 /// `@unchecked Sendable` for `FixedSalusClock`'s reason: the state is mutable, and the lock is what
 /// makes the promise true.
-final class CancellationBox: @unchecked Sendable {
+public final class CancellationBox: @unchecked Sendable {
     private let lock = NSLock()
     private var task: Task<Void, Never>?
 
+    public init() {}
+
     /// Replaces the held task and cancels whatever it displaced — the twin of `flatMapLatest`
     /// dropping its previous inner collection.
-    func replace(with task: Task<Void, Never>?) {
+    public func replace(with task: Task<Void, Never>?) {
         let previous = lock.withLock {
             let previous = self.task
             self.task = task
@@ -33,7 +36,7 @@ final class CancellationBox: @unchecked Sendable {
         previous?.cancel()
     }
 
-    func cancel() {
+    public func cancel() {
         replace(with: nil)
     }
 }

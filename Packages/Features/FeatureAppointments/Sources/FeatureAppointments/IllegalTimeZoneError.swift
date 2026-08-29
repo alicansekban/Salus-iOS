@@ -3,9 +3,10 @@
 // `TimeZone.of(timeZoneId)`.
 //
 // The same type as `FeatureVitals/IllegalTimeZoneError.swift`, deliberately duplicated: features
-// never depend on each other (`CLAUDE.md`), and the type is feature-local on both platforms. This
-// is the same template-sanctioned duplicate as `CancellationBox`. The declaration is identical; the
-// comments are not, because each copy cites its own feature's call site — Vitals has two
+// never depend on each other (`CLAUDE.md`), and the type is feature-local on both platforms — it
+// names a mapper's failure, not shared infrastructure, so it stays duplicated where
+// `CancellationBox` and `latestOfBoth` were promoted to `SalusCommon` in iOS-M6. The declaration is
+// identical; the comments are not, because each copy cites its own feature's call site — Vitals has two
 // (`WeightEntryMapper.kt:16`, `SaveWeightEntryUseCase.kt:57`) and this one has the mapper alone.
 // The two copies are independent types — nothing catches one expecting the other — so the
 // duplication costs a file, not a coupling.
