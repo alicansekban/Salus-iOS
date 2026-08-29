@@ -89,6 +89,99 @@ public struct LocalDate: Equatable, Hashable, Comparable, Sendable {
         (epochDay + 3).flooredMod(7)
     }
 
+    /// The weekday as Monday = 1 … Sunday = 7 — `kotlinx.datetime`'s `DayOfWeek.isoDayNumber`.
+    ///
+    /// The Cycle month grid backs up to the Monday that opens the first week with
+    /// `minus(isoDayNumber - 1, DateTimeUnit.DAY)` (`CycleViewModel.kt:163`), so this is the same
+    /// weekday as `mondayBasedWeekdayIndex`, counted from one instead of from zero.
+    public var isoDayNumber: Int {
+        mondayBasedWeekdayIndex + 1
+    }
+
+    /// The date `days` days after this one; a negative count runs backwards.
+    ///
+    /// `kotlinx.datetime.LocalDate.plus(n, DateTimeUnit.DAY)` (`CycleViewModel.kt:164`). Days
+    /// are all the same length in a calendar with no time of day, so this is an epoch-day shift
+    /// and nothing more.
+    public func plusDays(_ days: Int) -> LocalDate {
+        LocalDate(epochDay: epochDay + days)
+    }
+
+    /// The date `days` days before this one; a negative count runs forwards.
+    ///
+    /// `kotlinx.datetime.LocalDate.minus(n, DateTimeUnit.DAY)` (`CycleViewModel.kt:163`).
+    public func minusDays(_ days: Int) -> LocalDate {
+        LocalDate(epochDay: epochDay - days)
+    }
+
+    /// The signed number of days from this date to `other`, i.e. `other − this`: a date in the
+    /// future counts positive, one in the past negative, and the same day zero.
+    ///
+    /// `kotlinx.datetime.daysUntil` (`CycleViewModel.kt:140-141`, which reads it in both
+    /// directions — the day number inside the current cycle, and the days to the predicted one).
+    public func daysUntil(_ other: LocalDate) -> Int {
+        other.epochDay - epochDay
+    }
+
+    /// The date `months` months after this one, with the day **clamped** to the month it lands
+    /// in; a negative count runs backwards.
+    ///
+    /// `kotlinx.datetime.LocalDate.plus(n, DateTimeUnit.MONTH)` (`CycleViewModel.kt:162`, the
+    /// month the grid is paged to). The year/month pair moves and the day comes along only as far
+    /// as the new month reaches: 2026-01-31 + 1 month is 2026-02-28, and 2024-01-31 + 1 month is
+    /// 2024-02-29.
+    ///
+    /// The clamp is spelled out here rather than delegated to `init(year:month:day:)`, which
+    /// normalises a too-large day by *carrying* it into the following month — that initialiser
+    /// would answer 2026-03-03 for the first example, three days past the right one. Both rules
+    /// are correct for what they describe; they are simply not the same rule, and month paging
+    /// needs this one.
+    public func plusMonths(_ months: Int) -> LocalDate {
+        // A month index counted from year 0, so the shift is one addition and the year falls out
+        // of it. `flooredMod` rather than `%` because the index is negative before year 0.
+        let monthIndex = year * 12 + (month - 1) + months
+        let monthOfYear = monthIndex.flooredMod(12)
+        let targetYear = (monthIndex - monthOfYear) / 12
+        let targetMonth = monthOfYear + 1
+        let clampedDay = min(day, Self.lengthOfMonth(year: targetYear, month: targetMonth))
+
+        // The triple is a real day by construction, so the initialiser normalises nothing.
+        return LocalDate(year: targetYear, month: targetMonth, day: clampedDay)
+    }
+
+    /// The date `months` months before this one, clamped the same way; a negative count runs
+    /// forwards.
+    ///
+    /// `kotlinx.datetime.LocalDate.minus(n, DateTimeUnit.MONTH)` (`CycleViewModel.kt:62`).
+    public func minusMonths(_ months: Int) -> LocalDate {
+        plusMonths(-months)
+    }
+
+    /// The first day of this date's month — Android's `LocalDate.firstDayOfMonth()`
+    /// (`CycleViewModel.kt:208-209`, spelled `minus(day - 1, DateTimeUnit.DAY)` there), the anchor
+    /// the month grid is laid out from and the value every paging action moves.
+    public var firstDayOfMonth: LocalDate {
+        LocalDate(year: year, month: month, day: 1)
+    }
+
+    /// How many days this date's month holds: 28, 29, 30 or 31.
+    public var lengthOfMonth: Int {
+        Self.lengthOfMonth(year: year, month: month)
+    }
+
+    /// The days in a month, as a static because `plusMonths` has to ask about a month before it
+    /// has a `LocalDate` for it.
+    ///
+    /// Derived from the civil conversion — the distance from this month's first day to the next
+    /// month's — rather than from a hard-coded table plus a second copy of the leap-year rule:
+    /// there is then only one place in the port that knows February is short. `month` must be
+    /// inside `1...12`, and month 13 is exactly what the normalising initialiser turns into
+    /// January of the following year, so December needs no special case.
+    private static func lengthOfMonth(year: Int, month: Int) -> Int {
+        let firstOfNextMonth = LocalDate(year: year, month: month + 1, day: 1).epochDay
+        return firstOfNextMonth - Self.epochDay(year: year, month: month, day: 1)
+    }
+
     public static func < (lhs: LocalDate, rhs: LocalDate) -> Bool {
         lhs.epochDay < rhs.epochDay
     }

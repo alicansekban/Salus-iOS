@@ -231,3 +231,264 @@ struct LocalDateNormalisationTests {
         }
     }
 }
+
+// MARK: - Day and month arithmetic
+
+// The four operations the Cycle month grid and the predictor are written against
+// (`CycleViewModel.kt:162-168`, `CyclePredictorTest.kt:30`): kotlinx-datetime's
+// `plus(n, DateTimeUnit.DAY)`, `plus(n, DateTimeUnit.MONTH)`, `daysUntil` and `isoDayNumber`.
+// Android gets all four from the library and tests none of them, so — as with the table at the top
+// of this file — these rows pin the library contract the port reproduces, not a carried-over Kotlin
+// test file. Reference values came from Python `datetime.date` / `calendar.monthrange`, never from
+// the implementation under test.
+//
+// The month rule is worth stating out loud: it is the single place this arithmetic disagrees with
+// the normalising initialiser. `plus(n, MONTH)` moves the year/month pair and then **clamps** the
+// day to the month it lands in, so 2026-01-31 + 1 month is 2026-02-28, where the initialiser's
+// `LocalDate(year: 2026, month: 2, day: 31)` would carry instead and answer 2026-03-03.
+
+/// One day-shift row: a start date, a signed number of days, and the date it lands on.
+typealias DayShiftRow = (start: LocalDate, days: Int, expected: LocalDate)
+
+let dayShiftRows: [DayShiftRow] = [
+    // Across a year boundary, in both directions.
+    (LocalDate(year: 2025, month: 12, day: 31), 1, LocalDate(year: 2026, month: 1, day: 1)),
+    (LocalDate(year: 2026, month: 1, day: 1), -1, LocalDate(year: 2025, month: 12, day: 31)),
+    (LocalDate(year: 2026, month: 12, day: 31), 1, LocalDate(year: 2027, month: 1, day: 1)),
+    // Across the epoch itself, which is where a sign bug shows up first.
+    (LocalDate(year: 1970, month: 1, day: 1), -1, LocalDate(year: 1969, month: 12, day: 31)),
+    (LocalDate(year: 1969, month: 12, day: 31), 1, LocalDate(year: 1970, month: 1, day: 1)),
+    // Wholly before 1970, including a leap day and a whole year's worth of days.
+    (LocalDate(year: 1968, month: 2, day: 28), 1, LocalDate(year: 1968, month: 2, day: 29)),
+    (LocalDate(year: 1969, month: 1, day: 1), -365, LocalDate(year: 1968, month: 1, day: 2)),
+    (LocalDate(year: 1969, month: 12, day: 31), -365, LocalDate(year: 1968, month: 12, day: 31)),
+    (LocalDate(year: 1900, month: 1, day: 1), 59, LocalDate(year: 1900, month: 3, day: 1)),
+    (LocalDate(year: 2024, month: 2, day: 28), 1, LocalDate(year: 2024, month: 2, day: 29)),
+    (LocalDate(year: 2026, month: 2, day: 28), 1, LocalDate(year: 2026, month: 3, day: 1)),
+    (LocalDate(year: 2026, month: 8, day: 22), 365, LocalDate(year: 2027, month: 8, day: 22)),
+    (LocalDate(year: 2026, month: 8, day: 22), 0, LocalDate(year: 2026, month: 8, day: 22)),
+    // All the way back to the first day of the proleptic Gregorian era.
+    (LocalDate(year: 1970, month: 1, day: 1), -719_162, LocalDate(year: 1, month: 1, day: 1))
+]
+
+@Suite("LocalDate — day arithmetic")
+struct LocalDateDayArithmeticTests {
+    @Test("plusDays moves the date by a signed number of days", arguments: dayShiftRows)
+    func plusDays(_ row: DayShiftRow) {
+        #expect(row.start.plusDays(row.days) == row.expected, "\(row.start) + \(row.days) days")
+    }
+
+    @Test("minusDays is plusDays with the sign flipped", arguments: dayShiftRows)
+    func minusDays(_ row: DayShiftRow) {
+        #expect(row.start.minusDays(-row.days) == row.expected, "\(row.start) - \(-row.days) days")
+    }
+
+    @Test("a day shift is exactly an epoch-day shift, over a sweep across the epoch")
+    func shiftMatchesEpochDayOverASweep() {
+        for epochDay in -800 ... 800 {
+            let date = LocalDate(epochDay: epochDay)
+            for shift in [-400, -31, -1, 0, 1, 31, 400] {
+                #expect(date.plusDays(shift).epochDay == epochDay + shift)
+                #expect(date.minusDays(shift).epochDay == epochDay - shift)
+            }
+        }
+    }
+}
+
+/// One `daysUntil` row: two dates and the signed day count from the first to the second.
+typealias DaysUntilRow = (from: LocalDate, to: LocalDate, days: Int)
+
+let daysUntilRows: [DaysUntilRow] = [
+    // Positive: the direction `CycleViewModel.kt:141` reads for the days-to-next-period figure.
+    (LocalDate(year: 2026, month: 8, day: 22), LocalDate(year: 2026, month: 9, day: 5), 14),
+    // Negative: `other - this`, so a date in the past counts down.
+    (LocalDate(year: 2026, month: 9, day: 5), LocalDate(year: 2026, month: 8, day: 22), -14),
+    // Zero: the same day is nought days away from itself.
+    (LocalDate(year: 2026, month: 8, day: 22), LocalDate(year: 2026, month: 8, day: 22), 0),
+    // Across the epoch, where a truncating division would round the wrong way.
+    (LocalDate(year: 1969, month: 12, day: 25), LocalDate(year: 1970, month: 1, day: 5), 11),
+    (LocalDate(year: 2024, month: 2, day: 28), LocalDate(year: 2024, month: 3, day: 1), 2),
+    (LocalDate(year: 2026, month: 2, day: 28), LocalDate(year: 2026, month: 3, day: 1), 1),
+    // The epoch to a known epoch day, which the table at the top of this file already pins.
+    (LocalDate(year: 1970, month: 1, day: 1), LocalDate(year: 2026, month: 8, day: 22), 20687)
+]
+
+@Suite("LocalDate — daysUntil")
+struct LocalDateDaysUntilTests {
+    @Test("daysUntil counts the signed days from the receiver to the argument", arguments: daysUntilRows)
+    func daysUntil(_ row: DaysUntilRow) {
+        #expect(row.from.daysUntil(row.to) == row.days, "\(row.from) until \(row.to)")
+        // Antisymmetric: the same pair read the other way round counts the other way.
+        #expect(row.to.daysUntil(row.from) == -row.days)
+    }
+
+    @Test("daysUntil is the inverse of plusDays, over a sweep across the epoch")
+    func daysUntilInvertsPlusDays() {
+        for epochDay in -800 ... 800 {
+            let date = LocalDate(epochDay: epochDay)
+            for shift in [-400, -31, -1, 0, 1, 31, 400] {
+                #expect(date.daysUntil(date.plusDays(shift)) == shift)
+            }
+        }
+    }
+}
+
+/// One month-shift row: a start date, a signed number of months, and the date it lands on.
+typealias MonthShiftRow = (start: LocalDate, months: Int, expected: LocalDate)
+
+let monthShiftRows: [MonthShiftRow] = [
+    // The clamp, in every shape the calendar offers it.
+    (LocalDate(year: 2026, month: 1, day: 31), 1, LocalDate(year: 2026, month: 2, day: 28)),
+    (LocalDate(year: 2024, month: 1, day: 31), 1, LocalDate(year: 2024, month: 2, day: 29)),
+    (LocalDate(year: 2026, month: 3, day: 31), -1, LocalDate(year: 2026, month: 2, day: 28)),
+    (LocalDate(year: 2026, month: 5, day: 31), -1, LocalDate(year: 2026, month: 4, day: 30)),
+    (LocalDate(year: 2026, month: 10, day: 31), 4, LocalDate(year: 2027, month: 2, day: 28)),
+    // A leap day clamped by landing in a common year, and unclamped by landing in a leap one.
+    (LocalDate(year: 2000, month: 2, day: 29), 12, LocalDate(year: 2001, month: 2, day: 28)),
+    (LocalDate(year: 2000, month: 2, day: 29), 48, LocalDate(year: 2004, month: 2, day: 29)),
+    // ±12 months is the same day one year on or back, clamp or no clamp.
+    (LocalDate(year: 2026, month: 8, day: 22), 12, LocalDate(year: 2027, month: 8, day: 22)),
+    (LocalDate(year: 2026, month: 8, day: 22), -12, LocalDate(year: 2025, month: 8, day: 22)),
+    (LocalDate(year: 2026, month: 1, day: 31), 12, LocalDate(year: 2027, month: 1, day: 31)),
+    // Zero is the identity — the month grid leans on it when the user has not paged yet.
+    (LocalDate(year: 2026, month: 8, day: 22), 0, LocalDate(year: 2026, month: 8, day: 22)),
+    (LocalDate(year: 2026, month: 12, day: 15), 1, LocalDate(year: 2027, month: 1, day: 15)),
+    (LocalDate(year: 2026, month: 1, day: 15), -1, LocalDate(year: 2025, month: 12, day: 15)),
+    (LocalDate(year: 2026, month: 8, day: 22), -14, LocalDate(year: 2025, month: 6, day: 22)),
+    // Across the epoch, where the month index has to floor rather than truncate.
+    (LocalDate(year: 1970, month: 1, day: 31), -1, LocalDate(year: 1969, month: 12, day: 31)),
+    (LocalDate(year: 1969, month: 12, day: 31), 2, LocalDate(year: 1970, month: 2, day: 28))
+]
+
+@Suite("LocalDate — month arithmetic")
+struct LocalDateMonthArithmeticTests {
+    @Test("plusMonths moves the month and clamps the day to it", arguments: monthShiftRows)
+    func plusMonths(_ row: MonthShiftRow) {
+        #expect(row.start.plusMonths(row.months) == row.expected, "\(row.start) + \(row.months) months")
+    }
+
+    @Test("minusMonths is plusMonths with the sign flipped", arguments: monthShiftRows)
+    func minusMonths(_ row: MonthShiftRow) {
+        #expect(row.start.minusMonths(-row.months) == row.expected)
+    }
+
+    /// The distinction this whole table exists for, stated as one assertion.
+    @Test("the clamp is a clamp, not the normalising initialiser's carry")
+    func clampDoesNotCarry() {
+        let clamped = LocalDate(year: 2026, month: 1, day: 31).plusMonths(1)
+        let carried = LocalDate(year: 2026, month: 2, day: 31)
+
+        #expect(clamped == LocalDate(year: 2026, month: 2, day: 28))
+        #expect(carried == LocalDate(year: 2026, month: 3, day: 3))
+        #expect(clamped != carried)
+    }
+
+    @Test("a month shift always lands on the named month, over a sweep of every start day")
+    func landsOnTheNamedMonthOverASweep() {
+        // Every day of 2024 (a leap year) shifted by every offset inside ±14 months.
+        for epochDay in 19723 ... 20088 {
+            let date = LocalDate(epochDay: epochDay)
+            for months in -14 ... 14 {
+                let shifted = date.plusMonths(months)
+                let expectedIndex = (date.year * 12 + date.month - 1) + months
+
+                #expect(shifted.year * 12 + shifted.month - 1 == expectedIndex)
+                #expect(shifted.day == min(date.day, shifted.lengthOfMonth))
+                #expect(shifted.minusMonths(months).month == date.month)
+            }
+        }
+    }
+}
+
+/// One month-shape row: a year and month, and how many days that month holds.
+typealias MonthLengthRow = (year: Int, month: Int, length: Int)
+
+let monthLengthRows: [MonthLengthRow] = [
+    (2026, 2, 28), // February in a common year
+    (2024, 2, 29), // February in a leap year
+    (2000, 2, 29), // divisible by 400, so a leap year after all
+    (1900, 2, 28), // divisible by 100 but not 400, so a common one
+    (2026, 1, 31), (2026, 3, 31), (2026, 5, 31), (2026, 7, 31),
+    (2026, 8, 31), (2026, 10, 31), (2026, 12, 31), // the 31-day months
+    (2026, 4, 30), (2026, 6, 30), (2026, 9, 30), (2026, 11, 30) // and the 30-day ones
+]
+
+@Suite("LocalDate — month shape")
+struct LocalDateMonthShapeTests {
+    @Test("lengthOfMonth answers the days the month holds", arguments: monthLengthRows)
+    func lengthOfMonth(_ row: MonthLengthRow) {
+        let date = LocalDate(year: row.year, month: row.month, day: 1)
+
+        #expect(date.lengthOfMonth == row.length, "\(row.year)-\(row.month)")
+        // Every day of the month reads the same length, not just the first.
+        #expect(LocalDate(year: row.year, month: row.month, day: row.length).lengthOfMonth == row.length)
+    }
+
+    @Test("lengthOfMonth is the distance to the next month's first day", arguments: monthLengthRows)
+    func lengthOfMonthMatchesTheNextMonth(_ row: MonthLengthRow) {
+        let first = LocalDate(year: row.year, month: row.month, day: 1)
+
+        #expect(first.daysUntil(first.plusMonths(1)) == row.length)
+    }
+
+    @Test("firstDayOfMonth keeps the year and month and answers day 1")
+    func firstDayOfMonth() {
+        #expect(LocalDate(year: 2026, month: 8, day: 22).firstDayOfMonth == LocalDate(year: 2026, month: 8, day: 1))
+        #expect(LocalDate(year: 2026, month: 8, day: 1).firstDayOfMonth == LocalDate(year: 2026, month: 8, day: 1))
+        #expect(LocalDate(year: 1969, month: 12, day: 31).firstDayOfMonth == LocalDate(year: 1969, month: 12, day: 1))
+        #expect(LocalDate(year: 2024, month: 2, day: 29).firstDayOfMonth == LocalDate(year: 2024, month: 2, day: 1))
+    }
+
+    /// Android spells it `minus(day - 1, DateTimeUnit.DAY)` (`CycleViewModel.kt:208-209`); the two
+    /// forms have to agree on every day of the sweep, or the month grid starts on the wrong cell.
+    @Test("firstDayOfMonth matches Android's day-count spelling over a sweep")
+    func firstDayOfMonthMatchesAndroidOverASweep() {
+        for epochDay in -800 ... 20818 {
+            let date = LocalDate(epochDay: epochDay)
+            let first = date.firstDayOfMonth
+
+            #expect(first == date.minusDays(date.day - 1))
+            #expect(first.day == 1)
+            #expect(first.year == date.year)
+            #expect(first.month == date.month)
+        }
+    }
+}
+
+/// One ISO weekday row: a date and its ISO day number (Monday = 1 … Sunday = 7).
+typealias IsoDayRow = (date: LocalDate, isoDayNumber: Int)
+
+let isoDayRows: [IsoDayRow] = [
+    (LocalDate(year: 2026, month: 8, day: 24), 1), // a known Monday
+    (LocalDate(year: 2026, month: 8, day: 25), 2),
+    (LocalDate(year: 2026, month: 8, day: 26), 3),
+    (LocalDate(year: 2026, month: 8, day: 27), 4),
+    (LocalDate(year: 2026, month: 8, day: 28), 5),
+    (LocalDate(year: 2026, month: 8, day: 22), 6),
+    (LocalDate(year: 2026, month: 8, day: 23), 7), // a known Sunday
+    (LocalDate(year: 1970, month: 1, day: 1), 4), // the epoch, a Thursday
+    (LocalDate(year: 1900, month: 1, day: 1), 1), // a Monday well before it
+    (LocalDate(year: 1969, month: 12, day: 28), 7) // and a Sunday before it
+]
+
+@Suite("LocalDate — ISO day number")
+struct LocalDateIsoDayNumberTests {
+    @Test("isoDayNumber runs Monday = 1 … Sunday = 7", arguments: isoDayRows)
+    func isoDayNumber(_ row: IsoDayRow) {
+        #expect(row.date.isoDayNumber == row.isoDayNumber, "\(row.date)")
+    }
+
+    /// `CycleViewModel.kt:163` backs the grid up to the Monday of the first week with
+    /// `minus(isoDayNumber - 1, DAY)`, so the two indexings must stay one apart, always.
+    @Test("isoDayNumber is one past the Monday-based index, over a long sweep")
+    func isoDayNumberFollowsTheMondayIndex() {
+        for epochDay in -3000 ... 3000 {
+            let date = LocalDate(epochDay: epochDay)
+
+            #expect(date.isoDayNumber == date.mondayBasedWeekdayIndex + 1)
+            #expect((1 ... 7).contains(date.isoDayNumber), "epochDay \(epochDay)")
+            // Backing up by `isoDayNumber - 1` days always lands on a Monday.
+            #expect(date.minusDays(date.isoDayNumber - 1).isoDayNumber == 1)
+        }
+    }
+}
