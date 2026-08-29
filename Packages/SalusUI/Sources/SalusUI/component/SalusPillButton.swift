@@ -9,12 +9,15 @@
 // sit on their container: put it on the label and the pill draws 48 plus twice the style's padding,
 // well past the 48 that `design-tokens.md:382` asks for by name ("use 48 to stay identical to
 // Android"). Drawing the capsule ourselves is the one placement that gets both axes right at once,
-// and it is what `SalusEmptyState.swift:89-99` already does for this very Kotlin button.
+// and it is what `SalusEmptyState.swift` did by hand for this very Kotlin button until iOS-M7.
 //
-// The bordered mapping this supersedes is inlined in three places, and all three keep their copies
-// on purpose — migrating them is deferred by the M6 plan's ruling 3, not forgotten:
-// `AppointmentDetailScreen.swift:226-259`, `MedicationDetailSections.swift:275-292`, and this
-// package's own empty-state action (`SalusEmptyState.swift:87-99`, already hand-drawn).
+// The bordered mapping this supersedes had three inlined copies, deferred by the M6 plan's
+// ruling 3. **All three are migrated** (iOS-M7), so there is no inline pill left in the tree:
+// the appointment detail's three actions (`AppointmentDetailScreen.swift`, `actions`), the
+// medication detail's two (`MedicationDetailSections.swift`, `MedicationDetailActions`) — both
+// passing `fillsWidth: true` for Kotlin's `Modifier.fillMaxWidth()` — and this package's own
+// empty-state action (`SalusEmptyState.swift`), a straight substitution for a hand-drawn pill the
+// component already drew byte for byte.
 
 import SalusDesignSystem
 import SwiftUI

@@ -220,44 +220,47 @@ struct AppointmentDetailScreen: View {
         .padding(.horizontal, SalusSpacing.lg)
     }
 
-    /// `AppointmentDetailScreen.kt:302-334` — three full-width buttons. Compose emits them as
+    /// `AppointmentDetailScreen.kt:291-318` — three full-width pills. Compose emits them as
     /// children of the screen's own `Column(spacedBy = md)`, so they are spaced `md` here too.
+    ///
+    /// `fillsWidth: true` is Kotlin's `Modifier.fillMaxWidth()` on each of the three
+    /// (`:302`, `:310`, `:316`); an outer `.frame(maxWidth: .infinity)` would only centre a
+    /// text-width capsule in a full-width slot (`SalusPillButton.swift:35-39`).
     private var actions: some View {
         VStack(spacing: SalusSpacing.md) {
-            Button(action: onEdit) {
-                Text(AppointmentsStrings.detailEdit)
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.borderedProminent)
+            SalusPillButton(
+                text: AppointmentsStrings.detailEdit,
+                fillsWidth: true,
+                action: onEdit
+            )
 
             // Only where a calendar editor exists to present. On any other platform this is the
             // empty view the brief calls for, rather than a button that opens nothing.
             #if canImport(EventKitUI)
-                Button {
+                SalusPillButton(
+                    text: AppointmentsStrings.addToCalendar,
+                    // `canAddToCalendar = state.startEpochMs > 0L` (`:144`), passed straight
+                    // through as `enabled` (`:307`) — nothing to propose until the bounds are
+                    // derived.
+                    enabled: state.startEpochMs > 0,
+                    tonal: true,
+                    systemImage: "calendar",
+                    fillsWidth: true
+                ) {
                     isAddingToCalendar = true
-                } label: {
-                    Label(AppointmentsStrings.addToCalendar, systemImage: "calendar")
-                        .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.bordered)
-                // `AppointmentDetailScreen.kt:145` — nothing to propose until the bounds are
-                // derived.
-                .disabled(state.startEpochMs <= 0)
             #endif
 
-            Button {
+            SalusPillButton(
+                text: AppointmentsStrings.detailDelete,
+                tonal: true,
+                fillsWidth: true
+            ) {
                 onEvent(.deleteClicked)
-            } label: {
-                Text(AppointmentsStrings.detailDelete)
-                    .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.bordered)
         }
-        .controlSize(.large)
-        // What makes a `SalusPillButton` a pill — Kotlin's `shape = CircleShape`.
-        .buttonBorderShape(.capsule)
-        // `AppointmentDetailScreen.kt:309` — the block sits one step further from the section
-        // above it than the sections sit from each other.
+        // `Spacer(height = sm)` before the block (`AppointmentDetailScreen.kt:298`): the actions
+        // sit one step further from the section above them than the sections sit from each other.
         .padding(.top, SalusSpacing.sm)
         .padding(.horizontal, SalusSpacing.lg)
     }

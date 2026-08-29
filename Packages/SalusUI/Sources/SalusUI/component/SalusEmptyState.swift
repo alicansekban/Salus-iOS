@@ -2,11 +2,14 @@
 //
 // Kotlin composes two other `:core:ui` components here — `SalusIconBadge` (`SalusEmptyState.kt:45`)
 // and `SalusPillButton` (`:69`). Neither was part of the iOS-M2 component set (they arrive with the
-// feature that first needs them on their own), so both appear below as private views rather than
-// as public API this milestone did not owe. Their dimensions are cited to the Kotlin they copy.
-// `SalusIconBadge` has since shipped (iOS-M5) — but in its *default* 40/22 size, which is not the
-// 72/32 one this file draws, so the private badge below stays until a caller needs the large one
-// as public API too.
+// feature that first needs them on their own), so both were hand-drawn here as private views
+// rather than as public API that milestone did not owe.
+//
+// One of the two copies is now gone: `SalusPillButton` shipped with iOS-M6 and this file calls it
+// (iOS-M7 — the last of the three inline pills the M6 plan deferred). `SalusIconBadge` shipped
+// with iOS-M5 too, but in its *default* 40/22 size, which is not the 72/32 one this file draws, so
+// the private badge below stays until a caller needs the large one as public API too. Its
+// dimensions are cited to the Kotlin they copy.
 
 import SalusDesignSystem
 import SwiftUI
@@ -62,7 +65,11 @@ public struct SalusEmptyState: View {
             }
             if let actionLabel, let onAction {
                 Spacer().frame(height: SalusSpacing.xl)
-                pillButton(actionLabel, action: onAction)
+                // `SalusPillButton(text = actionLabel, onClick = onAction)`
+                // (`SalusEmptyState.kt:69`) — the default filled, content-width pill. This was
+                // hand-drawn here until `SalusPillButton` shipped with iOS-M6; the component draws
+                // the identical capsule, so the copy is gone.
+                SalusPillButton(text: actionLabel, action: onAction)
             }
         }
         .frame(maxWidth: .infinity)
@@ -81,22 +88,11 @@ public struct SalusEmptyState: View {
                 Image(systemName: systemImage)
                     .font(.system(size: Self.badgeIconSize))
                     .foregroundStyle(accent?.accent ?? colors.primary)
+                    // Decoration, not content: `SalusIconBadge.kt:48` passes
+                    // `contentDescription = null`, and the title below already says what the
+                    // empty state is about. Without this the symbol's own name is announced.
+                    .accessibilityHidden(true)
             }
-    }
-
-    /// `SalusPillButton(text:onClick:)` in its default (filled, primary) form
-    /// (`SalusPillButton.kt:83-97`): `CircleShape`, `labelLarge`, `heightIn(min = touch target)`.
-    private func pillButton(_ label: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Text(label)
-                .font(SalusTypography.labelLarge.font)
-                .tracking(SalusTypography.labelLarge.tracking)
-                .padding(.horizontal, SalusSpacing.xl)
-                .frame(minHeight: SalusTouchTarget.min)
-                .foregroundStyle(colors.onPrimary)
-                .background(SalusShapes.pill.fill(colors.primary))
-        }
-        .buttonStyle(.plain)
     }
 
     /// `SalusIconBadgeDefaults.LargeSize` / `.LargeIconSize` (`SalusIconBadge.kt:58-59`). Component

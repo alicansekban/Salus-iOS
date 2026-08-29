@@ -272,24 +272,24 @@ struct MedicationDetailActions: View {
 
     var body: some View {
         // Compose emits both as children of the screen's own `Column(spacedBy = md)`, so they are
-        // spaced `md` here too.
+        // spaced `md` here too. `fillsWidth: true` is Kotlin's `Modifier.fillMaxWidth()` on both
+        // (`:339`, `:345`); an outer `.frame(maxWidth: .infinity)` would only centre a text-width
+        // capsule in a full-width slot (`SalusPillButton.swift:35-39`).
         VStack(spacing: SalusSpacing.md) {
-            Button(action: onEdit) {
-                Text(MedicationsStrings.detailEdit)
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.borderedProminent)
+            SalusPillButton(
+                text: MedicationsStrings.detailEdit,
+                fillsWidth: true,
+                action: onEdit
+            )
 
             // `tonal = true` (`MedicationDetailScreen.kt:344`).
-            Button(action: onDelete) {
-                Text(MedicationsStrings.detailDelete)
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.bordered)
+            SalusPillButton(
+                text: MedicationsStrings.detailDelete,
+                tonal: true,
+                fillsWidth: true,
+                action: onDelete
+            )
         }
-        .controlSize(.large)
-        // What makes a `SalusPillButton` a pill — Kotlin's `shape = CircleShape`.
-        .buttonBorderShape(.capsule)
         // `Spacer(height = sm)` before the block (`MedicationDetailScreen.kt:335`): the actions sit
         // one step further from the section above them than the sections sit from each other.
         .padding(.top, SalusSpacing.sm)
