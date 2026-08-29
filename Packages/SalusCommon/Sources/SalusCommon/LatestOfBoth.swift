@@ -3,17 +3,24 @@
 //
 // Neither has a Kotlin counterpart file: Kotlin gets both from the coroutines library, and Swift's
 // standard library ships no combine-latest for `AsyncSequence` and no way to map one without
-// rebuilding it. `AppointmentsRepositoryImpl` needs the combinator three times
-// (`observeUpcoming`, `observePast`, `observeAppointment`), `MedicationsRepositoryImpl` twice, and
-// two list/detail ViewModels once each — so it is written once here rather than once per call site,
-// and no general-purpose async-algorithms package is added, because that is not on `CLAUDE.md`'s
-// closed dependency allowlist.
+// rebuilding it. Four feature packages call them today — `latestOfBoth` from nine call sites and
+// `mapped` from four. `FeatureAppointments` combines four times: `AppointmentsRepositoryImpl`
+// twice (directly in `observeAppointment`, and in the `withReminders` helper that serves both
+// `observeUpcoming` and `observePast`), then its list and detail ViewModels once each.
+// `FeatureMedications` combines four times the same way and maps once, `FeatureCycle` combines once
+// (`CycleViewModel`) and maps once (`CycleRepositoryImpl`), and `FeatureVitals` maps twice. So they
+// are written once here rather than once per call site, and no general-purpose async-algorithms
+// package is added, because that is not on `CLAUDE.md`'s closed dependency allowlist.
 //
-// Both helpers lived as byte-identical copies inside `FeatureAppointments` and `FeatureMedications`
-// (and `mapped` inside `FeatureVitals`) until iOS-M6, because features never depend on each other
-// and a shared home meant a core-package change. `docs/plans/2026-08-27-ios-m5-medications.md`
-// (ruling 8) named the third copy as the moment they move; this is that move. `SalusCommon` is the
-// right home rather than `SalusUI`: this is plain Swift concurrency with no UI framework in it.
+// Both helpers lived as copies inside the features until iOS-M6, because features never depend on
+// each other and a shared home meant a core-package change.
+// `docs/plans/2026-08-27-ios-m5-medications.md` (ruling 8) named the third copy as the moment they
+// move; this is that move. The two `latestOfBoth` copies — `FeatureAppointments`' and
+// `FeatureMedications`' — were byte-identical; the two `mapped` copies, `FeatureVitals`' and
+// `FeatureMedications`', were **not**. Vitals' `transform` is `throws` because its mapper resolves
+// a time zone and Medications' was not, so the signature kept below is Vitals', which accepts a
+// non-throwing closure unchanged. `SalusCommon` is the right home rather than `SalusUI`: this is
+// plain Swift concurrency with no UI framework in it.
 //
 // The `latestOfBoth` semantics are `combine`'s, deliberately narrow:
 //  - nothing is emitted until **both** sides have produced a value;
@@ -25,6 +32,9 @@
 //  - and it is **ordered**: pairs reach the consumer in the order they were formed. That is the
 //    property `combine` gets for free from running its collectors on one coroutine and the reason
 //    `LatestPair` runs `transform` and `yield` inside its lock — see the note on the class.
+//
+// `LatestOfAll.swift` widens the combinator to three, four and five sources by nesting it, so those
+// arities inherit every semantic above rather than restating it.
 
 import Foundation
 

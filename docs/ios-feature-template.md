@@ -165,6 +165,15 @@ ViewModel rules:
   each feature's `data/` until iOS-M6 promoted it, with `mapped` and `CancellationBox`, to
   `SalusCommon` — the shape a helper takes once a third feature wants it. **Do not re-hand-roll
   one** — a ViewModel that combines two DB streams reuses this.
+- **More than two streams: `latestOfThree` / `latestOfFour` / `latestOfFive`**
+  (`Packages/SalusCommon/Sources/SalusCommon/LatestOfAll.swift`, added in iOS-M7 for the home
+  dashboard). Each is a nesting of `latestOfBoth`, so the semantics above hold unchanged; they take
+  no transform and answer a tuple in argument order, which the caller destructures or maps with
+  `mapped`.
+- **A non-throwing `AsyncStream` joins them through `throwingStream(over:)`**
+  (`Packages/SalusCommon/Sources/SalusCommon/ThrowingStream.swift`). Settings and preferences
+  observations do not fail, so they are the wrong concrete type for the combinators; the wrapper
+  adds the error type and nothing else. Do not write a second combinator for that one shape.
 
 ## Shell and navigation-container rule (MANDATORY)
 
