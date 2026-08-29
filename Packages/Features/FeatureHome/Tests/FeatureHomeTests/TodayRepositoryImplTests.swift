@@ -30,21 +30,78 @@ import Testing
 @Suite("TodayRepositoryImpl")
 struct TodayRepositoryImplTests {
     /// The doses come from `TodayDoseAssembler`, which has its own ported table; what this pins is
-    /// that the three medication observations reach it with the captured `today`/`nowMinute`.
-    @Test("the overview carries today's doses", .timeLimit(.minutes(1)))
-    func theOverviewCarriesTodaysDoses() async throws {
+    /// that the three medication observations reach it with the captured `today` **and
+    /// `nowMinute`**. The fixture's instant is 12:00 UTC = 15:00 in `Europe/Istanbul`, so
+    /// `nowMinute` is 900: the 08:00 slot is an hour past its grace window and the 20:00 slot has
+    /// not come round yet. A repository that passed the wrong minute — zero, or a per-emission
+    /// reading — could not produce both statuses at once.
+    @Test("the overview carries today's doses with their resolved statuses", .timeLimit(.minutes(1)))
+    func theOverviewCarriesTodaysDosesWithTheirResolvedStatuses() async throws {
         let fixture = try Fixture()
+        #expect(fixture.clock.minuteOfDayNow() == 900)
         try await fixture.medicationDao.upsert(medicationRecord(id: "med-1", name: "Aspirin"))
-        try await fixture.medicationDao.upsertSchedules([scheduleRecord(id: "sch-1", medicationId: "med-1")])
+        try await fixture.medicationDao.upsertSchedules([
+            scheduleRecord(id: "sch-1", medicationId: "med-1", minutes: 480),
+            scheduleRecord(id: "sch-2", medicationId: "med-1", minutes: 1200)
+        ])
 
         let overview = try await fixture.firstOverview()
 
-        #expect(overview.doses.count == 1)
+        #expect(overview.doses.map(\.scheduleId) == ["sch-1", "sch-2"])
+        #expect(overview.doses.map(\.status) == [.missed, .pending])
         let dose = try #require(overview.doses.first)
-        #expect(dose.scheduleId == "sch-1")
+        #expect(dose.medicationId == "med-1")
         #expect(dose.medicationName == "Aspirin")
         #expect(dose.minuteOfDay == 480)
         #expect(dose.doseAmount == 1.0)
+    }
+
+    /// The heart of plan ruling 3: `today` / `nowMinute` / `nowMs` are captured **once, when the
+    /// observation is created**, never per emission. A live stream therefore keeps reporting the
+    /// day it started on however long it runs, and re-subscribing is the *only* thing that moves
+    /// it — which is exactly what `HomeRoute`'s `.task` does on every appearance, the iOS twin of
+    /// Android's `WhileSubscribed(5_000)`.
+    ///
+    /// The second medication starts *tomorrow*, so it is invisible to an observation captured
+    /// today. What forces the second emission is a recorded dose, and it is chosen for three
+    /// reasons: it writes **one table in one transaction**, so exactly one further emission
+    /// arrives; that table is one of the dose join's own three sources, so the join genuinely
+    /// re-runs rather than replaying a cached list; and the log is only found at all because the
+    /// log query was bound to the *captured* day. So `.taken` proves the join re-ran, and the
+    /// still-single dose proves the day did not move under the collector.
+    @Test("today and now are captured once, when the observation starts", .timeLimit(.minutes(1)))
+    func todayAndNowAreCapturedOnceWhenTheObservationStarts() async throws {
+        let fixture = try Fixture()
+        let capturedToday = fixture.today
+        try await fixture.medicationDao.saveWithSchedules(
+            medicationRecord(id: "med-today", name: "Aspirin"),
+            schedules: [scheduleRecord(id: "sch-today", medicationId: "med-today", minutes: 480)]
+        )
+        try await fixture.medicationDao.saveWithSchedules(
+            medicationRecord(id: "med-tomorrow", name: "Betaserc", start: capturedToday + 1),
+            schedules: [scheduleRecord(id: "sch-tomorrow", medicationId: "med-tomorrow", minutes: 600)]
+        )
+
+        var iterator = fixture.repository.observeTodayOverview().makeAsyncIterator()
+        let first = try #require(try await iterator.next())
+        #expect(first.doses.map(\.scheduleId) == ["sch-today"])
+        #expect(first.doses.map(\.status) == [.missed])
+
+        fixture.clock.advanceTo(fixture.clock.now().addingTimeInterval(24 * 60 * 60))
+        #expect(fixture.today == capturedToday + 1)
+        try await fixture.medicationDao.insertIntakeLog(
+            intakeLogRecord(scheduleId: "sch-today", medicationId: "med-today", day: capturedToday, minutes: 480)
+        )
+
+        let second = try #require(try await iterator.next())
+        // The log was found under the captured day, so the join really re-ran...
+        #expect(second.doses.map(\.status) == [.taken])
+        // ...and tomorrow's medication is still out of its window.
+        #expect(second.doses.map(\.scheduleId) == ["sch-today"])
+
+        // Only a new subscription re-captures the day.
+        let resubscribed = try await fixture.firstOverview()
+        #expect(resubscribed.doses.map(\.scheduleId) == ["sch-today", "sch-tomorrow"])
     }
 
     /// `today - start + 1`, 1-based: a period that started eleven days ago is cycle day twelve.
@@ -286,7 +343,7 @@ struct TodayRepositoryImplTests {
 
 private let dayMs: Int64 = 86_400_000
 
-private func medicationRecord(id: String, name: String) -> MedicationRecord {
+private func medicationRecord(id: String, name: String, start: Int = 0) -> MedicationRecord {
     MedicationRecord(
         id: id,
         profileId: SalusDatabase.defaultProfileId,
@@ -298,7 +355,7 @@ private func medicationRecord(id: String, name: String) -> MedicationRecord {
         instructions: nil,
         stockCount: nil,
         stockThreshold: nil,
-        startDateEpochDay: 0,
+        startDateEpochDay: start,
         endDateEpochDay: nil,
         isActive: true,
         remindersEnabled: true,
@@ -307,7 +364,7 @@ private func medicationRecord(id: String, name: String) -> MedicationRecord {
     )
 }
 
-private func scheduleRecord(id: String, medicationId: String) -> MedicationScheduleRecord {
+private func scheduleRecord(id: String, medicationId: String, minutes: Int = 480) -> MedicationScheduleRecord {
     MedicationScheduleRecord(
         id: id,
         medicationId: medicationId,
@@ -315,7 +372,7 @@ private func scheduleRecord(id: String, medicationId: String) -> MedicationSched
         daysOfWeekMask: 0,
         intervalDays: nil,
         anchorDateEpochDay: 0,
-        timeOfDayMinutes: 480,
+        timeOfDayMinutes: minutes,
         doseAmount: 1.0,
         isActive: true
     )
@@ -371,6 +428,27 @@ private func vitalsRecord(
         valueTertiary: nil,
         unit: unit,
         measurementContext: nil,
+        note: nil
+    )
+}
+
+private func intakeLogRecord(
+    scheduleId: String,
+    medicationId: String,
+    day: Int,
+    minutes: Int
+) -> MedicationIntakeLogRecord {
+    MedicationIntakeLogRecord(
+        id: "log-\(scheduleId)",
+        scheduleId: scheduleId,
+        medicationId: medicationId,
+        profileId: SalusDatabase.defaultProfileId,
+        scheduledDateEpochDay: day,
+        scheduledMinutes: minutes,
+        status: IntakeStatus.taken.rawValue,
+        takenAtEpochMs: 0,
+        snoozedUntilEpochMs: nil,
+        doseAmount: 1.0,
         note: nil
     )
 }
