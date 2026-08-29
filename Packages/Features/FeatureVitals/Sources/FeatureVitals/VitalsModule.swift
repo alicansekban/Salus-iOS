@@ -42,12 +42,19 @@ public struct VitalsModule {
     /// `VitalsQuickEntry`.
     public let makeSaveWeightEntryUseCase: @MainActor () -> SaveWeightEntryUseCase
 
+    /// Koin's `factoryOf(::SaveBloodPressureEntryUseCase)` (`VitalsModule.kt:27`).
+    public let makeSaveBloodPressureEntryUseCase: @MainActor () -> SaveBloodPressureEntryUseCase
+
     /// Koin's `viewModelOf(::VitalsViewModel)` (`VitalsModule.kt:30`).
     public let makeVitalsViewModel: @MainActor () -> VitalsViewModel
 
     /// Koin's parameterised `viewModel { … }` (`VitalsModule.kt:32-41`); the argument is the id of
     /// the entry being edited, or nil for a new one.
     public let makeWeightEditorViewModel: @MainActor (String?) -> WeightEditorViewModel
+
+    /// Koin's parameterised `viewModel { … }` (`VitalsModule.kt:43-53`); the argument is the id of
+    /// the entry being edited, or nil for a new one.
+    public let makeBloodPressureEditorViewModel: @MainActor (String?) -> BloodPressureEditorViewModel
 }
 
 /// Builds the feature's graph — the twin of `val vitalsModule = module { … }`.
@@ -69,11 +76,15 @@ public func makeVitalsModule(
     let makeSaveWeightEntryUseCase: @MainActor () -> SaveWeightEntryUseCase = {
         SaveWeightEntryUseCase(repository: repository, idGenerator: idGenerator)
     }
+    let makeSaveBloodPressureEntryUseCase: @MainActor () -> SaveBloodPressureEntryUseCase = {
+        SaveBloodPressureEntryUseCase(repository: repository, idGenerator: idGenerator)
+    }
 
     return VitalsModule(
         repository: repository,
         navigator: navigator,
         makeSaveWeightEntryUseCase: makeSaveWeightEntryUseCase,
+        makeSaveBloodPressureEntryUseCase: makeSaveBloodPressureEntryUseCase,
         makeVitalsViewModel: {
             VitalsViewModel(
                 repository: repository,
@@ -87,6 +98,16 @@ public func makeVitalsModule(
                 entryId: entryId,
                 repository: repository,
                 saveWeightEntry: makeSaveWeightEntryUseCase(),
+                clock: clock,
+                navigator: navigator,
+                undoableDelete: undoableDelete
+            )
+        },
+        makeBloodPressureEditorViewModel: { entryId in
+            BloodPressureEditorViewModel(
+                entryId: entryId,
+                repository: repository,
+                saveBloodPressureEntry: makeSaveBloodPressureEntryUseCase(),
                 clock: clock,
                 navigator: navigator,
                 undoableDelete: undoableDelete

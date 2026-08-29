@@ -31,8 +31,17 @@ public struct WeightEditorKey: Hashable, Sendable {
     }
 }
 
-// TODO(M7): `BloodPressureEditorKey` and `GlucoseEditorKey` (`VitalsNavigation.kt:18-22`), plus
-// their `navigationDestination` registrations below.
+/// The blood-pressure editor, new (`entryId == nil`) or editing (`VitalsNavigation.kt:18-19`).
+public struct BloodPressureEditorKey: Hashable, Sendable {
+    public let entryId: String?
+
+    public init(entryId: String?) {
+        self.entryId = entryId
+    }
+}
+
+// TODO(M7): `GlucoseEditorKey` (`VitalsNavigation.kt:21-22`), plus its `navigationDestination`
+// registration below.
 
 extension View {
     /// Registers every destination this feature owns (`VitalsNavigation.kt:29-43`).
@@ -48,6 +57,9 @@ extension View {
     public func vitalsDestinations() -> some View {
         navigationDestination(for: WeightEditorKey.self) { key in
             WeightEditorRoute(entryId: key.entryId)
+        }
+        .navigationDestination(for: BloodPressureEditorKey.self) { key in
+            BloodPressureEditorRoute(entryId: key.entryId)
         }
     }
 }

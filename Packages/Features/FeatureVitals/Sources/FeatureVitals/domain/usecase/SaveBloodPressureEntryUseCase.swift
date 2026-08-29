@@ -9,7 +9,7 @@ import SalusCommon
 ///
 /// It deliberately does **not** conform to `VitalsQuickEntry`: only weight does on Android too, so
 /// nothing outside this feature can record a reading without the editor's two fields.
-public struct SaveBloodPressureEntryUseCase {
+public struct SaveBloodPressureEntryUseCase: Sendable {
     /// `SaveBloodPressureEntryUseCase.kt:16-26`. Kotlin's `sealed interface` with one `data class`
     /// and four `data object`s is an enum with one associated value; both spellings are exhaustive
     /// and both compare by value.
