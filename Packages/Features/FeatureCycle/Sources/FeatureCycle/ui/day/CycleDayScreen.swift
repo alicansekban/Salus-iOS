@@ -7,7 +7,8 @@
 //                                  the one `NavigationStack`, and its own back arrow pops exactly
 //                                  the path `Navigator.pop()` mutates. That is why `cycle_back` has
 //                                  no reader — the same divergence `MedicationEditorScreen.swift`
-//                                  (h) and `AppointmentEditorScreen.swift` record. Hiding the
+//                                  (**iOS-M5** (h)) and `AppointmentEditorScreen.swift` record;
+//                                  for Cycle it is this milestone's divergence (o). Hiding the
 //                                  system button to relabel it would also disable the interactive
 //                                  swipe-back gesture, which is a worse trade than an unread
 //                                  string; the string stays in the catalog because the catalog is

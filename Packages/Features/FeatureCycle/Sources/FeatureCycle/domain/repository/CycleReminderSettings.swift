@@ -1,7 +1,8 @@
 // Ported 1:1 from Android
 // `feature/cycle/src/main/kotlin/com/alicansekban/salus/feature/cycle/domain/repository/CycleReminderSettings.kt`.
 //
-// Two divergences from the Kotlin twin, both forced by the store underneath rather than chosen:
+// **Recorded divergence (b)** from the Kotlin twin has two halves, both forced by the store
+// underneath rather than chosen:
 //
 // 1. `config` is a non-throwing `AsyncStream`, not `AsyncThrowingStream`. Android's DataStore
 //    `Flow` can fail on an IO error; the iOS side reads `UserDefaults` through

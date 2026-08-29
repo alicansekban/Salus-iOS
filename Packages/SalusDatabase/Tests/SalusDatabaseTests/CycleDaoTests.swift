@@ -5,7 +5,7 @@
 // ordering, filtering and constraint behaviour Android leaves to Room and to the schema itself,
 // plus the things that have no Kotlin twin at all: `saveDailyEntry`'s single transaction
 // (divergence (a)) and the two unique-index cases the DAO answers with a `DatabaseError` where
-// Room would silently write nothing (divergence (b), reasoned out in `CycleDao`'s file header).
+// Room would silently write nothing (divergence (l), reasoned out in `CycleDao`'s file header).
 //
 // The fixtures live at the foot of this file rather than in a `CycleFixtures.swift` of their own:
 // one suite reads them, so a second file would only add a hop.
@@ -77,7 +77,7 @@ struct CycleDaoTests {
 
     /// The unique `index_cycle_periods_profile_id_start_date`: one profile records at most one
     /// period per start day, so a second row on the same start is a constraint error rather than a
-    /// silent second period. This is divergence (b) — the reason `upsertPeriod` writes through
+    /// silent second period. This is divergence (l) — the reason `upsertPeriod` writes through
     /// GRDB's `save` rather than its `upsert`, which would overwrite the row that is there.
     @Test("a second period on the same start date violates the unique index")
     func aSecondPeriodOnTheSameStartViolatesTheUniqueIndex() async throws {
@@ -157,7 +157,7 @@ struct CycleDaoTests {
 
     /// The unique `index_cycle_daily_entries_profile_id_date`, the twin of the period one above:
     /// a profile logs at most one entry per day, so a second row on the same date is a constraint
-    /// error rather than a silent overwrite. This is the other half of divergence (b).
+    /// error rather than a silent overwrite. This is the other half of divergence (l).
     @Test("a second daily entry on the same date violates the unique index")
     func aSecondDailyEntryOnTheSameDateViolatesTheUniqueIndex() async throws {
         let dao = try await CycleFixtures.makeDao(clock: clock)

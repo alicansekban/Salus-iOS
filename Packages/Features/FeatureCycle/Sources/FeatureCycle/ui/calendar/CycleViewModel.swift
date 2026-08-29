@@ -6,12 +6,14 @@
 //
 //   `monthFirstDay` is a `MutableStateFlow` on Android and plain state here, and so is
 //   `activeReminderDialog` (the divergence `MedicationsViewModel` records for its
-//   `pendingDeleteId`): nothing outside this class observes either, so the first and fourth arms
+//   `pendingDeleteId` — **iOS-M5** (f); not lettered again for Cycle): nothing outside this
+//   class observes either, so the first and fourth arms
 //   become stored properties plus a `republish()` that rebuilds the state synchronously from the
 //   last pair the two real streams formed.
 //
 //   `repository.observePeriods()` is an `AsyncThrowingStream` and `reminderSettings.config` a
-//   non-throwing `AsyncStream` (`CycleReminderSettings.swift`, divergence 1). `SalusCommon`'s
+//   non-throwing `AsyncStream` (`CycleReminderSettings.swift`, divergence (b), first half).
+//   `SalusCommon`'s
 //   `latestOfBoth` is `combine`-of-two over two *throwing* streams, so the config side is wrapped
 //   rather than a second combinator written for the one shape that differs — the wrapper is
 //   ``throwingStream(over:)`` below and it adds no behaviour, only the error type.

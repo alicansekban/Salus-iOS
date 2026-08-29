@@ -3,8 +3,9 @@
 //
 // All five Kotlin case names are carried over verbatim with one substitution: Room's word for a
 // row is `entity`, GRDB's is `record`, so `period entity round-trips …` becomes `period record
-// round-trips …` and so on — the substitution `MedicationMapperTests` already made (recorded
-// divergence (g) there). Nothing else about the cases changes.
+// round-trips …` and so on — the substitution `MedicationMapperTests` already made (**iOS-M5**
+// divergence (g), in that milestone's record — this milestone's own letters are unrelated).
+// Nothing else about the cases changes.
 //
 // Kotlin calls the mappers as extension functions (`entity.toDomain()`); here they are static
 // functions on the `CycleMappers` namespace, so the call sites read `CycleMappers.toDomain(record)`

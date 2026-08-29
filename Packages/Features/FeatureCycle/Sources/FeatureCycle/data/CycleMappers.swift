@@ -6,9 +6,9 @@
 // an extension on `CyclePeriodRecord` declared here would put `toDomain()` on that public type for
 // every file in this package — including the ViewModels, which have no business seeing a record at
 // all. A namespace keeps the whole record↔domain boundary in one place, which is exactly what
-// `CLAUDE.md`'s "records never leave `SalusDatabase`" rule is protecting. Recorded divergence (c):
-// `MedicationMapper.swift` uses extensions; the two shapes do the same thing and the reach is the
-// difference.
+// `CLAUDE.md`'s "records never leave `SalusDatabase`" rule is protecting. Recorded in the M6
+// execution record without a letter (it is a shape, not a behaviour): `MedicationMapper.swift`
+// uses extensions; the two shapes do the same thing and the reach is the difference.
 //
 // **The two enums fall back to `nil` rather than throwing.** Kotlin reads them with
 // `entries.firstOrNull { it.name == this }`, so a `flow_peak` or `mood` this build cannot spell —
@@ -84,7 +84,7 @@ enum CycleMappers {
 
     /// One link per selected symptom, all at ``defaultSymptomSeverity`` (`CycleMappers.kt:58-65`).
     ///
-    /// The ids are sorted first, which Kotlin does not do — recorded divergence (d), and a Swift
+    /// The ids are sorted first, which Kotlin does not do — recorded divergence (m), and a Swift
     /// one: Kotlin's `Set` is a `LinkedHashSet`, so `map` there walks insertion order, while a
     /// Swift `Set`'s order is seeded per process and would hand the same day's links to the DAO in
     /// a different sequence on every launch. The resulting table is identical either way — the

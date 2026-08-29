@@ -8,9 +8,9 @@
 // taken to apply the change and copy out the observers, then RELEASED, and only then is the new
 // value yielded. Publishing under the lock would let a collector's `onTermination` reach back in.
 //
-// The setters are synchronous rather than `suspend`, because `CycleReminderSettings` is
-// (`CycleReminderSettings.swift`, divergence 2), and `config` is a non-throwing `AsyncStream` for
-// the same file's divergence 1.
+// The setters are synchronous rather than `suspend`, because `CycleReminderSettings` is, and
+// `config` is a non-throwing `AsyncStream` for the same reason — the two halves of recorded
+// divergence (b), reasoned out in `CycleReminderSettings.swift`.
 
 import Foundation
 
