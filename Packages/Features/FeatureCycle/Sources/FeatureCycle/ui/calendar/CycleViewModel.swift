@@ -16,7 +16,9 @@
 //   `SalusCommon`'s
 //   `latestOfBoth` is `combine`-of-two over two *throwing* streams, so the config side is wrapped
 //   rather than a second combinator written for the one shape that differs — the wrapper is
-//   ``throwingStream(over:)`` below and it adds no behaviour, only the error type.
+//   `SalusCommon`'s ``throwingStream(over:)`` and it adds no behaviour, only the error type. It
+//   lived here as a `private static` until iOS-M7, when the home dashboard became the second
+//   caller M6 had named as the moment it moves.
 //
 //   `.stateIn(scope, WhileSubscribed(5_000), CycleUiState())` — `@Observable` has no
 //   subscription-count hook, so the observation runs from `init` to `deinit` instead of starting
@@ -162,7 +164,7 @@ public final class CycleViewModel {
         // second observation of the same settings.
         let pairs = latestOfBoth(
             repository.observePeriods(),
-            Self.throwingStream(over: reminderSettings.config)
+            throwingStream(over: reminderSettings.config)
         ) { ($0, $1) }
         observation.replace(with: Task { [weak self] in
             do {
@@ -198,25 +200,5 @@ public final class CycleViewModel {
             // Read per rebuild, exactly where Kotlin reads it (`CycleViewModel.kt:107`).
             today: clock.today()
         )
-    }
-
-    /// Re-types a non-throwing `AsyncStream` as the throwing one `latestOfBoth` combines.
-    ///
-    /// Nothing else changes: every value is forwarded, the end of the source finishes the wrapper,
-    /// and a consumer that stops reading cancels the source. `.bufferingNewest(1)` restates the
-    /// conflation the settings stream already applies, because `AsyncThrowingStream` is a concrete
-    /// type and wrapping means rebuilding.
-    private static func throwingStream<Value: Sendable>(
-        over source: AsyncStream<Value>
-    ) -> AsyncThrowingStream<Value, any Error> {
-        AsyncThrowingStream(bufferingPolicy: .bufferingNewest(1)) { continuation in
-            let task = Task {
-                for await value in source {
-                    continuation.yield(value)
-                }
-                continuation.finish()
-            }
-            continuation.onTermination = { _ in task.cancel() }
-        }
     }
 }
