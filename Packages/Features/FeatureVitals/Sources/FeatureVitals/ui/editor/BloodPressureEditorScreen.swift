@@ -7,6 +7,12 @@
 //   `.roundedBorder` field has no error state, and Kotlin's red outline is the *only* per-field
 //   signal here (the message itself is a single `Text` below the three fields), so dropping it
 //   would leave `SYSTOLIC_NOT_ABOVE_DIASTOLIC` unable to say *which* two fields it means.
+//   `label = { Text(…) }` on an `OutlinedTextField` → a persistent caption above the field, *plus*
+//   the same string as the `TextField`'s placeholder. Material floats the label to the border and
+//   keeps it once the field is filled; SwiftUI's placeholder disappears at the first character,
+//   which would leave systolic and diastolic — two adjacent boxes carrying the identical `"mmHg"`
+//   suffix — unlabelled in exactly the edit case where both are filled. The caption takes the
+//   `error` role with the field, so `SYSTOLIC_NOT_ABOVE_DIASTOLIC` reddens the names too.
 
 import SalusDesignSystem
 import SalusUI
@@ -76,7 +82,7 @@ struct BloodPressureEditorScreen: View {
                 }
                 .buttonStyle(.borderedProminent)
                 // `BloodPressureEditorScreen.kt:154-157`.
-                .disabled(state.isSaving || isBlank(state.systolicText) || isBlank(state.diastolicText))
+                .disabled(state.isSaving || Self.isBlank(state.systolicText) || Self.isBlank(state.diastolicText))
             }
             .listRowBackground(Color.clear)
         }
@@ -118,8 +124,12 @@ struct BloodPressureEditorScreen: View {
     /// `BloodPressureEditorScreen.kt:101-141` — the two-column row, the full-width pulse, and the
     /// one error message the three of them share.
     private var readings: some View {
-        VStack(alignment: .leading, spacing: SalusSpacing.xs) {
-            HStack(spacing: SalusSpacing.md) {
+        // Kotlin's outer `Column` is `Arrangement.spacedBy(16.dp)` — `SalusSpacing.lg` — between the
+        // row and the pulse field. The shared error line keeps `.xs` instead, the idiom
+        // `WeightEditorScreen` uses: the message hugs the fields it describes rather than floating
+        // a full 16 below them.
+        VStack(alignment: .leading, spacing: SalusSpacing.lg) {
+            HStack(spacing: SalusSpacing.lg) {
                 numberField(
                     label: VitalsStrings.systolicLabel,
                     suffix: "mmHg",
@@ -141,18 +151,20 @@ struct BloodPressureEditorScreen: View {
                 )
             }
 
-            numberField(
-                label: VitalsStrings.pulseLabel,
-                suffix: "bpm",
-                text: Binding(get: { state.pulseText }, set: { onEvent(.pulseChanged($0)) }),
-                isError: state.error == .invalidPulse
-            )
+            VStack(alignment: .leading, spacing: SalusSpacing.xs) {
+                numberField(
+                    label: VitalsStrings.pulseLabel,
+                    suffix: "bpm",
+                    text: Binding(get: { state.pulseText }, set: { onEvent(.pulseChanged($0)) }),
+                    isError: state.error == .invalidPulse
+                )
 
-            // `BloodPressureEditorScreen.kt:133-139` — one message for four rejections.
-            if let error = state.error {
-                Text(Self.message(for: error))
-                    .font(SalusTypography.bodySmall.font)
-                    .foregroundStyle(theme.colorScheme.error)
+                // `BloodPressureEditorScreen.kt:133-139` — one message for four rejections.
+                if let error = state.error {
+                    Text(Self.message(for: error))
+                        .font(SalusTypography.bodySmall.font)
+                        .foregroundStyle(theme.colorScheme.error)
+                }
             }
         }
     }
@@ -165,25 +177,35 @@ struct BloodPressureEditorScreen: View {
         text: Binding<String>,
         isError: Bool
     ) -> some View {
-        HStack(spacing: SalusSpacing.sm) {
-            TextField(label, text: text)
-                .textFieldStyle(.roundedBorder)
-            #if os(iOS)
-                // `KeyboardType.Number` (`BloodPressureEditorScreen.kt:190`).
-                .keyboardType(.numberPad)
-            #endif
-                .overlay {
-                    if isError {
-                        // `SalusShapes.extraSmall` rather than a literal: the shape token is the
-                        // one sanctioned source for a radius, and `.roundedBorder`'s own corner
-                        // is not a value the framework publishes.
-                        RoundedRectangle(cornerRadius: SalusShapes.extraSmall)
-                            .stroke(theme.colorScheme.error, lineWidth: 1)
+        VStack(alignment: .leading, spacing: SalusSpacing.xs) {
+            // Kotlin's `label = { Text(…) }`, which Material keeps on the border once the field is
+            // filled. Repeating it as the placeholder costs nothing on an empty field and is what
+            // the platform draws before the first character.
+            Text(label)
+                .font(SalusTypography.labelMedium.font)
+                .tracking(SalusTypography.labelMedium.tracking)
+                .foregroundStyle(isError ? theme.colorScheme.error : theme.colorScheme.onSurfaceVariant)
+
+            HStack(spacing: SalusSpacing.sm) {
+                TextField(label, text: text)
+                    .textFieldStyle(.roundedBorder)
+                #if os(iOS)
+                    // `KeyboardType.Number` (`BloodPressureEditorScreen.kt:190`).
+                    .keyboardType(.numberPad)
+                #endif
+                    .overlay {
+                        if isError {
+                            // `SalusShapes.extraSmall` rather than a literal: the shape token is
+                            // the one sanctioned source for a radius, and `.roundedBorder`'s own
+                            // corner is not a value the framework publishes.
+                            RoundedRectangle(cornerRadius: SalusShapes.extraSmall)
+                                .stroke(theme.colorScheme.error, lineWidth: 1)
+                        }
                     }
-                }
-            Text(verbatim: suffix)
-                .font(SalusTypography.bodyMedium.font)
-                .foregroundStyle(theme.colorScheme.onSurfaceVariant)
+                Text(verbatim: suffix)
+                    .font(SalusTypography.bodyMedium.font)
+                    .foregroundStyle(theme.colorScheme.onSurfaceVariant)
+            }
         }
     }
 
@@ -211,7 +233,7 @@ struct BloodPressureEditorScreen: View {
     }
 
     /// `String.isNotBlank()` — whitespace is not a reading.
-    private func isBlank(_ text: String) -> Bool {
+    private static func isBlank(_ text: String) -> Bool {
         text.trimmingCharacters(in: .whitespaces).isEmpty
     }
 }
