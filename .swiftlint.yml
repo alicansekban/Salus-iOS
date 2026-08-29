@@ -243,17 +243,35 @@ custom_rules:
   # forbidden is naming `.tabBar` as the placement of a visibility call.
   #   \.toolbar(Visibility)?\(   both spellings — `.toolbar(_:for:)` and the
   #                              iOS 18 `.toolbarVisibility(_:for:)`.
-  #   [^)\n]*                    the arguments, on the SAME line (no nested
-  #                              parens, no wrap): a deliberately narrow match,
-  #                              since a regex has no way to balance parens and
-  #                              a greedy one would swallow whole expressions.
-  #                              A hand-wrapped call is a review finding.
-  #   for:\s*\.tabBar            the placement that makes it the shell's.
+  #   [^)\n]*for:[^)\n]*        the arguments, on the SAME line and inside the
+  #                              SAME parens: `[^)\n]` cannot leak past the
+  #                              closing paren or onto the next line, so the
+  #                              match stays within one call however greedy it
+  #                              looks. The second `[^)\n]*` is what makes the
+  #                              placement list variadic-proof — `for:` takes
+  #                              `ToolbarPlacement...`, so a feature wanting a
+  #                              full-screen screen writes
+  #                              `.toolbar(.hidden, for: .navigationBar, .tabBar)`,
+  #                              and an anchored `for:\s*\.tabBar` sailed
+  #                              straight past it. It also covers the spelled-out
+  #                              `for: ToolbarPlacement.tabBar`.
+  #   \.tabBar                   the placement that makes it the shell's.
   # `.toolbarBackground(…, for: .tabBar)` is intentionally NOT matched: that is
-  # styling, and the shell's own two lines are outside this scope anyway.
+  # styling, and the shell's own two lines are outside this scope anyway. (It
+  # cannot match by accident either — after `.toolbar` the regex demands `(` or
+  # `Visibility(`, and `Background` is neither.)
+  #
+  # KNOWN LIMITS — this raises the cost of the accident, not of the determined
+  # workaround, so do not read a clean run as proof no feature touches the bar:
+  #   * line-local. A call hand-wrapped across lines is missed, and stays a
+  #     review finding. A balanced-paren/multi-line regex is the kind of greedy
+  #     pattern that starts matching unrelated code and gets deleted the first
+  #     time it cries wolf.
+  #   * indirection. `let p: ToolbarPlacement = .tabBar` then `for: p` is missed,
+  #     as is any placement built at runtime. A regex cannot follow a binding.
   no_tab_bar_toolbar_in_features:
     name: "Tab Bar Visibility In Feature Package"
-    regex: '\.toolbar(Visibility)?\([^)\n]*for:\s*\.tabBar'
+    regex: '\.toolbar(Visibility)?\([^)\n]*for:[^)\n]*\.tabBar'
     excluded_match_kinds:
       - comment
       - doccomment

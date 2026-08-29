@@ -112,6 +112,16 @@ check "no_tab_bar_toolbar_in_features" \
     "Packages/SalusUI/Sources/SalusUI/LintFixtureDoNotCommit.swift" \
     ".toolbar(.hidden, for: .tabBar)"
 
+# ...and the variadic placement list, which is the spelling a feature actually
+# reaches for when it wants a FULL-screen screen rather than just the bar gone.
+# `for:` takes `ToolbarPlacement...`, so this row is a genuinely different branch
+# of the regex from the one above: an anchored `for:\s*\.tabBar` passes the first
+# check and misses this one entirely.
+check "no_tab_bar_toolbar_in_features" \
+    "Packages/Features/FeatureVitals/Sources/FeatureVitals/LintFixtureDoNotCommit.swift" \
+    "Packages/SalusUI/Sources/SalusUI/LintFixtureDoNotCommit.swift" \
+    ".toolbar(.hidden, for: .navigationBar, .tabBar)"
+
 echo
 if [ "$failures" -gt 0 ]; then
     echo "==> $failures check(s) failed: a custom rule is not doing its job."

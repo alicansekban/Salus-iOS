@@ -195,10 +195,15 @@ twin of Android's `showBottomBar` in `SalusApp.kt:133-136`). `RootView.tabStack(
 `.toolbar(backStacks.isAtRoot(tab) ? .visible : .hidden, for: .tabBar)` to the tab's
 `NavigationStack`, so a detail, an editor or any future pushed screen gets the full height without
 writing a line — and a screen that sets the modifier itself is a finding, because it would fight the
-shell rather than inherit it. That finding is mechanical, not a review habit: the SwiftLint custom
-rule `no_tab_bar_toolbar_in_features` (severity: error, `included:` scoped to `Packages/Features/`,
-fixture-checked by `scripts/lint-custom-rules.sh`) fails the build on `.toolbar(…, for: .tabBar)` or
-`.toolbarVisibility(…, for: .tabBar)` anywhere in a feature package.
+shell rather than inherit it. That finding is mostly mechanical: the SwiftLint custom rule
+`no_tab_bar_toolbar_in_features` (severity: error, `included:` scoped to `Packages/Features/`,
+fixture-checked by `scripts/lint-custom-rules.sh`) fails the build on a single-line
+`.toolbar(…)` or `.toolbarVisibility(…)` call in a feature package whose arguments name
+`.tabBar` — including a variadic placement list such as
+`.toolbar(.hidden, for: .navigationBar, .tabBar)`, which is the spelling a full-screen screen
+reaches for. It is a regex, so it is not exhaustive: a call hand-wrapped across lines, or a
+placement reached through a variable (`let p: ToolbarPlacement = .tabBar`), still passes the linter
+and is still a finding. The rule catches the accident; the rule above is what binds.
 
 Reference: `VitalsScreen` (ZStack + FAB) and `WeightEditorScreen` (VStack + toolbar).
 
