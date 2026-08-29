@@ -112,12 +112,19 @@ Milestone plans live in `docs/plans/`. Toolchain and CI usage: `README.md`.
     `locale` set (never `Calendar.current`, which follows the device's region and would answer
     another calendar's week), reading a static symbol table and **never touching a `Date`** —
     nothing there computes or shifts a day. A view passes its `@Environment(\.locale)`. A second
-    symbol helper, or a `Date` inside this one, is the finding. — *enforcement: review, plus
-    `SalusUITests/SalusWeekdaySymbolsTests.swift`; a `no_calendar_outside_clock` SwiftLint custom
-    rule (scoped `included:` + a `lint-custom-rules.sh` fixture, allowing exactly these three
-    files plus the two test files that build one to exercise them —
-    `SalusWeekdaySymbolsTests.swift`, `UserNotificationGatewayTests.swift`) is owed and is
-    iOS-M7's.*
+    symbol helper, or a `Date` inside this one, is the finding. — *enforcement: `.swiftlint.yml`
+    custom rule `no_calendar_outside_clock` (severity: error), landed in iOS-M7. Its `included:` is
+    the whole tree (`App/.*\.swift`, `Packages/.*\.swift`) minus an `excluded:` list of exactly
+    the three sanctioned files plus the two test files that build a `Calendar` to exercise them
+    (`SalusWeekdaySymbolsTests.swift`, `UserNotificationGatewayTests.swift`). It matches a
+    construction (`Calendar(`), `Calendar.current`, and a type position (`-> Calendar`,
+    `: Calendar`), while leaving identifiers that merely contain the word alone
+    (`UNCalendarNotificationTrigger`, `CycleCalendarBuilder`, `addToCalendar`). Proven to actually
+    fire by `scripts/lint-custom-rules.sh`, which plants a fixture inside the scope and asserts, in
+    that same repo-wide run, that all five carve-out files stay quiet — which is also the
+    measurement that `excluded:` is honoured on a *custom* rule, rather than an assumption about
+    it. Plus `SalusUITests/SalusWeekdaySymbolsTests.swift`, and review for what a regex cannot see
+    (a `Calendar` reached through a `typealias` or a stored property).*
   — *enforcement:
   `Packages/SalusModel/Tests/SalusModelTests/LocalDateTests.swift` + review.*
 - **The composition root owns the singletons; there is no container.** `App/AppCompositionRoot.swift`

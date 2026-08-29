@@ -284,4 +284,70 @@ custom_rules:
     included:
       - "Packages/Features/.*\\.swift"
 
+  # `Calendar` is a day-arithmetic hazard: it carries a time zone AND a user
+  # calendar, which is exactly the drift `SalusModel.LocalDate` / `epochDay`
+  # exists to avoid (CLAUDE.md's `LocalDate` rule). Days are `LocalDate` /
+  # `epochDay` integer math; `Date` stays for absolute instants only. Three
+  # production files are sanctioned and no fourth is:
+  #   * SalusCommon/SalusClock.swift               — the instant<->day boundary,
+  #                                                  both directions.
+  #   * SalusReminder/platform/UserNotificationGateway.swift
+  #                                                — UNCalendarNotificationTrigger
+  #                                                  takes DateComponents, not a Date.
+  #   * SalusUI/component/SalusWeekdaySymbols.swift — localized narrow weekday
+  #                                                  symbols, never a Date.
+  # ...plus the two test files that build a `Calendar` to exercise the last two,
+  # SalusWeekdaySymbolsTests.swift and UserNotificationGatewayTests.swift.
+  #
+  # The regex matches three spellings and nothing else:
+  #   \bCalendar\s*\(        a constructed calendar — `Calendar(identifier: .gregorian)`.
+  #                          The leading `\b` is what keeps
+  #                          `UNCalendarNotificationTrigger(` out: the character
+  #                          before `Calendar` there is `N`, a word character, so
+  #                          there is no boundary to match.
+  #   \bCalendar\.current\b  the device's calendar, forbidden even inside the
+  #                          carve-outs — it follows the device region and would
+  #                          answer a different year for the same instant.
+  #   (->|:)\s*Calendar\b    a type position — `-> Calendar`, `let c: Calendar`.
+  # Identifiers that merely CONTAIN the word are therefore untouched:
+  # `CalendarEventDraft`, `CycleCalendarBuilder`, `addToCalendar`,
+  # `calendarDraft`, and the lowercase local `calendar` inside the carve-outs.
+  # `DateComponents` is deliberately NOT matched: it computes nothing on its own,
+  # and its only construction site is inside SalusClock's own carve-out.
+  #
+  # The five carve-out files are listed in `excluded:` below, which SwiftLint
+  # DOES honour on a custom rule — measured, not assumed:
+  # `scripts/lint-custom-rules.sh` asserts in one repo-wide run that a planted
+  # fixture fires exactly once AND that all five real files stay quiet. If that
+  # ever regresses, the fallback is a
+  # `// swiftlint:disable:next no_calendar_outside_clock` at each of the five
+  # construction sites.
+  #
+  # KNOWN LIMIT, stated for whoever reads a clean run: a `typealias C = Calendar`
+  # followed by `C(...)` is missed, as is a calendar reached through a stored
+  # property on another type. This raises the cost of the accident, not of the
+  # determined workaround — the same class of limit as
+  # `no_tab_bar_toolbar_in_features`.
+  no_calendar_outside_clock:
+    name: "Calendar Outside The Clock Carve-Out"
+    regex: '(\bCalendar\s*\(|\bCalendar\.current\b|(->|:)\s*Calendar\b)'
+    excluded_match_kinds:
+      - comment
+      - doccomment
+      - string
+    message: "Days are SalusModel.LocalDate / epochDay. A Calendar may only be built in SalusClock.swift (instant<->day), UserNotificationGateway.swift (UNCalendarNotificationTrigger) and SalusWeekdaySymbols.swift (localized symbols only) — see CLAUDE.md's LocalDate rule."
+    severity: error
+    # The same `--path` warning as above applies verbatim: lint the repo, or
+    # pass files positionally. `scripts/lint-custom-rules.sh` proves this rule
+    # actually fires, with a planted fixture.
+    included:
+      - "App/.*\\.swift"
+      - "Packages/.*\\.swift"
+    excluded:
+      - "Packages/SalusCommon/Sources/SalusCommon/SalusClock\\.swift"
+      - "Packages/SalusReminder/Sources/SalusReminder/platform/UserNotificationGateway\\.swift"
+      - "Packages/SalusUI/Sources/SalusUI/component/SalusWeekdaySymbols\\.swift"
+      - "Packages/SalusUI/Tests/SalusUITests/SalusWeekdaySymbolsTests\\.swift"
+      - "Packages/SalusReminder/Tests/SalusReminderTests/UserNotificationGatewayTests\\.swift"
+
 reporter: "xcode"

@@ -13,6 +13,9 @@
 # So: for every custom rule, this plants a file that MUST trip it inside the
 # rule's scope, and an identical file OUTSIDE that scope which must NOT trip it.
 # The second half is the one that catches an `included:` regex gone too wide.
+# A rule scoped by `excluded:` rather than by directory has no "outside" to
+# plant in, so it gets `check_carve_out` instead: the same planted positive, and
+# a negative half made of the sanctioned files already in the tree.
 #
 #   scripts/lint-custom-rules.sh
 #
@@ -85,6 +88,48 @@ check() {
     rm -f "$inside" "$outside"
 }
 
+# check_carve_out <rule-id> <in-scope-file> <line> <sanctioned-file>...
+#
+# The shape a carve-out rule needs, and the reason `check` above does not fit
+# it: `no_calendar_outside_clock` scopes itself with `included:` (the whole
+# tree) MINUS an `excluded:` list of named files, so there is no "outside the
+# scope" directory to plant a negative fixture in. The negative half is instead
+# the carve-out files themselves — they are already in the tree, they already
+# build a `Calendar`, and they must stay quiet in the SAME repo-wide run that
+# the planted fixture trips. That makes them a free negative fixture nothing has
+# to plant, and it measures the half worth measuring: whether SwiftLint honours
+# `excluded:` on a CUSTOM rule (it does, on 0.65.0 — this is what proves it).
+check_carve_out() {
+    rule="$1"
+    inside="$2"
+    line="$3"
+    shift 3
+
+    plant "$inside" "$line"
+
+    output="$(swiftlint --quiet 2>/dev/null)"
+    hits_inside="$(printf '%s\n' "$output" | grep -c "$inside.*($rule)")"
+
+    if [ "$hits_inside" -eq 1 ]; then
+        echo "PASS  $rule fired on $inside"
+    else
+        echo "FAIL  $rule did NOT fire on $inside (expected 1 hit, got $hits_inside)"
+        failures=$((failures + 1))
+    fi
+
+    for sanctioned in "$@"; do
+        hits="$(printf '%s\n' "$output" | grep -c "$sanctioned.*($rule)")"
+        if [ "$hits" -eq 0 ]; then
+            echo "PASS  $rule stayed quiet on the carve-out $sanctioned"
+        else
+            echo "FAIL  $rule fired on the sanctioned $sanctioned ($hits hits)"
+            failures=$((failures + 1))
+        fi
+    done
+
+    rm -f "$inside"
+}
+
 echo "==> planting fixtures and linting the repo"
 echo
 
@@ -121,6 +166,22 @@ check "no_tab_bar_toolbar_in_features" \
     "Packages/Features/FeatureVitals/Sources/FeatureVitals/LintFixtureDoNotCommit.swift" \
     "Packages/SalusUI/Sources/SalusUI/LintFixtureDoNotCommit.swift" \
     ".toolbar(.hidden, for: .navigationBar, .tabBar)"
+
+# Guard 4: a `Calendar` may only be built in the three sanctioned files — days
+# are `SalusModel.LocalDate` / `epochDay` everywhere else (CLAUDE.md's LocalDate
+# rule). `Calendar(identifier: .gregorian)` is planted because that is the exact
+# spelling every real carve-out uses, so a regex that misses it misses
+# everything. The negative half is the five carve-out files themselves: they
+# already build a `Calendar` in the tree, and they must stay quiet in this same
+# run or `excluded:` has stopped being honoured on a custom rule.
+check_carve_out "no_calendar_outside_clock" \
+    "Packages/Features/FeatureVitals/Sources/FeatureVitals/LintFixtureDoNotCommit.swift" \
+    "let planted = Calendar(identifier: .gregorian)" \
+    "Packages/SalusCommon/Sources/SalusCommon/SalusClock.swift" \
+    "Packages/SalusReminder/Sources/SalusReminder/platform/UserNotificationGateway.swift" \
+    "Packages/SalusUI/Sources/SalusUI/component/SalusWeekdaySymbols.swift" \
+    "Packages/SalusUI/Tests/SalusUITests/SalusWeekdaySymbolsTests.swift" \
+    "Packages/SalusReminder/Tests/SalusReminderTests/UserNotificationGatewayTests.swift"
 
 echo
 if [ "$failures" -gt 0 ]; then
