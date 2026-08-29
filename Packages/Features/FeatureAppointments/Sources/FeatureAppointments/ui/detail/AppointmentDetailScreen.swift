@@ -7,7 +7,10 @@
 //                                 mutates (`WeightEditorScreen.swift` records the ruling).
 //   `Column(verticalScroll)`    → `ScrollView` + `VStack`.
 //   `FlowRow`                   → `SalusUI.ChipFlowLayout`; SwiftUI ships no flow stack.
-//   `SalusPillButton`           → `Button` + `.borderedProminent` (primary) / `.bordered` (tonal).
+//   `SalusPillButton`           → `SalusUI.SalusPillButton`, one for one, since iOS-M7: `tonal:`
+//                                 for Kotlin's `tonal`, `fillsWidth:` for its `fillMaxWidth()`,
+//                                 `enabled:` for its `enabled`. The `.borderedProminent` /
+//                                 `.bordered` stand-in this file carried is gone.
 //   `Icons.Filled.*`            → SF Symbol names.
 //   `AlertDialog`               → `.salusConfirmDialog(isPresented:…)`.
 //   `Intent(ACTION_INSERT)`     → a `.sheet` over `CalendarEventEditSheet` — divergence (e).
@@ -347,18 +350,19 @@ private struct OpenMapsButton: View {
     @Environment(\.openURL) private var openURL
 
     var body: some View {
-        Button {
+        // `SalusPillButton(tonal = true, icon = Icons.Filled.Map)`
+        // (`AppointmentDetailScreen.kt:237-242`) — content width, since Kotlin passes it no
+        // `Modifier.fillMaxWidth()` unlike the three in the action block.
+        SalusPillButton(
+            text: AppointmentsStrings.detailOpenMaps,
+            tonal: true,
+            systemImage: "map"
+        ) {
             guard let url = mapsURL(for: location) else { return }
             // `runCatching { startActivity(intent) }` (`AppointmentDetailScreen.kt:249`): no map
             // app is a legal state on both platforms, and the completion is what says so here.
             openURL(url) { _ in }
-        } label: {
-            Label(AppointmentsStrings.detailOpenMaps, systemImage: "map")
         }
-        .buttonStyle(.bordered)
-        // `AppointmentDetailScreen.kt:237` is a `SalusPillButton` too — tonal, with a map icon —
-        // so it takes the same pill as the action block above.
-        .buttonBorderShape(.capsule)
     }
 }
 

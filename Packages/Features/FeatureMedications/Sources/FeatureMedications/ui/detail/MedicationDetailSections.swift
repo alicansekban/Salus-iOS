@@ -12,8 +12,9 @@
 // Material → SwiftUI, the same table `MedicationsScreen.swift` and `AppointmentDetailScreen.swift`
 // already list:
 //   `Switch(checked:onCheckedChange:)` → `Toggle(_:isOn:)` over a get/set `Binding`.
-//   `SalusPillButton`                  → `Button` + `.borderedProminent` (primary) / `.bordered`
-//                                        (tonal), `.buttonBorderShape(.capsule)` for the pill.
+//   `SalusPillButton`                  → `SalusUI.SalusPillButton`, one for one, since iOS-M7:
+//                                        `tonal:` for Kotlin's `tonal`, `fillsWidth:` for its
+//                                        `fillMaxWidth()`. The bordered stand-in is gone.
 //   `Icons.Outlined.NotificationsOff`  → the `bell.slash` SF Symbol, the same one the list card's
 //                                        silenced chip draws.
 //   `DateTimeFormatter.ofPattern`      → `LocalDate.formatted(pattern:locale:)`.

@@ -11,13 +11,14 @@
 // Android"). Drawing the capsule ourselves is the one placement that gets both axes right at once,
 // and it is what `SalusEmptyState.swift` did by hand for this very Kotlin button until iOS-M7.
 //
-// The bordered mapping this supersedes had three inlined copies, deferred by the M6 plan's
-// ruling 3. **All three are migrated** (iOS-M7), so there is no inline pill left in the tree:
-// the appointment detail's three actions (`AppointmentDetailScreen.swift`, `actions`), the
-// medication detail's two (`MedicationDetailSections.swift`, `MedicationDetailActions`) — both
-// passing `fillsWidth: true` for Kotlin's `Modifier.fillMaxWidth()` — and this package's own
+// The bordered mapping this supersedes had inlined copies, deferred by the M6 plan's ruling 3.
+// **All of them are migrated** (iOS-M7), so no inline pill is left in the tree: the appointment
+// detail's three actions and its maps link (`AppointmentDetailScreen.swift` — `actions` and
+// `OpenMapsButton`, the fourth site the M6 inventory missed), the medication detail's two
+// (`MedicationDetailSections.swift`, `MedicationDetailActions`), and this package's own
 // empty-state action (`SalusEmptyState.swift`), a straight substitution for a hand-drawn pill the
-// component already drew byte for byte.
+// component already drew byte for byte. The action blocks pass `fillsWidth: true` for Kotlin's
+// `Modifier.fillMaxWidth()`; the maps link is content width, as Kotlin has it.
 
 import SalusDesignSystem
 import SwiftUI
