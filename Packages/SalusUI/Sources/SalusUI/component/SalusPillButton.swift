@@ -23,14 +23,27 @@ import SwiftUI
 /// (container-tinted) style for secondary actions. Pass the feature's `FeatureAccent` to color the
 /// button with that accent instead of the primary role (`SalusPillButton.kt:29-36`).
 ///
-/// Width is the caller's: Kotlin takes a `Modifier`, so a full-width action row applies
-/// `.frame(maxWidth: .infinity)` at the call site rather than the component deciding for every one.
+/// Width is the caller's: Kotlin takes a `Modifier`, so whether the pill fills its row is decided
+/// at the call site rather than by the component for every one. Two widths, and only two:
+///
+///   * **content width** (the default) — the capsule is as wide as its label plus
+///     `ButtonDefaults.ContentPadding`, which is what a pill in a column of prose or an empty
+///     state's action wants;
+///   * **`fillsWidth: true`** — the capsule fills the width it is proposed, the twin of a caller
+///     passing `Modifier.fillMaxWidth()` (`CycleScreen.kt:137`).
+///
+/// A bare `.frame(maxWidth: .infinity)` at the call site cannot do the second: nothing in the
+/// label's chain (`HStack` → padding → `frame(minHeight:)` → `background`) is width-greedy, so the
+/// button reports its content width and the outer frame merely centres a text-width capsule in a
+/// full-width slot. The greedy frame has to be *inside*, after the horizontal padding — on the
+/// `HStack` it would overflow the row by `2 × SalusSpacing.xl`.
 public struct SalusPillButton: View {
     private let text: String
     private let enabled: Bool
     private let tonal: Bool
     private let accent: FeatureAccent?
     private let systemImage: String?
+    private let fillsWidth: Bool
     private let action: () -> Void
 
     @Environment(\.salusTheme) private var theme
@@ -39,12 +52,16 @@ public struct SalusPillButton: View {
     ///   - systemImage: SF Symbol name for the leading icon, which labels the action and leads the
     ///     text (`SalusPillButton.kt:34-35`). Kotlin takes an `ImageVector` from `Icons`; the iOS
     ///     twin of that catalogue is SF Symbols, named rather than referenced.
+    ///   - fillsWidth: whether the drawn capsule fills the width it is proposed — the twin of a
+    ///     caller's `Modifier.fillMaxWidth()`. Defaults to `false`, the content-width pill every
+    ///     existing call site draws.
     public init(
         text: String,
         enabled: Bool = true,
         tonal: Bool = false,
         accent: FeatureAccent? = nil,
         systemImage: String? = nil,
+        fillsWidth: Bool = false,
         action: @escaping () -> Void
     ) {
         self.text = text
@@ -52,6 +69,7 @@ public struct SalusPillButton: View {
         self.tonal = tonal
         self.accent = accent
         self.systemImage = systemImage
+        self.fillsWidth = fillsWidth
         self.action = action
     }
 
@@ -71,8 +89,11 @@ public struct SalusPillButton: View {
             .padding(.horizontal, SalusSpacing.xl)
             // `heightIn(min = SalusTouchTarget.min)` (`SalusPillButton.kt:67`), on the container as
             // Kotlin has it: the pill *draws* 48 pt and is hittable across exactly that, rather
-            // than drawing short and reserving dead space around itself.
-            .frame(minHeight: SalusTouchTarget.min)
+            // than drawing short and reserving dead space around itself. The same frame carries
+            // the caller's `fillMaxWidth()`, and it has to be this one: it is the last view before
+            // the capsule background, so a greedy width here is a wide *drawn* pill, where the
+            // same frame on the `HStack` would push the padding past the row's edges.
+            .frame(maxWidth: fillsWidth ? .infinity : nil, minHeight: SalusTouchTarget.min)
             .foregroundStyle(contentColor)
             // `shape = CircleShape` (`:73`, `:88`) filled with `containerColor` (`:76`, `:91`).
             .background(SalusShapes.pill.fill(containerColor))
@@ -133,9 +154,17 @@ public struct SalusPillButton: View {
                 action: {}
             )
             SalusPillButton(text: "Log period", enabled: false, action: {})
+            // The full-width row, which Kotlin's preview does not draw either: the caller that
+            // passes `Modifier.fillMaxWidth()` (`CycleScreen.kt:137`).
+            SalusPillButton(
+                text: "Log period",
+                accent: theme.extendedColors.cycle,
+                fillsWidth: true,
+                action: {}
+            )
         }
         .padding(SalusSpacing.lg)
     }
-    .frame(height: 360)
+    .frame(height: 440)
     .salusTheme(theme)
 }

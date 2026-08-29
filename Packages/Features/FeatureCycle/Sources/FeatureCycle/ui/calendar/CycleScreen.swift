@@ -68,14 +68,18 @@ struct CycleScreen: View {
     /// `SalusPillButton(text = …, onClick = …, accent = cycle, modifier = fillMaxWidth())`
     /// (`CycleScreen.kt:119-138`). Never disabled: "start" and "end" are the two halves of one
     /// control, and whichever it is showing is always available.
+    ///
+    /// `fillsWidth: true` is the `Modifier.fillMaxWidth()` at `CycleScreen.kt:137`, and it is the
+    /// whole width story: an outer `.frame(maxWidth: .infinity)` would only centre a content-width
+    /// capsule, since the drawn pill has to be widened from inside the component.
     private var periodButton: some View {
         SalusPillButton(
             text: state.hasOpenPeriod ? CycleStrings.periodEnded : CycleStrings.periodStarted,
-            accent: theme.extendedColors.cycle
+            accent: theme.extendedColors.cycle,
+            fillsWidth: true
         ) {
             onEvent(state.hasOpenPeriod ? .endPeriodClicked : .startPeriodClicked)
         }
-        .frame(maxWidth: .infinity)
     }
 
     /// The medical disclaimer is pinned below the scroll area so it is always visible
