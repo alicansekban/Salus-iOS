@@ -58,8 +58,9 @@ extension RootTab {
     /// list, so it lands on Home here too.
     ///
     /// Since iOS-M6 the cycle answer is more than a tab: `RootView.openTappedReminder` pushes
-    /// `CycleKey` onto the stack this returns, so a tapped cycle reminder opens the calendar rather
-    /// than stopping at Home's root. That is an iOS-only behaviour — Android's tap builds a
+    /// `CycleKey` onto the stack this returns — once, memoized, so a second tap on a notification
+    /// iOS has not cleared does not stack a second calendar — so a tapped cycle reminder opens the
+    /// calendar rather than stopping at Home's root. That is an iOS-only behaviour — Android's tap builds a
     /// launcher intent and goes no further (iOS-M6 divergence (c)).
     static func hosting(_ type: ReminderType) -> RootTab {
         switch type {

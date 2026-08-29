@@ -231,7 +231,8 @@ Milestone plans live in `docs/plans/`. Toolchain and CI usage: `README.md`.
   the repository names anything banned" (`assertSourcesNameNothingBanned(roots:exemptFileName:)`)
   and "no string catalog in the repository names anything banned"
   (`assertCatalogsNameNothingBanned(paths:)`). Both fail loudly if the scan reaches zero files, so a
-  broken path cannot pass as a clean tree. Note the scan covers `Packages/` — `App/` is still review.*
+  broken path cannot pass as a clean tree. Both scans cover `Packages/` **and** `App/`: the catalog
+  scan gained `App/` in iOS-M6, when the app target got a `Localizable.xcstrings` of its own.*
 - **The AI/PDF disclaimer is verbatim and mandatory** on every AI output and every PDF page
   footer: TR *"Bu rapor bilgilendirme amaçlıdır, tıbbi tavsiye değildir."* /
   EN *"This report is for informational purposes only and is not medical advice."* — *review,

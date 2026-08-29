@@ -48,6 +48,13 @@ struct RootView: View {
     /// is on top of a stack is to remember what was put there. Hence a memo rather than a read.
     @State private var reminderPushedAppointment: PushedAppointmentDetail?
 
+    /// How deep Home's stack was left by the cycle calendar a tapped reminder last pushed — the
+    /// cycle half of the same "is this key still on top?" question.
+    ///
+    /// One `Int` rather than a pair because `CycleKey` carries no payload: there is only ever one
+    /// calendar, so the depth alone identifies it.
+    @State private var reminderPushedCycleDepth: Int?
+
     /// `Theme.kt:99-104`. The premium palette is pinned to `.classic` until M9 wires entitlement:
     /// the stored `premium_theme` is what the user *selected*, and `SalusTheme.resolve` wants what
     /// they are *entitled* to — a distinction there is nothing to evaluate against yet.
@@ -235,9 +242,12 @@ struct RootView: View {
         // The calendar itself, onto Home — `RootTab.hosting(.cyclePeriod)` is `.home`, because
         // cycle has no tab of its own (iOS-M6 ruling 1). `CycleKey` carries no payload, so unlike
         // the appointment arm above there is nothing to look up: the ref's `entityId` names the
-        // period, and the calendar shows every period there is.
+        // period, and the calendar shows every period there is. The push is memoized all the same,
+        // for the reason `pushAppointmentDetail` is: `switchTopLevel` is a no-op when Home is
+        // already selected and `push` never inspects the path, so two taps would stack two
+        // calendars.
         case .cyclePeriod:
-            backStacks.push(AnyNavKey(CycleKey()))
+            pushCycleCalendar()
         // A dose stops at the medications tab root, and that is a decision rather than an omission
         // (M5, decision 3): a dose ref's `entityId` is its SCHEDULE's id, and no screen is addressed
         // by one — `MedicationDetailKey` wants the medication.
@@ -260,6 +270,20 @@ struct RootView: View {
         reminderPushedAppointment = PushedAppointmentDetail(id: id, depth: depth + 1)
     }
 
+    /// Pushes the cycle calendar, unless that same calendar is what the last tap already left on top
+    /// of Home's stack.
+    ///
+    /// The twin of `pushAppointmentDetail`, minus the payload: with nothing to compare but the
+    /// stack, a depth that still matches the one the last push left means nothing has been pushed
+    /// or popped since, so the calendar is still showing and a second one would only have to be
+    /// dismissed twice.
+    private func pushCycleCalendar() {
+        let depth = backStacks.path(for: .home).count
+        guard reminderPushedCycleDepth != depth else { return }
+        backStacks.push(AnyNavKey(CycleKey()))
+        reminderPushedCycleDepth = depth + 1
+    }
+
     /// The store emits its current value first, then every change, so this both seeds and tracks.
     private func observeThemeMode() async {
         for await settings in root.preferences.userSettings {
@@ -271,11 +295,15 @@ struct RootView: View {
     /// touches the stack.
     private func observeNavigationCommands() async {
         for await command in root.navigator.commands {
-            // Anything a feature pushes onto the appointments stack invalidates the memo: it is now
-            // that key on top, not the detail a reminder put there. A pop needs no line — it moves
-            // the depth the memo is matched against, so it can never leave a stale match behind.
+            // Anything a feature pushes onto the appointments or Home stack invalidates that
+            // stack's memo: it is now that key on top, not what a reminder put there. A pop needs no
+            // line — it moves the depth the memo is matched against, so it can never leave a stale
+            // match behind.
             if case .navigate = command, backStacks.selection == .appointments {
                 reminderPushedAppointment = nil
+            }
+            if case .navigate = command, backStacks.selection == .home {
+                reminderPushedCycleDepth = nil
             }
             switch command {
             case let .navigate(key): backStacks.push(key)

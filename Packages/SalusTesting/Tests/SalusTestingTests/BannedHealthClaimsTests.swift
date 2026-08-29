@@ -81,10 +81,14 @@ struct BannedHealthClaimsTests {
         // The Swift scan above reads `.swift` only, so a catalog was invisible to it — and the
         // catalog is where the words a user actually reads live. This is the twin of Android's
         // per-module `assertFilesNameNothingBanned(STRING_FILES)`, hoisted to one repository-wide
-        // run: every `.xcstrings` under `Packages/` is covered the moment it is added, with no
-        // edit to the feature that added it.
+        // run: every `.xcstrings` under `Packages/` or `App/` is covered the moment it is added,
+        // with no edit to the feature that added it. `App/` is listed for the same reason the Swift
+        // scan above lists it — since iOS-M6 the app target carries a catalog of its own.
         try BannedHealthClaims.assertCatalogsNameNothingBanned(
-            paths: [Self.repositoryRoot.appendingPathComponent("Packages")]
+            paths: [
+                Self.repositoryRoot.appendingPathComponent("Packages"),
+                Self.repositoryRoot.appendingPathComponent("App")
+            ]
         )
     }
 
