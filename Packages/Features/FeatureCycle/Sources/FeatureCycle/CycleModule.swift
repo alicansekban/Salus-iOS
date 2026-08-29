@@ -20,12 +20,9 @@
 //   `single { CycleReminderHandler(…) }`      → built inline and handed straight out; the engine's
 //     `bind ReminderHandler::class`             registry is its only consumer.
 //   `viewModelOf(::CycleViewModel)`           → `makeCycleViewModel`.
-//
-// **`viewModel { CycleDayViewModel(…) }` (`CycleModule.kt:49-56`) has no twin yet**, because
-// `CycleDayViewModel` does not exist yet — iOS-M6 Task 11 builds it, together with the real
-// `CycleDayRoute`. Its factory is added here in the same slice; until then this module exposes one
-// ViewModel factory rather than two, and `SaveCycleDayUseCase` stays unwired. Recorded so the gap
-// reads as scheduled rather than dropped.
+//   `viewModel { CycleDayViewModel(…) }`      → `makeCycleDayViewModel`, which takes the one
+//     (`CycleModule.kt:49-56`)                  argument Koin reads off `parametersOf` — the
+//                                               epoch day the route was pushed with.
 
 import SalusCommon
 import SalusDatabase
@@ -59,6 +56,13 @@ public struct CycleModule {
 
     /// Koin's `viewModelOf(::CycleViewModel)` (`CycleModule.kt:47`).
     public let makeCycleViewModel: @MainActor () -> CycleViewModel
+
+    /// Koin's `viewModel { (epochDay: Int) -> CycleDayViewModel(…) }` (`CycleModule.kt:49-56`).
+    ///
+    /// Parameterised where the calendar's factory is not: `parametersOf(epochDay)` is a runtime
+    /// argument the container passes through, and a function that takes it is exactly that, minus
+    /// the lookup. `MedicationsModule.makeMedicationEditorViewModel` set the shape.
+    public let makeCycleDayViewModel: @MainActor (Int) -> CycleDayViewModel
 }
 
 /// Builds the feature's graph — the twin of `val cycleModule = module { … }`.
@@ -104,6 +108,16 @@ public func makeCycleModule(
                 clock: clock,
                 reminderSettings: reminderSettings,
                 reminderScheduler: reminderScheduler
+            )
+        },
+        makeCycleDayViewModel: { epochDay in
+            CycleDayViewModel(
+                epochDay: epochDay,
+                repository: repository,
+                // `factoryOf(::SaveCycleDayUseCase)` (`CycleModule.kt:31`): a fresh one per
+                // ViewModel, exactly as `factory` does.
+                saveCycleDay: SaveCycleDayUseCase(repository: repository, idGenerator: idGenerator),
+                navigator: navigator
             )
         }
     )

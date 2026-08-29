@@ -1,24 +1,46 @@
-// The day-log screen's Route, as a placeholder.
+// The day-log screen's Route — the twin of `@Composable fun CycleDayRoute`
+// (`feature/cycle/src/main/kotlin/com/alicansekban/salus/feature/cycle/ui/day/
+// CycleDayScreen.kt:46-59`).
 //
-// iOS-M6 Task 11 builds `CycleDayScreen.kt`'s twin and replaces this body with the real Route —
-// module from the environment, `CycleDayViewModel(epochDay:)` in `@State`. It exists now, empty,
-// because `cycleDestinations()` names it (`CycleNavigation.kt:21`) and a navigation table that does
-// not compile is not a navigation table.
+// Kotlin's `koinViewModel(parameters = { parametersOf(epochDay) })` is a container lookup with a
+// runtime argument; there is no container here, so the parameterised factory the composition root
+// built is read from the environment and called with the same argument
+// (`CycleModule.makeCycleDayViewModel`). `MedicationEditorRoute` set that shape and this follows it.
+//
+// Kotlin's second `koinInject<Navigator>()` has no twin: `onBack` is the system back arrow on the
+// shell's own stack, which pops the very path `Navigator.pop()` mutates — see the mapping note at
+// the top of `CycleDayScreen.swift`.
 
 import SwiftUI
 
-/// One day's log (`CycleDayScreen.kt`).
+/// One day's log (`CycleDayScreen.kt:46-59`).
+///
+/// No callback parameters: the only way out of this screen is a pop, and `Navigator` already
+/// carries that.
 public struct CycleDayRoute: View {
     /// The day being logged, as the epoch day the key carries.
-    let epochDay: Int
+    private let epochDay: Int
+
+    @Environment(\.cycleModule) private var module
+    @State private var viewModel: CycleDayViewModel?
 
     public init(epochDay: Int) {
         self.epochDay = epochDay
     }
 
     public var body: some View {
-        // Task 11 replaces this body.
-        ProgressView()
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        Group {
+            if let viewModel {
+                CycleDayScreen(state: viewModel.state, onEvent: viewModel.onEvent)
+            } else {
+                // Only until `.task` has run, or if the shell forgot to inject the module.
+                ProgressView()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        }
+        .task {
+            guard viewModel == nil, let module else { return }
+            viewModel = module.makeCycleDayViewModel(epochDay)
+        }
     }
 }
