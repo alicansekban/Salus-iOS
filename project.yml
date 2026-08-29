@@ -70,6 +70,13 @@ options:
 # mis-specified translation surfaces nowhere else — and puts the cycle screens through the iOS SDK
 # rather than the macOS host, which is where the calendar grid and the period reminder's
 # notification copy are actually built.
+#
+# M7 adds `FeatureHome`, the sixth feature package and the last tab that was still a placeholder.
+# M0 created the package but never linked it, so until now nothing compiled it against the iOS SDK
+# at all. Linking it compiles its String Catalog — the 27 keys of `:feature:home` that survive the
+# port, and `swift test` never compiles a catalog, so a missing or mis-specified translation
+# surfaces nowhere else — and puts the dashboard through the iOS SDK rather than the macOS host,
+# which is where the today cards and the weight sparkline are actually built.
 packages:
   SalusDesignSystem:
     path: Packages/SalusDesignSystem
@@ -97,6 +104,8 @@ packages:
     path: Packages/Features/FeatureMedications
   FeatureCycle:
     path: Packages/Features/FeatureCycle
+  FeatureHome:
+    path: Packages/Features/FeatureHome
   SalusReminder:
     path: Packages/SalusReminder
 
@@ -244,6 +253,8 @@ targets:
         product: FeatureMedications
       - package: FeatureCycle
         product: FeatureCycle
+      - package: FeatureHome
+        product: FeatureHome
       - package: SalusReminder
         product: SalusReminder
 
