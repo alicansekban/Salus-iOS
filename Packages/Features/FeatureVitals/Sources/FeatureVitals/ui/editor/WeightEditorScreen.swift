@@ -90,6 +90,15 @@ struct WeightEditorScreen: View {
             }
             .listRowBackground(Color.clear)
         }
+        // Divergence: iOS-only, with no line in `WeightEditorScreen.kt` behind it. The weight field
+        // is `.decimalPad`, which draws no return key, so the keyboard has no "Done" to press —
+        // where Compose's number IME still carries the `ImeAction` the Kotlin field declares. The
+        // two lines below give the keyboard the two ways down the platform expects: a tap, and a
+        // drag over the form. Both belong on the scrolling container itself; the file comment on
+        // `salusDismissesKeyboardOnTap()` records the layouts that were measured and do nothing.
+        // `MedicationEditorScreen` applies the same pair in the same place.
+        .salusDismissesKeyboardOnTap()
+        .scrollDismissesKeyboard(.interactively)
         .navigationTitle(state.isNew ? VitalsStrings.newTitle : VitalsStrings.editTitle)
         .toolbar {
             // `WeightEditorScreen.kt:77-86` — the delete action exists only for an existing entry.

@@ -145,6 +145,15 @@ struct AppointmentEditorScreen: View {
             }
             .padding(SalusSpacing.lg)
         }
+        // Divergence: iOS-only, with no line in `AppointmentEditorScreen.kt` behind it. The notes
+        // field is `axis: .vertical`, so its return key inserts a newline rather than closing the
+        // keyboard — where the Kotlin field carries `ImeAction.Done`. The two lines below give the
+        // keyboard the two ways down the platform expects: a tap, and a drag over the form. Both
+        // belong on the `ScrollView` itself; the file comment on `salusDismissesKeyboardOnTap()`
+        // records the layouts that were measured and do nothing. `MedicationEditorScreen` applies
+        // the same pair in the same place.
+        .salusDismissesKeyboardOnTap()
+        .scrollDismissesKeyboard(.interactively)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(theme.colorScheme.background)
         .navigationTitle(state.isNew ? AppointmentsStrings.newTitle : AppointmentsStrings.editTitle)

@@ -210,7 +210,10 @@ struct MedicationDetailViewModelTests {
 
         viewModel.onEvent(.deleteConfirmed)
 
-        // The row is gone from every list at once, but nothing is written yet.
+        // The row is gone from every list at once, but nothing is written yet. The yield drains
+        // the cooperative pool first, so a deferred write that was already ready to run gets its
+        // turn before the log is read.
+        await Task.yield()
         #expect(deletes.controller.pendingIds == ["med-1"])
         #expect(repository.medications.isEmpty == false)
         #expect(deletes.lastRequest?.message == MedicationsStrings.deleted)

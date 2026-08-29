@@ -148,7 +148,10 @@ struct MedicationEditorViewModelTests {
 
         viewModel.onEvent(.deleteConfirmed)
         await waitUntil("the editor to pop") { navigator.commandLog == [.pop] }
-        // `MedicationEditorViewModelTest.kt:146` — the write waits for the undo window.
+        // `MedicationEditorViewModelTest.kt:146` — the write waits for the undo window. The yield
+        // drains the cooperative pool first, so a deferred write that was already ready to run gets
+        // its turn before the log is read.
+        await Task.yield()
         #expect(!repository.medications.isEmpty)
 
         await deletes.closeUndoWindow()

@@ -158,7 +158,11 @@ struct MedicationsViewModelTests {
             viewModel.state.medications.isEmpty && viewModel.state.pendingDelete == nil
         }
 
-        // The row is gone, but nothing is written until the window closes.
+        // The row is gone, but nothing is written until the window closes. The yield drains the
+        // cooperative pool first, so a deferred write that was already ready to run gets its turn
+        // before the log is read — without it the assertion passes on scheduling luck rather than
+        // on the write actually waiting.
+        await Task.yield()
         #expect(repository.medications.count == 1)
         // `MedicationsViewModelTest.kt:140` — `assertEquals(1, deletes.snackbar.shown.size)`, in the
         // shape `AppointmentsViewModelTests` settled on: the iOS controller publishes the snackbar
