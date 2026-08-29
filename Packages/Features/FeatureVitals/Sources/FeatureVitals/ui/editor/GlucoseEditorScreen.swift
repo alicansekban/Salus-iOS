@@ -174,9 +174,14 @@ struct GlucoseEditorScreen: View {
     }
 
     /// `GlucoseEditorScreen.kt:123-127` and `:176-192` — the `GlucoseUnitSelector` composable.
+    ///
+    /// The label is empty for the same reason `VitalsScreen.swift`'s type selector's is: Kotlin's
+    /// `SingleChoiceSegmentedButtonRow` carries none, and inventing one would mean inventing
+    /// user-facing copy the string catalog does not carry. `glucoseValueLabel` belongs to the value
+    /// field above, so titling the unit picker with it made VoiceOver announce the unit selector as
+    /// "value".
     private var unitSelector: some View {
         Picker(
-            VitalsStrings.glucoseValueLabel,
             selection: Binding(
                 get: { state.unit },
                 set: { onEvent(.unitSelected($0)) }
@@ -185,6 +190,8 @@ struct GlucoseEditorScreen: View {
             ForEach(GlucoseUnit.allCases, id: \.self) { unit in
                 Text(verbatim: unit.label).tag(unit)
             }
+        } label: {
+            EmptyView()
         }
         .pickerStyle(.segmented)
         .labelsHidden()
