@@ -56,7 +56,9 @@ public final class VitalsViewModel {
     private let preferences: any VitalsPreferences
     private let pendingDeletes: PendingDeleteController
     private let undoableDelete: UndoableDelete
-    private let clock: any SalusClock
+    /// Internal rather than private because the state builders read the zone off it and live in
+    /// `VitalsStateBuilders.swift`; `private` would reach an extension in this file only.
+    let clock: any SalusClock
 
     /// `VitalsViewModel.kt:47-49`.
     private var selectedType: VitalType = .weight
@@ -68,7 +70,8 @@ public final class VitalsViewModel {
 
     /// What the current window has emitted, or nil while it has emitted nothing yet — the state
     /// `combine` is in before all of its sources have produced a value. Tagged with the branch it
-    /// came from, so a cancelled window's last emission cannot reach the new type's builder.
+    /// came from, so a late emission from the window a type switch just cancelled cannot be folded
+    /// through the new type's builder.
     private var loadedEntries: LoadedVitalsHistory?
 
     /// The glucose branch's third source (`VitalsViewModel.kt:74-81`), nil on the same terms and
@@ -146,9 +149,10 @@ public final class VitalsViewModel {
         undoableDelete(id, message: VitalsStrings.entryDeleted) { [repository] in
             switch type {
             case .weight:
-                // Kotlin lets a repository failure propagate into `viewModelScope`; there is no such
-                // scope here, and a delete that failed has already been taken off the list, so the
-                // row comes back on the next emission. The same holds for the two arms below.
+                // Kotlin lets a repository failure propagate into `viewModelScope`; there is no
+                // such scope here, and a delete that failed has already been taken off the list, so
+                // the row simply comes back on the next emission. The same holds for the two arms
+                // below.
                 try? await repository.deleteWeightEntry(id: id)
             case .bloodPressure:
                 try? await repository.deleteBloodPressureEntry(id: id)
@@ -198,7 +202,8 @@ public final class VitalsViewModel {
     /// Collects one window's history into the fold, tagged with the branch that asked for it.
     ///
     /// `Task.isCancelled` is the second half of `flatMapLatest`: `historyTask.replace` cancels the
-    /// previous window's task, and this drops a value it had already buffered when that landed.
+    /// task the previous window left running, and this stops a value that was already buffered
+    /// when the cancellation landed from writing the old branch's rows into the new one's fold.
     private func observe<Entry: Sendable>(
         _ history: AsyncThrowingStream<[Entry], any Error>,
         as tag: @escaping @Sendable ([Entry]) -> LoadedVitalsHistory
@@ -286,200 +291,6 @@ public final class VitalsViewModel {
         next.pendingDeleteId = pendingDeleteId
         state = next
     }
-
-    /// `VitalsViewModel.kt:118-144`.
-    private func buildWeightState(range: ChartRange, entries: [WeightEntry]) -> VitalsUiState {
-        let zone = clock.timeZone()
-        let sortedAscending = entries.sorted { $0.measuredAt < $1.measuredAt }
-
-        let items = sortedAscending
-            .reversed()
-            .map { entry in
-                VitalsListItem.weight(
-                    VitalsListItem.Weight(
-                        id: entry.id,
-                        measuredAt: entry.measuredAt.wallClock(in: zone),
-                        kilograms: entry.kilograms,
-                        note: entry.note
-                    )
-                )
-            }
-
-        let points = Self.dailyPoints(
-            sortedAscending,
-            zone: zone,
-            measuredAt: { $0.measuredAt },
-            yValue: { Float($0.kilograms) }
-        )
-
-        return VitalsUiState(
-            isLoading: false,
-            selectedType: .weight,
-            entries: items,
-            chart: Self.chartOrNull(points, yLabel: Self.decimalYLabel),
-            selectedRange: range,
-            latestKilograms: sortedAscending.last?.kilograms
-        )
-    }
-
-    /// `VitalsViewModel.kt:146-179`.
-    ///
-    /// `roundToInt` rounds half away from zero on a positive reading, which is what
-    /// `Double.rounded()` does; a blood pressure is never negative, where the two would part.
-    private func buildBloodPressureState(
-        range: ChartRange,
-        entries: [BloodPressureEntry]
-    ) -> VitalsUiState {
-        let zone = clock.timeZone()
-        let sortedAscending = entries.sorted { $0.measuredAt < $1.measuredAt }
-
-        // Newest first, and typed rather than erased, because `latestBloodPressure` is the first of
-        // these rows (`VitalsViewModel.kt:177`) and the state holds it as itself.
-        let rows = sortedAscending
-            .reversed()
-            .map { entry in
-                VitalsListItem.BloodPressure(
-                    id: entry.id,
-                    measuredAt: entry.measuredAt.wallClock(in: zone),
-                    systolic: Int(entry.systolic.rounded()),
-                    diastolic: Int(entry.diastolic.rounded()),
-                    pulse: entry.pulse.map { Int($0.rounded()) },
-                    note: entry.note
-                )
-            }
-
-        let measuredAt: (BloodPressureEntry) -> Date = { $0.measuredAt }
-        let systolicPoints = Self.dailyPoints(
-            sortedAscending,
-            zone: zone,
-            measuredAt: measuredAt,
-            yValue: { Float($0.systolic) }
-        )
-        let diastolicPoints = Self.dailyPoints(
-            sortedAscending,
-            zone: zone,
-            measuredAt: measuredAt,
-            yValue: { Float($0.diastolic) }
-        )
-        // `chartOrNull(systolicPoints, wholeYLabel())?.copy(secondaryPoints = diastolicPoints)`
-        // (`VitalsViewModel.kt:171`): the `MIN_CHART_POINTS` gate is the systolic series' alone,
-        // and the diastolic series is attached to whatever survived it. A struct has no `copy`.
-        let chart = Self.chartOrNull(systolicPoints, yLabel: Self.wholeYLabel).map {
-            ChartUiModel(
-                points: $0.points,
-                xLabel: $0.xLabel,
-                yLabel: $0.yLabel,
-                secondaryPoints: diastolicPoints
-            )
-        }
-
-        return VitalsUiState(
-            isLoading: false,
-            selectedType: .bloodPressure,
-            entries: rows.map(VitalsListItem.bloodPressure),
-            chart: chart,
-            selectedRange: range,
-            latestBloodPressure: rows.first
-        )
-    }
-
-    /// `VitalsViewModel.kt:181-215`. Storage is always canonical mg/dL and `unit` decides only how
-    /// a reading is written out, so rows and points are converted here and nowhere downstream.
-    private func buildGlucoseState(
-        range: ChartRange,
-        entries: [GlucoseEntry],
-        unit: GlucoseUnit
-    ) -> VitalsUiState {
-        let zone = clock.timeZone()
-        let sortedAscending = entries.sorted { $0.measuredAt < $1.measuredAt }
-
-        let rows = sortedAscending
-            .reversed()
-            .map { entry in
-                VitalsListItem.Glucose(
-                    id: entry.id,
-                    measuredAt: entry.measuredAt.wallClock(in: zone),
-                    value: GlucoseConversion.fromMgDl(entry.mgDl, unit: unit),
-                    unit: unit,
-                    measurementContext: entry.measurementContext,
-                    note: entry.note
-                )
-            }
-
-        let points = Self.dailyPoints(
-            sortedAscending,
-            zone: zone,
-            measuredAt: { $0.measuredAt },
-            yValue: { Float(GlucoseConversion.fromMgDl($0.mgDl, unit: unit)) }
-        )
-        // `VitalsViewModel.kt:207` — mg/dL readings are whole numbers to a reader, mmol/L ones are
-        // not, so the axis follows the unit rather than the series.
-        let yLabel = unit == .mgDl ? Self.wholeYLabel : Self.decimalYLabel
-
-        return VitalsUiState(
-            isLoading: false,
-            selectedType: .bloodGlucose,
-            entries: rows.map(VitalsListItem.glucose),
-            chart: Self.chartOrNull(points, yLabel: yLabel),
-            selectedRange: range,
-            latestGlucose: rows.first,
-            glucoseUnit: unit
-        )
-    }
-
-    /// One point per day (last measurement wins) keeps the x axis monotonic
-    /// (`VitalsViewModel.kt:217-227`).
-    ///
-    /// `associateBy` keeps the last value for a repeated key and the input is ascending, so the
-    /// day's newest reading is the one plotted — `uniquingKeysWith: { _, last in last }` is that,
-    /// spelled out.
-    private static func dailyPoints<T>(
-        _ sortedAscending: [T],
-        zone: TimeZone,
-        measuredAt: (T) -> Date,
-        yValue: (T) -> Float
-    ) -> [ChartPoint] {
-        let byDay = Dictionary(
-            sortedAscending.map { (measuredAt($0).wallClock(in: zone).date.epochDay, $0) },
-            uniquingKeysWith: { _, last in last }
-        )
-        return byDay
-            .map { epochDay, entry in ChartPoint(xEpochDay: epochDay, y: yValue(entry)) }
-            .sorted { $0.xEpochDay < $1.xEpochDay }
-    }
-
-    /// `VitalsViewModel.kt:229-237`.
-    ///
-    /// The `"d MMM"` axis label is produced from the epoch day through a `DateFormatter` pinned to
-    /// GMT and `Locale.current` — the twin of `LocalDate.ofEpochDay(…).format(ofPattern("d MMM",
-    /// Locale.getDefault()))`. Never a `Calendar`: see `LocalDateTime.swift`.
-    ///
-    /// The formatter is built inside the closure rather than captured, because `xLabel` is
-    /// `@Sendable` and `DateFormatter` is not.
-    private static func chartOrNull(
-        _ points: [ChartPoint],
-        yLabel: @escaping @Sendable (Float) -> String
-    ) -> ChartUiModel? {
-        guard points.count >= minChartPoints else { return nil }
-        return ChartUiModel(
-            points: points,
-            xLabel: { epochDay in LocalDate(epochDay: epochDay).formatted(pattern: "d MMM") },
-            yLabel: yLabel
-        )
-    }
-
-    /// `VitalsViewModel.kt:239-240` — `String.format(Locale.getDefault(), "%.1f", value)`.
-    private static let decimalYLabel: @Sendable (Float) -> String = { value in
-        String(format: "%.1f", locale: .current, Double(value))
-    }
-
-    /// `VitalsViewModel.kt:242-243` — `value.roundToInt().toString()`.
-    private static let wholeYLabel: @Sendable (Float) -> String = { value in
-        String(Int(value.rounded()))
-    }
-
-    /// `VitalsViewModel.kt:245-247`.
-    private static let minChartPoints = 2
 }
 
 /// `kotlin.time.Duration.Companion.days` applied to a `ChartRange` (`VitalsViewModel.kt:54`): exact
@@ -488,9 +299,9 @@ private let secondsPerDay: Double = 86400
 
 /// Which inner flow of `flatMapLatest` the fold is currently holding a value from.
 ///
-/// Kotlin needs no such tag: `when (type)` picks one `combine` and its emission's type is the
+/// Kotlin needs no such tag: `when (type)` picks one `combine` and the type of its emission is the
 /// branch. Here every branch writes into the same stored property, so the branch travels with the
-/// value rather than being re-derived from `selectedType`, which a cancelled window's last
+/// value rather than being re-derived from `selectedType` — which a cancelled window's last
 /// emission would read as the *new* type.
 private enum LoadedVitalsHistory: Sendable {
     case weight([WeightEntry])
