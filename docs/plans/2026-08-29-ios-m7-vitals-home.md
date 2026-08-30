@@ -385,7 +385,7 @@ And the user's own decision, which supersedes the plan's Task 12 and Task 13 smo
 tests, lint and the build, and write `scripts/m<N>-manual-qa.md`; Task 12 stopped its smoke
 mid-flight because of it.
 
-### Recorded divergences from Android — `D-M7-a` … `D-M7-x`
+### Recorded divergences from Android — `D-M7-a` … `D-M7-ab`
 
 The plan's letters (a)-(k) are merged with what the tasks actually recorded and renumbered cleanly;
 each row says which plan letter it came from. All of these are rows in
@@ -397,7 +397,7 @@ each row says which plan letter it came from. All of these are rows in
 | `D-M7-b` | plan (b), ruling 5 | NaN/non-finite input is **rejected** by both new save use cases; Kotlin's `x < MIN \|\| x > MAX` is false for NaN and stores it. One iOS-only case per use case. → Android follow-up (the `A11` twin) |
 | `D-M7-c` | plan (c) | Repository write failures are swallowed into UI state — `catch { isSaving = false }` in both editors' `save()`, `try? await` on the delete arms and on `takeDose`. Kotlin lets the throw reach the coroutine handler. Neither platform tells the user; iOS-M2 divergence 8, kept for consistency |
 | `D-M7-d` | plan (d), ruling 1 | `HomePremiumStatus` is bound to a `FreeOnlyPremiumStatus` that emits `false` **once and never finishes** (a placeholder that completed would change what "the dashboard's stream is still open" means). Pinned until iOS-M9; the test flips it `true`, so the Kotlin case is fully asserted |
-| `D-M7-e` | plan (e), ruling 3, narrowed by ruling 13 | Home re-subscribes on **every appearance** (`HomeRoute`'s `.task` → `restartObservation()`), re-capturing `today` / `nowMinute` / `nowMs`; Android re-captures after `WhileSubscribed(5_000)`'s grace. **`isLoading` staying false across the restart is parity, not part of this row** |
+| `D-M7-e` | plan (e), ruling 3, narrowed by ruling 13 | Home re-subscribes on **every appearance** (`HomeRoute`'s `.task` → `restartObservation()`), re-capturing `today` / `nowMinute` / `nowMs`; Android re-captures after `WhileSubscribed(5_000)`'s grace. **`isLoading` staying false across the restart is parity, not part of this row**, and neither is the join staying alive while the tab is off-screen: nothing on iOS cancels it, which is this tree's house pattern for a tab's observation, where Android drops the collector 5 s after the last subscriber |
 | `D-M7-f` | plan (f), ruling 1 | The AI summary card and its section header are **absent**. `HomeUiState.freeAiSummaryAvailable` / `isPremium` are computed and carried but unread, so iOS-M10 changes only `sections`; there is no `onOpenAiSummary` anywhere |
 | `D-M7-g` | plan (g), ruling 1 | The catalog holds **27 of Android's 29** home keys: `home_title` and `home_settings` are dead on Android since its M9 (the removed settings gear, whose `Icons.Outlined.Settings` / `IconButton` / `Icon` imports are still there) and are not ported. Pinned by `androidsDeadKeysAreAbsent` |
 | `D-M7-h` | plan (h), ruling 7 | The sparkline is `.accessibilityHidden(true)` — the weight row already speaks its value and Compose gives the chart no `contentDescription` |
@@ -410,13 +410,18 @@ each row says which plan letter it came from. All of these are rows in
 | `D-M7-o` | new (T6, T11) | Whole-number formatting is guarded: `Int(exactly:)` in the glucose editor's `formatValue` and `%.0f` in Home's `formatNumber`, where Kotlin's `toInt()` saturates. Swift's `Int(_:)` **traps**, and `1e20` is typeable. Same digits inside every accepted range |
 | `D-M7-p` | new (T11 review, ruling 14) | A card's pill is a **sibling** of `SalusCard(onTap:)`, never nested in its `Button` label — SwiftUI swallows the inner tap and VoiceOver reads one element. Android nests (`MedicationsScreen.kt:218`, follow-up `A32`) |
 | `D-M7-q` | new (T11) | The Home header is a `VStack`, not Android's `Row` + `weight(1f)`: the `Row`'s second child was the settings gear its M9 removed. Nothing was ported from the dead imports |
-| `D-M7-r` | new (T11) | `appointmentStart` renders through `Date.FormatStyle` with an explicit locale **and** zone (`TimeZone(identifier:) ?? .current`, the `runCatching{}.getOrDefault` twin) but the autoupdating **calendar**; `fullDate` derives the FULL pattern from `DateFormatter.dateFormat(fromTemplate:)` because there is no style-without-a-`Date` API. Identical text for tr and en |
+| `D-M7-r` | new (T11) | `appointmentStart` renders through `Date.FormatStyle` with an explicit locale **and** zone (`TimeZone(identifier:) ?? .current` — **parity, not a divergence**: it is the `runCatching { ZoneId.of(id) }.getOrDefault(ZoneId.systemDefault())` twin, line for line) but the autoupdating **calendar**; `fullDate` derives the FULL pattern from `DateFormatter.dateFormat(fromTemplate:)` because there is no style-without-a-`Date` API. Identical text for tr and en |
 | `D-M7-s` | new (T9) | Home's `combine`s are `latestOfThree/Four/Five` + `mapped` (they take no transform, so the map is afterwards), `preferences.userSettings` joins them through `throwingStream(over:)`, and `TodayDoseAssembler` is its own file rather than an `internal object` at the bottom of the repository |
 | `D-M7-t` | new (T9) | Home's two AI/premium dependencies are **feature-local protocols** (`HomeAiSummaryAvailability`, `HomePremiumStatus`), not Android's whole `AiSummaryRepository` / `PremiumRepository`. Kotlin's "never request a summary" `AssertionError` fake becomes unreachability, and `SalusAI`/premium stay out of Home's `domain/` |
 | `D-M7-u` | new (T10) | `clock.today()` is read at **event** time, not inside the launched task. The difference shows only for a tap that crosses midnight, where the tap belongs to the day it happened on |
 | `D-M7-v` | new (T2, ruling 7) | The fourth inline pill (`OpenMapsButton`, appointment detail) is now a `SalusPillButton`, so **its drawn height grows to 48 pt**. This closes `D-M6-d`'s "three inline sites still bypass it" |
 | `D-M7-w` | new (T12, ruling 15) | The composition root is split: `App/AppCompositionRoot+Modules.swift` holds the module factories, `Infrastructure` loses `private` as a parameter of the sibling file. No Kotlin twin — `HomeModule.kt`'s `module { … }` is `makeHomeGraph` calling `makeHomeModule` |
 | `D-M7-x` | new (grouped) | Mechanical and language rows, recorded once: `roundToInt()` → `Int(x.rounded())` (they differ only on negative halves); `ImmutableList`/`persistentListOf()` → Swift arrays; `sealed interface HomeEvent` → `enum`; `Recurrence.entries.firstOrNull { it.name == … }` → `Recurrence(rawValue:)`; `max(by:)` keeps the **last** maximal element where `maxByOrNull` keeps the first; `%1$d` → `%1$lld` and `%02d` → `%02lld`; `Form` instead of `Column` + `verticalScroll`, and no `onBack` (the stack owns the back button); `function_parameter_count` waived on both save use cases, `makeVitalsModule` and `makeHomeModule` (the `SaveAppointmentUseCase` precedent); `FakeVitalsRepository` is insertion-ordered and publishes outside its lock; `FakeVitalsPreferences` drops an equal set, as a Kotlin `MutableStateFlow` does |
+| `D-M7-y` | new (final review fix wave) | The three vitals editors share one feature-private `VitalsEditorField` (caption + field + error stroke + suffix). Kotlin needs no such view — Material's `OutlinedTextField` carries `label`, `suffix` and `isError` as slots, so `WeightEditorScreen.kt`, `BloodPressureEditorScreen.kt`'s private `NumberField` and `GlucoseEditorScreen.kt` each call the framework field directly. Supersedes the three hand-drawn copies `D-M7-l` and `D-M7-m` describe; the error **message** stays per-editor, because BP draws one for three fields |
+| `D-M7-z` | new (final review fix wave) | The three vitals editors paint `colorScheme.background` and hide the `Form`'s own `systemGroupedBackground` (`.scrollContentBackground(.hidden)`). Compose's `Column` + `verticalScroll` is transparent over the `Scaffold`, so Kotlin needs neither line. Closes the question `scripts/m7-manual-qa.md` §4.4 had been deferring to the user since iOS-M2 |
+| `D-M7-aa` | new (final review, T11) | Home's appointment row is `.frame(maxWidth: .infinity, alignment: .leading)`. Kotlin's inner `Column` inherits the card's width; a SwiftUI `VStack` shrinks to its content, so two rows of different text lengths would not share a left edge |
+| `D-M7-ab` | new (final review, T12) | Home memoizes the cycle-calendar push on the stack **depth** (`reminderPushedCycleDepth`), seeded by a `CycleKey` navigate and cleared by any other, where the appointments twin memoizes an `(id, depth)` pair. Android needs neither: `SalusApp.kt` pushes on a command and nothing else pushes the same key. **Note for M8:** any further Home destination must clear the memo, which the `else` branch already does — a new destination that pushes `CycleKey` would not |
+
 
 ### Deferred minors, verbatim from the ledger, grouped by task
 
@@ -539,6 +544,62 @@ aggregate card.**
   parity-ledger commit is local too, by ruling 16.
 - **The Android follow-ups above**, numbered by the user into `docs/ios-v1-plan.md` §11 — the nine
   unnumbered iOS-M6 rows are still waiting there as well.
-- **Two decisions the reviews deferred to the user**: the editors' system background vs the list's
-  `colorScheme.background` (§4.4), and whether the maps pill's new 48-pt height is the look you want
-  (§3.19).
+- **One decision the reviews deferred to the user**: whether the maps pill's new 48-pt height is the
+  look you want (§3.19). The second — the editors' system background — was settled by the final
+  review fix wave below; §4.4 now asks you to confirm the token background instead.
+
+### Final review fix wave
+
+Six findings from the final review of the branch, decided by the coordinator and implemented in five
+contiguous commits (plus one docs-only commit in `salus-android`). No behaviour outside the six is
+touched, no ViewModel and no test changed.
+
+| Commit | Finding | What changed |
+| --- | --- | --- |
+| `9fc72bd` `fix(app)` | **Stacked calendar after a Home card push** | `observeNavigationCommands` cleared `reminderPushedCycleDepth` on *every* `.navigate` while Home was selected — including the Home cycle card's own `CycleKey` push. A cycle-reminder tap that followed saw `nil != depth` and pushed a second calendar onto the one the card had just opened. It now **seeds** the memo when the key is `CycleKey` (the observer runs before the push, so `count + 1` is the depth that push will leave, which is exactly what `pushCycleCalendar` memoizes) and clears it for any other key. The comment at the Home stack now names the orderings the memo covers — reminder-then-reminder and card-then-reminder — and says why the card's own push needs no guard (with a calendar on top, the card is not on screen to tap). **No test:** the memo is `@State` on a SwiftUI `View`, reachable only through `body`; there is no seam to drive it from `swift test`, and the tree has no view-hosting test target. `scripts/m7-manual-qa.md` §4 is what covers it. |
+| `66682ed` `refactor(app)` | **Dead `doseActions` + false doc** | `AppCompositionRoot.doseActions` had no caller — `makeHomeGraph` reaches the Koin `factory` it ports through `medications.makeMarkDoseTakenUseCase()` directly, and that call *is* the seam — while its doc named Home's "next dose" card as the caller. Deleted; the two docs that pointed at it (`AppCompositionRoot.swift:115`, `AppCompositionRoot+Modules.swift:22`) now name the factory call and cite `MedicationsModule.kt:30`. `vitalsQuickEntry` is kept, its doc's "(M6)" corrected to **(M8)** — M6 was Cycle, onboarding is M8. |
+| `fdf95d2` `refactor(vitals)` | **Weight caption/error parity + hoist**, and **the editors' background** | New feature-private `Packages/Features/FeatureVitals/Sources/FeatureVitals/ui/editor/VitalsEditorField.swift` holds the caption + field + error-stroke overlay + suffix that had been three near-copies; all three editors use it. The weight editor gains the persistent caption and the error stroke it never had, which is what `WeightEditorScreen.kt:99-101` (`label` + `isError`, exactly as BP and glucose) has always specified. The error **message** stays per-editor: BP draws one for its three fields. Each editor's Kotlin-mapping table was rewritten to match. Presentation only — no ViewModel and no test changed. The same commit paints `theme.colorScheme.background` on each editor's outer container, in the placement `AppointmentEditorScreen` / `MedicationEditorScreen` use; those two wrap a transparent `ScrollView`, these three wrap a `Form`, whose `List` paints `systemGroupedBackground` over anything behind it, so the token is paired with `.scrollContentBackground(.hidden)` to actually be visible. |
+| `c726e22` `docs` | **Citation / `Text(verbatim:)` sweep** | Every Kotlin citation in the five named files was re-derived with `grep -n`; the brief named six and the sweep found the rest of the drift in the same files. `VitalsStateBuilders.swift`: `:171`→`:167`, `:177`→`:175`, `:146-179`→`:146-177`, `:181-215`→`:179-215`, `:207`→`:204`, `:217-227`→`:218-227`. `GlucoseEditorViewModel.swift`: ten, the class range and every member below `init` (`:135`→`:99`/`:116`, `:147-152`→`:145-150` among them). `BloodPressureEditorViewModel.swift`: seven (`:135`→`:137` among them). `AppointmentDetailScreen.swift`: `:245-252`→`:235-243`, `:249`→`:239`. `GlucoseEntryMapperTests.swift`: `:49-55`→`:49-56`. Plus `HomeScreen.swift`'s `HomeEmptyLine` and `HomeVitalsCard.line(_:)`, which passed a resolved `String` to `Text(_:)` — read as a `LocalizedStringKey` against the main bundle — now `Text(verbatim:)`. |
+| this commit `docs(vitals,home)` | **Record addenda** | This subsection, the amendments to `D-M7-e` and `D-M7-r` above, the four new rows `D-M7-y` … `D-M7-ab`, and the two `scripts/m7-manual-qa.md` steps below. |
+| *(Android)* `docs(parity)` | **Ledger mirror** | The same rows in `salus-android/docs/parity-ledger.md`, as one docs-only commit. Local, not pushed, by ruling 16. |
+
+**Ledger rows this wave adds or amends** — all mirrored in `salus-android/docs/parity-ledger.md`:
+
+- `D-M7-e` **amended**: the Home join stays alive while the tab is off-screen — nothing on iOS
+  cancels it, this tree's house pattern for a tab's observation, where Android drops the collector
+  5 s after the last subscriber.
+- `D-M7-r` **amended**: the `TimeZone(identifier:) ?? .current` fallback is recorded as **parity**,
+  the `runCatching { ZoneId.of(id) }.getOrDefault(ZoneId.systemDefault())` twin, so it is not
+  re-raised as a divergence.
+- `D-M7-y` **new**: `VitalsEditorField`, the one shared editor field.
+- `D-M7-z` **new**: the editors' token background over a hidden `Form` background.
+- `D-M7-aa` **new**: Home's appointment row is `.frame(maxWidth: .infinity, alignment: .leading)`.
+- `D-M7-ab` **new**: the cycle-calendar memo's depth shape, with the **M8 note** that any further
+  Home destination must clear it — the `else` branch already does, but a new destination that
+  pushed `CycleKey` would not.
+
+**`scripts/m7-manual-qa.md` corrected**, because two steps described the old behaviour:
+
+- **§1.3** now says all three editors draw the same `VitalsEditorField`, so the weight editor's
+  "Kilo" caption and its error outline are new and want checking when §3.14 opens that editor.
+- **§4.4** no longer asks the user to decide between the system grouped background and the token; it
+  asks them to confirm the background does not change between the list and an editor, and records
+  why `.scrollContentBackground(.hidden)` is needed beside the token on a `Form`.
+
+**`scripts/ci.sh`, run end to end at the branch tip:**
+
+```text
+# 0/5  toolchain    ==> Toolchain matches README.md.
+# 1/5  lint         swiftformat --lint .        clean
+#                   swiftlint --strict          0 violations, 0 serious in 470 files
+# 2/5  custom rules ==> every custom rule fired in scope and stayed quiet outside it.
+#                   (14 checks: 4 rules, plus no_calendar_outside_clock's exact-count
+#                    fixture and its five carve-out silences)
+# 3/5  test         ==> summary: 24/24 packages passed   (895 tests in 171 suites)
+# 4/5  build        ** BUILD SUCCEEDED **
+==> CI pipeline passed.
+```
+
+The test total is unchanged from the pre-wave `895` — by design: four of the six findings are
+comment-only or presentation-only, the fifth deletes an uncalled property, and the sixth is a
+SwiftUI `@State` memo with no test seam.

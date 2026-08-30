@@ -81,7 +81,10 @@ DB="$DATA/Library/Application Support/salus.db"
   **above** their fields once filled. *Why this step exists:* SwiftUI's `TextField` placeholder
   disappears the moment a value is typed, and two adjacent mmHg fields with no labels are
   indistinguishable. The caption is an iOS divergence (`D-M7-l`) added by the Task 5 review, and no
-  test can see it.
+  test can see it. Since the final review fix wave all three editors draw the same
+  `VitalsEditorField`, so **the weight editor's "Kilo" caption and its error outline are new** —
+  check for them when §3.14 sends you into the weight editor: the caption stays above the field
+  once a value is typed, and a rejected weight outlines the field as well as printing the message.
 - [ ] **1.4** Enter systolic **120**, diastolic **80**, pulse **70**, and save (**Kaydet**).
   *Expected:* the editor pops. The list header reads **"Son ölçüm: 120/80 mmHg"**, the row's
   headline is **"120/80 mmHg"** and its supporting line **"Nabız: 70 bpm"**.
@@ -294,11 +297,14 @@ check.
   *Expected:* no tab bar on any of them; the bar returns on back. If one still shows the bar, the
   modifier is on the wrong view — and note that a feature must never write
   `.toolbar(…, for: .tabBar)` itself (`no_tab_bar_toolbar_in_features` would have failed CI).
-- [ ] **4.4 An observation the reviews deferred to you, not a defect.** The three editors draw the
-  **system grouped background** (they are `Form`s) while the vitals list draws
-  `colorScheme.background`. It has been that way since iOS-M2 and it is visible when you push from
-  the list into an editor. Decide whether the editors should adopt the theme background; either
-  answer is fine, but it should be a decision rather than a leftover.
+- [ ] **4.4 The editors now draw the theme background.** Push from the vitals list into each of the
+  three editors and back.
+  *Expected:* the background does **not** change between the list and the editor — both are
+  `colorScheme.background`, in both themes. *Why this step exists:* the three editors are `Form`s,
+  and a `Form` paints `systemGroupedBackground` over anything behind it, so the token needed
+  `.scrollContentBackground(.hidden)` beside it. That was settled by the final review fix wave (it
+  had been an open question here since iOS-M2); the row backgrounds inside the form are still the
+  system's, which is what the appointment and medication editors do too.
 
 ---
 
