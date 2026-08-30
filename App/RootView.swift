@@ -2,6 +2,7 @@ import FeatureAppointments
 import FeatureCycle
 import FeatureHome
 import FeatureMedications
+import FeatureOnboarding
 import FeatureSettings
 import FeatureVitals
 import SalusDesignSystem
@@ -22,6 +23,11 @@ import SwiftUI
 ///     list `NavDisplay` renders; SwiftUI gives each tab its own `NavigationStack`.
 ///  4. **It mounts the app's one snackbar host** (`SalusApp.kt:106-136`) — over the selected tab's
 ///     content, above the tab bar — so an undo survives the screen the delete was triggered from.
+///  5. **It draws the two gates and the splash-hold** (`MainActivity.kt:47-107`, iOS-M8 T11).
+///     Android's are in `MainActivity` rather than in `SalusApp.kt` because that is where its
+///     splash screen and its `BiometricPrompt` live; on iOS `SalusApp` is a `Scene` with no view of
+///     its own, so the shell's outermost view is the only place an overlay *over* the `TabView` can
+///     be written. See `RootGates` for the order and why each flag is what it is.
 ///
 /// `@MainActor` on the struct rather than only on `body`: `TabBackStacks` is a main-actor
 /// `@Observable`, and a stored-property initializer runs outside `body`'s isolation.
@@ -51,6 +57,16 @@ struct RootView: View {
     /// `UserSettings`' own default (`Settings.kt:21`) and the safe direction while the store answers
     /// — a curtain that appears a frame late is a flicker, one that never lifts is a broken app.
     @State private var secureScreenEnabled = false
+
+    /// The stored `onboarding_completed`, mirrored out of the same one loop as the two above — and
+    /// the only one of the three that is an **optional**, because here `nil` is a state rather than
+    /// a missing value: "Null until DataStore has answered; the splash stays up so Home never
+    /// flashes" (`MainActivity.kt:44-45`, whose `MutableStateFlow<Boolean?>(null)` this is).
+    ///
+    /// A default of `false` would open onboarding for a frame on every launch; a default of `true`
+    /// would show Home for a frame on a first launch. Ruling 3 takes the third option and draws
+    /// neither — see ``splashHold`` and `RootGates`.
+    @State private var onboardingCompleted: Bool?
 
     /// The appointment detail a tapped reminder last pushed, and how deep the appointments stack was
     /// left by that push — the two halves of "is this key still on top?".
@@ -88,7 +104,75 @@ struct RootView: View {
         )
     }
 
+    /// What `RootGates` says is covering the app right now, recomputed on every update out of the
+    /// three values that decide it. A computed property rather than stored state: two of the three
+    /// live on the `@Observable` `AppLockManager`, so reading them here is also what subscribes
+    /// this view to them.
+    private var gates: RootGates {
+        RootGates.resolve(
+            onboardingCompleted: onboardingCompleted,
+            lockHasReadSetting: root.appLockManager.hasReadSetting,
+            isLocked: root.appLockManager.isLocked
+        )
+    }
+
     var body: some View {
+        ZStack {
+            tabs
+            // The gates, in Android's z-order (`MainActivity.kt:99-106`) — later is on top, so the
+            // lock covers the app and onboarding covers the lock. Overlays over the `TabView` and
+            // outside every `NavigationStack`, which is what keeps the back stack and any pending
+            // reminder deep link intact behind them (`MainActivity.kt:96-98`, ruling 3) and what
+            // keeps them clear of the cycle-calendar depth memo (`D-M7-ab`): neither pushes nor
+            // pops anything, so `reminderPushedCycleDepth` still means what it meant.
+            if gates.showsLock {
+                AppLockGate(manager: root.appLockManager)
+            }
+            if gates.showsOnboarding {
+                OnboardingRoute()
+                    // On the gate itself rather than on the `ZStack`: the module is this one
+                    // overlay's dependency, and the gate is not a destination, so there is no stack
+                    // that would have to carry it (`OnboardingModule.swift`'s `@Entry` doc).
+                    .environment(\.onboardingModule, root.onboardingModule)
+            }
+            // Topmost, and only while nothing has been decided. Above the two gates rather than
+            // below them because `RootGates` already keeps the lock down during the hold, and a
+            // cover that is unconditionally the outermost thing is the one that cannot be raced.
+            if gates.holdsSplash {
+                SplashHoldCover()
+            }
+        }
+        // `nil` for `.system`, which leaves the window to the OS (`ThemeMode.preferredColorScheme`).
+        // Outside the `ZStack` so the gates get it too — the system chrome they raise (the Face ID
+        // sheet, a keyboard in onboarding) reads the window's scheme, not the app's palette.
+        .preferredColorScheme(themeMode.preferredColorScheme)
+        // A reminder tapped while the app was closed arrives before this view exists, so the ref
+        // waits in the router and this reads it on the first update as well as on later taps.
+        //
+        // Out here rather than on the `TabView` so the splash-hold cannot change its identity: the
+        // `ZStack` is unconditional, and everything that varies is a child of it. That is also why
+        // the hold is a cover rather than an `if/else` around the whole shell — a branch swapped at
+        // the top would tear down and restart all four subscriptions below, and
+        // `observeNavigationCommands` would drop whatever was published while it was gone.
+        .onChange(of: root.reminderOpenRouter.pending, initial: true) { _, _ in openTappedReminder() }
+        .task { await observeUserSettings() }
+        .task { await observeNavigationCommands() }
+        .task { await root.logSeededProfile() }
+        // The §6.2 secure screen, applied over the `TabView` and outside every `NavigationStack`:
+        // the always-on app-switcher blur, plus the screenshot mask and the capture hide that
+        // `secure_screen_enabled` adds. Both gates and the splash-hold are BELOW this line, so the
+        // curtain is drawn over them too (`m8-manual-qa.md` §2.8).
+        .secureScreen(maskingEnabled: secureScreenEnabled)
+        // Resolved once, read everywhere below — no screen takes a `theme:` parameter. Outermost on
+        // purpose, and it is the one modifier that stays outside `.secureScreen`: an overlay reads
+        // the environment its host was *handed*, not the one its host writes, so a curtain applied
+        // after this line would draw the default palette over a dark-themed app.
+        .salusTheme(theme)
+    }
+
+    /// The five-tab shell itself — everything `SalusApp.kt:106-136` draws, with the gates above it
+    /// rather than inside it.
+    private var tabs: some View {
         TabView(selection: selection) {
             ForEach(RootTab.allCases) { tab in
                 tabStack(for: tab)
@@ -105,24 +189,6 @@ struct RootView: View {
         // behind it and drift from the token.
         .toolbarBackground(theme.colorScheme.surfaceContainer, for: .tabBar)
         .toolbarBackground(.visible, for: .tabBar)
-        // `nil` for `.system`, which leaves the window to the OS (`ThemeMode.preferredColorScheme`).
-        .preferredColorScheme(themeMode.preferredColorScheme)
-        // A reminder tapped while the app was closed arrives before this view exists, so the ref
-        // waits in the router and this reads it on the first update as well as on later taps.
-        .onChange(of: root.reminderOpenRouter.pending, initial: true) { _, _ in openTappedReminder() }
-        .task { await observeUserSettings() }
-        .task { await observeNavigationCommands() }
-        .task { await root.logSeededProfile() }
-        // The §6.2 secure screen, applied over the `TabView` and outside every `NavigationStack`:
-        // the always-on app-switcher blur, plus the screenshot mask and the capture hide that
-        // `secure_screen_enabled` adds. Anything a later gate overlays (onboarding, the app lock)
-        // belongs BELOW this line, so the curtain is drawn over it too.
-        .secureScreen(maskingEnabled: secureScreenEnabled)
-        // Resolved once, read everywhere below — no screen takes a `theme:` parameter. Outermost on
-        // purpose, and it is the one modifier that stays outside `.secureScreen`: an overlay reads
-        // the environment its host was *handed*, not the one its host writes, so a curtain applied
-        // after this line would draw the default palette over a dark-themed app.
-        .salusTheme(theme)
     }
 
     /// One stack per tab. No `navigationDestination` written here on purpose: `TabBackStacks.push`
@@ -131,9 +197,10 @@ struct RootView: View {
     /// Android's `vitalsEntries` / `homeEntries` `NavEntry` providers. The shell therefore never
     /// names a key; `medicationsDestinations()`, `vitalsDestinations()`,
     /// `appointmentsDestinations()`, `settingsDestinations()` and `cycleDestinations()` below are
-    /// those modifiers, and the one remaining tab — More — keeps its placeholder until M8 lands the
-    /// settings hub. Home registers no modifier of its own: its cards push another feature's key
-    /// or switch tab, so `FeatureHome` ships no `homeDestinations()` (plan ruling 8).
+    /// those modifiers — `settingsDestinations()` arrived with the More hub in iOS-M8, which is
+    /// what retired the placeholder that used to stand in for it. Home registers no modifier of its
+    /// own: its cards push another feature's key or switch tab, so `FeatureHome` ships no
+    /// `homeDestinations()` (plan ruling 8).
     ///
     /// `cycleDestinations()` is applied twice, which is the shape a feature without a tab takes:
     /// cycle is reached from the More list and from a tapped cycle reminder, which lands on Home
@@ -357,12 +424,19 @@ struct RootView: View {
     ///
     /// One loop for every shell-level setting, not one per value: `userSettings` carries the whole
     /// `UserSettings`, so a second `for await` over the same stream would buy a second observer and
-    /// nothing else. Android reads both of these off that one flow too, four lines apart
-    /// (`MainActivity.kt:61-67`).
+    /// nothing else. Android reads all three of these off that one flow too — the first two four
+    /// lines apart (`MainActivity.kt:61-67`), the third in its own `lifecycleScope.launch`
+    /// (`:50-54`) only because the splash condition is read before `setContent` exists.
+    ///
+    /// The `onboarding_completed` line is what takes the splash-hold down, and it is also the whole
+    /// of the onboarding gate's dismissal: the flow writes the flag through
+    /// `OnboardingPreferencesImpl` and this loop is what notices (T8 — the Route has no callback and
+    /// hands nothing back out).
     private func observeUserSettings() async {
         for await settings in root.preferences.userSettings {
             themeMode = settings.themeMode
             secureScreenEnabled = settings.secureScreenEnabled
+            onboardingCompleted = settings.onboardingCompleted
         }
     }
 

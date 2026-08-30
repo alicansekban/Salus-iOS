@@ -3,9 +3,11 @@ import UIKit
 
 /// The app entry point.
 ///
-/// Deliberately thin: it owns the composition root, hands the window one view, and forwards the one
-/// process-lifecycle event the graph cares about. Everything else — theming, navigation, features —
-/// lives below `RootView`, so this file should stay roughly this size for the life of the port.
+/// Deliberately thin: it owns the composition root, hands the window one view, and forwards the
+/// process-lifecycle transitions the graph cares about — the reminder reconcile and the undo
+/// commit since iOS-M3/M4, and the app lock's two since iOS-M8. Everything else — theming,
+/// navigation, the gates, features — lives below `RootView`, so this file should stay roughly this
+/// size for the life of the port.
 ///
 /// `@MainActor` on the struct, not only on `body`: `AppCompositionRoot` is a main-actor
 /// `@Observable`, and the stored-property initializer below runs outside `body`'s isolation.
@@ -35,13 +37,37 @@ struct SalusApp: App {
         WindowGroup {
             RootView()
                 .environment(compositionRoot)
+                // The one scenePhase subscription in the app, and it stays one: everything the
+                // process-lifecycle transitions drive is forwarded from these two arms.
+                //
+                // `AppLockManager` is what Android registers on `ProcessLifecycleOwner`
+                // (`SalusApplication.kt`), so on that side it needs no line in `MainActivity` at
+                // all; iOS has no process lifecycle owner, and this is the shell's half of the
+                // manager's divergence 1. `.inactive` is deliberately absent from both arms — iOS
+                // sends it for a control-centre pull or an incoming call, which Android would not
+                // call leaving the app. (The app-switcher blur is a separate concern and reads
+                // `.inactive` itself, inside `PrivacyOverlay`.)
                 .onChange(of: scenePhase) { _, phase in
                     switch phase {
-                    // The foreground reconcile. Opening the app is the one trigger iOS never
-                    // withholds, so it is also the engine's safety net for every background refresh
-                    // the system chose not to run.
-                    case .active: compositionRoot.reminderDidBecomeActive()
-                    case .background: commitPendingDeletes()
+                    case .active:
+                        // The lock first: it decides whether anything below is allowed to be seen,
+                        // and it is a synchronous state read either way. No `nowMs` — the shell
+                        // holds no reading of its own, so the manager reads the injected clock,
+                        // which is the production spelling (its divergence 4).
+                        compositionRoot.appLockManager.sceneDidBecomeActive()
+                        // The foreground reconcile. Opening the app is the one trigger iOS never
+                        // withholds, so it is also the engine's safety net for every background
+                        // refresh the system chose not to run.
+                        compositionRoot.reminderDidBecomeActive()
+
+                    case .background:
+                        // Stamps the instant the 30 s grace is measured from
+                        // (`AppLockManager.kt:40-42`). Before the commit below, which hops onto a
+                        // `Task`: the timestamp must be the moment the app left, not the moment an
+                        // unrelated await finished.
+                        compositionRoot.appLockManager.sceneDidEnterBackground()
+                        commitPendingDeletes()
+
                     default: break
                     }
                 }

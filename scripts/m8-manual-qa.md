@@ -22,10 +22,11 @@ three writes `finish()` performs. What no test can reach is the eight step bodie
 two hero clusters and the keyboard behaviour — those are visual and run only on a device or
 simulator.
 
-**Before you start — the gate is not mounted yet.** Task 8 ships the screens and the module; the
-overlay is hung above `RootView` by **Task 11** (ruling 3: onboarding outermost, app lock beneath).
-Until T11 lands, none of the rows below can be run at all — not "NOT RUN because nobody ran them"
-but "there is no way to reach the flow". Run §1 only after T11.
+**Before you start — the gate is mounted since Task 11.** Task 8 shipped the screens and the module;
+**Task 11** hung the overlay above `RootView` (ruling 3: onboarding outermost, app lock beneath), so
+the rows below are reachable. The wiring around them — that a fresh install opens the flow at all,
+that finishing it lands on Home, and that a relaunch does not repeat it — is **§7**, and §1 assumes
+it: if you cannot reach the Welcome step, run §7.1 first and stop there.
 
 **How to get back to a first launch.** The gate is `onboarding_completed` in `UserDefaults`
 (Android-verbatim key). Delete the app from the simulator and reinstall — that clears the defaults
@@ -335,9 +336,11 @@ after a reviewer derived the offset from CALayer's coordinate-space rules — al
 ## §3. The app lock (Task 9)
 
 Written by Task 9 (`Packages/SalusCommon/Sources/SalusCommon/AppLockManager.swift`,
-`App/Lock/AppLockScreen.swift`, `App/Lock/LockPrompting.swift`). The gate itself is mounted by the
-shell task, so **run this section only once the shell draws the lock overlay** — before that the
-manager exists but nothing shows it.
+`App/Lock/AppLockScreen.swift`, `App/Lock/LockPrompting.swift`), and **runnable since Task 11**,
+which mounted the gate (`App/RootView.swift`, `App/RootGates.swift`, `App/Lock/AppLockGate.swift`)
+and forwarded the scene transitions that drive it (`App/SalusApp.swift`). Task 11 also added
+**3.16–3.18** at the end of this section — the three checks that belong to the wiring rather than to
+the manager.
 
 The automated half is `AppLockManagerTests` (8 cases): the gate's whole state machine, including
 both sides of the 30 s boundary and the boundary itself, runs on a fake clock. What no test can
@@ -458,6 +461,44 @@ from 3.2.
   *Expected:* the lock is **still on** and the first launch is gated. *This step needs a device:*
   the Keychain entitlement is not granted under `swift test`, and this is the only check that the
   store works at all.
+
+### The shell's half of the gate (Task 11)
+
+These three are about the *wiring*, not the state machine: everything above assumes the gate is
+drawn at the right moment, and these are the moments where "right" is not obvious.
+
+- [ ] **3.16 With the lock OFF, a cold start shows no gate and asks for nothing.** Make sure the
+  **Uygulama kilidi** toggle is **off**, kill the app from the app switcher, and relaunch it —
+  watching the *first half second* closely, ideally two or three times in a row.
+  *Expected:* the launch screen hands straight over to Home. **No lock badge, no "Salus kilitli",
+  and above all no Face ID sheet — not even for one frame.**
+  *Why this step exists:* `AppLockManager.isLocked` starts **`true`** on purpose (its divergence 3 —
+  an unread setting must not draw the app's contents), so between launch and the first
+  `userSettings` emission the manager honestly says "locked" for a setting nobody has read. Two
+  things stop that becoming a visible gate: `hasReadSetting`, which `RootGates.resolve` requires
+  before it will draw the lock, and the splash-hold, which draws nothing at all until
+  `onboarding_completed` answers. If either is dropped, this step is what shows it — and it shows
+  it as a Face ID prompt fired at a user who never enabled the lock, because `AppLockScreen`
+  prompts on appearance.
+- [ ] **3.17 With the lock ON, the gate arrives without the app flashing behind it.** Turn the lock
+  on (§3.2), kill the app, and relaunch — again watching the first half second.
+  *Expected:* the launch colour, then the lock screen. **The tab bar and Home never appear**, not
+  even for a frame, and no screen contents are visible behind the lock badge.
+  *Why this step exists:* this is ruling 3's splash-hold from the other side. The lock is an overlay
+  over a `TabView` that is mounted and laid out underneath it (exactly as Android composes
+  `SalusApp()` under its splash), so "the gate covers everything" is a claim about z-order and
+  opacity that only the eye can check.
+- [ ] **3.18 On a reinstall, onboarding sits ON TOP of the lock.** This is the one state where both
+  gates are up at once, and it is reachable on a **device** only (see 3.15): with the lock **on**,
+  delete the app and reinstall it. The Keychain keeps `app_lock_enabled`; the reinstall clears
+  `onboarding_completed`.
+  *Expected:* the **onboarding Welcome step** is what you see — not the lock screen. A Face ID sheet
+  may appear over it (the lock gate is drawn underneath and prompts on appearance); dismissing or
+  approving it leaves onboarding exactly where it was, and the flow is walkable from there. Finish
+  the flow: at the end you land on the **lock screen**, and only after unlocking, on Home.
+  *Why this step exists:* the order is Android's, verbatim — "Onboarding sits outermost — a first
+  launch has nothing to lock" (`MainActivity.kt:96-98`, ruling 3). If the lock is on top instead,
+  the two `if`s in `RootView`'s `ZStack` have been swapped.
 
 ---
 
@@ -611,3 +652,150 @@ rather than twice (4.1b added), and 4.2 carries T5's stored-sex check. The round
 `scripts/build-app.sh` (BUILD SUCCEEDED) and `scripts/lint.sh` (0 violations in 520 files) —
 no simulator, no device, no preview render.
 ---
+## §7. The shell wiring (Task 11)
+
+Written by Task 11 (`App/RootView.swift`, `App/RootGates.swift`, `App/Lock/AppLockGate.swift`,
+`App/SalusApp.swift`, `App/AppCompositionRoot.swift`, `App/AppCompositionRoot+Modules.swift`). This
+section is about the seams: the More tab is a *mounted* hub rather than a placeholder, the two gates
+are *overlays over the `TabView`* rather than destinations, and the tab bar hides on a push. What
+each screen draws once it is on screen belongs to §1 (onboarding), §3 (the lock) and §4 (the hub) —
+those rows are not repeated here.
+
+The automated half is nothing: the app target has no test bundle (`project.yml`'s
+`scheme.testTargets: []`, the M8 "no app test target" decision), so the only mechanical guard on
+this task is that it compiles. `RootGates.resolve` is pure and total and can be read on its own, but
+it has no runner. Everything below is therefore the *only* check these seams get.
+
+**Before you start.** Several rows need a fresh install (delete the app to clear
+`onboarding_completed`). On a **device** a delete does **not** clear `app_lock_enabled` — it lives
+in the Keychain (§3.15) — so turn the lock off before deleting unless the row says otherwise.
+
+### The first launch
+
+- [ ] **7.1 A fresh install opens onboarding, and never Home first.** Delete Salus, reinstall, and
+  launch it — watching the first half second.
+  *Expected:* the launch colour, then the onboarding **Welcome** step. **The tab bar and Home never
+  appear**, not for a frame. *Why this step exists:* `onboardingCompleted` is `Bool?` and starts
+  `nil`; while it is nil the shell draws `SplashHoldCover` over everything (ruling 3, divergence
+  (f) — iOS has no `installSplashScreen`, so this is the hold). A default of `false` here would
+  flash onboarding on every launch; a default of `true` would flash Home on the first one.
+- [ ] **7.2 Walking the flow to the end lands on Home, with no gate left behind.** From 7.1, walk
+  all eight steps (the §1 rows describe each one) and finish.
+  *Expected:* the onboarding overlay disappears and you are on the **Home tab**, with the tab bar
+  visible and Home's own content drawn — not on a blank frame, not on the More tab, and not on a
+  second copy of onboarding. *Why this step exists:* the flow closes itself by writing
+  `onboarding_completed` (T8 — the Route has no callback and hands nothing back out), and the
+  shell's `userSettings` loop is the only thing that notices. If the overlay stays up, that loop is
+  not reading the flag; if the app is blank, the hold is being re-entered.
+- [ ] **7.3 Killing and relaunching does not repeat onboarding.** From 7.2, kill Salus from the app
+  switcher and relaunch.
+  *Expected:* straight to Home. No Welcome step, no flash of one.
+- [ ] **7.4 Onboarding cannot be escaped by the edge swipe or by backgrounding.** Re-do 7.1 to get
+  the flow back, advance to step 2 or later, then (a) swipe from the left edge of the screen, and
+  (b) press **Home**, wait five seconds, and return.
+  *Expected:* in both cases the flow is still up, on the same step. *Why this step exists:* ruling 8
+  — the gate is an overlay with no navigation container, so there is nothing to swipe back *to*;
+  this row proves nobody has since wrapped it in a `NavigationStack` or a `.sheet`.
+
+### The More tab is the hub
+
+- [ ] **7.5 The More tab's root is the hub, not a placeholder.** Tap the **More** tab.
+  *Expected:* the settings hub — the header, the 13 rows and the version footer described in §4.
+  There is no "placeholder" text and no empty screen. *Why this step exists:* `PlaceholderScreen`
+  was deleted in T6 and the tab now mounts `MoreRoute`; this row is what proves the shell mounts it
+  rather than something else.
+- [ ] **7.6 Every row the hub pushes renders, and the shell's back button returns.** From the hub,
+  push **Profil**, come back; **Hakkında**, come back; **Hatırlatıcılar**, come back; **Regl
+  Takibi** (on a non-male profile), come back.
+  *Expected:* all four open a real screen and all four return to the hub. *Why this step exists:*
+  three of them (`ProfileKey`, `AboutKey`, `ReminderHealthKey`) are registered by
+  `settingsDestinations()` and the fourth (`CycleKey`) by `cycleDestinations()` — both applied to
+  the More stack. A key with no registered destination pushes *nothing*, silently, which looks
+  exactly like a dead row.
+- [ ] **7.7 The two unbuilt rows are no-ops and say so by doing nothing.** Tap **Doktor raporu**,
+  then **Trendler**.
+  *Expected:* nothing happens, twice. The shell callbacks are TODO stubs until M10/M11 (this is
+  §4.6 from the shell's side; run one or the other, not both).
+
+### The tab bar belongs to the shell
+
+- [ ] **7.8 The tab bar hides on every push and comes back on every pop.** In each of the five tabs
+  in turn, push the deepest screen you can reach — Home → a card that pushes (**Regl Takibi**),
+  Medications → a medication → its editor, Vitals → the weight editor, Appointments → an
+  appointment → its editor, More → **Profil**.
+  *Expected:* the tab bar is **gone** on every pushed screen, and the screen uses the full height
+  down to the home indicator. Going back brings it straight back, with the system's own slide
+  animation.
+  *Why this step exists:* `.toolbar(backStacks.isAtRoot(tab) ? .visible : .hidden, for: .tabBar)` is
+  written once, on the stack, by the shell — the twin of Android's `showBottomBar`
+  (`SalusApp.kt:133-136`). A feature that writes its own `.toolbar(…, for: .tabBar)` is a lint
+  error (`no_tab_bar_toolbar_in_features`), so a bar that stays visible on a push means the shell's
+  own line moved or the tab's root grew a wrapper.
+- [ ] **7.9 A gate covers the tab bar too.** With the lock on (§3.2), background for 35 s and
+  return.
+  *Expected:* the lock screen covers the **whole window including the tab-bar band** — no tab
+  icons peeking out at the bottom, and tapping where a tab icon used to be switches nothing.
+  Repeat with onboarding (7.1): the Welcome step covers the same band.
+  *Why this step exists:* the gates are siblings of the `TabView` inside `RootView`'s `ZStack`, not
+  overlays inside a tab, so they are laid out against the window rather than the tab's content
+  region. The snackbar host is the deliberate opposite (it sits *inside* the tab so it lands above
+  the bar); if a gate ever starts behaving like the snackbar, this row is what catches it.
+
+### The gates do not disturb what is behind them
+
+- [ ] **7.10 A pushed screen survives the lock.** Push More → **Profil**, background for 35 s,
+  return, unlock.
+  *Expected:* you are back on **Profil**, not on the More root and not on Home. (§3.8 is the same
+  check from the lock's side, on the Medications stack; running either is enough.) *Why this step
+  exists:* "Overlays, not destinations: the back stack and pending notification deep links stay
+  intact behind the gates" (`MainActivity.kt:96-98`).
+- [ ] **7.11 The cycle-calendar memo still holds behind the gates — reminder then reminder.** Needs
+  a cycle reminder you can fire twice: set the cycle reminder to a near time (More → **Regl
+  Takibi** → the reminder settings), let it fire, and tap the notification. You land on **Home**
+  with the calendar pushed. Now, **without popping it**, pull the notification centre down and tap
+  the *same* notification again.
+  *Expected:* nothing is pushed the second time — you are still on **one** calendar, and one back
+  tap returns you to Home. *Why this step exists:* `pushCycleCalendar` memoizes the stack depth its
+  push left (`D-M7-ab`), and T11's gates sit above the `TabView` and outside every
+  `NavigationStack`, so they neither push nor pop and the memo still means what it meant. If a
+  second tap stacks a second calendar you have to dismiss twice, a gate has started touching the
+  back stack.
+- [ ] **7.12 …and card then reminder.** Pop back to Home, open the calendar from the **Regl Takibi**
+  card, and then tap the cycle notification while it is open.
+  *Expected:* again exactly one calendar. *Why this step exists:* the card's push seeds the memo
+  through `observeNavigationCommands` rather than clearing it, which is the case that would
+  otherwise let the following reminder tap open a second calendar.
+- [ ] **7.13 The secure-screen curtain is drawn over the gates, not under them.** With the lock on,
+  background for 35 s and return so the lock screen is up, then — without unlocking — press **Home**
+  and open the app switcher.
+  *Expected:* the Salus card in the switcher is **blurred**, exactly as §2.1 describes for the app
+  itself. Repeat with onboarding up.
+  *Why this step exists:* `.secureScreen(…)` is applied *outside* the `ZStack` that holds the gates
+  (§2.8), so the curtain covers them too. If a gate shows through the blur, the modifier order in
+  `RootView.body` has been changed.
+
+### The scene transitions reach the graph
+
+- [ ] **7.14 Backgrounding still commits an open undo window.** Delete a medication so the undo
+  snackbar appears, and — while it is still showing — press **Home**. Wait five seconds, return.
+  *Expected:* the snackbar is gone and the medication is **deleted**; the undo did not survive the
+  backgrounding. *Why this step exists:* the app lock's two calls were added to the same
+  `onChange(of: scenePhase)` switch that already drove `reminderDidBecomeActive()` and
+  `commitPendingDeletes()`, and this row is what proves the older two still fire from the arms the
+  new ones were added to.
+- [ ] **7.15 Returning to the foreground still refills the reminder window.** With at least one
+  future appointment reminder, background the app, return, and open More → **Hatırlatıcılar**.
+  *Expected:* Reminder Health's "last sync" line shows a time from the last few seconds. *Why this
+  step exists:* same reason as 7.14, for the `.active` arm.
+
+---
+
+## What was executed when this section was written (iOS-M8 Task 11)
+
+**Nothing.** Task 11 ran `scripts/build-app.sh` (BUILD SUCCEEDED), `scripts/lint.sh` (0 violations)
+and `scripts/test-packages.sh SalusTesting SalusCommon` (2/2 packages passed). No simulator was
+booted, no preview was rendered, and no screenshot was taken — every row in §7, and the three rows
+Task 11 added to §3 (3.16–3.18), is **NOT RUN**.
+
+Two rows in this section cannot be run on a simulator at all and are flagged where they appear:
+§3.18 (both gates at once) needs a device, because it depends on the Keychain surviving a delete.

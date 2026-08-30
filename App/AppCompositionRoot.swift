@@ -2,6 +2,7 @@ import FeatureAppointments
 import FeatureCycle
 import FeatureHome
 import FeatureMedications
+import FeatureOnboarding
 import FeatureSettings
 import FeatureVitals
 import Foundation
@@ -73,6 +74,12 @@ final class AppCompositionRoot {
     /// ViewModel of the screen the delete was triggered from."
     let pendingDelete: PendingDeleteController
 
+    /// `appModule`'s `single { AppLockManager(...) }` (`AppModules.kt:45-52`), built over the same
+    /// `userSettings` stream and the same clock Koin's `get()`s resolve to. Application-scoped
+    /// because it watches the process, not a screen: `SalusApp` forwards the scene's
+    /// background/active transitions to it and `RootView` draws the gate it publishes.
+    let appLockManager: AppLockManager
+
     /// `navigationModule`: publishes what ViewModels ask for; the shell applies it.
     let navigator: Navigator
 
@@ -115,6 +122,12 @@ final class AppCompositionRoot {
     /// "Al" button is Medications' `MarkDoseTakenUseCase`, reached through
     /// ``MedicationsModule/makeMarkDoseTakenUseCase()`` in ``makeHomeGraph(infrastructure:medications:)``.
     let homeModule: HomeModule
+
+    /// `onboardingModule` (`feature/onboarding/.../di/OnboardingModule.kt:10-23`), built once and
+    /// handed to the onboarding gate through the environment. Unlike every module above it belongs
+    /// to no tab: the flow is an overlay over the whole shell (ruling 3), so `RootView` injects it
+    /// on the gate itself rather than on a `NavigationStack`.
+    let onboardingModule: OnboardingModule
 
     /// `reminderModule`'s `single<ReminderEnvironment>` (`ReminderModule.kt:20`) — the honest
     /// read of what the OS will and will not let the reminder pipeline do. Reminder Health
@@ -180,6 +193,7 @@ final class AppCompositionRoot {
         aiUsage = infrastructure.aiUsage
         profileRepository = infrastructure.profileRepository
         pendingDelete = infrastructure.pendingDelete
+        appLockManager = infrastructure.appLockManager
         navigator = infrastructure.navigator
         snackbar = infrastructure.snackbar
 
@@ -192,6 +206,7 @@ final class AppCompositionRoot {
         cycleModule = modules.cycle
         settingsModule = modules.settings
         homeModule = modules.home
+        onboardingModule = modules.onboarding
 
         // `reminderModule` (`ReminderModule.kt:18-28`), assembled in one place — see
         // `makeReminderGraph`. The properties below are eight views of that one sub-graph.
@@ -305,16 +320,23 @@ final class AppCompositionRoot {
         let appLockFlagStore = KeychainAppLockFlagStore()
         // The root's own DAO, so the app builds exactly one over this database (Koin's `get()`).
         let profileDao = ProfileDao(database: database)
+        // A local, because two of the fields below are built over it: `AppLockManager` reads the
+        // same one store the settings hub writes, or the toggle would move a flag nothing watches.
+        let preferences = SalusPreferencesDataSource(defaults: .standard, appLockFlagStore: appLockFlagStore)
         return Infrastructure(
             clock: clock,
             idGenerator: UUIDIdGenerator(),
             database: database,
             profileDao: profileDao,
             appLockFlagStore: appLockFlagStore,
-            preferences: SalusPreferencesDataSource(defaults: .standard, appLockFlagStore: appLockFlagStore),
+            preferences: preferences,
             aiUsage: AiUsageDataSource(defaults: .standard),
             profileRepository: makeProfileRepository(profileDao: profileDao, clock: clock),
             pendingDelete: PendingDeleteController(),
+            appLockManager: AppLockManager(
+                appLockEnabled: appLockEnabledStream(of: preferences),
+                clock: clock
+            ),
             navigator: Navigator(),
             snackbar: SalusSnackbarController()
         )
@@ -395,7 +417,10 @@ final class AppCompositionRoot {
             medications: scheduled.medications,
             cycle: scheduled.cycle,
             settings: settings,
-            home: home
+            home: home,
+            // The one module built out of another feature's, after Home and for the same reason:
+            // its weight step is Vitals' `VitalsQuickEntry` (ruling 7). See `makeOnboardingGraph`.
+            onboarding: makeOnboardingGraph(infrastructure: infrastructure, vitals: vitals)
         )
     }
 
@@ -472,22 +497,4 @@ final class AppCompositionRoot {
             fatalError("Salus cannot open its database (\(SalusDatabase.name)): \(reason)")
         }
     }
-}
-
-/// The process-lifetime singletons, handed back from `makeInfrastructure` in one piece.
-///
-/// `internal` rather than `private` because ``AppCompositionRoot/makeHomeGraph(infrastructure:medications:)``
-/// lives in `AppCompositionRoot+Modules.swift` and takes it.
-struct Infrastructure {
-    let clock: any SalusClock
-    let idGenerator: any IdGenerator
-    let database: SalusDatabase
-    let profileDao: ProfileDao
-    let appLockFlagStore: any AppLockFlagStore
-    let preferences: SalusPreferencesDataSource
-    let aiUsage: AiUsageDataSource
-    let profileRepository: any ProfileRepository
-    let pendingDelete: PendingDeleteController
-    let navigator: Navigator
-    let snackbar: SalusSnackbarController
 }

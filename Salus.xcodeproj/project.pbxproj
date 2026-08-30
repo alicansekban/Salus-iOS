@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		01626160451B48B804DCFB04 /* RootGates.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1032A49894F75CD828D5BA26 /* RootGates.swift */; };
 		029DA3BD167192422CD3EF83 /* NoOpPaywallRequester.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69D0D21B298A9A70A88B19B8 /* NoOpPaywallRequester.swift */; };
 		0539B0B434063E373D3D798F /* AppStrings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C40A21C37AD104957DD4999 /* AppStrings.swift */; };
 		09EF295DE4AD83F20308E424 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 3B1306692224BD06CE0E55BF /* InfoPlist.strings */; };
@@ -21,6 +22,7 @@
 		3321C284993CDAECC785BB87 /* SalusDatabase in Frameworks */ = {isa = PBXBuildFile; productRef = 23E6F4A762A65FDBF66C5851 /* SalusDatabase */; };
 		3465E87C8F8A0E450EA3DB25 /* AppLockScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17EC8F7F2D16791CF7D4063F /* AppLockScreen.swift */; };
 		3D484E56042E4D7001156A70 /* AppCompositionRoot+Modules.swift in Sources */ = {isa = PBXBuildFile; fileRef = C46AC39F5A2F807756E92213 /* AppCompositionRoot+Modules.swift */; };
+		4E1FB0FCA8071ED1503A2FEC /* AppLockGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC90CD3E4D0ADF19D6382982 /* AppLockGate.swift */; };
 		537EC5AA135769AF924F7DC3 /* SalusCommon in Frameworks */ = {isa = PBXBuildFile; productRef = AC3FBAE5BFB699978B2666B6 /* SalusCommon */; };
 		551793D6452E4FC23ACF2654 /* SalusNavigation in Frameworks */ = {isa = PBXBuildFile; productRef = ACCBF7E12A2FD2C767BEFFBE /* SalusNavigation */; };
 		56D46F5ED917FBAEA79E96F5 /* SalusReminder in Frameworks */ = {isa = PBXBuildFile; productRef = A5B22EB0FD372492463281EC /* SalusReminder */; };
@@ -46,6 +48,7 @@
 /* Begin PBXFileReference section */
 		0C40A21C37AD104957DD4999 /* AppStrings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStrings.swift; sourceTree = "<group>"; };
 		0CB7EF65297E10E2C5CF4C2D /* SalusDatabase */ = {isa = PBXFileReference; lastKnownFileType = folder; name = SalusDatabase; path = Packages/SalusDatabase; sourceTree = SOURCE_ROOT; };
+		1032A49894F75CD828D5BA26 /* RootGates.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootGates.swift; sourceTree = "<group>"; };
 		15AD79D550BC94771443016D /* AppCompositionRoot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppCompositionRoot.swift; sourceTree = "<group>"; };
 		17EC8F7F2D16791CF7D4063F /* AppLockScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLockScreen.swift; sourceTree = "<group>"; };
 		1967360C450E679E57DA1D68 /* PrivacyOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyOverlay.swift; sourceTree = "<group>"; };
@@ -70,6 +73,7 @@
 		A853DA3BEE5AEAF0DC4959BF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		ABE62DF92DB777EA452EBEAF /* SalusModel */ = {isa = PBXFileReference; lastKnownFileType = folder; name = SalusModel; path = Packages/SalusModel; sourceTree = SOURCE_ROOT; };
 		AC11B0F74C84F76888F4B842 /* tr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = tr; path = tr.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		AC90CD3E4D0ADF19D6382982 /* AppLockGate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLockGate.swift; sourceTree = "<group>"; };
 		B817341D6CF4C638CED0FA9A /* FeatureMedications */ = {isa = PBXFileReference; lastKnownFileType = folder; name = FeatureMedications; path = Packages/Features/FeatureMedications; sourceTree = SOURCE_ROOT; };
 		BC743CA17A5881148ADB706C /* LockPrompting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LockPrompting.swift; sourceTree = "<group>"; };
 		C46AC39F5A2F807756E92213 /* AppCompositionRoot+Modules.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppCompositionRoot+Modules.swift"; sourceTree = "<group>"; };
@@ -154,6 +158,7 @@
 		7B26979369DD6CD398086DDA /* Lock */ = {
 			isa = PBXGroup;
 			children = (
+				AC90CD3E4D0ADF19D6382982 /* AppLockGate.swift */,
 				17EC8F7F2D16791CF7D4063F /* AppLockScreen.swift */,
 				BC743CA17A5881148ADB706C /* LockPrompting.swift */,
 			);
@@ -176,6 +181,7 @@
 				322C707DD49C5D019E45E256 /* Localizable.xcstrings */,
 				69D0D21B298A9A70A88B19B8 /* NoOpPaywallRequester.swift */,
 				1967360C450E679E57DA1D68 /* PrivacyOverlay.swift */,
+				1032A49894F75CD828D5BA26 /* RootGates.swift */,
 				814A06AA9BCDD69E3C76C98E /* RootTab.swift */,
 				3682A16DBF8B254394C1B404 /* RootView.swift */,
 				814D8ECF9C6A2402529D7DF1 /* Salus.entitlements */,
@@ -316,6 +322,7 @@
 				3D484E56042E4D7001156A70 /* AppCompositionRoot+Modules.swift in Sources */,
 				20CE1EC6D03BC4A4DE7B0C06 /* AppCompositionRoot+Reminder.swift in Sources */,
 				1102517D43A6643370219A27 /* AppCompositionRoot.swift in Sources */,
+				4E1FB0FCA8071ED1503A2FEC /* AppLockGate.swift in Sources */,
 				3465E87C8F8A0E450EA3DB25 /* AppLockScreen.swift in Sources */,
 				0539B0B434063E373D3D798F /* AppStrings.swift in Sources */,
 				1F0578B19CE4AC5AB5CCC17F /* DebugReminderHandler.swift in Sources */,
@@ -323,6 +330,7 @@
 				B1AB01B38B995823C20C59CD /* LockPrompting.swift in Sources */,
 				029DA3BD167192422CD3EF83 /* NoOpPaywallRequester.swift in Sources */,
 				FCAEC19BE57D93E9ECEF0569 /* PrivacyOverlay.swift in Sources */,
+				01626160451B48B804DCFB04 /* RootGates.swift in Sources */,
 				71A7E5AF1C24B88439724AF9 /* RootTab.swift in Sources */,
 				C2326DF7EB01BFBC5283C249 /* RootView.swift in Sources */,
 				B049FC0314FE8C521DE31994 /* SalusApp.swift in Sources */,
