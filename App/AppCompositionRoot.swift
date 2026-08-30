@@ -112,7 +112,8 @@ final class AppCompositionRoot {
 
     /// `homeModule` (`feature/home/.../di/HomeModule.kt`), built once and handed to the Home tab
     /// through the environment. Its `TodayRepository` joins what the other modules own, and its
-    /// "Al" button is Medications' `MarkDoseTakenUseCase` — the seam ``doseActions`` names.
+    /// "Al" button is Medications' `MarkDoseTakenUseCase`, reached through
+    /// ``MedicationsModule/makeMarkDoseTakenUseCase()`` in ``makeHomeGraph(infrastructure:medications:)``.
     let homeModule: HomeModule
 
     /// `reminderModule`'s `single<ReminderEnvironment>` (`ReminderModule.kt:20`) — the honest
@@ -164,15 +165,9 @@ final class AppCompositionRoot {
     /// `single<VitalsQuickEntry> { … }` — Kotlin's `bind VitalsQuickEntry::class`
     /// (`VitalsModule.kt:26`). A computed property rather than a stored one because the Koin
     /// registration it ports is a `factory`: every caller gets a fresh use case over the same
-    /// repository. Nothing consumes it yet; onboarding's "current weight" step (M6) is the caller
+    /// repository. Nothing consumes it yet; onboarding's "current weight" step (M8) is the caller
     /// this exists for, and exposing it here is what keeps that step from opening a second graph.
     var vitalsQuickEntry: any VitalsQuickEntry { vitalsModule.makeSaveWeightEntryUseCase() }
-
-    /// `factoryOf(::MarkDoseTakenUseCase)` bound as `DoseActions` (`MedicationsModule.kt:30`), a
-    /// computed property for the same reason: it ports a Koin `factory`, so every caller gets a
-    /// fresh use case over the one repository. Home's "next dose" card (M7) is the caller this
-    /// exists for, and exposing it here is what keeps that card from opening a second graph.
-    var doseActions: any DoseActions { medicationsModule.makeMarkDoseTakenUseCase() }
 
     init() {
         let infrastructure = Self.makeInfrastructure()

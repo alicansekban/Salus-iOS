@@ -19,8 +19,11 @@ extension AppCompositionRoot {
     ///
     /// A builder of its own, called *after* ``makeScheduledModules(infrastructure:reminderScheduler:)``,
     /// because the dashboard is the one module assembled out of another feature's: its "Al" button is
-    /// Medications' `MarkDoseTakenUseCase`, the same Koin `factory` ``AppCompositionRoot/doseActions``
-    /// exposes. Reusing that seam is what keeps the card from opening a second medications graph.
+    /// Medications' `MarkDoseTakenUseCase`, taken from the medications module by the
+    /// `medications.makeMarkDoseTakenUseCase()` call below — the twin of Koin's
+    /// `factoryOf(::MarkDoseTakenUseCase) bind DoseActions::class` (`MedicationsModule.kt:30`), so
+    /// every caller gets a fresh use case over the one repository. Reusing that factory is what
+    /// keeps the card from opening a second medications graph.
     ///
     /// The four DAOs are opened here exactly as every other module's are — a DAO is a value over the
     /// one `SalusDatabase`, so a second instance is not a second connection — and the profile id is
