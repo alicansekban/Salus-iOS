@@ -23,9 +23,23 @@
 //                                   (`VitalsEditorField.swift:59-67`), and it is the one place
 //                                   this port adds rather than maps. Recorded as a divergence.
 //
-// `KeyboardOptions` is not ported as a type: `keyboardType` and `capitalization` are the only two
-// members any caller sets, and both are `#if os(iOS)` APIs here, so they arrive as two small enums
-// this package can also compile on the macOS test host.
+// `KeyboardOptions` is not ported as a type. Its members arrive as three separate arguments —
+// `keyboard`, `capitalization`, `autocorrects` — because each is a `#if os(iOS)` API here, so a
+// Compose-shaped options struct would not compile on the macOS test host.
+//
+// **`imeAction` is deliberately NOT among them — a recorded divergence.** Kotlin sets
+// `imeAction = ImeAction.Next` on the two single-line profile fields (`ProfileScreen.kt:114`,
+// `:159`) and pointedly omits it on the multi-line one, with the reason written down: *"A
+// multi-line field gets no imeAction: it would steal the newline key"* (`:169-170`). Compose's
+// `Next` both relabels the key **and** advances focus, for free. SwiftUI splits those: only
+// `.submitLabel(.next)` is free, and the advance needs a `@FocusState` the caller owns and a
+// `FocusState.Binding` parameter on this component — generics on a view two features share, for an
+// affordance neither platform's design calls out. A "next" key that relabels but does not advance
+// is worse than no claim at all, so **neither half is ported**: both single-line fields keep the
+// platform's default return key. The half that actually matters is preserved by construction — the
+// multi-line field is `axis: .vertical`, which keeps its newline key because nothing was added to
+// take it away. If the advance is ever wanted, it arrives as a focus binding here and a
+// `@FocusState` in `ProfileScreen`, together, never as a bare `.submitLabel`.
 
 import SalusDesignSystem
 import SwiftUI
@@ -66,12 +80,18 @@ public struct SalusPillTextField: View {
     let isSingleLine: Bool
     let keyboard: Keyboard
     let capitalization: Capitalization
+    let autocorrects: Bool
 
     @Environment(\.salusTheme) private var theme
 
     /// Every argument past `placeholder` is defaulted, exactly as Kotlin defaults them
     /// (`SalusPillTextField.kt:39-45`). `enabled` is not ported: no caller disables one, and an
     /// unused knob is a knob that drifts.
+    ///
+    /// - Parameter autocorrects: Kotlin's `autoCorrectEnabled`, which it sets independently of
+    ///   capitalization (`false` on the name field, `ProfileScreen.kt:113`). A separate argument
+    ///   rather than something inferred from `capitalization`, so a caller that wants `.words`
+    ///   *with* autocorrect can say so and the coupling is not invisible at the call site.
     public init(
         text: Binding<String>,
         placeholder: String,
@@ -80,7 +100,8 @@ public struct SalusPillTextField: View {
         supportingText: String? = nil,
         isSingleLine: Bool = true,
         keyboard: Keyboard = .standard,
-        capitalization: Capitalization = .none
+        capitalization: Capitalization = .none,
+        autocorrects: Bool = true
     ) {
         _text = text
         self.placeholder = placeholder
@@ -90,6 +111,7 @@ public struct SalusPillTextField: View {
         self.isSingleLine = isSingleLine
         self.keyboard = keyboard
         self.capitalization = capitalization
+        self.autocorrects = autocorrects
     }
 
     public var body: some View {
@@ -146,9 +168,8 @@ public struct SalusPillTextField: View {
         #if os(iOS)
             .keyboardType(keyboard == .decimal ? .decimalPad : .default)
             .textInputAutocapitalization(autocapitalization)
-            // `autoCorrectEnabled = false` on the name field (`ProfileScreen.kt:113`), and a
-            // measurement or a unit is never a word the dictionary should second-guess either.
-            .autocorrectionDisabled(capitalization != .sentences)
+            // `autoCorrectEnabled` (`ProfileScreen.kt:113`), which the caller sets on its own.
+            .autocorrectionDisabled(!autocorrects)
         #endif
     }
 

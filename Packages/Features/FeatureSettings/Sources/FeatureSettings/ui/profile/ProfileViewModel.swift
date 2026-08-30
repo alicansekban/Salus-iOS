@@ -107,6 +107,12 @@ public final class ProfileViewModel {
     /// `ProfileViewModel.kt:27-37` — every `?.`/`orEmpty()` in one place. A missing row (which only
     /// a corrupted install produces) still clears `isLoading`: the form opens empty and saving it
     /// seeds the row, exactly as Kotlin's null-safe reads do.
+    ///
+    /// A whole new state rather than Kotlin's `it.copy(…)`, and it is only safe because the two
+    /// members `copy` would have preserved — `isSaving`, `showSexChangeConfirm` — are `false` at
+    /// load time on both platforms: this runs once, from `init`, before any event can set either.
+    /// If the load ever becomes re-runnable (an observation, a pull-to-refresh), this has to become
+    /// a copy or it will clear a dialog the user is looking at.
     private static func form(from profile: Profile?) -> ProfileUiState {
         guard let profile else { return ProfileUiState(isLoading: false) }
         return ProfileUiState(
@@ -123,10 +129,18 @@ public final class ProfileViewModel {
     /// Copies the stored row rather than building a new one: `id` and `isDefault` must survive,
     /// because every other table hangs off `profile_id`. A blank optional field saves as `nil`,
     /// exactly what a skipped onboarding step writes (`ProfileViewModel.kt:75-96`).
+    ///
+    /// **The form is captured synchronously, before the `Task`.** Kotlin reads `_state.value`
+    /// *inside* `viewModelScope.launch`, which is safe there because nothing else runs between the
+    /// call and the coroutine's first resumption. Here the `Task` body cannot start until the
+    /// current main-actor turn ends, so any event delivered later in that same turn would be read
+    /// instead of the form the user submitted — which is exactly what the confirm button's
+    /// `.sexChangeDismissed` used to do, writing the *old* sex (review C1). Reading `state` once,
+    /// here, makes the write independent of anything that happens after the tap.
     private func save() {
+        let form = state
         state.isSaving = true
         Task { [weak self, profileRepository, navigator] in
-            guard let form = self?.state else { return }
             do {
                 let existing = try await profileRepository.getProfile() ?? Self.emptyProfile()
                 try await profileRepository.saveProfile(

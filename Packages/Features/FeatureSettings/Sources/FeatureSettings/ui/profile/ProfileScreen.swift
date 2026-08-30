@@ -12,14 +12,23 @@
 //    contentPadding = top(sm))`        horizontal padding because its scroll column already applies
 //                                      it; the iOS header applies `SalusSpacing.lg` itself and has
 //                                      no `contentPadding` knob, so the column applies none and
-//                                      each field carries the same inset instead. Same result, one
-//                                      fewer parameter.
+//                                      each field carries the same inset instead. The header's own
+//                                      `SalusSpacing.sm` vertical padding stands in for Kotlin's
+//                                      `top = sm`, so a label sits `md` below the field above it
+//                                      rather than `md + sm` — a 8 pt cosmetic difference, listed
+//                                      rather than chased.
 //   `SalusConfirmDialog`             → `.salusConfirmDialog(isPresented:…)`, the modifier the
 //                                      component became on iOS.
 //   `Icons.Outlined.Female/Male/     → SF Symbols. `Transgender` has no SF Symbol; `person.2` is
 //    Transgender`                      the neutral stand-in, the same "third option" reading.
 //   `ContentType.PersonFullName`     → `.textContentType(.name)`, AutoFill's twin of Compose's
 //                                      autofill content type.
+//   `imeAction = ImeAction.Next`     → DROPPED, a recorded divergence. `SalusPillTextField.swift`'s
+//    (`:114`, `:159`)                  header carries the reasoning: Compose's `Next` relabels the
+//                                      return key *and* advances focus, SwiftUI splits those, and
+//                                      half of it is worse than none. The multi-line field's
+//                                      deliberate omission (`:169-172`) is preserved by
+//                                      construction — nothing was added to take its newline key.
 //
 // The field order is onboarding's, exactly as Kotlin has it (`ProfileScreen.kt:97`).
 
@@ -83,13 +92,17 @@ struct ProfileScreen: View {
             }
         }
         .salusConfirmDialog(
-            isPresented: Binding(
-                get: { state.showSexChangeConfirm },
-                set: { isPresented in
-                    guard !isPresented else { return }
-                    onEvent(.sexChangeDismissed)
-                }
-            ),
+            // The setter is deliberately empty, and this is the one dialog in the tree where that
+            // matters. `.alert(_:isPresented:actions:)` writes `false` for **either** button — the
+            // component says so itself (`SalusConfirmDialog.swift:34`) — so the usual
+            // "route the false edge to the dismiss event" shape (`VitalsScreen.swift`, the three
+            // vitals editors) would fire `.sexChangeDismissed` *after* `.sexChangeConfirmed`.
+            // There that is harmless: a stray dismiss only re-clears a flag. Here dismiss **undoes
+            // state** (`sex = storedSex`, `ProfileViewModel.kt:70-71`), so it would revert the pick
+            // the user just confirmed and the row would be written with the old sex (review C1).
+            // Both buttons already send their own event, and an alert has no other way out, so
+            // nothing is lost by ignoring the system's write.
+            isPresented: Binding(get: { state.showSexChangeConfirm }, set: { _ in }),
             title: SettingsStrings.profileSexConfirmTitle,
             message: SettingsStrings.profileSexConfirmBody,
             confirm: SalusDialogAction(label: SettingsStrings.profileSexConfirmOk) {
@@ -108,7 +121,10 @@ struct ProfileScreen: View {
             SalusPillTextField(
                 text: Binding(get: { state.name }, set: { onEvent(.nameChanged($0)) }),
                 placeholder: SettingsStrings.profileNamePlaceholder,
-                capitalization: .words
+                capitalization: .words,
+                // `autoCorrectEnabled = false` (`ProfileScreen.kt:113`) — a name is not a word the
+                // dictionary should second-guess.
+                autocorrects: false
             )
             #if os(iOS)
             // `ContentType.PersonFullName` (`ProfileScreen.kt:116`).
@@ -138,7 +154,8 @@ struct ProfileScreen: View {
                 suffix: "cm",
                 isError: state.showInvalidHeight,
                 supportingText: state.showInvalidHeight ? SettingsStrings.profileHeightInvalid : nil,
-                keyboard: .decimal
+                keyboard: .decimal,
+                autocorrects: false
             )
             .padding(.horizontal, SalusSpacing.lg)
 

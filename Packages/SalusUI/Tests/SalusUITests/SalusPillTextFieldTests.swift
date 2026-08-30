@@ -75,4 +75,31 @@ struct SalusPillTextFieldTests {
         #expect(plain.supportingText == nil)
         #expect(plain.isSingleLine)
     }
+
+    /// `autoCorrectEnabled` is set independently of capitalization on Android
+    /// (`ProfileScreen.kt:113` sets it `false` while asking for `Words`), so it is its own argument
+    /// here rather than something inferred — a caller that wants `.words` *with* autocorrect can
+    /// say so, and the coupling is not invisible at the call site.
+    @Test("autocorrect is its own knob, on by default and independent of capitalization")
+    @MainActor
+    func autocorrectIsIndependentOfCapitalization() {
+        let name = SalusPillTextField(
+            text: .constant("Ayşe"),
+            placeholder: "Örn: Ayşe",
+            capitalization: .words,
+            autocorrects: false
+        )
+        let notes = SalusPillTextField(
+            text: .constant(""),
+            placeholder: "Örn: Penisilin alerjisi",
+            isSingleLine: false,
+            capitalization: .sentences
+        )
+
+        #expect(!name.autocorrects)
+        #expect(name.capitalization == .words)
+        // The default, which is what the multi-line notes field keeps.
+        #expect(notes.autocorrects)
+        #expect(notes.capitalization == .sentences)
+    }
 }

@@ -111,6 +111,9 @@ struct ProfileViewModelTests {
 
         viewModel.onEvent(.sexChangeConfirmed)
         await waitUntil("the write") { !repository.saved.isEmpty }
+        // `repository.saved.single()` (`ProfileViewModelTest.kt:135`) — exactly one write, so a
+        // retry loop cannot pass this by writing twice.
+        #expect(repository.saved.count == 1)
         #expect(try #require(repository.saved.first).sex == .male)
         await waitUntil("the pop") { navigator.commandLog == [.pop] }
     }
@@ -142,6 +145,8 @@ struct ProfileViewModelTests {
         await waitUntil("the write") { !repository.saved.isEmpty }
 
         #expect(!viewModel.state.showSexChangeConfirm)
+        // `single()` (`ProfileViewModelTest.kt:164`).
+        #expect(repository.saved.count == 1)
         #expect(try #require(repository.saved.first).sex == .other)
     }
 
@@ -157,6 +162,8 @@ struct ProfileViewModelTests {
         viewModel.onEvent(.saveClicked)
         await waitUntil("the write") { !repository.saved.isEmpty }
 
+        // `single()` (`ProfileViewModelTest.kt:178`).
+        #expect(repository.saved.count == 1)
         #expect(try #require(repository.saved.first).sex == .female)
     }
 
@@ -205,6 +212,7 @@ struct ProfileViewModelTests {
         viewModel.onEvent(.saveClicked)
         await waitUntil("the write") { !repository.saved.isEmpty }
 
+        #expect(repository.saved.count == 1)
         let saved = try #require(repository.saved.first)
         #expect(saved.id == ProfileRepositoryDefaults.defaultProfileId)
         #expect(saved.isDefault)
@@ -213,6 +221,41 @@ struct ProfileViewModelTests {
         #expect(saved.birthDate == nil)
         #expect(saved.heightCm == nil)
         #expect(saved.healthNotes == nil)
+        await waitUntil("the pop") { navigator.commandLog == [.pop] }
+    }
+
+    /// **iOS-only — no Kotlin twin.** The regression for review finding C1.
+    ///
+    /// `.alert(_:isPresented:actions:)` writes `false` into its binding for **either** button, so
+    /// the screen's confirm tap used to deliver `.sexChangeConfirmed` and then
+    /// `.sexChangeDismissed` in the same main-actor turn. Compose has no such write —
+    /// `SalusConfirmDialog`'s `onDismissRequest` fires only for a real dismissal — so
+    /// `ProfileViewModelTest.kt` has no case for the pair.
+    ///
+    /// Two independent fixes have to hold, and this pins both: the screen no longer routes the
+    /// system's write to an event (`ProfileScreen.swift`, the empty `set:`), and `save()` captures
+    /// the form **before** its `Task`, so even a dismiss delivered after the confirm cannot change
+    /// what is written. The sequence below is the one the old screen produced; the row must still
+    /// be written with `MALE`.
+    @Test("a dismiss delivered after the confirm cannot revert the sex that was written")
+    func aDismissAfterTheConfirmCannotRevertTheWrittenSex() async throws {
+        let (viewModel, repository, navigator) = setUp()
+        defer { navigator.stop() }
+        await waitUntil("the profile to load") { !viewModel.state.isLoading }
+
+        viewModel.onEvent(.sexSelected(.male))
+        viewModel.onEvent(.saveClicked)
+        await settle()
+        #expect(viewModel.state.showSexChangeConfirm)
+
+        // Both events in one turn, with no `await` between them — exactly what the alert's confirm
+        // button used to deliver.
+        viewModel.onEvent(.sexChangeConfirmed)
+        viewModel.onEvent(.sexChangeDismissed)
+        await waitUntil("the write") { !repository.saved.isEmpty }
+
+        #expect(repository.saved.count == 1)
+        #expect(try #require(repository.saved.first).sex == .male)
         await waitUntil("the pop") { navigator.commandLog == [.pop] }
     }
 
