@@ -90,9 +90,14 @@ struct RootGates: Equatable {
 ///
 /// `UILaunchScreen` in `Info.plist` holds the screen until the first frame is ready; from there on
 /// it is this. The background *role* rather than a fixed colour, so a device in dark mode holds on
-/// the dark ground and the hand-off to whatever is drawn next is invisible — and the role is the
-/// right one to read even before `theme_mode` has been answered, because `ThemeMode.default` is
-/// `.system`, which is exactly what the launch screen was already following.
+/// the dark ground and the hand-off *forward* — into onboarding, into the lock gate, into Home — is
+/// invisible. The role is also the right one to read before `theme_mode` has been answered, because
+/// `ThemeMode.default` is `.system`, which is what the launch screen was already following.
+///
+/// The hand-off *backward* is the imperfect one: `UILaunchScreen` is declared empty, so iOS paints
+/// the system background under it, and wherever Salus's `background` token differs from that there
+/// is one frame of colour step. Cosmetic, device-only, and cheaper than keeping a launch-screen
+/// asset in step with two palettes by hand; `m8-manual-qa.md` §3.17 tells the tester not to file it.
 ///
 /// `.contentShape(.rect)` because the shell underneath it is live and laid out: the cover has to
 /// take the taps as well as the pixels. Hidden from VoiceOver because it names nothing to act on.

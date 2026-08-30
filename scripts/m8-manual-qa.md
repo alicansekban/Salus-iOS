@@ -482,8 +482,12 @@ drawn at the right moment, and these are the moments where "right" is not obviou
   prompts on appearance.
 - [ ] **3.17 With the lock ON, the gate arrives without the app flashing behind it.** Turn the lock
   on (§3.2), kill the app, and relaunch — again watching the first half second.
-  *Expected:* the launch colour, then the lock screen. **The tab bar and Home never appear**, not
+  *Expected:* a blank frame, then the lock screen. **The tab bar and Home never appear**, not
   even for a frame, and no screen contents are visible behind the lock badge.
+  *Not a bug:* the blank frame is `SplashHoldCover`, which paints the app's own `background` token,
+  while `UILaunchScreen` before it is empty and therefore paints the *system* background. Where the
+  two colours differ you may see one frame of colour step between them. Report a **flash of app
+  content**, not a flash of a slightly different grey.
   *Why this step exists:* this is ruling 3's splash-hold from the other side. The lock is an overlay
   over a `TabView` that is mounted and laid out underneath it (exactly as Android composes
   `SalusApp()` under its splash), so "the gate covers everything" is a claim about z-order and
@@ -674,8 +678,9 @@ in the Keychain (§3.15) — so turn the lock off before deleting unless the row
 
 - [ ] **7.1 A fresh install opens onboarding, and never Home first.** Delete Salus, reinstall, and
   launch it — watching the first half second.
-  *Expected:* the launch colour, then the onboarding **Welcome** step. **The tab bar and Home never
-  appear**, not for a frame. *Why this step exists:* `onboardingCompleted` is `Bool?` and starts
+  *Expected:* a blank frame, then the onboarding **Welcome** step. **The tab bar and Home never
+  appear**, not for a frame. (The blank frame is the app's background token, not the system launch
+  background — see the "not a bug" note on §3.17 if the two colours step.) *Why this step exists:* `onboardingCompleted` is `Bool?` and starts
   `nil`; while it is nil the shell draws `SplashHoldCover` over everything (ruling 3, divergence
   (f) — iOS has no `installSplashScreen`, so this is the hold). A default of `false` here would
   flash onboarding on every launch; a default of `true` would flash Home on the first one.

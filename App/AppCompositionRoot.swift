@@ -175,13 +175,6 @@ final class AppCompositionRoot {
     /// that unregisters when it is released.
     @ObservationIgnored private var systemEventObservers: [any NSObjectProtocol] = []
 
-    /// `single<VitalsQuickEntry> { … }` — Kotlin's `bind VitalsQuickEntry::class`
-    /// (`VitalsModule.kt:26`). A computed property rather than a stored one because the Koin
-    /// registration it ports is a `factory`: every caller gets a fresh use case over the same
-    /// repository. Nothing consumes it yet; onboarding's "current weight" step (M8) is the caller
-    /// this exists for, and exposing it here is what keeps that step from opening a second graph.
-    var vitalsQuickEntry: any VitalsQuickEntry { vitalsModule.makeSaveWeightEntryUseCase() }
-
     init() {
         let infrastructure = Self.makeInfrastructure()
         clock = infrastructure.clock

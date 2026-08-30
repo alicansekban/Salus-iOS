@@ -37,16 +37,19 @@ struct SalusApp: App {
         WindowGroup {
             RootView()
                 .environment(compositionRoot)
-                // The one scenePhase subscription in the app, and it stays one: everything the
-                // process-lifecycle transitions drive is forwarded from these two arms.
+                // The one scenePhase site that forwards to the graph, and it stays one:
+                // everything the process-lifecycle transitions drive reaches the composition root
+                // from these two arms. It is not the only `scenePhase` *reader* — `PrivacyOverlay`
+                // has its own, driving its own state (the blur) and nothing else.
                 //
                 // `AppLockManager` is what Android registers on `ProcessLifecycleOwner`
                 // (`SalusApplication.kt`), so on that side it needs no line in `MainActivity` at
                 // all; iOS has no process lifecycle owner, and this is the shell's half of the
                 // manager's divergence 1. `.inactive` is deliberately absent from both arms — iOS
                 // sends it for a control-centre pull or an incoming call, which Android would not
-                // call leaving the app. (The app-switcher blur is a separate concern and reads
-                // `.inactive` itself, inside `PrivacyOverlay`.)
+                // call leaving the app, and the gate must not re-lock behind its own Face ID
+                // sheet. The blur is the one thing that *should* react to `.inactive`, which is
+                // why `PrivacyOverlay` reads it there instead of here.
                 .onChange(of: scenePhase) { _, phase in
                     switch phase {
                     case .active:
