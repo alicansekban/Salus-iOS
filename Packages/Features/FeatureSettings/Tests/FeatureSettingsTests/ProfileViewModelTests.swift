@@ -179,6 +179,45 @@ struct ProfileViewModelTests {
         #expect(navigator.commandLog.isEmpty)
     }
 
+    // MARK: - iOS-only
+
+    /// **iOS-only — no Kotlin twin.** `ProfileRepository.getProfile()` is `throws` on iOS
+    /// (`ProfileRepository.swift:24`) where Kotlin's is a plain `suspend fun`, so the load has to
+    /// tell a *failure* from an *absent row* — and `ProfileViewModelTest.kt` has no case for either
+    /// because Kotlin's null-safe reads (`profile?.displayName.orEmpty()`, `:30-35`) make the
+    /// distinction invisible there. Divergence 2 in `ProfileViewModel.swift` is what this pins: a
+    /// nil row is **not** a failure, so `isLoading` clears and the form opens empty rather than
+    /// spinning for ever.
+    ///
+    /// The save that follows pins the other half of the same corrupted-install path,
+    /// `emptyProfile()` (`ProfileViewModel.kt:98-107`): with no row to copy, the write seeds
+    /// `ProfileRepositoryDefaults.defaultProfileId` and `isDefault`, so every table that hangs off
+    /// `profile_id` still finds its parent.
+    @Test("a missing profile row opens an empty form and saves back the seeded id")
+    func aMissingProfileRowOpensAnEmptyFormAndSavesBackTheSeededId() async throws {
+        let (viewModel, repository, navigator) = setUp(profile: nil)
+        defer { navigator.stop() }
+        await waitUntil("the load to finish") { !viewModel.state.isLoading }
+
+        #expect(viewModel.state == ProfileUiState(isLoading: false))
+
+        viewModel.onEvent(.nameChanged("Ayşe"))
+        viewModel.onEvent(.saveClicked)
+        await waitUntil("the write") { !repository.saved.isEmpty }
+
+        let saved = try #require(repository.saved.first)
+        #expect(saved.id == ProfileRepositoryDefaults.defaultProfileId)
+        #expect(saved.isDefault)
+        #expect(saved.displayName == "Ayşe")
+        #expect(saved.sex == nil)
+        #expect(saved.birthDate == nil)
+        #expect(saved.heightCm == nil)
+        #expect(saved.healthNotes == nil)
+        await waitUntil("the pop") { navigator.commandLog == [.pop] }
+    }
+
+    // MARK: - Helpers
+
     /// `advanceUntilIdle()` where there is nothing to wait *for* — the three cases that assert a
     /// write never happened have to give the write its chance first, or they would pass on a
     /// ViewModel that simply had not got there yet.
