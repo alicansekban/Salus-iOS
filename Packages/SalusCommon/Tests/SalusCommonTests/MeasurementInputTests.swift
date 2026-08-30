@@ -56,6 +56,11 @@ struct MeasurementInputHeightTests {
     func onlySpacesIsNil() {
         #expect(MeasurementInput.parseHeightCm("  ") == nil)
     }
+
+    @Test("a trailing newline is trimmed, as Kotlin String.trim() does")
+    func trailingNewlineIsTrimmed() {
+        #expect(MeasurementInput.parseHeightCm("170\n") == 170.0)
+    }
 }
 
 @Suite("MeasurementInput.parseWeightKg")

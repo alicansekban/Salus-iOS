@@ -36,7 +36,7 @@ public enum MeasurementInput {
     /// ?.takeIf { it in min..max }`. The comma replace is already in the Android source, so the
     /// iOS port matches 1:1, including it.
     private static func parse(_ text: String, min: Double, max: Double) -> Double? {
-        let trimmed = text.trimmingCharacters(in: .whitespaces)
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard let value = Double(trimmed.replacingOccurrences(of: ",", with: ".")) else { return nil }
         return (min ... max).contains(value) ? value : nil
     }
