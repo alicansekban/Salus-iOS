@@ -42,6 +42,16 @@ struct RootView: View {
     /// Seeded with the same default the store returns before anything has been written.
     @State private var themeMode: ThemeMode = .default
 
+    /// The stored `secure_screen_enabled`, mirrored out of the **same** stream and the same loop as
+    /// `themeMode` above — one subscription, two values, because `userSettings` publishes the whole
+    /// `UserSettings` and a second `for await` over it would only cost a second observer.
+    ///
+    /// It is the *masking* half of spec §6.2 (global constraints, ruling 2): the app-switcher blur
+    /// `.secureScreen(maskingEnabled:)` draws is on whatever this says. Seeded `false`, which is
+    /// `UserSettings`' own default (`Settings.kt:21`) and the safe direction while the store answers
+    /// — a curtain that appears a frame late is a flicker, one that never lifts is a broken app.
+    @State private var secureScreenEnabled = false
+
     /// The appointment detail a tapped reminder last pushed, and how deep the appointments stack was
     /// left by that push — the two halves of "is this key still on top?".
     ///
@@ -95,16 +105,24 @@ struct RootView: View {
         // behind it and drift from the token.
         .toolbarBackground(theme.colorScheme.surfaceContainer, for: .tabBar)
         .toolbarBackground(.visible, for: .tabBar)
-        // Resolved once, read everywhere below — no screen takes a `theme:` parameter.
-        .salusTheme(theme)
         // `nil` for `.system`, which leaves the window to the OS (`ThemeMode.preferredColorScheme`).
         .preferredColorScheme(themeMode.preferredColorScheme)
         // A reminder tapped while the app was closed arrives before this view exists, so the ref
         // waits in the router and this reads it on the first update as well as on later taps.
         .onChange(of: root.reminderOpenRouter.pending, initial: true) { _, _ in openTappedReminder() }
-        .task { await observeThemeMode() }
+        .task { await observeUserSettings() }
         .task { await observeNavigationCommands() }
         .task { await root.logSeededProfile() }
+        // The §6.2 secure screen, applied over the `TabView` and outside every `NavigationStack`:
+        // the always-on app-switcher blur, plus the screenshot mask and the capture hide that
+        // `secure_screen_enabled` adds. Anything a later gate overlays (onboarding, the app lock)
+        // belongs BELOW this line, so the curtain is drawn over it too.
+        .secureScreen(maskingEnabled: secureScreenEnabled)
+        // Resolved once, read everywhere below — no screen takes a `theme:` parameter. Outermost on
+        // purpose, and it is the one modifier that stays outside `.secureScreen`: an overlay reads
+        // the environment its host was *handed*, not the one its host writes, so a curtain applied
+        // after this line would draw the default palette over a dark-themed app.
+        .salusTheme(theme)
     }
 
     /// One stack per tab. No `navigationDestination` written here on purpose: `TabBackStacks.push`
@@ -325,9 +343,15 @@ struct RootView: View {
     }
 
     /// The store emits its current value first, then every change, so this both seeds and tracks.
-    private func observeThemeMode() async {
+    ///
+    /// One loop for every shell-level setting, not one per value: `userSettings` carries the whole
+    /// `UserSettings`, so a second `for await` over the same stream would buy a second observer and
+    /// nothing else. Android reads both of these off that one flow too, four lines apart
+    /// (`MainActivity.kt:61-67`).
+    private func observeUserSettings() async {
         for await settings in root.preferences.userSettings {
             themeMode = settings.themeMode
+            secureScreenEnabled = settings.secureScreenEnabled
         }
     }
 
