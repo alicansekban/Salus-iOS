@@ -7,9 +7,16 @@
 //                                                  `md` gap, name filling what is left.
 //   `SalusPillButton(tonal = true, accent = …)`  → `SalusUI.SalusPillButton`, argument for argument.
 //
-// The card is tappable *and* carries a button per pending row. That is Kotlin's shape too
-// (`SalusCard(onClick = …)` wrapping `SalusPillButton(onClick = …)`); SwiftUI resolves the inner
-// button first, so a tap on "Al" records the dose and does not also switch tabs.
+// THE CARD IS NOT A BUTTON HERE, AND KOTLIN'S IS. Compose dispatches a tap to the innermost
+// clickable, so `SalusCard(onClick = …)` with a `SalusPillButton` inside it works there. On iOS
+// `SalusCard(onTap:)` is `Button(action:) { surface }` (`SalusCard.swift:33-34`), and a `Button`
+// inside another `Button`'s label is treated as decoration: the outer one swallows the tap, so
+// "Al" would switch tabs and never record the dose. Three shipped features settled the shape —
+// `VitalsRow` first (`VitalsScreen.swift:258-272`), then `MedicationCard.swift:7-13` and
+// `AppointmentCard` — and this card copies it: a plain, non-interactive `HomeDashboardCard`, the
+// "open medications" tap on the time-and-name column through `homeOpensCard(_:)`, and the pill as
+// that column's **sibling** in the row. The two targets are disjoint by layout rather than merely
+// ordered by dispatch rules. Recorded as a divergence.
 
 import SalusDesignSystem
 import SalusUI
@@ -22,15 +29,17 @@ struct HomeDosesCard: View {
     let onTap: () -> Void
 
     var body: some View {
-        HomeDashboardCard(onTap: onTap) {
+        HomeDashboardCard {
             if doses.isEmpty {
+                // With no rows, the empty line is the only thing left to open the card with.
                 HomeEmptyLine(text: HomeStrings.dosesEmpty)
+                    .homeOpensCard(onTap)
             } else {
                 // `id: \.self` — the whole dose. One schedule has several slots a day, so the
                 // schedule id alone is not unique within this list; `TodayDose` is `Hashable`
                 // precisely so the row can be identified by everything it draws.
                 ForEach(doses, id: \.self) { dose in
-                    HomeDoseRow(dose: dose, onEvent: onEvent)
+                    HomeDoseRow(dose: dose, onEvent: onEvent, onTap: onTap)
                 }
             }
         }
@@ -42,12 +51,27 @@ struct HomeDosesCard: View {
 private struct HomeDoseRow: View {
     let dose: TodayDose
     let onEvent: (HomeEvent) -> Void
+    let onTap: () -> Void
 
     @Environment(\.salusTheme) private var theme
     /// `LocalLocale.current.platformLocale` (`HomeScreen.kt:221`).
     @Environment(\.locale) private var locale
 
     var body: some View {
+        HStack(spacing: 0) {
+            slot
+                // The column already fills every point the trailing control does not, so the gap
+                // beside a short medication name opens the card too.
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .homeOpensCard(onTap)
+            trailing
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, SalusSpacing.xs)
+    }
+
+    /// The half a tap opens the medications tab from (`HomeScreen.kt:233-243`).
+    private var slot: some View {
         HStack(spacing: 0) {
             Text(verbatim: HomeFormatting.minutes(dose.minuteOfDay, locale: locale))
                 .font(SalusTypography.labelLarge.font)
@@ -59,14 +83,11 @@ private struct HomeDoseRow: View {
                 .tracking(SalusTypography.bodyMedium.tracking)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.leading, SalusSpacing.md)
-            trailing
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, SalusSpacing.xs)
     }
 
     /// `if (dose.status == PENDING) SalusPillButton(...) else DoseStatusChip(...)`
-    /// (`HomeScreen.kt:244-255`).
+    /// (`HomeScreen.kt:244-255`). A sibling of `slot`, not a descendant of any Button.
     @ViewBuilder private var trailing: some View {
         if dose.status == .pending {
             SalusPillButton(

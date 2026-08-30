@@ -5,13 +5,14 @@
 // exactly, because the gate would be a product decision this milestone is not making.
 //
 // DIVERGENCE (i), THE PROGRESS TRACK. `LinearProgressIndicator(progress:, color:, trackColor:)`
-// (`HomeScreen.kt:328-335`) colours bar and track in one call; SwiftUI's `ProgressView` exposes
-// only the bar, through `.tint`. The track is therefore a `Capsule` in `cycle.container` behind the
-// linear style rather than a parameter to it. Drawn result: the same two colours, reached from the
-// other side.
+// (`HomeScreen.kt:328-335`) colours bar and track in one call; SwiftUI's `ProgressView(value:)`
+// takes a tint and nothing else. The accent is therefore carried by `.tint` and the track is the
+// platform's own dimmed rendering of it rather than `cycle.container` — the way
+// `MedicationCard.swift:14-19` already settled this same gap. Drawing the track by hand (a
+// `Capsule` behind the bar, say) would give the token back and cost the platform's sizing,
+// animation and accessibility, for a 4 pt strip; the bar's *value* is what the card is saying.
 
 import SalusDesignSystem
-import SalusUI
 import SwiftUI
 
 /// The cycle snapshot (`HomeScreen.kt:317-347`).
@@ -51,7 +52,6 @@ struct HomeCycleCard: View {
             ProgressView(value: min(max(Double(cycleDay) / Double(length), 0), 1))
                 .progressViewStyle(.linear)
                 .tint(theme.extendedColors.cycle.accent)
-                .background(Capsule().fill(theme.extendedColors.cycle.container))
         }
     }
 

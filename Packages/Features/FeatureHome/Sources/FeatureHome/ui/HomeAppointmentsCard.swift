@@ -1,13 +1,20 @@
 // Ported from `HomeScreen.kt:273-314` — the next few appointments.
 //
 // Material → SwiftUI:
-//   `Column { … }` per appointment              → a `VStack(alignment: .leading)`.
+//   `Column { … }` per appointment                 → a `VStack(alignment: .leading)`.
 //   `Spacer(height = sm)` + `align(Alignment.End)` → the same `sm` gap and a trailing-aligned frame
 //                                                    around the pill.
 //   `DateTimeFormatter.ofLocalizedDateTime(...)`   → `HomeFormatting.appointmentStart(...)`.
 //
 // The pill's action is the card's action: Kotlin passes the very same `onClick` to both
 // (`HomeScreen.kt:306-311`), because "see details" and tapping the card are one intention.
+//
+// AND THAT IS WHY THE CARD IS NOT A BUTTON. Same callback or not, `SalusCard(onTap:)` is a
+// `Button` on iOS (`SalusCard.swift:33-34`) and the pill would be a button inside its label —
+// swallowed by the outer one, and read by VoiceOver as a button within a button. So the card is
+// the plain, non-interactive `HomeDashboardCard`, the rows carry the tap through
+// `homeOpensCard(_:)`, and the pill is their **sibling** in the column. `VitalsRow`,
+// `MedicationCard` and `AppointmentCard` all take this shape; it is recorded as a divergence.
 
 import SalusDesignSystem
 import SalusUI
@@ -19,12 +26,14 @@ struct HomeAppointmentsCard: View {
     let onTap: () -> Void
 
     var body: some View {
-        HomeDashboardCard(onTap: onTap) {
+        HomeDashboardCard {
             if appointments.isEmpty {
                 HomeEmptyLine(text: HomeStrings.appointmentsEmpty)
+                    .homeOpensCard(onTap)
             } else {
                 ForEach(appointments, id: \.id) { appointment in
                     HomeAppointmentRow(appointment: appointment)
+                        .homeOpensCard(onTap)
                 }
                 // `Spacer(height = sm)` then the trailing pill (`HomeScreen.kt:305-311`).
                 Spacer().frame(height: SalusSpacing.sm)

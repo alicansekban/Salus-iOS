@@ -168,12 +168,25 @@ struct HomeScreen: View {
     }
 }
 
-/// The card every section draws into: full width, `lg` inset, tappable (`HomeScreen.kt:406-418`).
+/// The card every section draws into: full width, `lg` inset (`HomeScreen.kt:406-418`).
+///
+/// `onTap` is **optional**, and which cards pass it is the one place this screen departs from
+/// Kotlin's uniform `SalusCard(onClick = …)`:
+///
+///   * **Cycle and vitals pass it.** They contain no interactive child, so the card can be the
+///     real `Button` `SalusCard(onTap:)` builds — free button semantics, free VoiceOver.
+///   * **Doses and appointments do not.** Each contains a `SalusPillButton`, and a `Button` inside
+///     another `Button`'s label is treated as decoration by SwiftUI: the outer one swallows the
+///     tap. Three shipped features settled this — `VitalsRow` first, then `MedicationCard` and
+///     `AppointmentCard` — so those two cards are non-interactive here and carry the "open" tap on
+///     their content through ``SwiftUI/View/homeOpensCard(_:)``, with the pill as a **sibling** of
+///     that content. The two targets are then disjoint by layout rather than ordered by dispatch
+///     rules.
 struct HomeDashboardCard<Content: View>: View {
-    private let onTap: () -> Void
+    private let onTap: (() -> Void)?
     private let content: Content
 
-    init(onTap: @escaping () -> Void, @ViewBuilder content: () -> Content) {
+    init(onTap: (() -> Void)? = nil, @ViewBuilder content: () -> Content) {
         self.onTap = onTap
         self.content = content()
     }
@@ -182,6 +195,23 @@ struct HomeDashboardCard<Content: View>: View {
         SalusCard(onTap: onTap) { content }
             .frame(maxWidth: .infinity)
             .padding(.horizontal, SalusSpacing.lg)
+    }
+}
+
+extension View {
+    /// Makes this the part of a non-interactive ``HomeDashboardCard`` that opens it.
+    ///
+    /// The twin of what `SalusCard(onClick =)` gives Compose for free, for the two cards that
+    /// cannot be a `Button` (see ``HomeDashboardCard``). `contentShape` makes the whole proposed
+    /// area tappable and not just the drawn glyphs; the three accessibility modifiers put back
+    /// what a bare gesture costs — a tap gesture is invisible to VoiceOver, where Compose's
+    /// clickable card is announced as a button. `MedicationCard.swift:39-51`, line for line.
+    func homeOpensCard(_ action: @escaping () -> Void) -> some View {
+        contentShape(Rectangle())
+            .onTapGesture(perform: action)
+            .accessibilityElement(children: .combine)
+            .accessibilityAddTraits(.isButton)
+            .accessibilityAction(.default, action)
     }
 }
 
