@@ -25,6 +25,20 @@ final class FakeAppLocaleController: AppLocaleController, @unchecked Sendable {
         return currentLanguage
     }
 
+    /// The current held language, read synchronously — the twin of Kotlin's `locale.language`. Safe
+    /// to call from any actor; the lock is the same one `apply` takes.
+    var currentSync: AppLanguage {
+        current()
+    }
+
+    /// The languages `apply` was called with, in order, read synchronously — the twin of Kotlin's
+    /// `locale.appliedCount` and `applied` list.
+    var appliedSync: [AppLanguage] {
+        lock.lock()
+        defer { lock.unlock() }
+        return applied
+    }
+
     func apply(_ language: AppLanguage) {
         lock.lock()
         currentLanguage = language
