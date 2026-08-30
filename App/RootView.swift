@@ -286,15 +286,10 @@ struct RootView: View {
             // the stack, so an environment value set on the root would not reach it.
             .environment(\.homeModule, root.homeModule)
             .environment(\.cycleModule, root.cycleModule)
-
-        default:
-            // Unreachable: every `RootTab` case has an explicit branch above. Kept only so a future
-            // tab added to the enum lands as a compile error here rather than as a silently
-            // unstyled stack.
-            NavigationStack(path: backStacks.binding(for: tab)) {
-                EmptyView()
-            }
         }
+        // No `default:` clause on purpose: `RootTab` lives in this target, so an exhaustive switch
+        // is what makes a sixth tab added to the enum land as a compile error here rather than as a
+        // silently empty stack.
     }
 
     /// Shows a tapped reminder's occurrence: the tab that owns it, then the screen itself.

@@ -7,6 +7,13 @@
 //
 // `@Serializable` has no twin — see `VitalsNavigation.swift`'s note. `Hashable` is what
 // `NavigationPath` and `navigationDestination(for:)` actually require.
+//
+// **Recorded divergence (controller ruling H-7, iOS-M8 T6).** The M8 plan names
+// `settingsDestinations(onOpenCycle:onOpenDoctorReport:onOpenTrends:)`, the twin of Kotlin's
+// `settingsEntries(…)`, because on Android the More hub is a nav entry (`MoreKey`) and the three
+// cross-feature callbacks have to reach it through the entry provider. On iOS the hub is the More
+// tab's **root**, drawn by `RootView` rather than pushed, so a destination registrar has nothing to
+// hand them to: the callbacks are parameters of `MoreRoute` instead, and this modifier takes none.
 
 import SwiftUI
 

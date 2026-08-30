@@ -68,16 +68,15 @@ public func makeSettingsModule(
     premiumStatus: any MorePremiumStatus,
     paywallRequester: any PaywallRequester
 ) -> SettingsModule {
-    // The More-specific deps are built inside the factory from the passed data source, because the
-    // implementations (`SettingsPreferencesImpl`, `FreeOnlyMorePremiumStatus`) are `internal` to this
-    // package — the app target cannot construct them. The composition root passes the
-    // `SalusPreferencesDataSource` it already owns; the `UserDefaultsAppLocaleController` is built
-    // here from `.standard` because it is the same `internal` access story, and the
-    // `FreeOnlyMorePremiumStatus` is built here for the same reason (ruling 5 — M8 has no store).
+    // Exactly one More-specific dep is built inside the factory: `SettingsPreferencesImpl` is
+    // `internal` to this package, so the app target cannot construct it — the composition root
+    // passes the `SalusPreferencesDataSource` it already owns and the impl is wrapped around it
+    // here. The other three arrive as parameters, because their types are `public`: the
+    // `UserDefaultsAppLocaleController`, the `FreeOnlyMorePremiumStatus` stand-in and the
+    // `NoOpPaywallRequester` stand-in are all constructed by the composition root (ruling 5 — M9
+    // swaps the last two for the real store-backed ones, and swapping them there is the whole
+    // reason they are not built here).
     let morePreferences = SettingsPreferencesImpl(dataSource: preferencesDataSource)
-    let moreLocaleController = localeController
-    let morePremiumStatus = premiumStatus
-    let morePaywallRequester = paywallRequester
     return SettingsModule(
         makeReminderHealthViewModel: {
             ReminderHealthViewModel(
@@ -94,10 +93,10 @@ public func makeSettingsModule(
         makeMoreViewModel: {
             MoreViewModel(
                 profileRepository: profileRepository,
-                premiumStatus: morePremiumStatus,
+                premiumStatus: premiumStatus,
                 preferences: morePreferences,
-                localeController: moreLocaleController,
-                paywallRequester: morePaywallRequester
+                localeController: localeController,
+                paywallRequester: paywallRequester
             )
         },
         navigator: navigator

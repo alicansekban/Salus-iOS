@@ -377,12 +377,12 @@ final class AppCompositionRoot {
             navigator: infrastructure.navigator,
             // The four More-specific deps (T6). `preferencesDataSource` is the one
             // `SalusPreferencesDataSource` the root already owns; the factory builds the
-            // `SettingsPreferencesImpl` over it inside the package (the impl is `internal`).
-            // `localeController` is built inline for the same reason —
-            // `UserDefaultsAppLocaleController` is `internal` to `FeatureSettings`, so the factory
-            // cannot accept it from outside; the factory builds it from `.standard`. `premiumStatus`
-            // is the `FreeOnlyMorePremiumStatus` stand-in (ruling 5); `paywallRequester` is the
-            // `NoOpPaywallRequester` stand-in (ruling 5 — M9 swaps both).
+            // `SettingsPreferencesImpl` over it inside the package, because that impl is the one
+            // of the four that is `internal` to `FeatureSettings`. The other three are `public`
+            // and are built here, where every other singleton is: `localeController` is the
+            // `UserDefaultsAppLocaleController` over `.standard`, `premiumStatus` is the
+            // `FreeOnlyMorePremiumStatus` stand-in (ruling 5) and `paywallRequester` is the
+            // `NoOpPaywallRequester` stand-in (ruling 5 — M9 swaps the last two here).
             preferencesDataSource: infrastructure.preferences,
             localeController: UserDefaultsAppLocaleController(defaults: .standard),
             premiumStatus: FreeOnlyMorePremiumStatus(),
