@@ -441,10 +441,12 @@ triage at the branch's final review:
 ## Still owed, by the user (manual QA)
 
 `scripts/m8-manual-qa.md` is consolidated and committed by T13; **executing it is the user's job**.
-Nothing has been run: **§0–§1–§5 and §7 are NOT RUN; §6 (a11y) is pending Task 14** and will be
-appended after T13 lands. The **device-only rows** in particular are unexecuted: §2 (secure screen on
+Nothing has been run: **§1–§5 and §7 are NOT RUN (and §6, written by T14, is NOT RUN** — the a11y
+rotor walk and AX5-TR layout inspection are the user's, never an agent's). The **device-only rows**
+in particular are unexecuted: §2 (secure screen on
 a device, incl. the screenshot mask and AirPlay capture hide), §3 (Face ID on a device + the Keychain
-reinstall-survival check), and §7's full device pass. Per the M7 record, the **M5/M6/M7 device passes
+reinstall-survival check), §6.1.7 (VoiceOver over the lock gate and secure curtain) and §7's full
+device pass. Per the M7 record, the **M5/M6/M7 device passes
 are still outstanding too** — this milestone does not close them.
 
 ## Android follow-ups proposed (unnumbered `A?`, for T16 / the ledger)
@@ -461,14 +463,56 @@ are still outstanding too** — this milestone does not close them.
 
 ## Task 14 / Task 16 — pending at the time of writing
 
-- **T14 (VoiceOver + Dynamic Type): PENDING.** Expected to add `docs/a11y-audit-m8.md`, the
-  label/trait/hiding declarations, and QA §6. **State to be appended by the coordinator after T14
-  lands:** [T14 commits, verdict, QA §6 written-and-unrun status].
+- **T14 (VoiceOver + Dynamic Type): COMPLETE** — landed in two commits after T13 closed this record
+  (see "T14 — the VoiceOver + Dynamic Type pass" below for commits and the verdict). Added
+  `docs/a11y-audit-m8.md`, six code-label/trait/fix declarations, QA §6, and filled this subsection.
 - **T16 (parity ledger, Android docs commit): PENDING.** `salus-android/docs/parity-ledger.md` row →
   "iOS-M8 ✅ (cases: 20 More + 8 Profile + 6+7 onboarding + 6 lock + strings parity ×2 locales)",
   S-2 closed; the commit lands **local-only, never pushed** (M7 rule). **State to be appended by the
   coordinator after T16 lands:** [T16 commit + push status].
 - **T15 (manual QA)** is the user's; the record above's "Still owed" section is its checklist.
+
+## T14 — the VoiceOver + Dynamic Type pass (what T14 fixed and deferred)
+
+Written by T14 on `m8-settings-onboarding`, immediately after the CI summary below.
+
+### What T14 committed
+
+- **`feat(a11y): M8 VoiceOver and Dynamic Type declarations — labels, traits, hidden decoratives`**
+  — the code half: six fixes on in-scope surfaces.
+    - The shared components `SalusScreenHeader`, `SalusSectionHeader`, `SalusPillButton`,
+      `SalusConfirmDialog` and `SalusSnackbarHost` pass their resolved `String` to `Text(_:)`,
+      which reads it back as a `LocalizedStringKey` against the **main** bundle (the M7
+      `c726e22` finding). Now `Text(verbatim:)`, a comment citing the finding on each. This is the
+      one fix that touches every M8 screen at once (More, Profile, About, AppLock all render
+      through these components), plus Reminder Health.
+    - `MoreToggleCard`'s `Toggle` was announced as an unnamed "switch" (`Toggle("", …)`) — the
+      app-lock and secure-screen toggles on the hub. Added `.accessibilityLabel(title)`, the row's
+      own spoken text, so VoiceOver reads "Uygulama kilidi" / "Güvenli ekran".
+    - `ReminderHealthScreen` passed five resolved strings through `Text(_:)` (verdict, honesty
+      line, and the health-card title/description/fix button). All now `Text(verbatim:)`.
+- **`docs(a11y): the M8 audit worksheet and QA §6`** — `docs/a11y-audit-m8.md` (the per-screen
+  worksheet), `scripts/m8-manual-qa.md` §6 (§6.1 rotor walk + focus order, §6.2 AX5-TR layout;
+  both written-and-NOT-RUN, with the §0 preamble note updated to say §6 has landed), and this
+  subsection.
+
+Verdict: **DONE**. `scripts/lint.sh` 0 violations, `scripts/test-packages.sh SalusUI
+FeatureSettings` (2/2 passed; SalusUI 89/14, FeatureSettings 68/9), `scripts/build-app.sh` BUILD
+SUCCEEDED. QA §6 is the user's and is **NOT RUN**.
+
+### What T14 deferred (rows in `docs/a11y-audit-m8.md`)
+
+Five pre-existing `Text(_:)`-on-resolved-string sites on the M2–M6 surfaces (`HomeHeader`'s
+greeting, `VitalsListSections`' row texts, `MedicationDetailSections`' name/value texts,
+`AppointmentDetailScreen`'s detail texts, `CycleSummarySections`/`CycleDayScreen`) — same-class as
+the M7 verbatim rule, deliberately outside M8's scope (a whole-branch mechanical sweep, not per-
+milestone). Plus the M-2 app-lock disabled-switch explanatory copy (Android ships none).
+
+### T14's audit result
+
+The M7/M8 screens were already a11y-wired by their own tasks (T8's onboarding header/hero/counter,
+the M7 sparkline precedent, shared component decoratives). T14's remaining code work was the six
+fixes above; the rotor walk, focus-order and AX5-TR layout checks are the user's, per QA §6.
 
 ## CI summary — `scripts/ci.sh` at `76e14bf`
 

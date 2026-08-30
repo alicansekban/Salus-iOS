@@ -31,10 +31,9 @@ deleting the app and reinstalling keeps it. To fully reset the lock flag use the
 a delete alone is not enough. This is why several rows below (e.g. §3.15, §3.18, §7.1) tell you to
 turn the lock off before deleting unless the row says otherwise.
 
-**§6 has not been written yet.** The VoiceOver + Dynamic Type pass is **Task 14** and lands after
-this record (T13); §6 will be appended here once T14's commits are on this branch. Until then the
-sections in this file are **§0–§1–§2–§3–§4–§5 and §7**; do not look for §6 when this version is the
-one you run.
+**§6 has landed.** The VoiceOver + Dynamic Type pass is **Task 14**, committed after this record
+(T13). §6 (§6.1 VoiceOver rotor / focus order, §6.2 Dynamic Type at AX5 with Turkish) is appended
+below and is written-and-**NOT RUN**, like every other section in this file.
 
 ---
 
@@ -825,6 +824,98 @@ replaced `RootTab.placeholderLabel` with `RootTab.label` resolving through `AppS
 SUCCEEDED) and `scripts/lint.sh` (0 violations in 527 files). The compiled bundle was read to
 confirm the five keys are present in both `tr.lproj` and `en.lproj` with the Android values —
 file inspection of the build product, not a simulator run.
+
+---
+
+## §6. VoiceOver + Dynamic Type (Task 14)
+
+Written by Task 14 (`docs/a11y-audit-m8.md` — the per-screen worksheet; the code halves of this
+section are the `Text(verbatim:)`, `.accessibilityLabel`, `.accessibilityHidden` and trait
+declarations that landed with it). This section is the **user's** half of the a11y pass: the rotor
+walk, the focus-order check and the AX5-with-Turkish layout inspection. Every row below is
+**NOT RUN**. Nothing in the app has ever been read by VoiceOver, and no screen has ever been
+rendered at the largest Dynamic Type size.
+
+**Before you start.** You need the app in Turkish (spec §6.4 — it is the default and the fallback,
+so a default simulator is already there) and the *largest* Dynamic Type size **and** the
+accessibility sizes both. Set Settings → Accessibility → Display & Text Size → Larger Text all the
+way up (this is AX5 / "largest", past the accessibility sizes) before §6.2. For §6.1, turn on
+VoiceOver (Settings → Accessibility → VoiceOver) and learn its rotor (two-finger rotate): the rotor
+has an **Elements** position that walks focus in draw order.
+
+### 6.1 The VoiceOver rotor walk (focus order + labels)
+
+The expectation everywhere is the same: **one focus stop per control, in the order the screen draws
+it, each stop saying something true.** Decorative shapes (icons in circles, the sparkline, the
+onboarding hero cluster and counter badge) are **not** read. What each screen *should* announce is
+spelled out per screen so a wrong read is a finding rather than a judgment call.
+
+- [ ] **6.1.1 The Onboarding Welcome gate announces itself.** With the app deleted for a fresh
+  install (§0), the first launch shows Welcome. Rotor *Elements* left to right from the top.
+  *Expected:* **"Başla"** (the Start button) is the first control, and the hero picture above it is
+  not announced at all. Continue to the end of the step — the step must walk, in order: the Start
+  button only (no stray "shield", no "48%", no unlabeled elements). Then walk forward through all
+  eight steps (§1) in Turkish.
+- [ ] **6.1.2 The onboarding counter badge is silent.** On every step except Welcome, rotor *Elements*
+  *Expected:* the counter (e.g. "2/7") is **not** a stop; the progress bar announces
+  `onboarding_progress` ("Adım 2 / 7" or the English equivalent), and the back button announces
+  `onboarding_back` ("Geri"/"Back"). The back button is the first stop on steps ≥ 2, before the
+  title.
+- [ ] **6.1.3 The sex and health-notes fields announce their own labels.** Name and Health notes steps:
+  their `TextEditor`/text field focus reads the placeholder or the `SalusPillTextField` label. The
+  sex step: each `SalusOptionRow` is announced once, as a radio button with its selected state
+  ("Kadın, seçili"). The birth-date field announces `onboardingBirthTitle`.
+- [ ] **6.1.4 The More hub rows all speak, and their section labels are read before each group.**
+  Rotor *Elements* over the whole More scroll. *Expected:* the section headers (Profil, Premium,
+  Doktor raporu, Trendler, …, Ayarlar, Sekmeler, Bildirimler, Uygulama) are read in draw order,
+  each followed by its cards. Each `MoreCard` announces its title and its current value/subtitle as
+  one button. The app-lock and secure-screen toggles announce by their **title** ("Uygulama
+  kilidi", "Güvenli ekran"), not as blank switches.
+- [ ] **6.1.5 Each More selection dialog's options are radio buttons.** Open Renk teması → rotor
+  *Elements* inside the sheet. *Expected:* the title, then four `SalusOptionRow`s each announced as
+  a radio button with selected state, then "İptal". Same for the language dialog (two options) and
+  the colour-theme dialog (four).
+- [ ] **6.1.6 Profile, About and Reminder Health read everything.** Profil: the five fields plus the
+  sex rows and the toolbar "Kaydet". Hakkında: the app name, description and the full privacy body
+  (`about_privacy_body`) read as one card. Hatırlatıcılar: the verdict, the last-sync honesty line,
+  each health card, and the **fix button** where a card is unhealthy — the fix button must be
+  focusable.
+- [ ] **6.1.7 The lock screen and the secure curtain announce themselves.** With the lock on (§3.2),
+  background 35 s and return. *Expected:* VoiceOver reads the lock screen — its title
+  (`appLockLockedTitle`) first, then the "Cihazın kilidini aç" button — and nothing behind it is
+  focusable. Same for the secure curtain: while it is up the app's content is **not** focusable
+  (see the audit row S-0 — the curtain is one combined element naming "Salus").
+- [ ] **6.1.8 Focus order follows draw order on a pushed screen.** Push More → Profil. Rotor *Elements*
+  top to bottom: the section headers and each field/row in the order they appear — Name, Sex,
+  Birth date, Height, Health notes, then the toolbar save at top. No reordering, no skipped control.
+
+### 6.2 Dynamic Type at AX5 largest, with Turkish
+
+The longest TR string on each screen drives the layout; the check is that **nothing clips**. Set the
+largest Dynamic Type size (§6 preamble) and, with the app in Turkish, page through the screens with
+the longest texts and confirm each wraps rather than truncating. `lineLimit(nil)` on the wrapping
+texts is where Android wraps too — the app must not scale-to-fit where Android does not.
+
+- [ ] **6.2.1 Onboarding notifications step at AX5.** The eight steps at the largest size, especially
+  **Notifications** (`onboarding_notifications_body`) and **Health notes**. *Expected:* the titles
+  and bodies wrap to multiple lines and scroll; no text is truncated at the trailing edge; the
+  Continue/Allow button and the back button stay reachable.
+- [ ] **6.2.2 The onboarding header title wraps.** On a step with a long section title, the header's
+  `lineLimit(nil)` title wraps to two lines without colliding with the back button or the (hidden)
+  counter badge.
+- [ ] **6.2.3 The About privacy card wraps.** Hakkında at AX5: `about_privacy_body` wraps inside the
+  card; the card grows, the ScrollView scrolls; no fixed height clips it.
+- [ ] **6.2.4 The More hub at AX5.** Each row's long Turkish subtitle (e.g.
+  `settingsDoctorReportDesc`) wraps within its card; the rows grow; the section labels stay
+  legible; the version footer is not clipped.
+- [ ] **6.2.5 Reminder Health and the lock screen.** The Reminder Health verdict (`reminderHealthIntro`)
+  and each health card's description wrap at AX5; the last-sync honesty line wraps instead of
+  truncating. The lock screen title wraps and the unlock button stays on-screen.
+- [ ] **6.2.6 The seven existing surfaces.** Walk Home, Vitals list + editors, Medications
+  list/detail/editor, Appointments list/detail/editor, Cycle calendar/log at AX5. *Expected:* no
+  fixed-height card clips its text — list rows wrap, editors' supporting text (`lineLimit(2...6)`) is
+  the one deliberate truncation and matches Android's own `maxLines` cap, and the cycle day cells /
+  legend stay readable.
 
 ---
 
