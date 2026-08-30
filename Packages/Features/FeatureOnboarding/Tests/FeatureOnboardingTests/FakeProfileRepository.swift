@@ -17,7 +17,6 @@
 // observation is registered as a continuation fired on each mutation.
 
 import Foundation
-import SalusDatabase
 import SalusModel
 import SalusProfile
 
@@ -49,7 +48,9 @@ final class FakeProfileRepository: ProfileRepository, @unchecked Sendable {
 
     /// `OnboardingViewModelTest.kt:37-45` — the row the v1 migration seeds.
     static let seeded = Profile(
-        id: SalusDatabase.defaultProfileId,
+        // `"default-profile"`, reached through `SalusProfile` rather than `SalusDatabase`: a
+        // feature target never imports the database package (CLAUDE.md).
+        id: ProfileRepositoryDefaults.defaultProfileId,
         displayName: "",
         birthDate: nil,
         sex: nil,

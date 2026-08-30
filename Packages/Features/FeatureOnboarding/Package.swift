@@ -21,7 +21,6 @@ let package = Package(
         .package(path: "../../SalusCommon"),
         .package(path: "../../SalusModel"),
         .package(path: "../../SalusProfile"),
-        .package(path: "../../SalusDatabase"),
         .package(path: "../../SalusSettings"),
         .package(path: "../../SalusTesting")
     ],
@@ -34,7 +33,6 @@ let package = Package(
                 .product(name: "SalusCommon", package: "SalusCommon"),
                 .product(name: "SalusModel", package: "SalusModel"),
                 .product(name: "SalusProfile", package: "SalusProfile"),
-                .product(name: "SalusDatabase", package: "SalusDatabase"),
                 .product(name: "SalusSettings", package: "SalusSettings")
             ],
             resources: [

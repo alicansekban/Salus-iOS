@@ -28,7 +28,6 @@
 import Foundation
 import Observation
 import SalusCommon
-import SalusDatabase
 import SalusModel
 import SalusProfile
 
@@ -167,9 +166,14 @@ public final class OnboardingViewModel {
 
     /// The row is seeded on database creation; this only guards a corrupted install.
     /// `OnboardingViewModel.kt:111-120`.
+    ///
+    /// Kotlin reads `SalusDatabase.DEFAULT_PROFILE_ID` directly; a feature on this side never
+    /// imports `SalusDatabase` (CLAUDE.md — records and DAOs live there), so the id comes through
+    /// `SalusProfile`'s ``ProfileRepositoryDefaults``, the twin of the Kotlin companion constant
+    /// that exists "for callers that have no Room dependency" (`ProfileRepository.kt:25-28`).
     private static func emptyProfile() -> Profile {
         Profile(
-            id: SalusDatabase.defaultProfileId,
+            id: ProfileRepositoryDefaults.defaultProfileId,
             displayName: "",
             birthDate: nil,
             sex: nil,
