@@ -11,7 +11,7 @@ import SalusModel
 import SalusNavigation
 import SalusUI
 
-/// Drives the blood-pressure editor (`BloodPressureEditorViewModel.kt:22-139`).
+/// Drives the blood-pressure editor (`BloodPressureEditorViewModel.kt:21-138`).
 @MainActor
 @Observable
 public final class BloodPressureEditorViewModel {
@@ -91,7 +91,7 @@ public final class BloodPressureEditorViewModel {
             state.error = nil
 
         case let .noteChanged(text):
-            // `BloodPressureEditorViewModel.kt:71-72` — the note leaves the error standing.
+            // `BloodPressureEditorViewModel.kt:69-70` — the note leaves the error standing.
             state.noteText = text
 
         case let .dateSelected(epochDay):
@@ -111,7 +111,7 @@ public final class BloodPressureEditorViewModel {
         }
     }
 
-    /// `BloodPressureEditorViewModel.kt:87-121`.
+    /// `BloodPressureEditorViewModel.kt:87-122`.
     private func save() {
         let current = state
         let systolic = Self.value(of: current.systolicText)
@@ -162,25 +162,25 @@ public final class BloodPressureEditorViewModel {
         }
     }
 
-    /// `BloodPressureEditorViewModel.kt:123-125`.
+    /// `BloodPressureEditorViewModel.kt:124-126`.
     private func showError(_ error: BloodPressureError) {
         state.isSaving = false
         state.error = error
     }
 
-    /// `BloodPressureEditorViewModel.kt:127-133`.
+    /// `BloodPressureEditorViewModel.kt:128-135`.
     private func delete() {
         guard let entryId else { return }
         state.showDeleteConfirm = false
         // Held for the undo window by an app-scoped controller, so popping this editor does not
-        // cancel the deletion (`BloodPressureEditorViewModel.kt:129-130`).
+        // cancel the deletion (`BloodPressureEditorViewModel.kt:131-132`).
         undoableDelete(entryId, message: VitalsStrings.entryDeleted) { [repository] in
             try? await repository.deleteBloodPressureEntry(id: entryId)
         }
         navigator.pop()
     }
 
-    /// `BloodPressureEditorViewModel.kt:135` — `replace(',', '.').toDoubleOrNull()`. A Turkish
+    /// `BloodPressureEditorViewModel.kt:137` — `replace(',', '.').toDoubleOrNull()`. A Turkish
     /// keyboard produces the comma, and the parser only knows the point.
     private static func value(of text: String) -> Double? {
         Double(text.replacingOccurrences(of: ",", with: "."))

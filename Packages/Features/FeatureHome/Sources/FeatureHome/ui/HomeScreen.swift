@@ -225,7 +225,9 @@ struct HomeEmptyLine: View {
     @Environment(\.salusTheme) private var theme
 
     var body: some View {
-        Text(text)
+        // `verbatim:` because the caller hands over a resolved string; the plain initializer would
+        // treat it as a `LocalizedStringKey` and look it up in the *main* bundle.
+        Text(verbatim: text)
             .font(SalusTypography.bodyMedium.font)
             .tracking(SalusTypography.bodyMedium.tracking)
             .foregroundStyle(theme.colorScheme.onSurfaceVariant)

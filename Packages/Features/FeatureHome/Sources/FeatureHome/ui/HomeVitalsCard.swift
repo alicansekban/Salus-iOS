@@ -88,7 +88,9 @@ struct HomeVitalsCard: View {
     /// `:398-400`). Greedy so the sparkline is pushed to the trailing edge on the weight row and
     /// the two lines below start at the same inset.
     private func line(_ text: String) -> some View {
-        Text(text)
+        // `verbatim:` because the caller hands over a resolved string; the plain initializer would
+        // treat it as a `LocalizedStringKey` and look it up in the *main* bundle.
+        Text(verbatim: text)
             .font(SalusTypography.bodyMedium.font)
             .tracking(SalusTypography.bodyMedium.tracking)
             .frame(maxWidth: .infinity, alignment: .leading)

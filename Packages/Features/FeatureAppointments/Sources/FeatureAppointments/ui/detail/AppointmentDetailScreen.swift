@@ -339,7 +339,7 @@ private struct IconRow: View {
     }
 }
 
-/// `AppointmentDetailScreen.kt:245-252` — the `appointment_detail_open_maps` button.
+/// `AppointmentDetailScreen.kt:235-243` — the `appointment_detail_open_maps` button.
 ///
 /// Its own view so the `openURL` environment value is read where it is used; a `Button` whose
 /// action reaches for an environment value of the enclosing screen would work, but this keeps the
@@ -359,7 +359,7 @@ private struct OpenMapsButton: View {
             systemImage: "map"
         ) {
             guard let url = mapsURL(for: location) else { return }
-            // `runCatching { startActivity(intent) }` (`AppointmentDetailScreen.kt:249`): no map
+            // `runCatching { startActivity(intent) }` (`AppointmentDetailScreen.kt:239`): no map
             // app is a legal state on both platforms, and the completion is what says so here.
             openURL(url) { _ in }
         }

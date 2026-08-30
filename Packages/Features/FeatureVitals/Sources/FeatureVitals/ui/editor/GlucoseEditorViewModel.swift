@@ -20,7 +20,7 @@ import SalusModel
 import SalusNavigation
 import SalusUI
 
-/// Drives the glucose editor (`GlucoseEditorViewModel.kt:25-152`).
+/// Drives the glucose editor (`GlucoseEditorViewModel.kt:25-151`).
 @MainActor
 @Observable
 public final class GlucoseEditorViewModel {
@@ -63,7 +63,7 @@ public final class GlucoseEditorViewModel {
         self.undoableDelete = undoableDelete
         state = GlucoseEditorUiState(isNew: entryId == nil)
 
-        // `GlucoseEditorViewModel.kt:40-65` — **one** task, not two: the unit has to be known
+        // `GlucoseEditorViewModel.kt:40-64` — **one** task, not two: the unit has to be known
         // before the loaded reading can be written into the field, because the field carries the
         // reading *in that unit*.
         loadTask.replace(with: Task { [weak self] in
@@ -92,7 +92,7 @@ public final class GlucoseEditorViewModel {
         loadTask.cancel()
     }
 
-    /// `GlucoseEditorViewModel.kt:67-93`.
+    /// `GlucoseEditorViewModel.kt:66-92`.
     public func onEvent(_ event: GlucoseEditorEvent) {
         switch event {
         case let .valueChanged(text):
@@ -106,7 +106,7 @@ public final class GlucoseEditorViewModel {
             state.measurementContext = context
 
         case let .noteChanged(text):
-            // `GlucoseEditorViewModel.kt:80-81` — the note leaves the rejection standing.
+            // `GlucoseEditorViewModel.kt:76-77` — the note leaves the rejection standing.
             state.noteText = text
 
         case let .dateSelected(epochDay):
@@ -127,7 +127,7 @@ public final class GlucoseEditorViewModel {
     }
 
     /// Converts the typed value into the new unit and persists the preference globally
-    /// (`GlucoseEditorViewModel.kt:95-113`).
+    /// (`GlucoseEditorViewModel.kt:95-108`).
     ///
     /// The write is app-wide on purpose: this segmented control is the *only* place the display
     /// unit is chosen — there is no toggle on the list screen and none in Settings.
@@ -148,7 +148,7 @@ public final class GlucoseEditorViewModel {
         preferences.setGlucoseUnit(newUnit)
     }
 
-    /// `GlucoseEditorViewModel.kt:115-140`.
+    /// `GlucoseEditorViewModel.kt:110-134`.
     private func save() {
         let current = state
         let value = Self.value(of: current.valueText)
@@ -188,12 +188,12 @@ public final class GlucoseEditorViewModel {
         }
     }
 
-    /// `GlucoseEditorViewModel.kt:142-150`.
+    /// `GlucoseEditorViewModel.kt:136-143`.
     private func delete() {
         guard let entryId else { return }
         state.showDeleteConfirm = false
         // Held for the undo window by an app-scoped controller, so popping this editor does not
-        // cancel the deletion (`GlucoseEditorViewModel.kt:144-145`).
+        // cancel the deletion (`GlucoseEditorViewModel.kt:139-140`).
         undoableDelete(entryId, message: VitalsStrings.entryDeleted) { [repository] in
             try? await repository.deleteGlucoseEntry(id: entryId)
         }
@@ -209,13 +209,13 @@ public final class GlucoseEditorViewModel {
         return nil
     }
 
-    /// `GlucoseEditorViewModel.kt:135` — `replace(',', '.').toDoubleOrNull()`. A Turkish keyboard
+    /// `GlucoseEditorViewModel.kt:99` and `:116` — `replace(',', '.').toDoubleOrNull()`. A Turkish keyboard
     /// produces the comma, and the parser only knows the point.
     private static func value(of text: String) -> Double? {
         Double(text.replacingOccurrences(of: ",", with: "."))
     }
 
-    /// `GlucoseEditorViewModel.kt:147-152`.
+    /// `GlucoseEditorViewModel.kt:145-150`.
     ///
     /// `Locale.US`, not the device locale — and deliberately so (research §10 row 10): this text is
     /// parsed straight back by `value(of:)`, which only understands the point, so formatting it

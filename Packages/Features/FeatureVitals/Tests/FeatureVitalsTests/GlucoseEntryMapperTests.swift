@@ -57,7 +57,7 @@ struct GlucoseEntryMapperTests {
         #expect(roundTrip == Self.entry)
     }
 
-    /// `GlucoseEntryMapperTest.kt:49-55` — `null context and unknown stored context map to null`.
+    /// `GlucoseEntryMapperTest.kt:49-56` — `null context and unknown stored context map to null`.
     /// A context this build does not know is read back as no context rather than as a failure: the
     /// reading itself is still a reading, and Kotlin's `firstOrNull { it.name == stored }` answers
     /// null for the same input.

@@ -63,7 +63,7 @@ extension VitalsViewModel {
         )
     }
 
-    /// `VitalsViewModel.kt:146-179`.
+    /// `VitalsViewModel.kt:146-177`.
     ///
     /// `roundToInt` rounds half away from zero on a positive reading, which is what
     /// `Double.rounded()` does; a blood pressure is never negative, where the two would part.
@@ -75,7 +75,7 @@ extension VitalsViewModel {
         let sortedAscending = entries.sorted { $0.measuredAt < $1.measuredAt }
 
         // Newest first, and typed rather than erased, because `latestBloodPressure` is the first of
-        // these rows (`VitalsViewModel.kt:177`) and the state holds it as itself.
+        // these rows (`VitalsViewModel.kt:175`) and the state holds it as itself.
         let rows = sortedAscending
             .reversed()
             .map { entry in
@@ -103,7 +103,7 @@ extension VitalsViewModel {
             yValue: { Float($0.diastolic) }
         )
         // `chartOrNull(systolicPoints, wholeYLabel())?.copy(secondaryPoints = diastolicPoints)`
-        // (`VitalsViewModel.kt:171`): the `MIN_CHART_POINTS` gate is the systolic series' alone,
+        // (`VitalsViewModel.kt:167`): the `MIN_CHART_POINTS` gate is the systolic series' alone,
         // and the diastolic series is attached to whatever survived it. A Swift struct has no
         // `copy`, so the model is rebuilt from its own parts.
         let chart = Self.chartOrNull(systolicPoints, yLabel: Self.wholeYLabel).map {
@@ -125,7 +125,7 @@ extension VitalsViewModel {
         )
     }
 
-    /// `VitalsViewModel.kt:181-215`.
+    /// `VitalsViewModel.kt:179-215`.
     ///
     /// Storage is always canonical mg/dL; `unit` decides only how a stored reading is written out,
     /// so every row and every plotted point is converted here and nothing downstream converts again.
@@ -156,7 +156,7 @@ extension VitalsViewModel {
             measuredAt: { $0.measuredAt },
             yValue: { Float(GlucoseConversion.fromMgDl($0.mgDl, unit: unit)) }
         )
-        // `VitalsViewModel.kt:207` — mg/dL readings are whole numbers to a reader, mmol/L ones are
+        // `VitalsViewModel.kt:204` — mg/dL readings are whole numbers to a reader, mmol/L ones are
         // not, so the axis follows the unit rather than the series.
         let yLabel = unit == .mgDl ? Self.wholeYLabel : Self.decimalYLabel
 
@@ -172,7 +172,7 @@ extension VitalsViewModel {
     }
 
     /// One point per day (last measurement wins) keeps the x axis monotonic
-    /// (`VitalsViewModel.kt:217-227`).
+    /// (`VitalsViewModel.kt:218-227`).
     ///
     /// `associateBy` keeps the last value for a repeated key and the input is ascending, so the
     /// day's newest reading is the one plotted — `uniquingKeysWith: { _, last in last }` is that,
