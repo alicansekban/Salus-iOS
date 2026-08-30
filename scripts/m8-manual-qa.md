@@ -273,3 +273,121 @@ from 3.2.
   *Expected:* the lock is **still on** and the first launch is gated. *This step needs a device:*
   the Keychain entitlement is not granted under `swift test`, and this is the only check that the
   store works at all.
+
+---
+
+## §4. The More hub (Task 6)
+
+Written by Task 6 (`Packages/Features/FeatureSettings/Sources/FeatureSettings/ui/more/
+MoreScreen.swift`, `MoreScreenComponents.swift`; `Packages/SalusUI/Sources/SalusUI/component/
+SalusListItemChevron.swift`). The automated half is `MoreViewModelTests` (20 cases, T4): the five
+event gates and the buffered effects. What no test can reach is the row layout and the three
+dialogs — those are visual and run only on a device or simulator.
+
+The hub is the More tab's root: `SalusScreenHeader` (no back button — the tab has no parent), then a
+scroll column of 13 rows split across five sections by four `SalusSectionHeader` labels, with a
+version footer at the bottom. The draw order is `MoreScreen.kt:180-313` verbatim.
+
+**Before you start.** The rows that push the doctor report (M10) and trends (M11) are no-ops today —
+the callbacks are TODO stubs in `RootView.swift`. Run those two rows and record the no-op; the
+screens they open arrive with their milestones. Cycle is shown only for non-male profiles
+(`state.showCycle`); a male profile hides the row and its section label.
+
+### The rows render in the §1 order
+
+- [ ] **4.1 All 13 rows render in order.** Open the More tab on a profile whose sex is **not male**
+  (so the Cycle row shows).
+  *Expected:* top to bottom — **Profil** (person), **Premium** (crown), **Doktor raporu** (doc),
+  **Trendler** (chart), then the **Takip** section with **Regl Takibi** (drop), then **Görünüm**
+  with **Tema** / **Renk teması** / **Dil**, then **Güvenlik** with **Uygulama kilidi** (lock) and
+  **Güvenli ekran** (camera), then **Bildirimler** with **Bildirimler** (bell) and **Hatırlatıcılar**
+  (alarm), then **Uygulama** with **Hakkında** (info), then the version footer
+  **"Sürüm x.y.z"**. *Why this step exists:* the order is `MoreScreen.kt:180-313` verbatim — a row
+  out of order is the port's most likely regression.
+- [ ] **4.2 The Cycle row and its section are hidden on a male profile.** Switch the profile's sex
+  to male (Profile editor), return to More.
+  *Expected:* no **Takip** section, no **Regl Takibi** row; everything else stays. Re-switch to
+  female/other/unspecced and the row + section come back.
+
+### Pushes
+
+- [ ] **4.3 Profile row pushes the editor and save pops back.** Tap **Profil**.
+  *Expected:* the profile editor opens (`.navigationTitle` "Profil", the shell's back button).
+  Change the name, tap **Kaydet**, and the editor pops back to More, which now shows the new name
+  as the row's subtitle. *Why this step exists:* the push is `navigator.navigate(ProfileKey())`
+  and the pop is `ProfileViewModel`'s `navigator.pop()` on save — both go through the shell's one
+  `Navigator`, never `backStacks.push` directly.
+- [ ] **4.4 About row pushes the About screen.** Tap **Hakkında**.
+  *Expected:* the About screen opens with `.navigationTitle` "Hakkında" and the shell's back button
+  (no in-screen back button — divergence (d)). The body shows **"Salus"** (headlineMedium, primary),
+  the description, and one privacy card. Tap the shell's back button and it pops back to More.
+- [ ] **4.5 Reminders row pushes Reminder Health.** Tap **Hatırlatıcılar**.
+  *Expected:* the Reminder Health screen opens (the M3 screen). Back returns to More.
+- [ ] **4.6 Doctor report and Trends rows are no-ops (M10/M11).** Tap **Doktor raporu**, then
+  **Trendler**.
+  *Expected:* nothing happens — the rows are tappable but the shell callbacks are TODO stubs until
+  `FeatureAIHealth` (M10) and `FeatureTrends` (M11) land. Record the no-op; do not file a bug.
+  *Ownership note:* the premium gate that decides whether the report row opens the screen or the
+  paywall lives in `MoreViewModel` and is tested there; the row itself is ungated here, by design.
+
+### The three selection dialogs
+
+- [ ] **4.7 Theme dialog opens on row tap and applies the pick.** Tap **Tema**.
+  *Expected:* a `confirmationDialog` titled **"Tema"** lists **Sistem** / **Açık** / **Koyu** plus a
+  **İptal** button. Tap **Koyu**.
+  *Expected:* the dialog closes, the row's subtitle becomes **Koyu**, and the app's palette flips
+  to dark immediately (the theme is resolved in `RootView` from `userSettings.themeMode`). Re-open
+  and tap **İptal** — nothing changes.
+- [ ] **4.8 Color theme dialog shows the full list and writes only when entitled.** Tap
+  **Renk teması**.
+  *Expected:* a dialog lists **Klasik** / **Okyanus** / **Gün batımı** / **Orman** plus **İptal**.
+  *On a free user (the M8 default):* tapping any palette closes the dialog and fires the paywall
+  no-op (ruling 5 — `NoOpPaywallRequester` logs the source and does nothing visible); the row's
+  subtitle stays **Klasik** (the effective theme collapses to Classic for a free user, div. 6).
+  *Why this step exists:* the entitlement gate is in `MoreViewModel`, not the screen — a free user
+  may open the picker and tap; nothing is written.
+- [ ] **4.9 Language dialog applies and closes.** Tap **Dil**.
+  *Expected:* a dialog lists **Sistem** / **Türkçe** / **İngilizce** plus **İptal**. Tap **Türkçe**.
+  *Expected:* the dialog closes and the row's subtitle becomes **Türkçe**. **The running app's
+  strings do not flip until the next launch** (ruling 6 / divergence (a) — the `AppleLanguages`
+  override is read at launch time). Kill and relaunch to see the change.
+
+### The app-lock toggle (ruling 4)
+
+- [ ] **4.10 Enabling app lock re-authenticates first.** With Face ID enrolled (Features → Face ID
+  → Enrolled) and a device passcode set, tap the **Uygulama kilidi** toggle on.
+  *Expected:* the system authentication sheet appears **before** the toggle moves, titled
+  **"Uygulama kilidini etkinleştir"**. Approve it (Features → Face ID → Matching Face).
+  *Expected:* the toggle is now on. *Why this step exists:* the confirmation is the shell-owned
+  `appLockPrompt` closure `MoreRoute` calls (ruling 4 / divergence 2 — the shell owns the
+  `LAContext`, the same one `AppLockScreen` reaches through `makeLockPrompt()`). §3.2 is the same
+  gate from the lock's side; this row is the setting's side.
+- [ ] **4.11 A refused confirmation leaves the toggle off.** Turn the toggle off, then on and
+  **cancel** the sheet (or Non-matching Face).
+  *Expected:* the toggle springs back to off and nothing is written. Kill and relaunch — still off.
+- [ ] **4.12 No biometric and no passcode disables the row.** On a simulator with **no** Face ID
+  enrolment and **no** passcode, open More → **Güvenlik**.
+  *Expected:* the **Uygulama kilidi** row is **greyed out**, its subtitle is
+  **"Bu cihazda ekran kilidi tanımlı değil"**, and tapping it does nothing. (This is §3.1's
+  availability check from the More side; run one or the other, not both.)
+
+### The notification row
+
+- [ ] **4.13 The notification row opens the system Settings page.** Tap **Bildirimler**.
+  *Expected:* iOS's Settings page for Salus opens (the app's own Settings, not a
+  notification-only page — divergence 3, `UIApplication.openSettingsURLString`). Return to Salus;
+  the row did not push anything, so More is still where you left it. *Why this step exists:* iOS
+  exposes no narrower destination than the app's own Settings; the row is a deep-link, not an
+  in-app screen.
+
+---
+
+## What was executed when this section was written (iOS-M8 Task 6)
+
+**Nothing.** Task 6 ran `scripts/build-app.sh` (BUILD SUCCEEDED), `scripts/test-packages.sh`
+(24/24 packages passed, including the 20 `MoreViewModelTests` cases from T4 and the
+`AppStringCatalogTests` update that drops the two `more_cycle*` keys), and `scripts/lint.sh`
+(0 violations). Every §4 row above is **NOT RUN**; the row layout and the three dialogs have never
+been observed on any hardware. §4.6 (doctor report / trends no-ops) and §4.8 (free-user color
+theme gate) in particular depend on the M9 paywall and the M10/M11 screens that do not exist yet.
+---

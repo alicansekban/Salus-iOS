@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		029DA3BD167192422CD3EF83 /* NoOpPaywallRequester.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69D0D21B298A9A70A88B19B8 /* NoOpPaywallRequester.swift */; };
 		0539B0B434063E373D3D798F /* AppStrings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C40A21C37AD104957DD4999 /* AppStrings.swift */; };
 		09EF295DE4AD83F20308E424 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 3B1306692224BD06CE0E55BF /* InfoPlist.strings */; };
 		0E32E65689FF17CEBD1E46D5 /* FeatureVitals in Frameworks */ = {isa = PBXBuildFile; productRef = 5FBA7A24FA520BFB0BB3288E /* FeatureVitals */; };
@@ -38,7 +39,6 @@
 		DA4B13A08A43ECDAE0D2FB35 /* FeatureCycle in Frameworks */ = {isa = PBXBuildFile; productRef = 5DF81EBE222F89283ED6ED69 /* FeatureCycle */; };
 		E6D8F62A94D311D909FEF6B3 /* AppAlarmIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBB3D1F6577F9A1686EEF47C /* AppAlarmIntents.swift */; };
 		E96240D6854215CCE9B0EB25 /* SalusProfile in Frameworks */ = {isa = PBXBuildFile; productRef = C00759E3F5DE77C5688CF407 /* SalusProfile */; };
-		FC66D0CB66008FBFBFEB19A3 /* PlaceholderScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E7A0AF160F41F13451BB006 /* PlaceholderScreen.swift */; };
 		FCAEC19BE57D93E9ECEF0569 /* PrivacyOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1967360C450E679E57DA1D68 /* PrivacyOverlay.swift */; };
 /* End PBXBuildFile section */
 
@@ -49,7 +49,6 @@
 		17EC8F7F2D16791CF7D4063F /* AppLockScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLockScreen.swift; sourceTree = "<group>"; };
 		1967360C450E679E57DA1D68 /* PrivacyOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyOverlay.swift; sourceTree = "<group>"; };
 		2A068E62066834CBBAD1DFE8 /* FeatureAppointments */ = {isa = PBXFileReference; lastKnownFileType = folder; name = FeatureAppointments; path = Packages/Features/FeatureAppointments; sourceTree = SOURCE_ROOT; };
-		2E7A0AF160F41F13451BB006 /* PlaceholderScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaceholderScreen.swift; sourceTree = "<group>"; };
 		32081AE7A86A99CF65AC0A3A /* SalusSettings */ = {isa = PBXFileReference; lastKnownFileType = folder; name = SalusSettings; path = Packages/SalusSettings; sourceTree = SOURCE_ROOT; };
 		322C707DD49C5D019E45E256 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		3682A16DBF8B254394C1B404 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
@@ -57,6 +56,7 @@
 		4C21605CC5C2E2D933AFE62F /* DebugReminderHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugReminderHandler.swift; sourceTree = "<group>"; };
 		4F54D86E0A2A967EA71D0327 /* SalusCommon */ = {isa = PBXFileReference; lastKnownFileType = folder; name = SalusCommon; path = Packages/SalusCommon; sourceTree = SOURCE_ROOT; };
 		69A1B55BADFFC2D672DBFB8E /* Salus.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Salus.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		69D0D21B298A9A70A88B19B8 /* NoOpPaywallRequester.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoOpPaywallRequester.swift; sourceTree = "<group>"; };
 		7C55BD8FCF59C4D3D0B3D410 /* AlarmActionBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmActionBridge.swift; sourceTree = "<group>"; };
 		7E5895AE298994F9E378CD48 /* FeatureVitals */ = {isa = PBXFileReference; lastKnownFileType = folder; name = FeatureVitals; path = Packages/Features/FeatureVitals; sourceTree = SOURCE_ROOT; };
 		80918512BF78D2B9D3F0B433 /* salus_alarm.caf */ = {isa = PBXFileReference; path = salus_alarm.caf; sourceTree = "<group>"; };
@@ -170,7 +170,7 @@
 				4C21605CC5C2E2D933AFE62F /* DebugReminderHandler.swift */,
 				A853DA3BEE5AEAF0DC4959BF /* Info.plist */,
 				322C707DD49C5D019E45E256 /* Localizable.xcstrings */,
-				2E7A0AF160F41F13451BB006 /* PlaceholderScreen.swift */,
+				69D0D21B298A9A70A88B19B8 /* NoOpPaywallRequester.swift */,
 				1967360C450E679E57DA1D68 /* PrivacyOverlay.swift */,
 				814A06AA9BCDD69E3C76C98E /* RootTab.swift */,
 				3682A16DBF8B254394C1B404 /* RootView.swift */,
@@ -315,7 +315,7 @@
 				1F0578B19CE4AC5AB5CCC17F /* DebugReminderHandler.swift in Sources */,
 				0E8DF43BA69659B95A5AB53F /* DoseAlarmIntents.swift in Sources */,
 				B1AB01B38B995823C20C59CD /* LockPrompting.swift in Sources */,
-				FC66D0CB66008FBFBFEB19A3 /* PlaceholderScreen.swift in Sources */,
+				029DA3BD167192422CD3EF83 /* NoOpPaywallRequester.swift in Sources */,
 				FCAEC19BE57D93E9ECEF0569 /* PrivacyOverlay.swift in Sources */,
 				71A7E5AF1C24B88439724AF9 /* RootTab.swift in Sources */,
 				C2326DF7EB01BFBC5283C249 /* RootView.swift in Sources */,

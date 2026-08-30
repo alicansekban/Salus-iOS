@@ -51,40 +51,6 @@
           }
         }
       }
-    },
-    "more_cycle" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cycle tracking"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Regl Takibi"
-          }
-        }
-      }
-    },
-    "more_cycle_subtitle" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Calendar, predictions and symptoms"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Takvim, tahminler ve belirtiler"
-          }
-        }
-      }
     }
   },
   "version" : "1.0"

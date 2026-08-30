@@ -8,13 +8,18 @@
 //   `viewModelOf(::ReminderHealthViewModel)` → `makeReminderHealthViewModel`, a closure, so each
 //                                              Route gets a fresh one exactly as `viewModel` does.
 //   `viewModelOf(::ProfileViewModel)`        → `makeProfileViewModel`, the same shape.
+//   `viewModelOf(::MoreViewModel)`           → `makeMoreViewModel`, the same shape (iOS-M8 T6).
 //
-// TODO(M8): the settings hub's own ViewModel and the preferences it reads.
+// The `navigator` is exposed alongside the factories because `MoreRoute`'s same-feature pushes
+// (`ReminderHealthKey`/`AboutKey`/`ProfileKey`) go through it the way Kotlin's `MoreRoute` reaches
+// `koinInject<Navigator>()` (`MoreScreen.kt:139-141`). The shell still owns the stack; the feature
+// only asks it to push.
 
 import SalusCommon
 import SalusNavigation
 import SalusProfile
 import SalusReminder
+import SalusSettings
 import SwiftUI
 
 /// Everything this feature's views need, built by the composition root.
@@ -25,6 +30,12 @@ import SwiftUI
 public struct SettingsModule {
     public let makeReminderHealthViewModel: @MainActor () -> ReminderHealthViewModel
     public let makeProfileViewModel: @MainActor () -> ProfileViewModel
+    /// `viewModelOf(::MoreViewModel)` — the More hub's ViewModel, a closure so each `MoreRoute`
+    /// gets a fresh one exactly as `viewModel` does.
+    public let makeMoreViewModel: @MainActor () -> MoreViewModel
+    /// The shell's `Navigator`, exposed so the More hub's rows can push the three same-feature
+    /// destinations (`MoreScreen.kt:139-141`). Read-only; the shell is still the only stack mutator.
+    public let navigator: Navigator
 }
 
 /// Builds the feature's graph — the twin of `val settingsModule = module { … }`.
@@ -40,7 +51,8 @@ public struct SettingsModule {
 /// The parameter list is the dependency list — the shape Koin's `module { }` block has — so the
 /// `function_parameter_count` warning is answered with a disable rather than by bundling
 /// dependencies into a struct that would exist only to satisfy a count. The same targeted-disable
-/// precedent `MoreViewModel.onEvent` sets for `cyclomatic_complexity`.
+/// precedent `MoreViewModel.onEvent` sets for `cyclomatic_complexity`. T6 grows the list from 7 to
+/// 11 (the four More-specific deps); the disable stays.
 @MainActor
 // swiftlint:disable:next function_parameter_count
 public func makeSettingsModule(
@@ -50,9 +62,23 @@ public func makeSettingsModule(
     clock: any SalusClock,
     alarmKitSupported: Bool,
     profileRepository: any ProfileRepository,
-    navigator: Navigator
+    navigator: Navigator,
+    preferencesDataSource: SalusPreferencesDataSource,
+    localeController: any AppLocaleController,
+    premiumStatus: any MorePremiumStatus,
+    paywallRequester: any PaywallRequester
 ) -> SettingsModule {
-    SettingsModule(
+    // The More-specific deps are built inside the factory from the passed data source, because the
+    // implementations (`SettingsPreferencesImpl`, `FreeOnlyMorePremiumStatus`) are `internal` to this
+    // package — the app target cannot construct them. The composition root passes the
+    // `SalusPreferencesDataSource` it already owns; the `UserDefaultsAppLocaleController` is built
+    // here from `.standard` because it is the same `internal` access story, and the
+    // `FreeOnlyMorePremiumStatus` is built here for the same reason (ruling 5 — M8 has no store).
+    let morePreferences = SettingsPreferencesImpl(dataSource: preferencesDataSource)
+    let moreLocaleController = localeController
+    let morePremiumStatus = premiumStatus
+    let morePaywallRequester = paywallRequester
+    return SettingsModule(
         makeReminderHealthViewModel: {
             ReminderHealthViewModel(
                 environment: reminderEnvironment,
@@ -64,7 +90,17 @@ public func makeSettingsModule(
         },
         makeProfileViewModel: {
             ProfileViewModel(profileRepository: profileRepository, navigator: navigator)
-        }
+        },
+        makeMoreViewModel: {
+            MoreViewModel(
+                profileRepository: profileRepository,
+                premiumStatus: morePremiumStatus,
+                preferences: morePreferences,
+                localeController: moreLocaleController,
+                paywallRequester: morePaywallRequester
+            )
+        },
+        navigator: navigator
     )
 }
 

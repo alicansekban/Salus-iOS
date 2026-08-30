@@ -220,24 +220,37 @@ struct RootView: View {
 
         case .more:
             NavigationStack(path: backStacks.binding(for: tab)) {
-                // TODO(M8): the settings hub replaces this placeholder. Until it lands the tab's
-                // root carries the two rows this and the last milestone need, so Reminder Health
-                // and the cycle calendar are reachable rather than only routable.
+                // The settings hub (M8 T6). The three cross-feature hops are shell callbacks
+                // (`onOpenCycle`/`onOpenDoctorReport`/`onOpenTrends`); the three same-feature
+                // destinations (`ReminderHealthKey`/`AboutKey`/`ProfileKey`) are registered by
+                // `settingsDestinations()` and the `MoreRoute` pushes them through its module's
+                // `navigator`, the same way Kotlin's `MoreRoute` reaches `koinInject<Navigator>()`.
                 //
-                // Both rows push through the navigator rather than calling `backStacks.push`
-                // directly: the shell is the only thing that mutates a back stack, and a row is
-                // not the shell.
-                PlaceholderScreen(
-                    tab: tab,
-                    onOpenReminderHealth: { root.navigator.navigate(ReminderHealthKey()) },
-                    onOpenCycle: { root.navigator.navigate(CycleKey()) }
+                // `appLockPrompt` is the shell-owned biometric evaluation the enable-re-auth
+                // interception calls (ruling 4 — the shell owns the `LAContext`, the same one
+                // `AppLockScreen` reaches through `makeLockPrompt()`).
+                MoreRoute(
+                    onOpenCycle: { root.navigator.navigate(CycleKey()) },
+                    onOpenDoctorReport: {
+                        // TODO(M10): the doctor report is another feature's screen, whose key this
+                        // shell cannot name yet. Cross-feature navigation is a shell callback
+                        // (spec §4), so when `FeatureAIHealth` lands this pushes its key through
+                        // `root.navigator`.
+                    },
+                    onOpenTrends: {
+                        // TODO(M11): trends is another feature's screen, whose key this shell
+                        // cannot name yet. Cross-feature navigation is a shell callback (spec §4),
+                        // so when `FeatureTrends` lands this pushes its key through
+                        // `root.navigator`. The vitals tab carries the same TODO for the same reason.
+                    },
+                    appLockPrompt: makeLockPrompt()
                 )
                 .settingsDestinations()
                 .cycleDestinations()
             }
-            // On the stack, not inside its root — a pushed `ReminderHealthKey` or `CycleKey`
-            // destination is rendered by the stack, so an environment value set on the root would
-            // not reach it.
+            // On the stack, not inside its root — a pushed `ReminderHealthKey`, `AboutKey`,
+            // `ProfileKey` or `CycleKey` destination is rendered by the stack, so an environment
+            // value set on the root would not reach it.
             .environment(\.settingsModule, root.settingsModule)
             .environment(\.cycleModule, root.cycleModule)
 
@@ -275,8 +288,11 @@ struct RootView: View {
             .environment(\.cycleModule, root.cycleModule)
 
         default:
+            // Unreachable: every `RootTab` case has an explicit branch above. Kept only so a future
+            // tab added to the enum lands as a compile error here rather than as a silently
+            // unstyled stack.
             NavigationStack(path: backStacks.binding(for: tab)) {
-                PlaceholderScreen(tab: tab)
+                EmptyView()
             }
         }
     }

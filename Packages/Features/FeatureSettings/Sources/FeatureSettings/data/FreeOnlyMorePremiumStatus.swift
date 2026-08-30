@@ -19,10 +19,12 @@
 // change what "the More tab's stream is still open" means.
 
 /// ``MorePremiumStatus`` until iOS-M9 brings the store.
-final class FreeOnlyMorePremiumStatus: MorePremiumStatus {
-    var status: AsyncStream<MorePremiumStatusValue> {
+public final class FreeOnlyMorePremiumStatus: MorePremiumStatus {
+    public var status: AsyncStream<MorePremiumStatusValue> {
         AsyncStream(bufferingPolicy: .bufferingNewest(1)) { continuation in
             continuation.yield(.free)
         }
     }
+
+    public init() {}
 }

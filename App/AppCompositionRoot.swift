@@ -374,7 +374,19 @@ final class AppCompositionRoot {
             clock: clock,
             alarmKitSupported: reminder.alarmKitSupported,
             profileRepository: infrastructure.profileRepository,
-            navigator: infrastructure.navigator
+            navigator: infrastructure.navigator,
+            // The four More-specific deps (T6). `preferencesDataSource` is the one
+            // `SalusPreferencesDataSource` the root already owns; the factory builds the
+            // `SettingsPreferencesImpl` over it inside the package (the impl is `internal`).
+            // `localeController` is built inline for the same reason —
+            // `UserDefaultsAppLocaleController` is `internal` to `FeatureSettings`, so the factory
+            // cannot accept it from outside; the factory builds it from `.standard`. `premiumStatus`
+            // is the `FreeOnlyMorePremiumStatus` stand-in (ruling 5); `paywallRequester` is the
+            // `NoOpPaywallRequester` stand-in (ruling 5 — M9 swaps both).
+            preferencesDataSource: infrastructure.preferences,
+            localeController: UserDefaultsAppLocaleController(defaults: .standard),
+            premiumStatus: FreeOnlyMorePremiumStatus(),
+            paywallRequester: NoOpPaywallRequester()
         )
         return FeatureModules(
             reminder: reminder,
