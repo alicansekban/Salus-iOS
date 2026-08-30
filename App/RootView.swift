@@ -238,10 +238,14 @@ struct RootView: View {
                 )
                 // `cycleDestinations()` stays on this stack because two things now push `CycleKey`
                 // onto it: the card above, and a tapped cycle reminder, which `RootTab.hosting`
-                // routes to Home (iOS-M6 ruling 2). The two cannot be confused — `pushCycleCalendar`
-                // memoizes the reminder's push on Home's stack depth, and `observeNavigationCommands`
-                // clears that memo on every `.navigate` while Home is selected, so a card push
-                // invalidates it rather than being counted as one.
+                // routes to Home (iOS-M6 ruling 2). Neither ordering stacks two calendars —
+                // `pushCycleCalendar` memoizes the depth its push leaves, and
+                // `observeNavigationCommands` keeps that memo true for the card's push as well: a
+                // `CycleKey` navigate seeds it, any other key clears it. So the two orderings that
+                // can actually happen — reminder-then-reminder and card-then-reminder — both no-op
+                // the second push, while a push or pop in between moves the depth and lets the
+                // calendar open again. The card's own push is unguarded, and needs no guard: while
+                // a calendar is on top of Home the card is not on screen to tap.
                 //
                 // There is no `homeDestinations()`: the dashboard pushes nothing of its own — every
                 // card either switches tab or pushes another feature's key (plan ruling 8).
@@ -331,15 +335,22 @@ struct RootView: View {
     /// touches the stack.
     private func observeNavigationCommands() async {
         for await command in root.navigator.commands {
-            // Anything a feature pushes onto the appointments or Home stack invalidates that
-            // stack's memo: it is now that key on top, not what a reminder put there. A pop needs no
-            // line — it moves the depth the memo is matched against, so it can never leave a stale
-            // match behind.
+            // Anything a feature pushes onto the appointments stack invalidates that stack's memo:
+            // it is now that key on top, not what a reminder put there. A pop needs no line — it
+            // moves the depth the memo is matched against, so it can never leave a stale match
+            // behind.
             if case .navigate = command, backStacks.selection == .appointments {
                 reminderPushedAppointment = nil
             }
-            if case .navigate = command, backStacks.selection == .home {
-                reminderPushedCycleDepth = nil
+            // Home's memo is seeded rather than only cleared: a Home card pushes `CycleKey` too,
+            // and clearing the memo there would leave a following cycle-reminder tap seeing
+            // `nil != depth` and pushing a second calendar onto the one the card just opened. This
+            // runs before the push below, so `count + 1` is the depth that push will leave —
+            // exactly what `pushCycleCalendar` memoizes. Any other key still clears.
+            if case let .navigate(key) = command, backStacks.selection == .home {
+                reminderPushedCycleDepth = key == AnyNavKey(CycleKey())
+                    ? backStacks.path(for: .home).count + 1
+                    : nil
             }
             switch command {
             case let .navigate(key): backStacks.push(key)
