@@ -75,17 +75,25 @@ The switch is Task 6's; these rows only flip it.
   "screenshot" is a host-side capture of a window, not an iOS render-server capture, so the
   `isSecureTextEntry` exclusion has nothing to act on. Record what you see and treat **§2.4 as a
   device-only pass**.
-  *If the simulator instead shows a black or empty app window as soon as the toggle goes on* —
-  i.e. the app itself is broken, not the screenshot — that is the known simulator artefact the Task
-  10 brief anticipated: the fix is to wrap `SecureScreenMask.apply()`/`remove()` in
-  `#if !targetEnvironment(simulator)`. Report it rather than working around it.
+  *If the app itself breaks the moment the toggle goes on* — a black or empty window, or (see §2.5)
+  content that jumps out of place — that is the artefact the Task 10 brief anticipated: the fix is to
+  wrap `SecureScreenMask.apply()`/`remove()` in `#if !targetEnvironment(simulator)`. Report it rather
+  than working around it.
 
-- [ ] **2.5 The mask is reversible.** Turn **Güvenli ekran** back off, then take another screenshot.
+- [ ] **2.5 The mask is reversible, and it does not move the app.** With the toggle **on**, before
+  turning it back off, look hard at the screen: **the content is not displaced or offset** — no
+  shift down or to the right, nothing running off the edge, no strip of blank where the layout used
+  to start, and a tap still lands on the control it is under (tap a tab, then a list row). Then turn
+  **Güvenli ekran** off and take another screenshot.
   *Expected — device:* the screenshot shows the app normally again. *Expected — simulator and
-  device:* the app keeps drawing and keeps responding to taps through both flips — scroll the list
-  and open an editor after each one. *Why this row exists:* the mask re-parents the app's root layer
-  under the text field's content layer and `setEnabled(false)` puts it back; a one-way door would
-  leave the app permanently masked or, worse, permanently blank.
+  device:* the app draws in exactly the same place with the toggle on as with it off, and keeps
+  responding to taps through both flips — scroll the list and open an editor after each one.
+  *Why this row exists:* the mask re-parents the app's root layer under the text field's content
+  layer, and re-parenting changes whose coordinate space that layer's position is read in. Get the
+  field's geometry wrong and the app renders offset by half the screen **while hit-testing stays
+  where it was**, so taps fire the wrong control — a failure that looks like a layout bug and is
+  not. The other half of the row is the one-way-door check: `setEnabled(false)` must put the layer
+  back.
 
 ### 2.6–2.7 The capture hide (AirPlay / recording)
 
@@ -127,6 +135,7 @@ The switch is Task 6's; these rows only flip it.
 ## What was executed when this section was written (iOS-M8 Task 10)
 
 **Nothing.** Task 10 ran `scripts/build-app.sh` (BUILD SUCCEEDED, zero new warnings) and
-`scripts/lint.sh` (0 violations in 491 files) and wrote this section from the code. Every §2 row
-above is **NOT RUN**. §2.4 and §2.6 in particular have never been observed on any hardware, and
-they are the two rows that carry the feature's actual promise.
+`scripts/lint.sh` (0 violations) and wrote this section from the code. Every §2 row above is **NOT
+RUN**. §2.4 and §2.6 in particular have never been observed on any hardware, and they are the two
+rows that carry the feature's actual promise; §2.5's displacement check was added in review round 1,
+after a reviewer derived the offset from CALayer's coordinate-space rules — also unobserved.
