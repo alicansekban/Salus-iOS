@@ -160,10 +160,11 @@ Boy → Kilo → Sağlık notları → Bildirimler. Welcome carries no header, s
   *Expected:* the progress bar announces **"Adım 2 / 7"**; the counter circle beside it is **not**
   focusable and announces nothing — the same fact twice in a row is the thing being avoided (the M7
   sparkline precedent). The two hero clusters (Welcome, Bildirimler) are likewise skipped entirely.
-  *Known gap, and it is a finding rather than a pass:* the header's **back button has no spoken
-  label** — Android's `onboarding_back` ("Geri") is not in this port's catalog. VoiceOver falls back
-  to the SF Symbol's own description. Record what it actually says; restoring the key is a decision
-  for T14.
+  Focus the header's **back button**: it announces **"Geri"** (`onboarding_back`), and in English
+  **"Back"**. *Why this row says so explicitly:* this is the only back button in the app that draws
+  itself — every other one belongs to the shell's `NavigationStack`, which is why the rest of the
+  port carries no back label at all (divergence (d)). Controller ruling H-8 restored the key for
+  this button; an unlabelled chevron here is the regression to look for.
 
 ## What was executed when this section was written (iOS-M8 Task 8)
 

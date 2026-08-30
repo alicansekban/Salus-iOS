@@ -3,12 +3,14 @@
 // `:feature:onboarding` owns, name and text verbatim, resolved against this package's own
 // bundle exactly as `R.string` resolves against `:feature:onboarding`.
 //
-// KEY DROPPING, and it is the one divergence from the Android key list. Android carries an
-// `onboarding_back` ("Geri" / "Back") label; this port does not, because the shell's single
-// `NavigationStack` draws the back button for every pushed destination — no screen in this
-// port declares one (`docs/ios-feature-template.md`, Navigation). The same precedent dropped
-// `reminder_health_back` (iOS-M3) and `settings_back` / `profile_back` (iOS-M8 settings).
-// Recorded as divergence (d) in the task report.
+// NO KEY IS DROPPED: all 46 Android keys are here. `onboarding_back` ("Geri" / "Back") was
+// briefly left out on the divergence-(d) precedent — the shell's single `NavigationStack` draws
+// the back button for every pushed destination, so `reminder_health_back` (iOS-M3) and
+// `settings_back` / `profile_back` (iOS-M8 settings) all went unported. **Controller ruling H-8
+// (iOS-M8) reversed that for this one key**: divergence (d) holds for a *pushed* screen and the
+// onboarding flow is not one. The gate is an overlay with no navigation container, so
+// `OnboardingHeader` draws the only hand-made back button in the app, and it is the only back
+// button in the tree that needs a spoken label of its own.
 //
 // PLACEHOLDER MAPPING, the one place the port is not byte-for-byte. Two keys carry two
 // integer arguments:
@@ -34,6 +36,9 @@ import Foundation
 public enum OnboardingStrings {
     // MARK: - Actions
 
+    /// The header back button's accessibility label — the one back button in the port that draws
+    /// itself, so the one that carries this key (ruling H-8).
+    public static var onboardingBack: String { localized(.onboardingBack) }
     public static var onboardingSkip: String { localized(.onboardingSkip) }
     public static var onboardingStart: String { localized(.onboardingStart) }
     public static var onboardingNext: String { localized(.onboardingNext) }
@@ -128,6 +133,7 @@ public enum OnboardingStrings {
     /// The catalog keys, named once. Internal so the parity test can prove every accessor asks for
     /// a key the catalog really carries — a typo here would otherwise ship the key as the label.
     enum Key: String, CaseIterable {
+        case onboardingBack = "onboarding_back"
         case onboardingSkip = "onboarding_skip"
         case onboardingStart = "onboarding_start"
         case onboardingNext = "onboarding_next"

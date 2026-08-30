@@ -1,6 +1,23 @@
 {
   "sourceLanguage" : "tr",
   "strings" : {
+    "onboarding_back" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Back"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geri"
+          }
+        }
+      }
+    },
     "onboarding_skip" : {
       "extractionState" : "manual",
       "localizations" : {

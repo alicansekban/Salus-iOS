@@ -80,7 +80,7 @@ options:
 #
 # M8 adds `FeatureOnboarding`, the seventh feature package. M0 created it and nothing has linked it
 # until now, so the eight-step gate had never been compiled against the iOS SDK. Linking it compiles
-# its String Catalog — the 45 keys of `:feature:onboarding`, and `swift test` never compiles a
+# its String Catalog — the 46 keys of `:feature:onboarding`, and `swift test` never compiles a
 # catalog at all — and puts the two iOS-only branches of the flow through a compiler for the first
 # time: the name field's `.textContentType(.name)` and the notes editor's
 # `.textInputAutocapitalization(.sentences)`, both behind `#if os(iOS)` and both invisible to the

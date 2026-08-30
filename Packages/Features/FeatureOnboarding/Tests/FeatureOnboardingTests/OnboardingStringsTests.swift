@@ -8,10 +8,11 @@ import Testing
 /// language) and `values-en/strings.xml`, and the drift detector between the two locales: all
 /// keys and both of their translations are pinned here.
 ///
-/// `onboarding_back` is deliberately not here (see `OnboardingStrings.swift`'s header): the
-/// shell's single `NavigationStack` draws the back button, so no screen in this port declares
-/// one. It is a recorded divergence (d), not a silent drop — the same precedent that dropped
-/// `reminder_health_back` (iOS-M3) and `settings_back` / `profile_back` (iOS-M8 settings).
+/// `onboarding_back` **is** here, and it is the one key divergence (d) does not reach: that
+/// precedent (`reminder_health_back`, `settings_back`, `profile_back`) drops a back label because
+/// the shell's single `NavigationStack` draws the button. The onboarding gate is an overlay with no
+/// navigation container, so `OnboardingHeader` draws its own — controller ruling H-8 (iOS-M8)
+/// restored the key for it. All 46 Android keys are pinned below.
 ///
 /// The catalog is read off disk rather than through `Bundle.module`, for the two reasons
 /// `VitalsStringsTests` records: `String(localized:)` answers for ONE locale, so it can never
@@ -28,7 +29,7 @@ struct OnboardingStringsTests {
     func catalogHoldsExactlyTheKeys() throws {
         // Pinned as a number as well as a set: a row deleted from the table together with its key
         // from the catalog would otherwise agree with itself and pass.
-        #expect(Self.samples.count == 45)
+        #expect(Self.samples.count == 46)
 
         try StringCatalogParity.assertKeys(of: Self.loadCatalog(), are: Self.expectedKeys)
     }
@@ -108,6 +109,7 @@ struct OnboardingStringsTests {
 /// past the `type_body_length` gate.
 private enum OnboardingSamples {
     static let all: [OnboardingStringSample] = [
+        OnboardingStringSample(key: "onboarding_back", turkish: "Geri", english: "Back"),
         OnboardingStringSample(key: "onboarding_skip", turkish: "Şimdilik Atla", english: "Skip for now"),
         OnboardingStringSample(key: "onboarding_start", turkish: "Başla", english: "Get started"),
         OnboardingStringSample(key: "onboarding_next", turkish: "Devam Et", english: "Continue"),

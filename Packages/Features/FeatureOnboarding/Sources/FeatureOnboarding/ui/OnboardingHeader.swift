@@ -23,16 +23,14 @@
 //    counter                           Kotlin: "the bar next to it already announces the position".
 //                                      The M7 sparkline (ruling 7) is the precedent.
 //
-// DIVERGENCE — the back button carries no `accessibilityLabel`. Android labels it
-// `onboarding_back` ("Geri"/"Back", `values/strings.xml:3`), and that key is deliberately absent
-// from this port's catalog: iOS-M8 T2 dropped it on the `reminder_health_back` / `settings_back`
-// precedent — "the shell's single `NavigationStack` draws the back button". That reasoning is true
-// of every *pushed* screen and NOT of this one: the onboarding gate is an overlay with no
-// navigation container, so this file draws the only hand-made back button in the tree. VoiceOver
-// still announces the SF Symbol's own localized description rather than nothing, so the button is
-// reachable, but it does not say "Geri". Restoring `onboarding_back` (45 → 46 keys, plus the
-// `OnboardingStringsTests` pin) is a one-line change that belongs to whoever owns the catalog —
-// raised in the Task 8 report for T14's accessibility pass rather than taken unilaterally here.
+// NOT A DIVERGENCE, and it took a ruling to get there. The back button's `accessibilityLabel` is
+// `onboarding_back` ("Geri"/"Back", `values/strings.xml:3`), the twin of the Kotlin `IconButton`'s
+// `contentDescription` (`OnboardingHeader.kt:63`). iOS-M8 T2 first dropped that key on the
+// `reminder_health_back` / `settings_back` precedent — "the shell's single `NavigationStack` draws
+// the back button" — which is true of every *pushed* screen and NOT of this one: the onboarding
+// gate is an overlay with no navigation container, so this file draws the only hand-made back
+// button in the tree and nothing else would name it. **Controller ruling H-8 (iOS-M8)** restored
+// the key for exactly this call site; the catalog is 46 keys and `OnboardingStringsTests` pins it.
 //
 // The four dimensions are the Kotlin file's own private vals (`OnboardingHeader.kt:111-114`).
 
@@ -71,6 +69,7 @@ struct OnboardingHeader: View {
                 .contentShape(.rect)
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(Text(verbatim: OnboardingStrings.onboardingBack))
     }
 
     /// `OnboardingHeader.kt:67-89` — the title over the bar.
