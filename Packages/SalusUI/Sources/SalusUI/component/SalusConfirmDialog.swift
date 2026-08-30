@@ -51,7 +51,10 @@ extension View {
             Button(confirm.label, role: .destructive, action: confirm.action)
             Button(dismiss.label, role: .cancel, action: dismiss.action)
         } message: {
-            Text(message)
+            // `Text(verbatim:)`: `message` is already a resolved `String` from the call site's
+            // typed `Strings` enum — the plain initializer would read it back as a
+            // `LocalizedStringKey` against the main bundle (the M7 `c726e22` finding).
+            Text(verbatim: message)
         }
     }
 }

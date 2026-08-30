@@ -47,7 +47,10 @@ public struct SalusSnackbarHost: View {
 
     private func snackbar(_ request: SnackbarRequest) -> some View {
         HStack(spacing: SalusSpacing.md) {
-            Text(request.message)
+            // `Text(verbatim:)` because `request.message` is already a resolved string — the plain
+            // initializer would read it as a `LocalizedStringKey` against the main bundle (the M7
+            // `c726e22` finding).
+            Text(verbatim: request.message)
                 .font(SalusTypography.bodyMedium.font)
                 .tracking(SalusTypography.bodyMedium.tracking)
                 .foregroundStyle(colors.inverseOnSurface)

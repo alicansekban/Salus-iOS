@@ -93,7 +93,10 @@ public struct SalusPillButton: View {
                     Image(systemName: systemImage)
                         .font(.system(size: Self.iconSize))
                 }
-                Text(text)
+                // `Text(verbatim:)` because `text` is already resolved — the plain initializer
+                // would look it up as a `LocalizedStringKey` against the main bundle (the M7
+                // `c726e22` finding).
+                Text(verbatim: text)
                     .font(SalusTypography.labelLarge.font)
                     .tracking(SalusTypography.labelLarge.tracking)
                 // `trailingIcon` (`SalusPillButton.kt:58-65`), the same `ButtonIconSize` and the

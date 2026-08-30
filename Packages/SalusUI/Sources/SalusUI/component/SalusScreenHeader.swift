@@ -21,7 +21,10 @@ public struct SalusScreenHeader<Actions: View>: View {
         // Zero, matching Compose's `Arrangement.Start` default: the trailing icon buttons carry
         // their own touch-target padding, and a gap here would double it.
         HStack(spacing: 0) {
-            Text(title)
+            // `Text(verbatim:)` because `title` is already a resolved string — the plain
+            // initializer would re-read it as a `LocalizedStringKey` against the main bundle (the
+            // M7 `c726e22` finding).
+            Text(verbatim: title)
                 .font(SalusTypography.headlineLarge.font)
                 .tracking(SalusTypography.headlineLarge.tracking)
                 .foregroundStyle(theme.colorScheme.onBackground)

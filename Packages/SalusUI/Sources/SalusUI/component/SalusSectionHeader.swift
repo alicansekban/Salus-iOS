@@ -55,7 +55,10 @@ public struct SalusSectionHeader<Actions: View>: View {
         // Zero, matching Compose's `Arrangement.Start` default — the same reasoning as
         // `SalusScreenHeader`: a trailing button carries its own touch-target padding.
         HStack(spacing: 0) {
-            Text(title)
+            // `Text(verbatim:)` because the caller hands over a resolved `String` — the plain
+            // initializer would read it back as a `LocalizedStringKey` against the main bundle
+            // (the M7 `c726e22` finding).
+            Text(verbatim: title)
                 .font(SalusTypography.titleLarge.font)
                 .tracking(SalusTypography.titleLarge.tracking)
                 .foregroundStyle(theme.colorScheme.onSurface)

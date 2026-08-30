@@ -87,6 +87,12 @@ struct MoreToggleCard: View {
                 ))
                 .labelsHidden()
                 .disabled(!enabled)
+                // The whole card is the tappable affordance, so VoiceOver reads the card once —
+                // but the toggle itself is still a focusable control and must not be announced as
+                // an unnamed "switch". The title is what the switch toggles, exactly as the row's
+                // text names it; `Switch` on Android reads the enclosing label the same way
+                // (`MoreScreen.kt:409-449`, `Modifier.semantics { }` on the card).
+                .accessibilityLabel(title)
             }
         }
     }

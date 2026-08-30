@@ -121,7 +121,7 @@ struct ReminderHealthScreen: View {
 
     /// `ReminderHealthScreen.kt:150-158`.
     private var verdict: some View {
-        Text(state.allHealthy ? SettingsStrings.reminderHealthAllOk : SettingsStrings.reminderHealthIntro)
+        Text(verbatim: state.allHealthy ? SettingsStrings.reminderHealthAllOk : SettingsStrings.reminderHealthIntro)
             .font(SalusTypography.bodyMedium.font)
             .tracking(SalusTypography.bodyMedium.tracking)
             .foregroundStyle(colors.onSurfaceVariant)
@@ -168,7 +168,7 @@ struct ReminderHealthScreen: View {
     /// The honesty line, which Android has no twin for — see `ReminderHealthLastSync.line`, whose
     /// doc says what the stamp does and does not promise.
     private var lastSyncLine: some View {
-        Text(ReminderHealthLastSync.line(for: state.lastSyncAt, in: state.timeZone))
+        Text(verbatim: ReminderHealthLastSync.line(for: state.lastSyncAt, in: state.timeZone))
             .font(SalusTypography.bodySmall.font)
             .tracking(SalusTypography.bodySmall.tracking)
             .foregroundStyle(colors.onSurfaceVariant)
@@ -210,11 +210,11 @@ private struct HealthCard: View {
 
     private var text: some View {
         VStack(alignment: .leading, spacing: SalusSpacing.xs) {
-            Text(title)
+            Text(verbatim: title)
                 .font(SalusTypography.titleMedium.font)
                 .tracking(SalusTypography.titleMedium.tracking)
                 .foregroundStyle(colors.onSurface)
-            Text(description)
+            Text(verbatim: description)
                 .font(SalusTypography.bodySmall.font)
                 .tracking(SalusTypography.bodySmall.tracking)
                 .foregroundStyle(colors.onSurfaceVariant)
@@ -226,7 +226,7 @@ private struct HealthCard: View {
     /// label, which `.borderedProminent` draws once it is tinted with the container role.
     private var fixButton: some View {
         Button(action: onFix) {
-            Text(SettingsStrings.reminderHealthFix)
+            Text(verbatim: SettingsStrings.reminderHealthFix)
                 .font(SalusTypography.labelLarge.font)
                 .tracking(SalusTypography.labelLarge.tracking)
                 .foregroundStyle(colors.onSecondaryContainer)
