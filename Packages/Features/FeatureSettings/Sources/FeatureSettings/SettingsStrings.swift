@@ -237,6 +237,17 @@ public enum SettingsStrings {
         }
     }
 
+    /// `language_*` — the dialog option label for each `AppLanguage` (ruling P-2). The three
+    /// `language_*` accessors and keys shipped with T1; this accessor lands with T3, where
+    /// `AppLanguage` is first defined (`domain/AppLocaleController.swift`).
+    public static func language(_ language: AppLanguage) -> String {
+        switch language {
+        case .system: languageSystem
+        case .turkish: languageTurkish
+        case .english: languageEnglish
+        }
+    }
+
     // MARK: - Keys
 
     /// The catalog keys, named once. Internal so the parity test can prove every accessor asks for
