@@ -473,10 +473,12 @@ are still outstanding too** — this milestone does not close them.
   → full `PremiumStatus` at M9, the iOS-only `language_relaunch_note` key, and the
   `SalusPillTextField` polish sweep for the older editors). One earlier row closed: `D-M6-h`
   (the `more_cycle*` keys moved into FeatureSettings and the row is now sex-gated). A new
-  `D-M8-a…h` divergence section was added (h retracted at planning). **Android commit
+  `D-M8-a…h` divergence section was added (h retracted at planning). **Android commits
   `8355a36` `docs(parity): iOS-M8 settings, onboarding, app lock — row closed, S-2 landed, follow-ups`
-  landed **local-only, never pushed** (M7 rule — the user owns the push); Android working tree clean,
-  no file outside `docs/parity-ledger.md` touched. The `docs/ios-feature-template.md` rule-check:
+  and `e717626` `docs(parity): clarify the D-M8 lettering note — (h) retraction vs the ledger's own
+  rows` (the second a local-only reword from T16's own fix round) —
+  both landed **local-only, never pushed** (M7 rule — the user owns the push); Android working tree
+  clean, no file outside `docs/parity-ledger.md` touched. The `docs/ios-feature-template.md` rule-check:
   the template did **not** already document the gates-as-overlays shape or the
   `AppLockManager`-in-`SalusCommon` (PendingDeleteController) precedent, so a subsection was added
   to the "Shell and navigation-container rule" section.** **The `--ff-only` merge to `main` and both

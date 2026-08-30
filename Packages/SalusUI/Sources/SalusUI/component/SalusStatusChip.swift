@@ -47,7 +47,10 @@ public struct SalusStatusChip: View {
                     // already says what the icon says.
                     .accessibilityHidden(true)
             }
-            Text(label)
+            // `Text(verbatim:)` because `label` is already a resolved string — the plain
+            // initializer would re-read it as a `LocalizedStringKey` against the main bundle (the
+            // M7 `c726e22` finding).
+            Text(verbatim: label)
                 .font(SalusTypography.labelMedium.font)
                 .tracking(SalusTypography.labelMedium.tracking)
         }

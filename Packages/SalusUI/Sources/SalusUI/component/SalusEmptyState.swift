@@ -50,14 +50,20 @@ public struct SalusEmptyState: View {
         VStack(spacing: 0) {
             iconBadge
             Spacer().frame(height: SalusSpacing.lg)
-            Text(title)
+            // `Text(verbatim:)` because `title` is already a resolved string — the plain
+            // initializer would re-read it as a `LocalizedStringKey` against the main bundle (the
+            // M7 `c726e22` finding).
+            Text(verbatim: title)
                 .font(SalusTypography.titleLarge.font)
                 .tracking(SalusTypography.titleLarge.tracking)
                 .foregroundStyle(colors.onSurface)
                 .multilineTextAlignment(.center)
             if let message {
                 Spacer().frame(height: SalusSpacing.sm)
-                Text(message)
+                // `Text(verbatim:)` because `message` is already a resolved string — the plain
+                // initializer would re-read it as a `LocalizedStringKey` against the main bundle
+                // (the M7 `c726e22` finding).
+                Text(verbatim: message)
                     .font(SalusTypography.bodyMedium.font)
                     .tracking(SalusTypography.bodyMedium.tracking)
                     .foregroundStyle(colors.onSurfaceVariant)

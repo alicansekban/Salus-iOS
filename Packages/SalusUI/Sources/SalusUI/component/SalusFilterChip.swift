@@ -34,7 +34,10 @@ public struct SalusFilterChip: View {
                     Image(systemName: "checkmark")
                         .font(.system(size: Self.iconSize))
                 }
-                Text(label)
+                // `Text(verbatim:)` because `label` is already a resolved string — the plain
+                // initializer would re-read it as a `LocalizedStringKey` against the main bundle
+                // (the M7 `c726e22` finding).
+                Text(verbatim: label)
                     .font(SalusTypography.labelLarge.font)
                     .tracking(SalusTypography.labelLarge.tracking)
                     // A chip label is one short phrase ("1 hour before"); wrapping it would turn

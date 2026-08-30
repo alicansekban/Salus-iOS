@@ -900,6 +900,11 @@ spelled out per screen so a wrong read is a finding rather than a judgment call.
 - [ ] **6.1.8 Focus order follows draw order on a pushed screen.** Push More → Profil. Rotor *Elements*
   top to bottom: the section headers and each field/row in the order they appear — Name, Sex,
   Birth date, Height, Health notes, then the toolbar save at top. No reordering, no skipped control.
+- [ ] **6.1.9 The onboarding health-notes privacy chip is a labelled element.** On the Health notes step,
+  the green **"Yalnızca bu cihazda"** chip is `SalusStatusChip` (`onboarding_notes_private`). Rotor
+  *Elements* over the note area. *Expected:* the chip is read **as part of the chip** — one labelled
+  element announcing the privacy wording (e.g. "Yalnızca bu cihazda") — never as stray text floating
+  in the note `TextEditor`.
 
 ### 6.2 Dynamic Type at AX5 largest, with Turkish
 
