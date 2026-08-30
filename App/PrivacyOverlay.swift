@@ -304,6 +304,12 @@ private final class SecureScreenMask {
         // A mechanism, not a control: it must never take a touch, a tap or the keyboard away from
         // the app it is masking, and it must draw nothing of its own.
         field.isUserInteractionEnabled = false
+        // …and it must not exist for VoiceOver either. This field is full-screen (the C-1 fix), and
+        // an accessibility element that size sits over the whole app: VoiceOver would offer "secure
+        // text field, double-tap to edit" and touch exploration would land on it instead of on the
+        // content underneath, for as long as masking is on. `isUserInteractionEnabled = false` does
+        // not cover this — the accessibility tree is walked separately from the touch hierarchy.
+        field.isAccessibilityElement = false
         field.borderStyle = .none
         field.backgroundColor = .clear
         field.translatesAutoresizingMaskIntoConstraints = false
@@ -329,6 +335,9 @@ private final class SecureScreenMask {
         // fails loudly — no mask, and QA §2.4 is the detector — rather than half-applying.
         guard let sublayers = field.layer.sublayers, sublayers.count == 1, let canvas = sublayers.first
         else {
+            // Loud in a debug build, silent-and-safe in a shipped one: a UIKit shape change is a
+            // thing to discover while developing, not a reason to trap a user's app.
+            assertionFailure("secure UITextField no longer has exactly one sublayer; masking is off")
             field.removeFromSuperview()
             return false
         }

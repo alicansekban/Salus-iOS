@@ -87,7 +87,10 @@ The switch is Task 6's; these rows only flip it.
   **Güvenli ekran** off and take another screenshot.
   *Expected — device:* the screenshot shows the app normally again. *Expected — simulator and
   device:* the app draws in exactly the same place with the toggle on as with it off, and keeps
-  responding to taps through both flips — scroll the list and open an editor after each one.
+  responding to taps through both flips — scroll the list and open an editor after each one. With
+  **VoiceOver on** and the toggle on, swiping through the screen still reaches the app's own
+  controls and never announces a "secure text field": the masking field is full-screen, so if it
+  were an accessibility element it would swallow the whole screen.
   *Why this row exists:* the mask re-parents the app's root layer under the text field's content
   layer, and re-parenting changes whose coordinate space that layer's position is read in. Get the
   field's geometry wrong and the app renders offset by half the screen **while hit-testing stays
