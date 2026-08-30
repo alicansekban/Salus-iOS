@@ -466,10 +466,21 @@ are still outstanding too** — this milestone does not close them.
 - **T14 (VoiceOver + Dynamic Type): COMPLETE** — landed in three commits after T13 closed this record
   (see "T14 — the VoiceOver + Dynamic Type pass" below for commits and the verdict). Added
   `docs/a11y-audit-m8.md`, the label/trait/fix declarations, QA §6, and filled this subsection.
-- **T16 (parity ledger, Android docs commit): PENDING.** `salus-android/docs/parity-ledger.md` row →
-  "iOS-M8 ✅ (cases: 20 More + 8 Profile + 6+7 onboarding + 6 lock + strings parity ×2 locales)",
-  S-2 closed; the commit lands **local-only, never pushed** (M7 rule). **State to be appended by the
-  coordinator after T16 lands:** [T16 commit + push status].
+- **T16 (parity ledger, Android docs commit): COMPLETE.** `salus-android/docs/parity-ledger.md` row →
+  "iOS-M8 ✅ (cases: 20 More + 8 Profile + 6+7 onboarding + 6 lock + strings parity)". S-2 closed
+  (implementation landed, T10). Five follow-ups proposed as unnumbered `A?` rows (language
+  apply-on-relaunch, `about_privacy_body` store naming → joint copy pass, two-state premium stand-in
+  → full `PremiumStatus` at M9, the iOS-only `language_relaunch_note` key, and the
+  `SalusPillTextField` polish sweep for the older editors). One earlier row closed: `D-M6-h`
+  (the `more_cycle*` keys moved into FeatureSettings and the row is now sex-gated). A new
+  `D-M8-a…h` divergence section was added (h retracted at planning). **Android commit
+  `8355a36` `docs(parity): iOS-M8 settings, onboarding, app lock — row closed, S-2 landed, follow-ups`
+  landed **local-only, never pushed** (M7 rule — the user owns the push); Android working tree clean,
+  no file outside `docs/parity-ledger.md` touched. The `docs/ios-feature-template.md` rule-check:
+  the template did **not** already document the gates-as-overlays shape or the
+  `AppLockManager`-in-`SalusCommon` (PendingDeleteController) precedent, so a subsection was added
+  to the "Shell and navigation-container rule" section.** **The `--ff-only` merge to `main` and both
+  pushes remain held for the user**, as in iOS-M3 through M7.
 - **T15 (manual QA)** is the user's; the record above's "Still owed" section is its checklist.
 
 ## T14 — the VoiceOver + Dynamic Type pass (what T14 fixed and deferred)

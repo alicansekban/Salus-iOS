@@ -216,6 +216,40 @@ and is still a finding. The rule catches the accident; the rule above is what bi
 
 Reference: `VitalsScreen` (ZStack + FAB) and `WeightEditorScreen` (VStack + toolbar).
 
+### Gates are overlays, never destinations
+
+The app-lock and onboarding gates are **overlays above the `TabView` and outside every
+`NavigationStack`** — not nav destinations and not an `if/else` swap of the whole shell. This is
+the iOS twin of the Compose gate order in `MainActivity.kt:47-107`, and it is what keeps the back
+stack and any pending notification deep link alive behind a gate: an overlay neither pushes nor
+pops anything, so memoised pushes (the `D-M7-ab` cycle-calendar depth, the appointments twin) still
+mean what they meant while a gate is up.
+
+- The two gates draw as **siblings in a `ZStack` in Android's z-order — later is on top**, so the
+  lock covers the app and onboarding covers the lock (`App/RootView.swift:120-144`). They are not
+  exclusive: a reinstall keeps `app_lock_enabled` (it lives in the Keychain) while clearing
+  `onboarding_completed`, and a real device can want both at once.
+- Onboarding sits **outermost** — a first launch has nothing to lock (Android's comment verbatim,
+  `MainActivity.kt:96-98`, plan ruling 3). The gate order and the "which covers which" flags live
+  in `App/RootGates.swift`, extracted so the logic is readable on its own.
+- A gate has no stack to pop, so it draws **no back affordance from the shell** and the
+  shell-drawn-back precedent does not hold for it: the onboarding gate draws its own back chevron
+  (iOS-M8, divergence (d) / H-8). A feature is never involved — these are shell overlays.
+- The secure screen is a curtain over the `TabView` and outside every `NavigationStack` too
+  (`RootView`'s `.secureScreen(maskingEnabled:)`), drawn above all three gates so the blur and the
+  mask cover them as well.
+
+**Shell logic lives in `SalusCommon`, with the shell injecting it** — the `PendingDeleteController`
+precedent (`@Observable`, iOS-M1) now joined by `AppLockManager` (iOS-M8). Both are pure state
+machines with no UI framework and no app target, and the app target has no test bundle
+(`project.yml`'s `scheme.testTargets: []`), so logic that deserves a case-for-case test suite lives
+in `SalusCommon` where `swift test` can reach it; the shell owns only the two things that *are*
+platform — the `scenePhase` forwarder in `SalusApp` and the `LAContext` prompt in `App/Lock/`.
+`SalusCommon` stays UI-free (its `@Observable` is Observation, not SwiftUI), so this is a layering
+choice, not a domain-layer exception.
+
+Reference: `App/RootGates.swift`, `App/Lock/AppLockGate.swift`, `App/RootView.swift:120-170`.
+
 ## Route / Screen split
 
 - **`<Name>Route`**: `public`, stateful. It reads the feature's module from the environment
