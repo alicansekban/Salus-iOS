@@ -50,10 +50,21 @@ Boy → Kilo → Sağlık notları → Bildirimler. Welcome carries no header, s
   4. **Boy** — decimal field, suffix **cm**, placeholder **"Örn: 170"**;
   5. **Kilo** — decimal field, suffix **kg**, placeholder **"Örn: 70"**;
   6. **Sağlık notları** — a 240 pt note area with the green **"Yalnızca bu cihazda"** lock chip
-     pinned to its bottom-right, and a shield privacy card under it;
+     pinned to its bottom-right, and a shield privacy card under it. Two cosmetics to judge here,
+     both known and neither blocking: (a) the placeholder **"Örn: …"** may sit ~8 pt above where
+     the first typed character lands, so watch for a small jump on the first keystroke
+     (`UITextView`'s `textContainerInset.top`, uncancelled); (b) tap **mid-paragraph** in a note
+     you have already typed a few lines of — the caret must move **without the keyboard dropping
+     and bouncing back** (the screen's `salusDismissesKeyboardOnTap` sees every tap, and this is
+     the app's first multi-line editor under it). Record either as a finding if it is worse than
+     described;
   7. **Bildirimler** — the bell/heart hero cluster, the body paragraph, one benefit card
      (**"Zamanında Hatırlatma"** over "Asla bir dozu kaçırmayın."), and the primary button now
      reading **"İzin Ver"** with a **tick** rather than an arrow.
+  Finally, compare the header's **back chevron** against the back button on a pushed screen (More ›
+  Profil): the onboarding one is hand-drawn at a 24 pt SF Symbol where Material's 24 dp is a
+  bounding box, so it may read **larger** than every other back button in the app. Cosmetic —
+  record the size, do not block on it.
   *Why this step exists:* the order and the two hero steps are `OnboardingStep.kt` + Kotlin's
   `OnboardingStepContent.kt:64-188` verbatim; a step in the wrong place is the port's most likely
   regression.
@@ -72,6 +83,14 @@ Boy → Kilo → Sağlık notları → Bildirimler. Welcome carries no header, s
   therefore no back button at all — and **the flow cannot be escaped**: there is no swipe-from-edge
   and no system back that leaves it (ruling 8, `OnboardingScreen.swift`'s `BackHandler` note).
   Try the edge swipe on Welcome and on Ad and record that nothing happens.
+- [ ] **1.3b The gate is opaque before it has anything to show.** Cold-start the app from a fresh
+  install and watch the **very first frame** (record the screen and step through it if the eye
+  cannot catch it).
+  *Expected:* the app goes launch screen → **solid background** → Welcome cover. At no point does
+  the **Home tab** (tab bar, cards) appear behind or through the gate, not even for one frame.
+  *Why this step exists:* `OnboardingRoute` builds its ViewModel in `.task`, which runs *after* the
+  first render pass, so the loading branch has to paint the same opaque background the screen does
+  (review I-1). A flash of the live app behind the gate is the regression.
 - [ ] **1.4 Values survive a walk back and forward.** Type **Ayşe** on Ad, pick **Kadın**, set a
   birth date, type **170** on Boy. Walk back to Ad and forward again.
   *Expected:* every answer is still there — the name field still reads Ayşe, Kadın is still the

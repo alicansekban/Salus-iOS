@@ -70,6 +70,7 @@ import UserNotifications
 /// Owns the ViewModel and asks for the notification permission (`OnboardingScreen.kt:42-66`).
 public struct OnboardingRoute: View {
     @Environment(\.onboardingModule) private var module
+    @Environment(\.salusTheme) private var theme
     @State private var viewModel: OnboardingViewModel?
 
     public init() {}
@@ -81,15 +82,35 @@ public struct OnboardingRoute: View {
                     requestNotificationPermission(then: viewModel)
                 }
             } else {
-                // Only until `.task` has run, or if the shell forgot to inject the module.
-                ProgressView()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                placeholder
             }
         }
+        // THE GATE IS OPAQUE IN EVERY STATE, and this is the one Route where that matters (review
+        // I-1). Every other Route renders *inside* a tab that already paints a background; this one
+        // is the app's outermost overlay, so a transparent frame is a frame of the live TabView
+        // showing through a gate whose whole job is to be in front of it. `.task` runs after the
+        // first render pass, so without this the first launch flashes Home before the Welcome
+        // cover — and a dropped module injection would leave a fully interactive app behind a
+        // permanent spinner, the opposite of `OnboardingModule`'s "nothing pretends to work".
+        // `OnboardingScreen` keeps its own identical background: it has to stand up on its own in
+        // the eight previews, and painting the same colour twice costs nothing.
+        .background(theme.colorScheme.background.ignoresSafeArea())
         .task {
             guard viewModel == nil, let module else { return }
             viewModel = module.makeOnboardingViewModel()
         }
+    }
+
+    /// Only until `.task` has run, or if the shell forgot to inject the module.
+    ///
+    /// A full-screen surface rather than a bare spinner: `.contentShape(.rect)` makes the whole
+    /// frame take the tap, so nothing behind the gate is reachable while it is up, and the
+    /// indeterminate spinner is hidden from VoiceOver because it names nothing a user can act on.
+    private var placeholder: some View {
+        ProgressView()
+            .accessibilityHidden(true)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .contentShape(.rect)
     }
 
     /// `permissionLauncher` (`OnboardingScreen.kt:48-53`) — the result is discarded on purpose:

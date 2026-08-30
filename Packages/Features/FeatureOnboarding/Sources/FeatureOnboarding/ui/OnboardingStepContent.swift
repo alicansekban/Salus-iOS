@@ -167,9 +167,12 @@ struct OnboardingStepContent: View {
         #endif
     }
 
-    /// `OnboardingStepContent.kt:96-104`.
+    /// `OnboardingStepContent.kt:96-104`. The three rows are direct children of `LeadingStep`'s
+    /// `Column(verticalArrangement = spacedBy(SalusSpacing.lg))` in Kotlin; SwiftUI has no
+    /// per-child arrangement, so they need a wrapper — and the wrapper carries the same `lg`, or
+    /// the gap between the rows would silently shrink to `md` (review M-1).
     private var sexOptions: some View {
-        VStack(alignment: .leading, spacing: SalusSpacing.md) {
+        VStack(alignment: .leading, spacing: SalusSpacing.lg) {
             ForEach(Sex.allCases, id: \.self) { option in
                 SalusOptionRow(
                     systemImage: option.onboardingSystemImage,
