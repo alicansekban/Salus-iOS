@@ -1,8 +1,10 @@
 // Ported from `feature/vitals/src/main/kotlin/com/alicansekban/salus/feature/vitals/
 // ui/editor/BloodPressureEditorScreen.kt`.
 //
-// Material → SwiftUI by the same mapping table `WeightEditorScreen.swift` spells out, plus the one
-// widget this screen adds:
+// Material → SwiftUI by the same mapping table `WeightEditorScreen.swift` spells out. Kotlin's
+// private `NumberField` composable (`BloodPressureEditorScreen.kt:174-196`) is `VitalsEditorField`
+// here — the same view the weight and glucose editors draw — and two of its parts matter most on
+// this screen:
 //   `isError = true` on an `OutlinedTextField` → a stroked overlay in the `error` role. SwiftUI's
 //   `.roundedBorder` field has no error state, and Kotlin's red outline is the *only* per-field
 //   signal here (the message itself is a single `Text` below the three fields), so dropping it
@@ -90,6 +92,14 @@ struct BloodPressureEditorScreen: View {
         // needs the two ways down the platform expects — a tap and a drag over the form.
         .salusDismissesKeyboardOnTap()
         .scrollDismissesKeyboard(.interactively)
+        // The token background the two shipped editors paint (`AppointmentEditorScreen`,
+        // `MedicationEditorScreen`), in the same place on the outer container. Those two wrap a
+        // `ScrollView`, which is transparent; a `Form` is a `List` and paints
+        // `systemGroupedBackground` of its own over anything behind it, so hiding that is what
+        // makes the token visible here — the `.background` alone would never be seen.
+        .scrollContentBackground(.hidden)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(theme.colorScheme.background)
         .navigationTitle(
             state.isNew ? VitalsStrings.bloodPressureNewTitle : VitalsStrings.bloodPressureEditTitle
         )
@@ -130,7 +140,7 @@ struct BloodPressureEditorScreen: View {
         // a full 16 below them.
         VStack(alignment: .leading, spacing: SalusSpacing.lg) {
             HStack(spacing: SalusSpacing.lg) {
-                numberField(
+                VitalsEditorField(
                     label: VitalsStrings.systolicLabel,
                     suffix: "mmHg",
                     text: Binding(
@@ -138,25 +148,28 @@ struct BloodPressureEditorScreen: View {
                         set: { onEvent(.systolicChanged($0)) }
                     ),
                     // `BloodPressureEditorScreen.kt:106-107` — the difference error reddens both.
-                    isError: state.error == .invalidSystolic || state.error == .systolicNotAboveDiastolic
+                    isError: state.error == .invalidSystolic || state.error == .systolicNotAboveDiastolic,
+                    keyboard: .number
                 )
-                numberField(
+                VitalsEditorField(
                     label: VitalsStrings.diastolicLabel,
                     suffix: "mmHg",
                     text: Binding(
                         get: { state.diastolicText },
                         set: { onEvent(.diastolicChanged($0)) }
                     ),
-                    isError: state.error == .invalidDiastolic || state.error == .systolicNotAboveDiastolic
+                    isError: state.error == .invalidDiastolic || state.error == .systolicNotAboveDiastolic,
+                    keyboard: .number
                 )
             }
 
             VStack(alignment: .leading, spacing: SalusSpacing.xs) {
-                numberField(
+                VitalsEditorField(
                     label: VitalsStrings.pulseLabel,
                     suffix: "bpm",
                     text: Binding(get: { state.pulseText }, set: { onEvent(.pulseChanged($0)) }),
-                    isError: state.error == .invalidPulse
+                    isError: state.error == .invalidPulse,
+                    keyboard: .number
                 )
 
                 // `BloodPressureEditorScreen.kt:133-139` — one message for four rejections.
@@ -165,46 +178,6 @@ struct BloodPressureEditorScreen: View {
                         .font(SalusTypography.bodySmall.font)
                         .foregroundStyle(theme.colorScheme.error)
                 }
-            }
-        }
-    }
-
-    /// `BloodPressureEditorScreen.kt:174-196` — the private `NumberField` composable. The suffix is
-    /// the literal Kotlin draws, not a string resource, on both platforms.
-    private func numberField(
-        label: String,
-        suffix: String,
-        text: Binding<String>,
-        isError: Bool
-    ) -> some View {
-        VStack(alignment: .leading, spacing: SalusSpacing.xs) {
-            // Kotlin's `label = { Text(…) }`, which Material keeps on the border once the field is
-            // filled. Repeating it as the placeholder costs nothing on an empty field and is what
-            // the platform draws before the first character.
-            Text(label)
-                .font(SalusTypography.labelMedium.font)
-                .tracking(SalusTypography.labelMedium.tracking)
-                .foregroundStyle(isError ? theme.colorScheme.error : theme.colorScheme.onSurfaceVariant)
-
-            HStack(spacing: SalusSpacing.sm) {
-                TextField(label, text: text)
-                    .textFieldStyle(.roundedBorder)
-                #if os(iOS)
-                    // `KeyboardType.Number` (`BloodPressureEditorScreen.kt:190`).
-                    .keyboardType(.numberPad)
-                #endif
-                    .overlay {
-                        if isError {
-                            // `SalusShapes.extraSmall` rather than a literal: the shape token is
-                            // the one sanctioned source for a radius, and `.roundedBorder`'s own
-                            // corner is not a value the framework publishes.
-                            RoundedRectangle(cornerRadius: SalusShapes.extraSmall)
-                                .stroke(theme.colorScheme.error, lineWidth: 1)
-                        }
-                    }
-                Text(verbatim: suffix)
-                    .font(SalusTypography.bodyMedium.font)
-                    .foregroundStyle(theme.colorScheme.onSurfaceVariant)
             }
         }
     }

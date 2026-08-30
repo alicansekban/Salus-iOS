@@ -9,9 +9,16 @@
 //                               two ways back stay one behaviour. `onBack` therefore has no
 //                               parameter here, and `vitals_back` stays in the catalog for the
 //                               editors M7 brings under the same shell.
-//   `OutlinedTextField`       → `TextField(…).textFieldStyle(.roundedBorder)`.
-//   `suffix = { Text("kg") }` → a trailing `Text` in the row; SwiftUI's field has no suffix slot.
-//   `isError` + `supportingText` → the error line under the field, in the `error` role.
+//   `OutlinedTextField` with `label` / `suffix` / `isError` (`WeightEditorScreen.kt:96-113`)
+//                             → `VitalsEditorField`, the one view the three vitals editors share:
+//                               a persistent caption above the field (Material floats `label` to
+//                               the border and keeps it once the field is filled, where SwiftUI's
+//                               placeholder disappears at the first character), a trailing `Text`
+//                               for the suffix SwiftUI has no slot for, and a stroked overlay in
+//                               the `error` role for `isError`.
+//   `supportingText`          → the error line under the field, in the `error` role. It stays on
+//                               this screen rather than in `VitalsEditorField`, because the
+//                               blood-pressure editor draws one message for three fields.
 //   `Button`                  → `Button(…).buttonStyle(.borderedProminent)`.
 //   `AlertDialog`             → `.salusConfirmDialog(isPresented:…)`.
 
@@ -105,6 +112,14 @@ struct WeightEditorScreen: View {
         // exercises this screen and a `ScrollView` editor side by side.
         .salusDismissesKeyboardOnTap()
         .scrollDismissesKeyboard(.interactively)
+        // The token background the two shipped editors paint (`AppointmentEditorScreen`,
+        // `MedicationEditorScreen`), in the same place on the outer container. Those two wrap a
+        // `ScrollView`, which is transparent; a `Form` is a `List` and paints
+        // `systemGroupedBackground` of its own over anything behind it, so hiding that is what
+        // makes the token visible here — the `.background` alone would never be seen.
+        .scrollContentBackground(.hidden)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(theme.colorScheme.background)
         .navigationTitle(state.isNew ? VitalsStrings.newTitle : VitalsStrings.editTitle)
         .toolbar {
             // `WeightEditorScreen.kt:77-86` — the delete action exists only for an existing entry.
@@ -136,23 +151,17 @@ struct WeightEditorScreen: View {
     /// `WeightEditorScreen.kt:96-113`.
     private var weightField: some View {
         VStack(alignment: .leading, spacing: SalusSpacing.xs) {
-            HStack(spacing: SalusSpacing.sm) {
-                TextField(
-                    VitalsStrings.weightLabel,
-                    text: Binding(get: { state.valueText }, set: { onEvent(.valueChanged($0)) })
-                )
-                .textFieldStyle(.roundedBorder)
-                #if os(iOS)
-                    // `KeyboardType.Decimal` (`WeightEditorScreen.kt:108`).
-                    .keyboardType(.decimalPad)
-                #endif
+            VitalsEditorField(
+                label: VitalsStrings.weightLabel,
                 // The literal Kotlin draws (`WeightEditorScreen.kt:100`), not `weightUnit` from the
                 // mapper: that constant is the *persisted* unit string, and a label that borrowed
                 // it would make a storage change a silent UI change.
-                Text(verbatim: "kg")
-                    .font(SalusTypography.bodyMedium.font)
-                    .foregroundStyle(theme.colorScheme.onSurfaceVariant)
-            }
+                suffix: "kg",
+                text: Binding(get: { state.valueText }, set: { onEvent(.valueChanged($0)) }),
+                // `WeightEditorScreen.kt:101` — the same `isError` the other two editors pass.
+                isError: state.showInvalidWeight,
+                keyboard: .decimal
+            )
 
             if state.showInvalidWeight {
                 Text(VitalsStrings.invalidWeight)

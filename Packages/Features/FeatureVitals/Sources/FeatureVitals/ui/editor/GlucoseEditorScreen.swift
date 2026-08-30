@@ -10,10 +10,9 @@
 //                                        ("Açlık", "Tokluk", "Yatmadan önce", "Rastgele") do not
 //                                        fit one line on any phone — the layout that wraps is what
 //                                        every other chip row in this tree already uses.
-//   `label = { Text(…) }`              → a persistent caption above the field, *plus* the same
-//                                        string as the placeholder: Material floats the label to
-//                                        the border and keeps it once the field is filled, where
-//                                        SwiftUI's placeholder disappears at the first character.
+//   `label` / `suffix` / `isError`     → `VitalsEditorField`, the one view the three vitals editors
+//                                        share; the unit symbol is its suffix, so the field is the
+//                                        only place `state.unit` is drawn.
 //
 // `"mg/dL"` / `"mmol/L"` stay hardcoded here, exactly as Kotlin's `private fun GlucoseUnit.label()`
 // does: they are unit symbols, not copy.
@@ -97,6 +96,14 @@ struct GlucoseEditorScreen: View {
         // needs the two ways down the platform expects — a tap and a drag over the form.
         .salusDismissesKeyboardOnTap()
         .scrollDismissesKeyboard(.interactively)
+        // The token background the two shipped editors paint (`AppointmentEditorScreen`,
+        // `MedicationEditorScreen`), in the same place on the outer container. Those two wrap a
+        // `ScrollView`, which is transparent; a `Form` is a `List` and paints
+        // `systemGroupedBackground` of its own over anything behind it, so hiding that is what
+        // makes the token visible here — the `.background` alone would never be seen.
+        .scrollContentBackground(.hidden)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(theme.colorScheme.background)
         .navigationTitle(state.isNew ? VitalsStrings.glucoseNewTitle : VitalsStrings.glucoseEditTitle)
         .toolbar {
             // `GlucoseEditorScreen.kt:86-95` — the delete action exists only for an existing entry.
@@ -129,40 +136,14 @@ struct GlucoseEditorScreen: View {
     /// rejection message below it.
     private var valueField: some View {
         VStack(alignment: .leading, spacing: SalusSpacing.xs) {
-            // Kotlin's `label = { Text(…) }`, which Material keeps on the border once the field is
-            // filled. Repeating it as the placeholder costs nothing on an empty field and is what
-            // the platform draws before the first character.
-            Text(VitalsStrings.glucoseValueLabel)
-                .font(SalusTypography.labelMedium.font)
-                .tracking(SalusTypography.labelMedium.tracking)
-                .foregroundStyle(
-                    state.showInvalidValue ? theme.colorScheme.error : theme.colorScheme.onSurfaceVariant
-                )
-
-            HStack(spacing: SalusSpacing.sm) {
-                TextField(
-                    VitalsStrings.glucoseValueLabel,
-                    text: Binding(get: { state.valueText }, set: { onEvent(.valueChanged($0)) })
-                )
-                .textFieldStyle(.roundedBorder)
-                #if os(iOS)
-                    // `KeyboardType.Decimal` (`GlucoseEditorScreen.kt:117`).
-                    .keyboardType(.decimalPad)
-                #endif
-                    .overlay {
-                        if state.showInvalidValue {
-                            // `SalusShapes.extraSmall` rather than a literal: the shape token is
-                            // the one sanctioned source for a radius, and `.roundedBorder`'s own
-                            // corner is not a value the framework publishes.
-                            RoundedRectangle(cornerRadius: SalusShapes.extraSmall)
-                                .stroke(theme.colorScheme.error, lineWidth: 1)
-                        }
-                    }
+            VitalsEditorField(
+                label: VitalsStrings.glucoseValueLabel,
                 // `suffix = { Text(state.unit.label()) }` — the symbol Kotlin writes as a literal.
-                Text(verbatim: state.unit.label)
-                    .font(SalusTypography.bodyMedium.font)
-                    .foregroundStyle(theme.colorScheme.onSurfaceVariant)
-            }
+                suffix: state.unit.label,
+                text: Binding(get: { state.valueText }, set: { onEvent(.valueChanged($0)) }),
+                isError: state.showInvalidValue,
+                keyboard: .decimal
+            )
 
             // `GlucoseEditorScreen.kt:111-115` — the supporting text exists only while flagged.
             if state.showInvalidValue {
