@@ -3,7 +3,10 @@
 // MoreViewModelTest.kt`.
 //
 // The 20 cases port by name, grouped exactly as the Kotlin test groups them (cycle visibility 4,
-// settings 5, premium 4, doctor report 3, colour themes 4). Turbine's `state.test { awaitItem() }`
+// settings 5, premium 4, doctor report 3, colour themes 4). The two iOS-only cases that pin the
+// effect **queue** — divergence (4), which the Kotlin `Channel` + `LaunchedEffect` collector makes
+// unnecessary there — live in `MoreEffectQueueTests.swift`, so this suite stays the ported table
+// and nothing else. Turbine's `state.test { awaitItem() }`
 // becomes reading `viewModel.state` after `waitUntil`, and its `effects.test { awaitItem() }`
 // becomes reading `pendingEffects` / `consumeEffects()` — the same substitution the M7
 // `ReminderHealthViewModelTests` made for `@Observable`, generalised to the buffered array.

@@ -2,14 +2,15 @@
 // ui/more/MoreScreen.kt`. Material → SwiftUI (the mapping `docs/ios-feature-template.md` records):
 // `Column`+`verticalScroll` → `ScrollView`+`VStack(spacing:)`; tab-root `SalusScreenHeader` stays
 // `SalusScreenHeader(title:)` (no `TopAppBar` — divergence (d)); `SalusSectionHeader(contentPadding
-// = top(sm))` → `SalusSectionHeader(title:)` with no column horizontal padding (cards carry the
-// inset — the cosmetic difference `ProfileScreen.swift` records); `Card(onClick)` → `SalusCard`;
-// `Switch` → `Toggle`; `AlertDialog`+`RadioButton` → `confirmationDialog`; `Icons.Outlined.*` → SF
+// = top(sm))` → `SalusSectionHeader(title:contentPadding: .topOnly)`, the scroll column carrying the
+// screen's horizontal inset exactly as the Kotlin column does; `Card(onClick)` → `SalusCard`;
+// `Switch` → `Toggle`; `AlertDialog`+`RadioButton` → a `.sheet` over ``MoreSelectionDialog``;
+// `Icons.Outlined.*` → SF
 // Symbols (the Material→SF map is in the task brief — a recorded divergence, not byte-for-byte);
 // `stringResource(R.string.…)` → `SettingsStrings.…` in `Text(verbatim:)`; `profileName.ifBlank` →
 // `profileName.isEmpty ? … : profileName`.
 //
-// Six platform divergences from the Kotlin twin:
+// Eight platform divergences from the Kotlin twin:
 //   1. **`MoreRoute` owns the LAContext availability check** — the twin of
 //      `BiometricManager.from(context).canAuthenticate(BIOMETRIC_WEAK or DEVICE_CREDENTIAL)`
 //      (`MoreScreen.kt:94-98`); `.canEvaluatePolicy(.deviceOwnerAuthentication)` answers true with a
@@ -22,10 +23,24 @@
 //      notification-only page, so the row opens the app's own Settings page.
 //   4. **`CFBundleShortVersionString` for the version footer** — the twin of
 //      `context.packageManager.getPackageInfo(…).versionName` (`MoreScreen.kt:120-124`).
-//   5. **Effect consumption drains a queue, not a `Channel`** (MoreViewModel div. 4): a `.task`
-//      re-runs `restartObservation()` (ruling 3) and drains `pendingEffects` on every appearance.
+//   5. **Effect consumption drains a queue, not a `Channel`** (MoreViewModel div. 4). The Kotlin
+//      `LaunchedEffect { viewModel.effects.collect { … } }` (`MoreScreen.kt:103-116`) runs for as
+//      long as the composition lives; `@Observable` has no `Flow`, so the collector is
+//      `.onChange(of: viewModel.pendingEffects)` — the house pattern
+//      (`AppointmentEditorScreen.swift:79`), which fires on every append rather than once at
+//      appear. `restartObservation()` (ruling 3) is called where the ViewModel is created, not
+//      from a second `.task` that depended on the first one having already run.
 //   6. **`effectivePremiumTheme` is two-state** (the collapse `MoreViewModel` makes, div. 1):
 //      `status == .entitled ? selected : .classic`, folding `GRACE_PERIOD` and `PREMIUM`.
+//   7. **The selection dialogs are a `.sheet` over ``MoreSelectionDialog``**, not an alert: a
+//      SwiftUI `alert`/`confirmationDialog` holds plain buttons only and cannot draw Kotlin's
+//      `RadioButton(selected = …)` (`MoreScreen.kt:504`), so the stored choice would be invisible.
+//      The sheet draws `SalusOptionRow`s, which carry the same radio indicator plus an icon circle
+//      Kotlin's rows have no twin for — see `MoreSelectionDialog.swift`.
+//   8. **`SalusCard`'s content padding is uniform.** Kotlin's cards use
+//      `horizontal = lg, vertical = md` (`MoreScreen.kt:376-379`); `SalusCard` takes one value by
+//      house design, so every card here is `lg` on all four edges — the accepted limitation of the
+//      shared component, not a new one.
 //
 // The three same-feature pushes (`ReminderHealthKey`/`AboutKey`/`ProfileKey`) the Kotlin Route makes
 // through `koinInject<Navigator>()` (`MoreScreen.kt:139-141`) go through the `navigator` the
@@ -48,6 +63,9 @@ import SwiftUI
 /// `onOpenCycle`/`onOpenDoctorReport`/`onOpenTrends` are the cross-feature hops (the shell owns the
 /// keys, the feature cannot); `appLockPrompt` is the shell-owned biometric evaluation the
 /// enable-re-auth interception calls (ruling 4 — the shell owns the `LAContext`).
+///
+/// The three hops are parameters **here** rather than of `settingsDestinations()`, which the M8
+/// plan named — recorded divergence (ruling H-7); `SettingsNavigation.swift`'s header says why.
 public struct MoreRoute: View {
     @Environment(\.settingsModule) private var module
     @Environment(\.openURL) private var openURL
@@ -84,77 +102,91 @@ public struct MoreRoute: View {
     public var body: some View {
         Group {
             if let viewModel {
-                MoreScreen(
-                    state: viewModel.state,
-                    versionName: versionName ?? "",
-                    appLockAvailable: appLockAvailable,
-                    onEvent: { event in
-                        // `MoreScreen.kt:130-137` — only the enable edge is intercepted; a disabling
-                        // tap is forwarded straight through (div. 2 — the prompt is shell-owned).
-                        if case let .setAppLock(enabled) = event, enabled {
-                            Task { [appLockPrompt] in
-                                if await appLockPrompt(SettingsStrings.settingsAppLockConfirmTitle) {
-                                    viewModel.onEvent(event)
-                                }
-                            }
-                        } else {
-                            viewModel.onEvent(event)
-                        }
-                    },
-                    onOpenCycle: onOpenCycle,
-                    // `navigator.navigate(ReminderHealthKey/AboutKey/ProfileKey)`
-                    // (`MoreScreen.kt:139-141`) — the shell owns the stack; a row pushes through the
-                    // navigator rather than `backStacks.push`.
-                    onOpenReminderHealth: { module?.navigator.navigate(ReminderHealthKey()) },
-                    onOpenAbout: { module?.navigator.navigate(AboutKey()) },
-                    onOpenProfile: { module?.navigator.navigate(ProfileKey()) },
-                    onOpenNotificationSettings: openNotificationSettings
-                )
+                hub(driving: viewModel)
             } else {
                 ProgressView()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
         .task {
-            guard viewModel == nil, let module else { return }
+            guard let module else { return }
+            guard viewModel == nil else {
+                // A returning appearance re-captures the profile stream — the behavioural half of
+                // Kotlin's `WhileSubscribed(5_000)` (ruling 3, MoreViewModel div. 5). A first
+                // appearance needs no restart: `MoreViewModel.init` already started the
+                // observation, which is why the call sits beside the creation rather than in a
+                // second `.task` that would depend on this one having run first.
+                viewModel?.restartObservation()
+                return
+            }
             viewModel = module.makeMoreViewModel()
             // `BiometricManager.from(context).canAuthenticate(…)` (divergence 1).
             appLockAvailable = LAContext().canEvaluatePolicy(.deviceOwnerAuthentication, error: nil)
             // `context.packageManager.getPackageInfo(…).versionName` (divergence 4).
             versionName = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
         }
-        // The buffered-effects drain (MoreViewModel div. 4/5): re-runs on every appearance,
-        // re-capturing the profile stream (ruling 3) and draining any effect fired off-screen.
-        .task {
-            await drainEffects()
+    }
+
+    /// The screen plus its effect collector, compiled only where there is a ViewModel to drive them
+    /// — the shape `AppointmentEditorScreen`'s `editor(driving:)` sets.
+    private func hub(driving viewModel: MoreViewModel) -> some View {
+        MoreScreen(
+            state: viewModel.state,
+            versionName: versionName ?? "",
+            appLockAvailable: appLockAvailable,
+            onEvent: { event in
+                // `MoreScreen.kt:130-137` — only the enable edge is intercepted; a disabling
+                // tap is forwarded straight through (div. 2 — the prompt is shell-owned).
+                if case let .setAppLock(enabled) = event, enabled {
+                    Task { [appLockPrompt] in
+                        if await appLockPrompt(SettingsStrings.settingsAppLockConfirmTitle) {
+                            viewModel.onEvent(event)
+                        }
+                    }
+                } else {
+                    viewModel.onEvent(event)
+                }
+            },
+            onOpenCycle: onOpenCycle,
+            // `navigator.navigate(ReminderHealthKey/AboutKey/ProfileKey)`
+            // (`MoreScreen.kt:139-141`) — the shell owns the stack; a row pushes through the
+            // navigator rather than `backStacks.push`.
+            onOpenReminderHealth: { module?.navigator.navigate(ReminderHealthKey()) },
+            onOpenAbout: { module?.navigator.navigate(AboutKey()) },
+            onOpenProfile: { module?.navigator.navigate(ProfileKey()) },
+            onOpenNotificationSettings: openNotificationSettings
+        )
+        // The collector for `Channel<MoreEffect>` (MoreViewModel div. 4), spelled for an
+        // `@Observable`: the queue is a property, so `.onChange` is the twin of the Kotlin
+        // `LaunchedEffect { viewModel.effects.collect { … } }` (`MoreScreen.kt:103-116`) — it fires
+        // on every append, for as long as this view lives, which a `.task` on a tab root (created
+        // once, never re-created) would not. `pendingEffects` is a queue rather than a single
+        // effect because two rows can fire back-to-back, so the handler drains all of it.
+        .onChange(of: viewModel.pendingEffects) { _, pending in
+            // Fires on the drain's own write as well as on the append; the empty edge is dropped.
+            guard !pending.isEmpty else { return }
+            deliver(viewModel.consumeEffects())
         }
     }
 
-    /// Drains `viewModel.pendingEffects` in order — the twin of the Kotlin
-    /// `LaunchedEffect { viewModel.effects.collect { … } }` (`MoreScreen.kt:103-116`).
+    /// Performs the drained effects in order (`MoreScreen.kt:103-116`).
     @MainActor
-    private func drainEffects() async {
-        guard let viewModel else { return }
-        viewModel.restartObservation()
-        // Drain until empty: a handler may append an effect, and a single pass would miss it — the
-        // Kotlin `collect` is the same shape, it never returns.
-        while !viewModel.pendingEffects.isEmpty {
-            for effect in viewModel.consumeEffects() {
-                switch effect {
-                case let .openUrl(urlString):
-                    #if canImport(UIKit)
-                        guard let url = URL(string: urlString) else { continue }
-                        // `runCatching { context.startActivity(Intent(…)) }` — a device without the
-                        // App Store must not crash on a tap.
-                        openURL(url)
-                    #endif
+    private func deliver(_ effects: [MoreEffect]) {
+        for effect in effects {
+            switch effect {
+            case let .openUrl(urlString):
+                #if canImport(UIKit)
+                    guard let url = URL(string: urlString) else { continue }
+                    // `runCatching { context.startActivity(Intent(…)) }` — a device without the
+                    // App Store must not crash on a tap.
+                    openURL(url)
+                #endif
 
-                case .openDoctorReport:
-                    onOpenDoctorReport()
+            case .openDoctorReport:
+                onOpenDoctorReport()
 
-                case .openTrends:
-                    onOpenTrends()
-                }
+            case .openTrends:
+                onOpenTrends()
             }
         }
     }
@@ -188,8 +220,9 @@ struct MoreScreen: View {
     var body: some View {
         // No `Scaffold` twin and no inset modifiers: the shell owns the one `NavigationStack` and
         // its insets, and this is a tab root — `SalusScreenHeader` rather than a `TopAppBar`
-        // (div. (d), `MoreScreen.kt:165-168`). The §1 draw order is `MoreScreen.kt:180-313`;
-        // section labels carry no horizontal padding (each card carries the screen inset).
+        // (div. (d), `MoreScreen.kt:165-168`). The §1 draw order is `MoreScreen.kt:180-313`; the
+        // scroll column carries the screen's horizontal inset for everything in it
+        // (`MoreScreen.kt:171-175`), which is why `SectionLabel` drops the header's own.
         VStack(spacing: 0) {
             SalusScreenHeader(title: SettingsStrings.moreTitle)
             ScrollView {
@@ -331,85 +364,80 @@ struct MoreScreen: View {
             }
         }
         .background(colors.background)
-        // The three selection dialogs (`MoreScreen.kt:317-357`), built on `activeDialog` rather than
-        // three `@State` flags (matching Kotlin's `when (state.activeDialog)`). Each `isPresented`
-        // binding reads/writes `activeDialog` so only one is open at a time.
-        .confirmationDialog(
-            SettingsStrings.themeTitle,
+        // The three selection dialogs (`MoreScreen.kt:317-357`), driven by `activeDialog` rather
+        // than three `@State` flags (matching Kotlin's `when (state.activeDialog)`) — one sheet,
+        // so only one can be open at a time by construction. The binding's `false` edge is the
+        // twin of `onDismissRequest`: a swipe down sends `DialogDismissed`, exactly as tapping
+        // outside the `AlertDialog` does.
+        .sheet(
             isPresented: Binding(
-                get: { state.activeDialog == .theme },
+                get: { state.activeDialog != nil },
                 set: { presented in
                     if !presented {
                         onEvent(.dialogDismissed)
                     }
                 }
-            ),
-            titleVisibility: .visible
+            )
         ) {
-            ForEach(ThemeMode.allCases, id: \.self) { mode in
-                Button {
-                    onEvent(.selectTheme(mode))
-                } label: {
-                    Text(verbatim: SettingsStrings.theme(mode))
-                }
-            }
-            Button(role: .cancel) {
-                onEvent(.dialogDismissed)
-            } label: {
-                Text(verbatim: SettingsStrings.settingsCancel)
+            if let dialog = state.activeDialog {
+                selectionDialog(for: dialog)
             }
         }
-        .confirmationDialog(
-            SettingsStrings.settingsColorTheme,
-            isPresented: Binding(
-                get: { state.activeDialog == .colorTheme },
-                set: { presented in
-                    if !presented {
-                        onEvent(.dialogDismissed)
-                    }
-                }
-            ),
-            titleVisibility: .visible
-        ) {
-            // Free users see the full list — the entitlement check runs in the ViewModel on tap, so
-            // the palettes stay visible as something to subscribe for.
-            ForEach(PremiumTheme.allCases, id: \.self) { premiumTheme in
-                Button {
-                    onEvent(.colorThemeSelected(premiumTheme))
-                } label: {
-                    Text(verbatim: SettingsStrings.colorTheme(premiumTheme))
-                }
-            }
-            Button(role: .cancel) {
-                onEvent(.dialogDismissed)
-            } label: {
-                Text(verbatim: SettingsStrings.settingsCancel)
-            }
-        }
-        .confirmationDialog(
-            SettingsStrings.languageTitle,
-            isPresented: Binding(
-                get: { state.activeDialog == .language },
-                set: { presented in
-                    if !presented {
-                        onEvent(.dialogDismissed)
-                    }
-                }
-            ),
-            titleVisibility: .visible
-        ) {
-            ForEach(AppLanguage.allCases, id: \.self) { language in
-                Button {
-                    onEvent(.selectLanguage(language))
-                } label: {
-                    Text(verbatim: SettingsStrings.language(language))
-                }
-            }
-            Button(role: .cancel) {
-                onEvent(.dialogDismissed)
-            } label: {
-                Text(verbatim: SettingsStrings.settingsCancel)
-            }
+    }
+
+    /// `when (state.activeDialog)` (`MoreScreen.kt:317-357`) — each branch maps its enum's cases to
+    /// options carrying `isSelected`, which is what draws the stored choice as selected.
+    @ViewBuilder
+    private func selectionDialog(for dialog: MoreDialog) -> some View {
+        switch dialog {
+        case .theme:
+            MoreSelectionDialog(
+                title: SettingsStrings.themeTitle,
+                systemImage: "paintpalette.fill",
+                options: ThemeMode.allCases.map { mode in
+                    MoreSelectionOption(
+                        id: mode.rawValue,
+                        label: SettingsStrings.theme(mode),
+                        isSelected: state.themeMode == mode,
+                        onSelect: { onEvent(.selectTheme(mode)) }
+                    )
+                },
+                onDismiss: { onEvent(.dialogDismissed) }
+            )
+
+        case .colorTheme:
+            MoreSelectionDialog(
+                title: SettingsStrings.settingsColorTheme,
+                systemImage: "circle.hexagons.fill",
+                // Free users see the full list — the entitlement check runs in the ViewModel on
+                // tap, so the palettes stay visible as something to subscribe for. The selection is
+                // the **stored** pick, not the effective one: a lapsed subscriber sees that their
+                // Ocean choice survived even while the app draws Classic.
+                options: PremiumTheme.allCases.map { premiumTheme in
+                    MoreSelectionOption(
+                        id: premiumTheme.rawValue,
+                        label: SettingsStrings.colorTheme(premiumTheme),
+                        isSelected: state.premiumTheme == premiumTheme,
+                        onSelect: { onEvent(.colorThemeSelected(premiumTheme)) }
+                    )
+                },
+                onDismiss: { onEvent(.dialogDismissed) }
+            )
+
+        case .language:
+            MoreSelectionDialog(
+                title: SettingsStrings.languageTitle,
+                systemImage: "globe",
+                options: AppLanguage.allCases.map { language in
+                    MoreSelectionOption(
+                        id: language.rawValue,
+                        label: SettingsStrings.language(language),
+                        isSelected: state.language == language,
+                        onSelect: { onEvent(.selectLanguage(language)) }
+                    )
+                },
+                onDismiss: { onEvent(.dialogDismissed) }
+            )
         }
     }
 }

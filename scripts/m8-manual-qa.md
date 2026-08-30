@@ -279,10 +279,12 @@ from 3.2.
 ## §4. The More hub (Task 6)
 
 Written by Task 6 (`Packages/Features/FeatureSettings/Sources/FeatureSettings/ui/more/
-MoreScreen.swift`, `MoreScreenComponents.swift`; `Packages/SalusUI/Sources/SalusUI/component/
-SalusListItemChevron.swift`). The automated half is `MoreViewModelTests` (20 cases, T4): the five
-event gates and the buffered effects. What no test can reach is the row layout and the three
-dialogs — those are visual and run only on a device or simulator.
+MoreScreen.swift`, `MoreScreenComponents.swift`, `MoreSelectionDialog.swift`;
+`Packages/SalusUI/Sources/SalusUI/component/SalusListItemChevron.swift`,
+`SalusSectionHeader.swift`). The automated half is `MoreViewModelTests` (20 cases, T4) plus
+`MoreEffectQueueTests` (2 cases, fix round 1): the five event gates and the buffered effects. What
+no test can reach is the row layout and the three dialogs — those are visual and run only on a
+device or simulator.
 
 The hub is the More tab's root: `SalusScreenHeader` (no back button — the tab has no parent), then a
 scroll column of 13 rows split across five sections by four `SalusSectionHeader` labels, with a
@@ -304,10 +306,20 @@ screens they open arrive with their milestones. Cycle is shown only for non-male
   (alarm), then **Uygulama** with **Hakkında** (info), then the version footer
   **"Sürüm x.y.z"**. *Why this step exists:* the order is `MoreScreen.kt:180-313` verbatim — a row
   out of order is the port's most likely regression.
+- [ ] **4.1b The four section labels line up with the card edges.** On the same screen, sight down
+  the left edge: **Takip**, **Görünüm**, **Güvenlik**, **Bildirimler** and **Uygulama** must start
+  at the same x as the cards below them, not a step further right.
+  *Expected:* one 16 pt screen inset, applied once by the scroll column — the label carries
+  `SalusSectionHeaderDefaults.topOnly`, the twin of Kotlin's
+  `contentPadding = PaddingValues(top = SalusSpacing.sm)` (`MoreScreen.kt:363-366`). *Why this step
+  exists:* fix round 1 — the labels used to be inset twice (column `lg` + the header's own `lg`).
 - [ ] **4.2 The Cycle row and its section are hidden on a male profile.** Switch the profile's sex
-  to male (Profile editor), return to More.
-  *Expected:* no **Takip** section, no **Regl Takibi** row; everything else stays. Re-switch to
-  female/other/unspecced and the row + section come back.
+  to male (Profile editor), **confirm the sex-change dialog**, return to More.
+  *Expected:* no **Takip** section, no **Regl Takibi** row; everything else stays. Now verify the
+  sex was actually **stored**: kill and relaunch the app, open **Profil**, and the sex still reads
+  male (T5's carry-in check — confirming the dialog must write the sex that was confirmed, not the
+  one that was showing). Re-switch to female/other/unspecced, confirm, and the row + section come
+  back.
 
 ### Pushes
 
@@ -329,25 +341,41 @@ screens they open arrive with their milestones. Cycle is shown only for non-male
   `FeatureAIHealth` (M10) and `FeatureTrends` (M11) land. Record the no-op; do not file a bug.
   *Ownership note:* the premium gate that decides whether the report row opens the screen or the
   paywall lives in `MoreViewModel` and is tested there; the row itself is ungated here, by design.
+  *Fix-round note:* the effect collector is now `.onChange(of: viewModel.pendingEffects)`, so an
+  effect fired minutes after the tab first appeared is still delivered. Nothing observable proves
+  that at M8 — every effect-producing branch is behind an entitlement that only M9 can grant — so
+  the guarantee is pinned by `MoreEffectQueueTests` instead, and this row becomes a real check when
+  M10/M11 fill the callbacks in.
 
 ### The three selection dialogs
 
-- [ ] **4.7 Theme dialog opens on row tap and applies the pick.** Tap **Tema**.
-  *Expected:* a `confirmationDialog` titled **"Tema"** lists **Sistem** / **Açık** / **Koyu** plus a
-  **İptal** button. Tap **Koyu**.
+Each dialog is a **sheet** (fix round 1 — divergence 7), not an action sheet: a title, one
+`SalusOptionRow` per option with a radio indicator on the trailing edge, and a tonal **İptal** pill
+at the bottom. Every row in one dialog carries the same icon as the More row that opened it; the
+indicator is what tells the options apart, exactly as Kotlin's `RadioButton(selected = …)` does.
+
+- [ ] **4.7 Theme dialog opens on row tap, shows the stored pick, and applies the new one.** Tap
+  **Tema**.
+  *Expected:* a sheet titled **"Tema"** lists **Sistem** / **Açık** / **Koyu** plus an **İptal**
+  pill, and **the currently stored mode is drawn selected** (filled radio dot, tinted container).
+  Tap **Koyu**.
   *Expected:* the dialog closes, the row's subtitle becomes **Koyu**, and the app's palette flips
   to dark immediately (the theme is resolved in `RootView` from `userSettings.themeMode`). Re-open
-  and tap **İptal** — nothing changes.
-- [ ] **4.8 Color theme dialog shows the full list and writes only when entitled.** Tap
-  **Renk teması**.
-  *Expected:* a dialog lists **Klasik** / **Okyanus** / **Gün batımı** / **Orman** plus **İptal**.
-  *On a free user (the M8 default):* tapping any palette closes the dialog and fires the paywall
-  no-op (ruling 5 — `NoOpPaywallRequester` logs the source and does nothing visible); the row's
-  subtitle stays **Klasik** (the effective theme collapses to Classic for a free user, div. 6).
-  *Why this step exists:* the entitlement gate is in `MoreViewModel`, not the screen — a free user
-  may open the picker and tap; nothing is written.
-- [ ] **4.9 Language dialog applies and closes.** Tap **Dil**.
-  *Expected:* a dialog lists **Sistem** / **Türkçe** / **İngilizce** plus **İptal**. Tap **Türkçe**.
+  — **Koyu** is now the selected row — and tap **İptal**; nothing changes. Swiping the sheet down
+  is the same as **İptal**.
+- [ ] **4.8 Color theme dialog shows the full list, the stored pick, and writes only when
+  entitled.** Tap **Renk teması**.
+  *Expected:* a sheet lists **Klasik** / **Okyanus** / **Gün batımı** / **Orman** plus **İptal**,
+  with the **stored** palette drawn selected. *On a free user (the M8 default):* tapping any
+  palette closes the dialog and fires the paywall no-op (ruling 5 — `NoOpPaywallRequester` logs the
+  source and does nothing visible); the row's subtitle stays **Klasik** (the effective theme
+  collapses to Classic for a free user, div. 6) while the dialog keeps showing the stored pick as
+  selected. *Why this step exists:* the entitlement gate is in `MoreViewModel`, not the screen — a
+  free user may open the picker and tap; nothing is written, and the selection they can see is the
+  one that survives a lapse.
+- [ ] **4.9 Language dialog shows the current language and applies.** Tap **Dil**.
+  *Expected:* a sheet lists **Sistem** / **Türkçe** / **İngilizce** plus **İptal**, with the current
+  language drawn selected. Tap **Türkçe**.
   *Expected:* the dialog closes and the row's subtitle becomes **Türkçe**. **The running app's
   strings do not flip until the next launch** (ruling 6 / divergence (a) — the `AppleLanguages`
   override is read at launch time). Kill and relaunch to see the change.
@@ -390,4 +418,11 @@ screens they open arrive with their milestones. Cycle is shown only for non-male
 (0 violations). Every §4 row above is **NOT RUN**; the row layout and the three dialogs have never
 been observed on any hardware. §4.6 (doctor report / trends no-ops) and §4.8 (free-user color
 theme gate) in particular depend on the M9 paywall and the M10/M11 screens that do not exist yet.
+
+**Fix round 1 (review of Task 6) changed three §4-visible things and ran nothing.** The dialogs are
+now sheets that draw the stored selection (4.7–4.9 rewritten), the section labels are inset once
+rather than twice (4.1b added), and 4.2 carries T5's stored-sex check. The round ran
+`scripts/test-packages.sh FeatureSettings SalusUI` (2/2 passed, 68 + 89 tests),
+`scripts/build-app.sh` (BUILD SUCCEEDED) and `scripts/lint.sh` (0 violations in 520 files) —
+no simulator, no device, no preview render.
 ---

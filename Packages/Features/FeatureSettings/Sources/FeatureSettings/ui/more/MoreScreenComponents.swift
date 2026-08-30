@@ -9,15 +9,16 @@ import SalusModel
 import SalusUI
 import SwiftUI
 
-/// Section label above a group of cards (`MoreScreen.kt:360-368`). `SalusSectionHeader(title:)`
-/// with no horizontal padding of its own — the scroll column carries none and each card carries the
-/// screen inset instead (see `MoreScreen.swift`'s header). The Kotlin's `top = sm` is the header's
-/// own `SalusSpacing.sm` vertical padding.
+/// Section label above a group of cards (`MoreScreen.kt:360-368`). The scroll column already
+/// applies the screen's horizontal inset, so the header drops its own — `topOnly` is the twin of
+/// Kotlin's `contentPadding = PaddingValues(top = SalusSpacing.sm)` (`MoreScreen.kt:363-366`),
+/// and without it every label would start a second `SalusSpacing.lg` in, out of line with the
+/// card edges below it.
 struct SectionLabel: View {
     let title: String
 
     var body: some View {
-        SalusSectionHeader(title: title)
+        SalusSectionHeader(title: title, contentPadding: SalusSectionHeaderDefaults.topOnly)
     }
 }
 

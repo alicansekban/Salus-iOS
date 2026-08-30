@@ -1,0 +1,98 @@
+// The radio-list popup the three More pickers share — the twin of Kotlin's private
+// `SelectionDialog` + `SelectionOption` (`MoreScreen.kt:480-527`), extracted into its own file
+// rather than nested in `MoreScreen.swift` so that file stays under the 500-line gate.
+//
+// Two spelling differences from the Kotlin, both recorded in `MoreScreen.swift`'s divergence list:
+//
+//   `AlertDialog(text = { Column(     → a `.sheet` whose body is this view. A SwiftUI `alert` can
+//    selectableGroup()) { … } })`       hold only plain buttons — no selection state, no custom
+//                                       row — so an alert cannot draw the radio mark Kotlin draws,
+//                                       which is the whole point of the dialog.
+//   `RadioButton(selected = …)` +     → `SalusOptionRow`, the house radio row (`SalusOptionRow.kt`),
+//    `Text(label)`                      which draws the same indicator plus a tinted icon circle.
+//                                       Kotlin's rows carry no icon, so every option in one dialog
+//                                       repeats the icon of the More row that opened it: the
+//                                       indicator is what distinguishes the options, exactly as on
+//                                       Android.
+//
+// `confirmButton = { TextButton(settings_cancel) }` (`MoreScreen.kt:517-521`) is a tonal
+// `SalusPillButton` — the house button, since `SalusUI` ships no text button.
+
+import SalusDesignSystem
+import SalusUI
+import SwiftUI
+
+/// One option of a ``MoreSelectionDialog`` (`MoreScreen.kt:524-527`).
+struct MoreSelectionOption: Identifiable {
+    /// The enum's stored raw value — stable, and already Android-verbatim.
+    let id: String
+    let label: String
+    let isSelected: Bool
+    let onSelect: () -> Void
+}
+
+/// Radio-list popup; selecting an option applies it immediately and closes the dialog
+/// (`MoreScreen.kt:480-522`).
+struct MoreSelectionDialog: View {
+    let title: String
+    /// The SF Symbol every row in this dialog carries — the icon of the More row that opened it.
+    let systemImage: String
+    let options: [MoreSelectionOption]
+    let onDismiss: () -> Void
+
+    @Environment(\.salusTheme) private var theme
+
+    var body: some View {
+        VStack(spacing: SalusSpacing.lg) {
+            // `title = { Text(title) }` (`MoreScreen.kt:512`).
+            Text(verbatim: title)
+                .font(SalusTypography.titleLarge.font)
+                .tracking(SalusTypography.titleLarge.tracking)
+                .foregroundStyle(theme.colorScheme.onSurface)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            // Scrolls rather than clipping: four palettes plus a title and a button do not fit the
+            // medium detent on a small screen.
+            ScrollView {
+                VStack(spacing: SalusSpacing.sm) {
+                    ForEach(options) { option in
+                        SalusOptionRow(
+                            systemImage: systemImage,
+                            label: option.label,
+                            isSelected: option.isSelected,
+                            onSelected: option.onSelect
+                        )
+                    }
+                }
+            }
+
+            SalusPillButton(
+                text: SettingsStrings.settingsCancel,
+                tonal: true,
+                fillsWidth: true,
+                action: onDismiss
+            )
+        }
+        .padding(SalusSpacing.lg)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .background(theme.colorScheme.background)
+        .presentationDetents([.medium, .large])
+    }
+}
+
+// MARK: - Previews
+
+#Preview("Selection dialog") {
+    MoreSelectionDialog(
+        title: "Renk teması",
+        systemImage: "circle.hexagons.fill",
+        options: [
+            MoreSelectionOption(id: "CLASSIC", label: "Klasik", isSelected: false, onSelect: {}),
+            MoreSelectionOption(id: "OCEAN", label: "Okyanus", isSelected: true, onSelect: {}),
+            MoreSelectionOption(id: "SUNSET", label: "Gün batımı", isSelected: false, onSelect: {}),
+            MoreSelectionOption(id: "FOREST", label: "Orman", isSelected: false, onSelect: {})
+        ],
+        onDismiss: {}
+    )
+    .salusTheme(SalusTheme.resolve(systemIsDark: false))
+}
