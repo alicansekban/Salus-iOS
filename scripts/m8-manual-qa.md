@@ -604,11 +604,14 @@ indicator is what tells the options apart, exactly as Kotlin's `RadioButton(sele
   free user may open the picker and tap; nothing is written, and the selection they can see is the
   one that survives a lapse.
 - [ ] **4.9 Language dialog shows the current language and applies.** Tap **Dil**.
-  *Expected:* a sheet lists **Sistem** / **Türkçe** / **İngilizce** plus **İptal**, with the current
-  language drawn selected. Tap **Türkçe**.
+  *Expected:* a sheet lists **Sistem dili** / **Türkçe** / **English** plus **İptal**, with the
+  current language drawn selected, and a footnote line under the options reading
+  **"Değişiklik, uygulamayı yeniden açtığınızda uygulanır."** (the option labels are the catalog's
+  own — `language_english` is "English" in **both** locales and `language_system` is "Sistem dili";
+  corrected here by Task 12, which added the footnote). Tap **Türkçe**.
   *Expected:* the dialog closes and the row's subtitle becomes **Türkçe**. **The running app's
   strings do not flip until the next launch** (ruling 6 / divergence (a) — the `AppleLanguages`
-  override is read at launch time). Kill and relaunch to see the change.
+  override is read at launch time). Kill and relaunch to see the change — §5 is that half.
 
 ### The app-lock toggle (ruling 4)
 
@@ -655,7 +658,134 @@ rather than twice (4.1b added), and 4.2 carries T5's stored-sex check. The round
 `scripts/test-packages.sh FeatureSettings SalusUI` (2/2 passed, 68 + 89 tests),
 `scripts/build-app.sh` (BUILD SUCCEEDED) and `scripts/lint.sh` (0 violations in 520 files) —
 no simulator, no device, no preview render.
+
 ---
+
+## §5. Language (Task 12)
+
+Written by Task 12 (`Packages/Features/FeatureSettings/Sources/FeatureSettings/data/
+UserDefaultsAppLocaleController.swift` and `.../domain/AppLocaleController.swift`, both T3;
+`.../ui/more/MoreSelectionDialog.swift` + `MoreScreen.swift`, the footnote T12 added; `project.yml`'s
+`options.developmentLanguage: tr` + `settings.base.DEVELOPMENT_LANGUAGE: tr`). §4.9 checks the
+*dialog*; this section checks the *pipeline*: what the picked language does to the app after it
+restarts, and what it does to a user who never opens the dialog at all.
+
+The automated half is `UserDefaultsAppLocaleControllerTests` (the three `AppleLanguages` writes and
+the four `current()` readings) and the ten `…StringsTests` suites (`tr` is the source language, every
+key carries both locales). None of them can prove what the **system** does with the key at launch,
+because `UserDefaults` is only half the mechanism — `UIApplication` reads it while the process starts
+and picks the bundle's localization from it. That half has no test on any platform, so every row
+below is the only check it gets.
+
+**The mechanism, so a failure can be read.** `apply(_:)` writes `AppleLanguages` into the app's own
+`UserDefaults`: `["tr"]` for Türkçe, `["en"]` for English, and it **removes** the key for Sistem
+dili. iOS reads that key at process start only, which is why nothing changes until a relaunch
+(ruling 6, **recorded divergence (a)** — Android's appcompat recreates the activity instead). With no
+key, the device's own language order applies, resolved against the bundle's `tr` and `en` `.lproj`s
+and falling back to `tr` (`developmentRegion`) for anything else — spec §6.4.
+
+**How to relaunch properly.** Swipe the app out of the app switcher, or stop and re-run from Xcode.
+Backgrounding is **not** enough: the process survives, and so does the language it launched with.
+
+**Before you start.** Note the device's own language (Settings → General → Language & Region);
+several rows below change it and the last one restores it.
+
+### The pick survives, and lands, on the next launch
+
+- [ ] **5.1 Türkçe → relaunch → Turkish.** On a device whose own language is **English**, open
+  More → **Dil**, tap **Türkçe**, then kill and relaunch the app.
+  *Expected:* the whole app is Turkish — More's header is **"Diğer"** and the section labels are
+  **"Takip"** / **"Görünüm"** / **"Güvenlik"**, with the **Dil** row's subtitle **Türkçe**.
+  Settings → Salus (the iOS Settings page) now offers a **Preferred Language** row reading
+  **Türkçe**. *Why this row exists:* it is the only proof that the key the controller writes is the
+  key `UIApplication` reads. If the app comes back English, the write landed in the wrong defaults
+  suite or the bundle has no `tr.lproj`.
+- [ ] **5.2 English → relaunch → English.** From 5.1, open More → **Dil**, tap **English**, kill and
+  relaunch.
+  *Expected:* the whole app is English — **"More"**, **"Tracking"** / **"Appearance"** /
+  **"Security"**, and the language row reads **Language / English**. The onboarding and lock copy is
+  English too if you can reach it (§1, §3): every package catalog carries `en`, so the override is
+  bundle-wide, not settings-only.
+- [ ] **5.3 Sistem dili → relaunch → the device's language.** From 5.2, open the dialog and tap
+  **System language**, kill and relaunch.
+  *Expected:* the app comes back in the **device's** language rather than the one last picked —
+  English on an English device. Re-open the dialog: **System language** is the selected row. *Why
+  this row exists:* `system` is a **removal**, not a third stored value; if the app stays on the
+  previous pick, the key was overwritten instead of removed and `current()` will keep answering the
+  stale language forever.
+- [ ] **5.4 A relaunch is required, and only a relaunch.** With the app in Turkish, open the dialog
+  and tap **English**, then **background** the app (home gesture) and come back.
+  *Expected:* the app is **still Turkish**; only the row's subtitle says **English**. Now kill and
+  relaunch — it is English. *Why this row exists:* this is divergence (a) itself. The footnote in the
+  dialog (§4.9) is the app's only warning, and this row is what proves the warning is honest rather
+  than a hedge.
+
+### The user who never opens the dialog
+
+- [ ] **5.5 A system-language user is untouched.** Delete the app and reinstall it (a fresh install
+  has no `AppleLanguages` key). Walk far enough into onboarding to read some copy, then — **without
+  ever opening the language dialog** — change the device language (Settings → General → Language &
+  Region) to the other one of Turkish/English and relaunch Salus.
+  *Expected:* the app follows the device, both times, and Settings → Salus shows **no** Preferred
+  Language row until the dialog has been used at least once. *Why this row exists:* the override must
+  be opt-in — writing `["tr"]` at first launch would pin every user to Turkish and make the device
+  setting dead.
+
+### The Turkish fallback (spec §6.4)
+
+- [ ] **5.6 A third system language falls back to Turkish, not English.** With **no** override set
+  (5.5's state — reinstall if unsure), set the device language to one the app does not ship,
+  **Deutsch** or **Français**, and relaunch Salus.
+  *Expected:* the app is **Turkish** — every screen, every package: More, onboarding, the lock, the
+  notification copy. *Why this row exists:* Xcode's default development region is `en`, while the
+  Android app falls back to `values/`, which is Turkish. `project.yml` says `tr` twice
+  (`options.developmentLanguage` for the project's `developmentRegion`, `DEVELOPMENT_LANGUAGE` for
+  `CFBundleDevelopmentRegion`) precisely so both platforms answer the same for this user. **If this
+  screen comes back English, one of those two lines was lost** — that is the whole failure mode, and
+  it is invisible on a TR or EN device.
+- [ ] **5.7 …and an override still wins over the fallback.** From 5.6 (device in Deutsch, app in
+  Turkish), open More → **Dil** → **English**, kill and relaunch.
+  *Expected:* the app is English.
+- [ ] **5.8 The Info.plist purpose strings follow the same override.** With the app in English (5.2
+  or 5.7), reach the Face ID prompt (§3.2 — turn the app lock on) and, on iOS 26+, the AlarmKit
+  permission (§3 / M5).
+  *Expected:* the system sheets show the **English** sentences from `App/en.lproj/InfoPlist.strings`,
+  not the Turkish ones from `Info.plist`. Switch to Türkçe, relaunch and repeat: the Turkish
+  sentences. *Why this row exists:* each purpose string lives in three places (the plist base value
+  and the two `.lproj` peers) and only a real prompt shows which one the system picked.
+- [ ] **5.9 Restore the device language.** Set Settings → General → Language & Region back to what
+  you noted before 5.1, and set the app back to **Sistem dili**.
+
+### Known gap — the tab bar is not localized
+
+- [ ] **5.10 The five tab labels stay English in every language.** In Turkish (5.1), look at the tab
+  bar.
+  *Expected today:* **Home / Medications / Vitals / Appointments / More** — English words in a
+  Turkish app. This is **not** a regression this section can pass or fail; it is
+  `RootTab.placeholderLabel` (`App/RootTab.swift:25`), the M0 placeholder whose own doc comment says
+  every one of the five "is expected to be deleted — not translated — when `nav_home`,
+  `nav_medications`, `nav_vitals`, `nav_appointments` and `nav_more` are ported". Android's `app`
+  module owns those five keys (`app/src/main/res/values/strings.xml`); ruling 9 fixed the iOS app
+  catalog at the three `app_lock_*` keys, so M8 never ported them. Recorded by Task 12's cross-check
+  so the gap is a decision rather than an oversight. **Tick this box only to confirm the labels are
+  still English** — a Turkish tab bar here would mean someone ported the keys without updating this
+  row.
+
+---
+
+## What was executed when this section was written (iOS-M8 Task 12)
+
+**Nothing.** Task 12 added the dialog footnote (`language_relaunch_note`, the settings catalog's
+88th key), verified that the launch-time wiring was already complete (T3's controller, T6's dialog
+and `project.yml`'s two `tr` lines — nothing was missing in `SalusApp.swift`, exactly as the brief
+predicted), and ran `scripts/test-packages.sh` (all 24 packages), `scripts/build-app.sh` and
+`scripts/lint.sh`. Every §5 row above is **NOT RUN**: no simulator, no device, no language has ever
+been switched on any hardware. §5.6 has never been observed and is the row most likely to surprise —
+it is the only one that exercises the fallback the spec argues about, and the only one no TR or EN
+device can fail.
+
+---
+
 ## §7. The shell wiring (Task 11)
 
 Written by Task 11 (`App/RootView.swift`, `App/RootGates.swift`, `App/Lock/AppLockGate.swift`,
