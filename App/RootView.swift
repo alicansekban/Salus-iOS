@@ -176,7 +176,13 @@ struct RootView: View {
         TabView(selection: selection) {
             ForEach(RootTab.allCases) { tab in
                 tabStack(for: tab)
-                    .tabItem { Label(tab.placeholderLabel, systemImage: tab.symbolName) }
+                    // `Text(verbatim:)` rather than `Label(_:systemImage:)`: the title is an
+                    // already-resolved `AppStrings` value, and a resolved string never goes
+                    // through an initializer that could read it back as a `LocalizedStringKey`
+                    // against the main bundle (`c726e22`).
+                    .tabItem {
+                        Label { Text(verbatim: tab.label) } icon: { Image(systemName: tab.symbolName) }
+                    }
                     .tag(tab)
             }
         }

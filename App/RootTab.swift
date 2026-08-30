@@ -15,22 +15,18 @@ enum RootTab: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
-    /// A placeholder English label.
+    /// The tab-bar label, the twin of `TopLevelDestination.labelRes` (`SalusApp.kt:80-84`).
     ///
-    /// M0 does no strings work by design (spec §10): the localized `nav_*` keys and the TR/EN
-    /// parity rule arrive with the string catalogs. These five words exist only so the tab bar
-    /// has something to draw, and every one of them is expected to be deleted — not translated
-    /// — when `nav_home`, `nav_medications`, `nav_vitals`, `nav_appointments` and `nav_more`
-    /// are ported.
-    var placeholderLabel: String {
-        switch self {
-        case .home: "Home"
-        case .medications: "Medications"
-        case .vitals: "Vitals"
-        case .appointments: "Appointments"
-        case .more: "More"
-        }
-    }
+    /// M0 drew five hardcoded English words here and said so: "every one of them is expected to be
+    /// deleted — not translated — when `nav_home`, `nav_medications`, `nav_vitals`,
+    /// `nav_appointments` and `nav_more` are ported". iOS-M8 T12 ported them (controller ruling
+    /// H-10), and the placeholder is gone: with a Turkish app and an English tab bar, §6.4's TR
+    /// default was a half-truth on the surface the user looks at most.
+    ///
+    /// Resolved through `AppStrings`, not `String(localized:)` at the call site, for the reason
+    /// that enum exists — a typo in a key name ships the key as the label instead of failing to
+    /// compile.
+    var label: String { AppStrings.nav(self) }
 
     /// The SF Symbol standing in for the Material icon Android draws.
     ///

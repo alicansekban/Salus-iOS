@@ -20,17 +20,33 @@ import Testing
 /// has no twin here: `AppStrings` is in the app target, which no package can import. The catalog
 /// and `AppStrings.Key` are therefore kept in step by review.
 ///
-/// **The set is three keys.** They are the shell's permanently — Android's app-module strings
-/// (`app/src/main/res/values{,-en}/strings.xml:11-13`), drawn by `App/Lock/AppLockScreen.swift`. The
-/// two `more_cycle*` copies that lived here while `PlaceholderScreen` drew the cycle row were
+/// **The set is eight keys**, and they are the shell's permanently — both groups Android app-module
+/// strings, because both surfaces are the app's on that side too:
+///
+///   - three `app_lock_*` (`app/src/main/res/values{,-en}/strings.xml:11-13`), drawn by
+///     `App/Lock/AppLockScreen.swift`; and
+///   - five `nav_*` (`…/strings.xml:5-10` minus `nav_cycle`), drawn by `App/RootView.swift`'s
+///     `.tabItem` through `RootTab.label`.
+///
+/// The two `more_cycle*` copies that lived here while `PlaceholderScreen` drew the cycle row were
 /// deleted with it in iOS-M8 T6: the More hub now owns the row and reads `FeatureSettings`' own
-/// copies, so this pin carries exactly the three `app_lock_*` keys.
+/// copies. The five `nav_*` arrived in iOS-M8 T12 under controller ruling H-10, which read ruling
+/// 9's three-key pin as the `AppStrings`/`more_cycle*` cleanup it was rather than a ban on the
+/// shell owning the strings the shell draws — §6.4's TR default outranks a key count.
+///
+/// Two Android app-module keys are deliberately absent. `nav_cycle` (`…/strings.xml:7`) is **dead
+/// on Android**: it is declared but nothing references it, because `SalusApp.kt:80-84` lists five
+/// `TopLevelDestination`s and the M9 restructure removed the cycle tab. `app_name`
+/// (`…/strings.xml:3`) is the manifest label, whose iOS twin is `CFBundleDisplayName` in
+/// `project.yml`, not a catalog key.
 @Suite("App target strings")
 struct AppStringCatalogTests {
     /// Every key the shell owns, with both translations.
     ///
-    /// The `app_lock_*` rows are copied from Android's app module,
-    /// `app/src/main/res/values{,-en}/strings.xml:11-13`.
+    /// Every row is copied from Android's app module,
+    /// `app/src/main/res/values{,-en}/strings.xml` — `app_lock_*` from `:11-13`, `nav_*` from
+    /// `:5-10`. Listed in the two groups' own source order rather than alphabetically, so a drift
+    /// against the XML is read by scanning down one column.
     static let samples: [Sample] = [
         Sample(
             key: "app_lock_locked_title",
@@ -46,16 +62,26 @@ struct AppStringCatalogTests {
             key: "app_lock_prompt_title",
             turkish: "Salus kilidini aç",
             english: "Unlock Salus"
-        )
+        ),
+        Sample(key: "nav_home", turkish: "Ana Sayfa", english: "Home"),
+        Sample(key: "nav_medications", turkish: "İlaçlar", english: "Medications"),
+        Sample(key: "nav_vitals", turkish: "Ölçümler", english: "Vitals"),
+        Sample(key: "nav_appointments", turkish: "Randevular", english: "Appointments"),
+        Sample(key: "nav_more", turkish: "Daha Fazla", english: "More")
     ]
 
     static var expectedKeys: Set<String> { Set(samples.map(\.key)) }
 
-    @Test("the catalog holds exactly the three keys the shell owns")
-    func catalogHoldsExactlyTheThreeKeys() throws {
+    @Test("the catalog holds exactly the eight keys the shell owns")
+    func catalogHoldsExactlyTheEightKeys() throws {
         // Pinned as a number as well as a set: a row deleted from the table together with its key
         // from the catalog would otherwise agree with itself and pass.
-        #expect(Self.samples.count == 3)
+        //
+        // The arithmetic behind 8: Android's app module declares 10 keys. Two are not ported —
+        // `app_name` (its twin is `CFBundleDisplayName`, a plist value, not a catalog key) and
+        // `nav_cycle` (declared on Android but referenced by nothing since the M9 restructure cut
+        // the cycle tab from `SalusApp.kt:80-84`'s five destinations). 10 − 2 = 8.
+        #expect(Self.samples.count == 8)
 
         try StringCatalogParity.assertKeys(of: Self.loadCatalog(), are: Self.expectedKeys)
     }
@@ -65,6 +91,17 @@ struct AppStringCatalogTests {
         let appLockKeys = Self.expectedKeys.filter { $0.hasPrefix("app_lock_") }
 
         #expect(appLockKeys == ["app_lock_locked_title", "app_lock_unlock", "app_lock_prompt_title"])
+    }
+
+    @Test("the five nav keys are the tab bar's, and nav_cycle is not among them")
+    func theFiveNavKeysAreTheTabBars() {
+        let navKeys = Self.expectedKeys.filter { $0.hasPrefix("nav_") }
+
+        // The set, not the count: a future edit that ported `nav_cycle` (which Android declares and
+        // never draws) while dropping another would keep the count and break the tab bar.
+        #expect(
+            navKeys == ["nav_home", "nav_medications", "nav_vitals", "nav_appointments", "nav_more"]
+        )
     }
 
     @Test("Turkish is the source language and every key has both tr and en (spec 6.4)")

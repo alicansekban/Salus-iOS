@@ -756,20 +756,24 @@ several rows below change it and the last one restores it.
 - [ ] **5.9 Restore the device language.** Set Settings → General → Language & Region back to what
   you noted before 5.1, and set the app back to **Sistem dili**.
 
-### Known gap — the tab bar is not localized
+### The tab bar
 
-- [ ] **5.10 The five tab labels stay English in every language.** In Turkish (5.1), look at the tab
-  bar.
-  *Expected today:* **Home / Medications / Vitals / Appointments / More** — English words in a
-  Turkish app. This is **not** a regression this section can pass or fail; it is
-  `RootTab.placeholderLabel` (`App/RootTab.swift:25`), the M0 placeholder whose own doc comment says
-  every one of the five "is expected to be deleted — not translated — when `nav_home`,
-  `nav_medications`, `nav_vitals`, `nav_appointments` and `nav_more` are ported". Android's `app`
-  module owns those five keys (`app/src/main/res/values/strings.xml`); ruling 9 fixed the iOS app
-  catalog at the three `app_lock_*` keys, so M8 never ported them. Recorded by Task 12's cross-check
-  so the gap is a decision rather than an oversight. **Tick this box only to confirm the labels are
-  still English** — a Turkish tab bar here would mean someone ported the keys without updating this
-  row.
+- [ ] **5.10 The five tab labels are Turkish in Turkish.** In Turkish (5.1), look at the tab bar.
+  *Expected:* **Ana Sayfa / İlaçlar / Ölçümler / Randevular / Daha Fazla**, left to right in that
+  order, each under the icon it had before. Switch to English (5.2), relaunch, and look again:
+  **Home / Medications / Vitals / Appointments / More**. *Why this row exists:* until iOS-M8 T12
+  these were five hardcoded English words (`RootTab.placeholderLabel`, the M0 placeholder), so a
+  Turkish app had an English tab bar — the most visible §6.4 violation there was. Controller ruling
+  H-10 ported Android's five `nav_*` keys (`app/src/main/res/values{,-en}/strings.xml:5-10`,
+  verbatim) and the app catalog went 3 → 8 keys. This row is what proves the labels now follow the
+  override like everything else.
+- [ ] **5.11 The labels still fit at the largest Dynamic Type size.** With the app in Turkish, set
+  Settings → Accessibility → Display & Text Size → Larger Text to the largest non-accessibility
+  size.
+  *Expected:* the five labels truncate the way iOS truncates any tab title — no overlap, no icon
+  pushed out of place. **Daha Fazla** and **Randevular** are the long ones and are what to watch;
+  Turkish is longer than English on four of the five, which is exactly why this is checked here and
+  not left to §6 (Task 14's Dynamic Type pass, which covers the screens rather than the shell).
 
 ---
 
@@ -783,6 +787,15 @@ predicted), and ran `scripts/test-packages.sh` (all 24 packages), `scripts/build
 been switched on any hardware. §5.6 has never been observed and is the row most likely to surprise —
 it is the only one that exercises the fallback the spec argues about, and the only one no TR or EN
 device can fail.
+
+**Fix round 1 (controller ruling H-10) localized the tab bar and ran nothing on hardware.** §5.10
+was a *record-the-gap* row and is now a real check, and §5.11 (Dynamic Type on the Turkish labels)
+is new beside it. The round ported Android's five `nav_*` keys into the app catalog (3 → 8),
+replaced `RootTab.placeholderLabel` with `RootTab.label` resolving through `AppStrings`, and ran
+`scripts/test-packages.sh SalusTesting` (32 tests, 5 suites), `scripts/build-app.sh` (BUILD
+SUCCEEDED) and `scripts/lint.sh` (0 violations in 527 files). The compiled bundle was read to
+confirm the five keys are present in both `tr.lproj` and `en.lproj` with the Android values —
+file inspection of the build product, not a simulator run.
 
 ---
 
