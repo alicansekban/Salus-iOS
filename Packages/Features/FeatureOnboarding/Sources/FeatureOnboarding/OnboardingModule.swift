@@ -43,8 +43,8 @@ public struct OnboardingModule {
 /// Every dependency is passed in and none is reached for, so a second graph (a test, a preview) is a
 /// second call rather than a mutated global.
 ///
-/// - Parameter vitalsQuickEntry: the composition root already exposes it "for onboarding's current
-///   weight step (M6)"; `OnboardingViewModel.finish()` is the caller that doc names (ruling 7).
+/// - Parameter vitalsQuickEntry: `makeOnboardingGraph` passes Vitals' `makeSaveWeightEntryUseCase()`
+///   (`VitalsModule.kt:26`); `OnboardingViewModel.finish()` is the caller that doc names (ruling 7).
 /// - Parameter preferencesDataSource: the store `OnboardingPreferencesImpl` writes
 ///   `onboarding_completed` through — the flag the shell's gate reads.
 @MainActor

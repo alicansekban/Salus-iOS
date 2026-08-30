@@ -12,6 +12,32 @@ section at a time and the numbering follows the plan rather than the reading ord
 
 ---
 
+## §0. Fresh install & reset (preamble)
+
+Read this before §1 or any row that asks for a "fresh install". It is the setup the other sections
+assume and is written once here so they do not each repeat it.
+
+**Delete the app to reset onboarding.** `onboarding_completed` lives in `UserDefaults` (the
+Android-verbatim key), and the gate reads `onboarding_completed` as a `Bool?` that starts `nil`
+(splash-hold, ruling 3). To restore a first launch, **delete Salus** (long-press the icon → Remove
+App, or `xcrun simctl uninstall booted com.alicansekban.salus`) and reinstall. Deleting also clears
+the database, which is what §1.9's "the profile row was empty before" check needs. Do not try to
+reset by editing defaults by hand.
+
+**A reinstall does NOT clear the app lock.** `app_lock_enabled` is the one thing that lives in the
+**Keychain** (`KeychainAppLockFlagStore`, `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly`), so
+deleting the app and reinstalling keeps it. To fully reset the lock flag use the **in-app toggle**
+(More → Güvenlik → Uygulama kilidi, turn it off) or the **device settings** for the keychain item —
+a delete alone is not enough. This is why several rows below (e.g. §3.15, §3.18, §7.1) tell you to
+turn the lock off before deleting unless the row says otherwise.
+
+**§6 has not been written yet.** The VoiceOver + Dynamic Type pass is **Task 14** and lands after
+this record (T13); §6 will be appended here once T14's commits are on this branch. Until then the
+sections in this file are **§0–§1–§2–§3–§4–§5 and §7**; do not look for §6 when this version is the
+one you run.
+
+---
+
 ## §1. Onboarding (Task 8)
 
 Written by Task 8 (`Packages/Features/FeatureOnboarding/Sources/FeatureOnboarding/ui/

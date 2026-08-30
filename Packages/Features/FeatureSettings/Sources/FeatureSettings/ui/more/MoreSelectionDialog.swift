@@ -49,8 +49,9 @@ struct MoreSelectionDialog: View {
     /// to the next launch — **recorded divergence (a)**, ruling 6. Kotlin's `SelectionDialog` has
     /// no such parameter: appcompat recreates the activity, so there is nothing to warn about.
     /// Defaulted to `nil` so the theme and colour-theme call sites stay the Kotlin shape — which is
-    /// also why it is the one `var` here: only a `var` gets a memberwise default, so `let` would
-    /// force those two call sites to pass `footnote: nil`.
+    /// also why it is the one `var` here: a `let` with a default is dropped from the memberwise
+    /// initializer's parameter list entirely, so the language dialog's call site — the one that
+    /// *does* pass a footnote — could not compile. Only a `var` keeps the parameter overridable.
     var footnote: String?
     let onDismiss: () -> Void
 

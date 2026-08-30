@@ -214,3 +214,305 @@
 - M7 deltas folded in: QA is the user's (executors run zero simulator work — every visual check is a written `m8-manual-qa.md` row), `FreeOnlyMorePremiumStatus` copies the exact M7 `FreeOnlyPremiumStatus` shape (`D-M7-d`), `AppCompositionRoot+Modules.swift` is the split the T6/T11 graph work edits, `NSFaceIDUsageDescription` edits all three files together (plist base + both `InfoPlist.strings`), Kotlin citations are re-derived with `grep -n` at execution time, `Text(verbatim:)` everywhere a resolved string reaches `Text`.
 - All ten rulings confirmed by the user, 2026-08-30 (app lock timing, §6.2 secure screen, gate order + blank-frame splash-hold, re-auth-to-enable, two-state premium stand-in, language apply-on-relaunch, about copy verbatim + tokens, no app test target, a11y easy-fixes-in-M8, Face ID text, onboarding no-escape). Executors run zero simulator work — every visual check is a written `m8-manual-qa.md` row the user executes.
 - Not in scope: the real `PaywallController`/`PremiumStatus` three-state + entitlement effects (M9), `AiSummaryKey` (M10), Trends destination (M11), backup (M12), `SalusListItem` as a shared SalusUI component beyond what these screens need inline, `SalusPillTextField` migration of the older editors (polish), an app-target test bundle (flagged).
+
+---
+
+# Execution record (iOS-M8)
+
+Written by Task 13 on 2026-08-30 at branch `m8-settings-onboarding`, HEAD `76e14bf`, 34 commits
+above `main` (`cdc33e1..76e14bf`). Every commit SHA below exists in the branch; every verdict,
+ruling and deferred minor is carried from `.superpowers/sdd/2026-08-30-ios-m8-settings/progress.md`
+and cross-checked against the task reports. **Correction note:** where this record disagrees with the
+plan text above (the string counts in the header, Self-review and divergence (g)), this record is
+right and the plan text is the stale planning-time estimate — the errata sub-section below is the
+correction vehicle; the plan's Global Constraints text is deliberately left untouched so its history
+stays.
+
+**Status of the two later tasks at the time of writing — T14 (a11y pass) and T16 (parity ledger)
+are PENDING.** They land after this record. Their subsections below are honest placeholders; the
+coordinator appends their outcome (commit SHAs + verdicts) once their own commits land on this
+branch.
+
+## Commits per task
+
+| Task | Commits (newest first within the range) | Shipped | Tests / gates at the time |
+|------|------------------------------------------|---------|---------------------------|
+| T0 Branch + `MeasurementInput` | `cdc33e1` (plan), `614ab3e`, `dea0d34` | `MeasurementInput` in `SalusCommon` | 15 new cases (9 height + 6 weight), SalusCommon 52→53 total |
+| T1 | `7446fba` | settings catalog 87 keys, `SettingsStrings` accessors | 20 tests / 3 suites, 87-key pin |
+| T2 | `fd400f3` | `FeatureOnboarding` package, 45-key catalog (P-4), `OnboardingUiState` | 11 tests / 2 suites (6 UiState + 5 strings) |
+| T3 | `425944e` | `SettingsPreferences`, `AppLanguage`, `AppLocaleController`, premium stand-in | domain suites pass |
+| T4 | `b1720e6` | `MoreViewModel` + state, buffered effects | 20 `MoreViewModel` cases; 56 tests / 7 suites |
+| T7 | `ededde6`, `fbd0207` | `OnboardingViewModel`, `OnboardingPreferences` | 7 Kotlin cases + 1 iOS-only abort; 19 tests / 3 suites |
+| T10 | `eaaf9fe` (= `bef1009` replayed), `a101b03`, `5693300` | §6.2 secure screen — `PrivacyOverlay` + masking | SalusTesting 30→32 tests / 5 suites |
+| T9 | `3d0d696`, `ffdf33b`, `d61e872` | `AppLockManager`, `AppLockScreen`, Face ID description | 6 Kotlin + 2 iOS-only `AppLock` cases; SalusCommon 61 |
+| T5 | `2644d4f`, `d8606fb`, `f0d59d6`, `8da55f2` | `SalusOptionRow`/`SalusPillTextField` (SalusUI), profile editor + key | 8 Kotlin + 10 SalusUI + 1 pin (nil-profile); FeatureSettings 65→66 |
+| T7 H-6 | `916e6f1` | onboarding reaches the default profile id via `SalusProfile` | FeatureOnboarding 19, lint 0 |
+| T6 | `fbfe32a`, `d8f591a`, `9675c46`, `de45c2d`, `6bb009d` | More hub + About + settings navigation completion | FeatureSettings 68 / 9, SalusUI 89 / 14 |
+| T8 | `caaa9dc`, `3cd7230`, `28365bc` | the eight-step onboarding screens + module | FeatureOnboarding 19 / 3 |
+| T11 | `965db8c`, `f30ef1c` | More tab mount, gates, `AppStrings` lock keys | Salus+Common 2/2, build OK |
+| T12 | `5097e15`, `a032522`, `d8c7dc5`, `76e14bf` | `language_relaunch_note`, QA §5, H-10 tab-bar keys, notes | SalusTesting 32 / 5 |
+
+Total: 34 commits, linear (`cdc33e1..76e14bf`), no merge commits. T13's own commits append below.
+
+## Review rounds (per task)
+
+| Task | Review verdict | Fix rounds | Re-review |
+|------|----------------|-----------|-----------|
+| T0  | Spec ❌ → C1 (whitespace), I1 (no newline test) | 1 | clean |
+| T1  | Spec ✅, no findings | 0 | — |
+| T2  | Spec ✅, minors only (M-1 commit message 54 vs 45; M-2 unused helper) | 0 | — |
+| T3  | Spec ✅, M-3 (impl access `internal`) | 0 | — |
+| T4  | Spec ✅, M-4/M-5 (stream duplication, value-equal writes) | 0 | — |
+| T5  | Spec ✅, Quality Needs work — C1 (sex-change alert saved old sex), I1 (`ImeAction.Next` dropped) | 1 | r1 clean |
+| T6  | Spec ⚠️ — C1 (effects stranded), I1–I3; H-7 recorded | 1 | r1 clean |
+| T7  | Spec ✅, Quality Approved — I-1 (`finish()` silent catch, parked H-4) + H-6 (import swap) | 1 | clean |
+| T8  | Spec ✅, Quality Approved — I1 (loading branch not opaque) | 1 | r1 clean |
+| T9  | Spec ✅, Quality Approved — I1 (missing QA row), I2 (`hasReadSetting` public) | 1 | r1 clean |
+| T10 | Spec ❌ / Quality Needs work — C1 + I1–I3; round 2 accessibility finding | 2 | r1 + r2 clean |
+| T11 | Spec PASS, Quality Approved — I1 (dead `vitalsQuickEntry`) | 1 | r1 clean |
+| T12 | Spec ✅, Quality Approved — I1 (stale `AppStrings` doc) | 1 | r1 clean (1 comment-only minor parked → T13) |
+
+## Recorded divergences — the plan's (a)–(h) and how each resolved
+
+- **(a) language apply-on-relaunch** — delivered (T3 `UserDefaultsAppLocaleController`, T6 dialog,
+  T12 `language_relaunch_note`). The note is an iOS-only catalog key (settings catalog's 88th).
+- **(b) two-state premium stand-in** (`free`/`entitled`, grace folded in) — delivered (T3), full
+  `PremiumStatus` deferred to M9.
+- **(c) About spacing tokens** — delivered (T6, ruling 10).
+- **(d) shell-drawn back buttons drop `settings_back`/`profile_back`** — delivered; **H-8 carved out the
+  onboarding back button**, restoring `onboarding_back` (catalog 46) because the onboarding gate draws
+  its own back chevron and the shell precedent does not hold for an overlay gate.
+- **(e) notification permission in the Route; denial → `NextClicked`** — delivered (T8).
+- **(f) blank-frame splash-hold (no `installSplashScreen`)** — delivered (T11 `SplashHoldCover`).
+- **(g) catalog-pin growth** — see the errata below. The plan text's "15→87 settings / 54 onboarding /
+  3 app" is the stale estimate; the real triple is **88 / 46 / 8**.
+- **(h) `MeasurementInput` comma normalization** — **RETRACTED by ruling P-1.** Kotlin
+  `MeasurementInput.kt:26` already does `text.trim().replace(',', '.')` before `toDoubleOrNull()`,
+  so the comma replace is a verbatim port, not an iOS-only addition. No divergence.
+
+## Divergences found in execution (beyond the plan's list)
+
+- **D (H-7)** — More callbacks live on `MoreRoute(…onOpenCycle:onOpenDoctorReport:onOpenTrends:)`, not
+  on `settingsDestinations(onOpenCycle:…)` as the plan named them: the More tab root is a Route, the
+  destinations are pushes, and the callbacks belong where the effects are consumed. Recorded in
+  `SettingsNavigation.swift`/`MoreScreen.swift`.
+- **D (H-8)** — `onboarding_back` restored against divergence (d): the overlay gate draws its own back
+  button, so the key survives; onboarding catalog is **46**, pin updated, used as the button's a11y
+  label (see (d)).
+- **D (H-10)** — the five `nav_*` tab-bar keys ported Android-verbatim; app catalog 3 → 8, pin
+  updated, `RootTab.label` resolves through `AppStrings`. Unlocalized tab bar was the most visible
+  §6.4 violation (T12). `nav_cycle` is dead on Android and `app_name` = `CFBundleDisplayName`, both
+  recorded.
+- **D (H-4)** — `finish()`'s write failure is swallowed silently (no error UI), matching Kotlin
+  parity; the step reopens and the write is retryable. QA §1.9 notes "no error UI by design".
+- **D (P-4 → H-8, count)** — onboarding 45 keys at T2 (P-4: Android XML carries 46, not the plan's
+  54; the inventory §6 table lists 46; its summary line "54" was an arithmetic error). H-8 restored
+  `onboarding_back` → **46**.
+- **D (T12 total)** — the repository total is **409 keys × 2 locales across ten catalogs** (T12
+  verified on the compiled bundle with `plutil`, 409 in `tr` and 409 in `en`), not the plan's "511".
+  511 was quoted from the Android spec counting the whole Android tree, never the iOS tree.
+- **D (H-9)** — `appLockAvailable`/`versionName` filled in `.task` show a one-frame pop; accepted
+  (`LAContext.canEvaluatePolicy` in `init`/body would re-run per `RootView` evaluation).
+- **D (H-2/H-3)** — `.captured` hiding is gated on `secure_screen_enabled` (mirroring/recording stay
+  usable when the toggle is off); no `#if !targetEnvironment(simulator)` on the mask is needed (QA
+  §2.4 is device-only and names the `#if` as the fix if the simulator artefacts demand it).
+- **D (H-6)** — onboarding reaches the default profile id through `SalusProfile.ProfileRepositoryDefaults`,
+  not `SalusDatabase` (the leak rule).
+- **D (T5, divergence 11)** — `ImeAction.Next` (advance-on-return-key) is not ported; Profile's notes
+  field keeps the newline key. Recorded in `ProfileScreen.swift`'s Material→SwiftUI table.
+- **D (T9, divergence 3)** — `AppLockManager.isLocked` starts `true` (Android starts `false`), so an
+  unread setting never draws app contents; gated behind `hasReadSetting` + the splash-hold. QA
+  §3.16/§3.17 confirm no flash.
+- **D (T7, divergence 3)** — a failing onboarding write skips the completion flag and reopens the
+  step (abort path); pinned by the 8th iOS-only test.
+- **D (T6, divergence 7)** — the three More pickers are sheets that draw the stored selection, not
+  Kotlin's `AlertDialog` radio list; a SwiftUI `alert` cannot hold selection state.
+- **D (T6, divergence 2)** — the LAContext availability/enable-re-auth prompt is shell-injected via
+  `MoreRoute`'s `appLockPrompt` closure; `openSettingsURLString` is iOS's only notification-Settings
+  destination (divergence 3); the notification-row badge uses the `.vitals` accent stand-in
+  (divergence 6). All recorded in the `MoreScreen.swift` header.
+- **D (T10)** — masking field added to the **window**, not the host view; `remove()` and the `.active`
+  re-assert survive the worst case. `PrivacyOverlay.State` name kept verbatim per the brief.
+
+## Coordinator rulings H-1…H-10 and P-1…P-4
+
+All made during execution (full text in the ledger; one line each here — the plan already carries
+user-confirmed rulings 1–10, not re-duplicated):
+
+- **P-1** — (h) comma normalization retracted as a divergence (Kotlin already does it); port verbatim.
+- **P-2** — `SettingsStrings.language(_:)` deferred to T3 beside `AppLanguage` (T1 compiles alone).
+- **P-3** — T9 rewrites the app-catalog pin to the 3-key set; catalog and Swift accessors are separate
+  files. (Superseded by H-5/H-10.)
+- **P-4** — onboarding catalog is 45 keys (Android XML carries 46, not 54; the plan's "54" is the error).
+- **H-1** — T5 ∥ T7 ∥ T9 ∥ T10 run as parallel executors in worktrees, each rebased before review.
+- **H-2** — `.captured` hiding gated on `secure_screen_enabled`.
+- **H-3** — no `#if !targetEnvironment(simulator)` on the mask.
+- **H-4** — T7's `finish()` silent catch accepted as Kotlin parity (recorded divergence).
+- **H-5** — 5-key app-catalog pin at T9 (3 `app_lock_*` + 2 `more_cycle*`), trimmed to 3 by T11, then 8 by H-10.
+- **H-6** — T7's `import SalusDatabase` swapped for `ProfileRepositoryDefaults.defaultProfileId`.
+- **H-7** — More callbacks on `MoreRoute`, not on `settingsDestinations` args (recorded divergence).
+- **H-8** — `onboarding_back` restored; onboarding catalog 46.
+- **H-9** — `appLockAvailable`/`versionName` one-frame pop accepted.
+- **H-10** — the five `nav_*` tab keys ported; app catalog 8 (supersedes the plan's 3).
+
+## Errata — the plan's stale string counts (divergence (g))
+
+The plan's Global Constraints and Self-review still say "15→87 settings, 54 onboarding, 3 app" and a
+"511-key closure". The realized counts, verified against the tree (pin tests + the T12 `plutil`
+bundle read), are:
+
+| Catalog | Key count | Why it differs from the plan |
+|---------|-----------|------------------------------|
+| Settings | **88** | 87 + `language_relaunch_note` (T12, iOS-only, recorded divergence (a)). |
+| Onboarding | **46** | Android XML carries 46, not 54 — the plan's inventory summary and §6 table disagreed; the table is right (P-4 → 45, H-8 → 46). |
+| App | **8** | 3 `app_lock_*` + 5 `nav_*` (H-10, the unlocalized tab bar). |
+| **Total** | **409 × 2 locales** | The plan's "511" counted the Android spec's whole tree, never the iOS tree; the ten iOS catalogs hold 409 keys in each of `tr` and `en` (T12, verified). |
+
+The **pre-M8 baseline is 267 keys** (the M1–M7 catalogs). 267 + 88 + 46 + 8 = **409**. The parity
+ledger row (T16) and `salus-android/docs/ios-v1-plan.md:177`'s "511" are reconciled by this errata;
+the ledger is not edited here.
+
+## Test-case counts vs Kotlin (the milestone's contract)
+
+- **More (T4): 20 `MoreViewModelTest` cases** by name (cycle visibility 4, settings 5, premium 4,
+  doctor report 3, colour themes 4) — all ported, verified against the inventory §7 table.
+- **Profile (T5): 8 `ProfileViewModelTest` cases** + 1 iOS-only nil-profile case + 10 `SalusUI` API
+  tests for the new components.
+- **Onboarding UiState (T2): 6** cases; **ViewModel (T7): 7** Kotlin cases + 1 iOS-only abort path.
+- **App lock (T9): 6 `AppLockManagerTest` cases** (all six port, 8 total with the 2 iOS-only ones).
+- **Strings parity pins** per package (settings 88, onboarding 46, app 8) via `StringCatalogParity`;
+  `BannedHealthClaims` runs repo-wide.
+
+## Deferred findings (for the final whole-branch review)
+
+Collected from each task's "Minor (deferred)" lines in the ledger. These are parked, not fixed —
+triage at the branch's final review:
+
+- **T0** — M1 `replacingOccurrences` pulls Foundation transitively into the leaf; M2 report said
+  "15 tests" without noting +2 over the brief's 13.
+- **T2** — M1 commit message says "54-key" but the catalog holds 45 (git log only); M2 unused
+  single-arg `formatted(_:)` helper in `OnboardingStrings.swift:273` (private, SwiftLint-silent).
+- **T3** — M3 `SettingsPreferencesImpl` + `FreeOnlyMorePremiumStatus` are `internal` (fine while the
+  factory is in-package).
+- **T4** — M4 `CurrentValueStream`/`FakeMorePremiumStatus` continuation bookkeeping duplication
+  (collapse if a third copy appears); M5 `CurrentValueStream` pushes value-equal writes (no case
+  depends on it).
+- **T7** — M1 dead continuation registry in `FakeProfileRepository`; M2 tautological assertions (2);
+  M3 `goTo` cascades where Kotlin `check` aborts; M4 profile-rebuild blind spot for a future
+  defaulted field; M5 `waitUntil` yield-loop flake risk (inherited from T4).
+- **T5** — weakened `single()` assertions (4 cases); autocorrect coupled to capitalization; 1970
+  wheel seed; dropped `top(sm)`; the 7-param `makeSettingsModule` suppression shelf life (resolved by
+  T6's factory restructure); whole-state replace in `form(from:)`; `person.2` + `3…8` visual
+  judgements.
+- **T9** — 2 stale Kotlin citations; untested `SalusIconBadge` knobs + the redundant
+  `SalusEmptyState` private 72/32 copy; `SalusPillButton` rendering its label through `Text(_:)`
+  (pre-existing M7 debt).
+- **T10** — `PrivacyOverlay.State` name shadowing (kept verbatim per the brief); bounds-origin
+  cancellation computed once; `remove()` early-return can strand the field if the root view is
+  replaced; material opacity judgement (`.ultraThickMaterial` kept); badge accent `.vitals` stand-in
+  (M-8); per-update mask allocation (mostly taken); z-order on restore (M-4).
+- **T6** — 7 review minors (1, 3, 5, 6 taken in the fix) + `MoreEffectQueueTests` pin the queue not
+  the collector; `SalusSectionHeaderDefaults` unpinned; `MoreScreen.swift` line count (491 then, now
+  499); sheet content blanks during dismissal.
+- **T8** — sex-row spacing `md` vs Kotlin `lg` (fixed in round 1, not recorded); notes placeholder
+  offset (~8 pt); keyboard-bounce risk in the 240 pt editor (no QA row); back chevron 24 pt vs the
+  24 dp box (QA 1.1); no test for `SalusPillButton.trailingSystemImage:` (M-5 acknowledged).
+- **T11** — 500-line threshold fragility; `SplashHoldCover` theme `background` vs the launch-screen
+  system background (one-frame grey step, QA-not-a-bug); unused `Equatable` on `RootGates`;
+  view-with-logic file (`RootGates.swift`); no in-flight guard on the unlock prompt (port-faithful);
+  redundant `@MainActor`; §7 vs §4 QA cross-references (kept deliberately non-duplicative).
+- **T12** — `MoreScreen.swift` 499/500 and `RootView.swift` 497/500, both within three lines of the
+  file-length gate; §5.6 (Deutsch → Turkish fallback) needs a real device config and has never run;
+  `Text(_:)` with a resolved `String` rationale wording in the constraints doc (~90 pre-M8 sites
+  untouched); `AppStrings.Key` has no mechanical catalog check (the app target cannot be imported by
+  a package — kept in step by review alone).
+
+## Stale-comment sweep (T13's own, closed here)
+
+- `OnboardingModule.swift` doc — rewording to match the "composition root's graph builder passes
+  it" reality (T11's flag), applied by T13.
+- `MoreSelectionDialog.swift` `var footnote` doc — the justification sentence (the T12 re-review
+  finding) corrected to "a `let` default is dropped from the memberwise init, not 'forced on call
+  sites'", applied by T13.
+- The false "one scenePhase subscription" comment in `SalusApp.swift` was **already fixed in
+  `f30ef1c`** (now "The one scenePhase site that forwards to the graph"); verified — no residual.
+- No other comment the reviews named remains open for T13.
+
+## Still owed, by the user (manual QA)
+
+`scripts/m8-manual-qa.md` is consolidated and committed by T13; **executing it is the user's job**.
+Nothing has been run: **§0–§1–§5 and §7 are NOT RUN; §6 (a11y) is pending Task 14** and will be
+appended after T13 lands. The **device-only rows** in particular are unexecuted: §2 (secure screen on
+a device, incl. the screenshot mask and AirPlay capture hide), §3 (Face ID on a device + the Keychain
+reinstall-survival check), and §7's full device pass. Per the M7 record, the **M5/M6/M7 device passes
+are still outstanding too** — this milestone does not close them.
+
+## Android follow-ups proposed (unnumbered `A?`, for T16 / the ledger)
+
+- **Language apply-on-relaunch divergence** (ruling 6) — a relaunch note is the honest iOS twin of
+  appcompat's apply-on-recreate; no Android write.
+- **`about_privacy_body` Google Play / RevenueCat naming → App Store naming** — a joint copy pass is
+  flagged; kept verbatim this milestone per the parity rule.
+- **Two-state premium stand-in → full `PremiumStatus` at M9** (the real `PaywallController` and
+  entitlement branches).
+- **`language_relaunch_note` iOS-only key** — the settings catalog's 88th; no Android twin.
+- **`SalusPillTextField` migration sweep** for the older vitals/medications/appointments editors
+  (polish, not parity — T5 created the component).
+
+## Task 14 / Task 16 — pending at the time of writing
+
+- **T14 (VoiceOver + Dynamic Type): PENDING.** Expected to add `docs/a11y-audit-m8.md`, the
+  label/trait/hiding declarations, and QA §6. **State to be appended by the coordinator after T14
+  lands:** [T14 commits, verdict, QA §6 written-and-unrun status].
+- **T16 (parity ledger, Android docs commit): PENDING.** `salus-android/docs/parity-ledger.md` row →
+  "iOS-M8 ✅ (cases: 20 More + 8 Profile + 6+7 onboarding + 6 lock + strings parity ×2 locales)",
+  S-2 closed; the commit lands **local-only, never pushed** (M7 rule). **State to be appended by the
+  coordinator after T16 lands:** [T16 commit + push status].
+- **T15 (manual QA)** is the user's; the record above's "Still owed" section is its checklist.
+
+## CI summary — `scripts/ci.sh` at `76e14bf`
+
+Run by T13 as the acceptance sweep, end to end, at the branch tip:
+
+```
+############################################################
+# 1/5  toolchain
+############################################################
+# 2/5  lint
+############################################################
+# 3/5  custom lint rules (planted fixtures)
+############################################################
+# 4/5  test (all packages)
+############################################################
+::group::[ 1/24] …        …   (all 24 packages: FeatureModel … FeatureHome … FeatureSettings … )
+==> summary: 24/24 packages passed
+############################################################
+# 5/5  build (app scheme)
+############################################################
+** BUILD SUCCEEDED **
+==> CI pipeline passed.
+```
+
+All five steps green: **toolchain 1/1, lint 0 violations, custom lint rules 1/1, test-packages
+24/24, build-app BUILD SUCCEEDED**. Full log: `/var/folders/…T/opencode` copy at T13 write time;
+verbatim tail (the last 40 lines) recorded in the T13 report.
+
+<details>
+<summary>Verbatim CI tail (the final lines of the run)</summary>
+
+```
+CreateUniversalBinary … Salus.app/Salus (from target 'Salus')
+    lipo -create …/Objects-normal/arm64/Binary/Salus /…/Objects-normal/x86_64/Binary/Salus
+CopySwiftLibs … (in target 'Salus')
+ExtractAppIntentsMetadata (in target 'Salus' from project 'Salus')
+2026-08-30 23:43:45.362 appintentsmetadataprocessor … Starting appintentsmetadataprocessor export
+2026-08-30 23:43:45.373 appintentsmetadataprocessor … Writing Metadata.appintents
+CodeSign … Salus.debug.dylib (in target 'Salus')
+CodeSign … __preview.dylib (in target 'Salus')
+CodeSign … Salus.app (in target 'Salus')
+Validate … Salus.app (in target 'Salus')
+** BUILD SUCCEEDED **
+==> CI pipeline passed.
+```
+
+</details>
