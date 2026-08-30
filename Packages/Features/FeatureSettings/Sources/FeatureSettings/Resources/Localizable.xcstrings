@@ -188,6 +188,23 @@
         }
       }
     },
+    "language_relaunch_note" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The change applies the next time you open the app."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Değişiklik, uygulamayı yeniden açtığınızda uygulanır."
+          }
+        }
+      }
+    },
     "language_system" : {
       "extractionState" : "manual",
       "localizations" : {

@@ -10,7 +10,7 @@
 // `stringResource(R.string.…)` → `SettingsStrings.…` in `Text(verbatim:)`; `profileName.ifBlank` →
 // `profileName.isEmpty ? … : profileName`.
 //
-// Eight platform divergences from the Kotlin twin:
+// Nine platform divergences from the Kotlin twin:
 //   1. **`MoreRoute` owns the LAContext availability check** — the twin of
 //      `BiometricManager.from(context).canAuthenticate(BIOMETRIC_WEAK or DEVICE_CREDENTIAL)`
 //      (`MoreScreen.kt:94-98`); `.canEvaluatePolicy(.deviceOwnerAuthentication)` answers true with a
@@ -41,6 +41,11 @@
 //      `horizontal = lg, vertical = md` (`MoreScreen.kt:376-379`); `SalusCard` takes one value by
 //      house design, so every card here is `lg` on all four edges — the accepted limitation of the
 //      shared component, not a new one.
+//   9. **The language dialog carries a footnote Kotlin has no key for** (T12, **recorded
+//      divergence (a)**, ruling 6): `language_relaunch_note`. `setApplicationLocales` recreates
+//      the activity, so Android's pick is visibly instant; iOS reads the `AppleLanguages` override
+//      at process start, so it lands on the next launch and the dialog says so. The other two
+//      dialogs pass no footnote and stay the Kotlin shape.
 //
 // The three same-feature pushes (`ReminderHealthKey`/`AboutKey`/`ProfileKey`) the Kotlin Route makes
 // through `koinInject<Navigator>()` (`MoreScreen.kt:139-141`) go through the `navigator` the
@@ -436,6 +441,9 @@ struct MoreScreen: View {
                         onSelect: { onEvent(.selectLanguage(language)) }
                     )
                 },
+                // The one dialog with a footnote (divergence 9): the pick is applied by the next
+                // launch, not by this one.
+                footnote: SettingsStrings.languageRelaunchNote,
                 onDismiss: { onEvent(.dialogDismissed) }
             )
         }

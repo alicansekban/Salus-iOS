@@ -2,7 +2,7 @@
 // `SelectionDialog` + `SelectionOption` (`MoreScreen.kt:480-527`), extracted into its own file
 // rather than nested in `MoreScreen.swift` so that file stays under the 500-line gate.
 //
-// Two spelling differences from the Kotlin, both recorded in `MoreScreen.swift`'s divergence list:
+// Three spelling differences from the Kotlin, all recorded in `MoreScreen.swift`'s divergence list:
 //
 //   `AlertDialog(text = { Column(     → a `.sheet` whose body is this view. A SwiftUI `alert` can
 //    selectableGroup()) { … } })`       hold only plain buttons — no selection state, no custom
@@ -14,6 +14,12 @@
 //                                       repeats the icon of the More row that opened it: the
 //                                       indicator is what distinguishes the options, exactly as on
 //                                       Android.
+//
+//   (no twin)                       → an optional `footnote` line under the options, passed by the
+//                                       language dialog alone (`language_relaunch_note`): iOS
+//                                       applies a language pick on the next launch, Android
+//                                       recreates the activity inline, so only this port has
+//                                       something to say (divergence 9 / recorded divergence (a)).
 //
 // `confirmButton = { TextButton(settings_cancel) }` (`MoreScreen.kt:517-521`) is a tonal
 // `SalusPillButton` — the house button, since `SalusUI` ships no text button.
@@ -38,6 +44,12 @@ struct MoreSelectionDialog: View {
     /// The SF Symbol every row in this dialog carries — the icon of the More row that opened it.
     let systemImage: String
     let options: [MoreSelectionOption]
+    /// An optional line under the options. Only the language dialog passes one
+    /// (`SettingsStrings.languageRelaunchNote`), because only the language pick defers its effect
+    /// to the next launch — **recorded divergence (a)**, ruling 6. Kotlin's `SelectionDialog` has
+    /// no such parameter: appcompat recreates the activity, so there is nothing to warn about.
+    /// Defaulted to `nil` so the theme and colour-theme call sites stay the Kotlin shape.
+    var footnote: String?
     let onDismiss: () -> Void
 
     @Environment(\.salusTheme) private var theme
@@ -64,6 +76,17 @@ struct MoreSelectionDialog: View {
                         )
                     }
                 }
+            }
+
+            if let footnote {
+                // `Text(verbatim:)`, not `Text(_:)`: the value is already resolved, and `Text(_:)`
+                // would re-read it as a `LocalizedStringKey` against the MAIN bundle (the M7
+                // `c726e22` finding).
+                Text(verbatim: footnote)
+                    .font(SalusTypography.bodySmall.font)
+                    .tracking(SalusTypography.bodySmall.tracking)
+                    .foregroundStyle(theme.colorScheme.onSurfaceVariant)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
 
             SalusPillButton(
