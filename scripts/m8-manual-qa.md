@@ -531,6 +531,18 @@ drawn at the right moment, and these are the moments where "right" is not obviou
 
 ---
 
+## What was executed when this section was written (iOS-M8 Task 9)
+
+**Nothing.** Task 9 ran `scripts/test-packages.sh SalusCommon` (61 tests, including the 8
+`AppLockManagerTests` cases), `scripts/test-packages.sh SalusUI SalusTesting SalusCommon` (3/3
+packages passed), the full `scripts/test-packages.sh` sweep (24/24 packages passed),
+`scripts/build-app.sh` (BUILD SUCCEEDED) and `scripts/lint.sh` (0 violations in 495 files). Every §3
+row above is **NOT RUN**; the rows Task 11 added (3.16–3.18) are likewise unrun. No simulator was
+booted and no Face ID prompt has ever been observed on any hardware — §3.15 (the Keychain
+reinstall-survival check) in particular needs a device and has never been run.
+
+---
+
 ## §4. The More hub (Task 6)
 
 Written by Task 6 (`Packages/Features/FeatureSettings/Sources/FeatureSettings/ui/more/
@@ -916,6 +928,18 @@ texts is where Android wraps too — the app must not scale-to-fit where Android
   fixed-height card clips its text — list rows wrap, editors' supporting text (`lineLimit(2...6)`) is
   the one deliberate truncation and matches Android's own `maxLines` cap, and the cycle day cells /
   legend stay readable.
+
+---
+
+## What was executed when this section was written (iOS-M8 Task 14)
+
+**Nothing.** Task 14 ran `scripts/lint.sh` (0 violations in 527 files), `scripts/lint-custom-rules.sh`
+(every custom rule fired in scope, quiet outside), `scripts/test-packages.sh SalusUI FeatureSettings`
+(2/2 packages passed; SalusUI 89/14, FeatureSettings 68/9) plus the 7-package sweep
+(Home/Medications/Appointments/Cycle too, all passed), and `scripts/build-app.sh` (BUILD SUCCEEDED).
+Every §6 row above is **NOT RUN**: nothing in the app has ever been read by VoiceOver, and no screen
+has ever been rendered at the largest Dynamic Type size. The rotor walk (§6.1) and the AX5-TR layout
+inspection (§6.2) are the user's half of the a11y pass, exactly as the §0 preamble says.
 
 ---
 
