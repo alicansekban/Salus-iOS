@@ -327,11 +327,31 @@ inside its root view, or a pushed destination would not see it.
 - **The Android test table is the drift detector**: port it case-for-case, by name. A ported type
   without its ported table is an unfinished port. A table that exists only on iOS is an Android gap
   — open it in `salus-android/docs/ios-v1-plan.md` §11 in the same milestone.
+- **Manual QA is written, not run, by the agents who build a milestone** (user decision,
+  2026-08-30). Anything that needs a tap, a real clock or the OS's own stores goes into
+  `scripts/m<N>-manual-qa.md` as a numbered step with an expected result, and the user runs it. A
+  milestone's implementers run `scripts/test-packages.sh`, `scripts/build-app.sh` and
+  `scripts/ci.sh` only. A step nobody has executed says **NOT RUN** in that file — never "passing".
 - `scripts/test-packages.sh <PackageName>` narrows the run; `scripts/ci.sh` is the gate.
 - After adding **or deleting** a *file* in a path dependency, a warm checkout can fail with a stale
   `Packages/*/.build` — "missing inputs" for a file that is no longer there is the same stale-cache
   failure as an unseen new one, and M4's Task 1 hit it by *moving* `LocalDateTime` out of
   `FeatureVitals`. Run `scripts/clean.sh`.
+
+## Days and dates
+
+A *day* is `SalusModel.LocalDate` and travels as `epochDay`; a `Date` is an absolute instant only.
+The rule and its three carve-outs are in `CLAUDE.md` — what changed in iOS-M7 is the enforcement:
+
+- **This is now mechanical.** `.swiftlint.yml`'s `no_calendar_outside_clock` custom rule (error,
+  `included:` the whole tree) rejects a `Calendar` construction, `Calendar.current` /
+  `Calendar.autoupdatingCurrent`, and a `Calendar` type position, everywhere except the three
+  sanctioned files and the two tests that exercise them. `scripts/lint-custom-rules.sh` proves it
+  fires — its fixture asserts an exact hit count *and* silence on all five carve-out files, because
+  a custom rule's `included:`/`excluded:` fails as silently as its regex does.
+- It cannot see indirection (a `typealias`, a stored property, `NSCalendar`), so review is still the
+  backstop. Formatting a day in a feature goes through `LocalDate.formatted(pattern:locale:)`;
+  formatting an instant goes through `Date.FormatStyle` with an explicit locale *and* time zone.
 
 ## Charts
 
@@ -364,7 +384,7 @@ the iOS-M4 task 6, 8 and 9 reports for the rows marked *(M4)*.
 | `FilterChip` (multi-select, M4's reminder offsets) *(M4)* | `SalusUI.SalusFilterChip(label:isSelected:action:)` — `secondaryContainer` fill when selected, outline when not, 48 pt minimum touch target, Dynamic-Type-scaled |
 | `AssistChip` / status pill *(M4)* | `SalusUI.SalusStatusChip(label:accent:)`, tinted from a `FeatureAccent?` |
 | `SalusSectionHeader` (core/ui) *(M4)* | `SalusUI.SalusSectionHeader(title:)`, or `SalusSectionHeader(title:actions:)` with a `@ViewBuilder` trailing closure for the optional trailing action — `titleLarge` / `onSurface`. A *group label* inside a form is **not** this: it is a plain `Text` at `titleSmall` / `onSurface` |
-| `SalusPillButton` (core/ui) *(M4)* | `Button` + `.buttonStyle(.borderedProminent)` for the default filled form, `.bordered` for `tonal = true`. There is no `SalusPillButton` view: the two Material styles are exactly the two SwiftUI button styles, and `CircleShape` is what `.bordered*` already draws |
+| `SalusPillButton` (core/ui) *(M4, superseded by M6/M7)* | `SalusUI.SalusPillButton` — `.buttonStyle(.plain)` over a hand-drawn `SalusShapes.pill`, 48-pt label floor, Material's disabled alphas, `fillsWidth`. The M4 row said "there is no `SalusPillButton` view; use `.borderedProminent`/`.bordered`": iOS-M6 built the component (a system button style cannot be held to the 48-pt token) and **iOS-M7 migrated the last four inline copies** (appointment detail ×4 including the maps pill, medication detail ×2, `SalusEmptyState`). Do not hand-roll a fifth |
 | `DatePickerDialog` over an `epochDay` *(M4)* | `SalusUI.SalusDateField(title:epochDay:placeholder:seedEpochDay:onChange:)` — the binding converts on the GMT boundary, never `Calendar.current`; `nil` draws a placeholder button that opens the wheel at `seedEpochDay` and **commits nothing** until the wheel actually moves, the twin of `SalusTimeField` below |
 | `TimePickerDialog` over a `minuteOfDay` *(M4)* | `SalusUI.SalusTimeField(title:minuteOfDay:placeholder:seedMinuteOfDay:onChange:)` — `nil` draws a placeholder button and **commits nothing** until the wheel actually moves, which is how a Compose dialog's Cancel behaves; `seedMinuteOfDay` is required so the caller, not the component, owns the Kotlin `?: 9` default |
 | `kotlinx.datetime.LocalDateTime` *(M4)* | `SalusModel.LocalDateTime` (`LocalDate` + `minuteOfDay`), with `isoLocalString` / `init?(isoLocalString:)` writing exactly what Kotlin's `toString()` writes, and `instant(in:)` in `SalusCommon/SalusClock.swift`. It moved out of `FeatureVitals` the moment a second feature needed it — do not copy it into a feature |
@@ -384,6 +404,14 @@ the iOS-M4 task 6, 8 and 9 reports for the rows marked *(M4)*.
 | `String.format(locale, "%d", int)` | `String(format: "%lld", locale:, …)` — Swift's `Int` is 64-bit |
 | `DateTimeFormatter.ofPattern(p, locale)` | `DateFormatter` with a **fixed** `dateFormat`, never `setLocalizedDateFormatFromTemplate` (which reorders components per region where Android does not) |
 | `koinViewModel()` / `koinInject<Navigator>()` | `@Environment(\.<name>Module)` + a factory called from `.task` |
+
+**A tappable control is never nested inside `SalusCard(onTap:)`.** Compose lets a clickable child
+inside a clickable `Card` win the gesture; SwiftUI's `SalusCard(onTap:)` is a `Button`, and anything
+in a `Button`'s label is part of the label — the inner tap is swallowed and VoiceOver reads one
+element. So a card's own pill or icon button is a **sibling**: the card's tappable region and the
+control sit side by side in the same `HStack`, each with its own accessibility element. This is the
+house pattern (`VitalsRow`, `MedicationCard`, `AppointmentsScreen`, and iOS-M7's Home dose and
+appointment cards); the Android twin nests, which is Android follow-up `A32`.
 
 Design values come only from `salus-android/docs/design/design-tokens.md` through
 `SalusDesignSystem`; a view reads the theme from `@Environment(\.salusTheme)` and never takes a
