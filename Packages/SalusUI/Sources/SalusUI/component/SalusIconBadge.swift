@@ -17,9 +17,9 @@ import SalusDesignSystem
 import SwiftUI
 
 /// Icon inside a tinted circle — the shared leading visual for list rows, cards and detail
-/// headers. `accent.container` fills the circle, `accent.accent` draws the icon
-/// (`SalusIconBadge.kt:44-45`); with no accent it is the primary role, as Kotlin's
-/// `accent?.accent ?: colorScheme.primary` has it (`SalusIconBadge.kt:38-39`).
+/// headers. `accent.container` fills the circle and `accent.accent` draws the icon — both read at
+/// `SalusIconBadge.kt:38-39` and applied at `:43` and `:49`; with no accent it is the primary role,
+/// as Kotlin's `accent?.accent ?: colorScheme.primary` has it (`SalusIconBadge.kt:38-39`).
 public struct SalusIconBadge: View {
     private let systemImage: String
     private let accent: FeatureAccent?

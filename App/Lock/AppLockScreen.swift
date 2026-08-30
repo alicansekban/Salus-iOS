@@ -10,7 +10,8 @@
 //     `ZStack`, `ignoresSafeArea()` because `fillMaxSize` inside `setContent` covers the whole
 //     window. Compose's `Surface` also sets the content colour, which is what `onBackground` on the
 //     title below spells out.
-//   * no back handling (`AppLockScreen.kt:27-28`) → nothing here declares a toolbar, a
+//   * no back handling — Kotlin declares no `BackHandler` anywhere in `AppLockScreen.kt`, and its
+//     KDoc says why (`AppLockScreen.kt:26-29`) → nothing here declares a toolbar, a
 //     `NavigationStack` or a dismiss. The gate is an overlay the shell (T11) draws **above** the
 //     tab bar and outside every `NavigationStack`, so the back stack and any pending deep link
 //     survive the lock instead of being popped by it.

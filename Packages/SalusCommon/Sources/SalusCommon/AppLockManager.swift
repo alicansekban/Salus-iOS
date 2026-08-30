@@ -28,8 +28,10 @@
 //      the stream's first emission is still a task hop away. Starting locked means the worst case
 //      is a gate that disappears; starting unlocked means the worst case is the app's contents
 //      drawn to someone who was supposed to be stopped by the lock. The flash the choice would
-//      otherwise cost is already paid for by the onboarding gate's splash-hold (M8 ruling 3), which
-//      keeps `RootView` blank until the same `userSettings` stream answers.
+//      otherwise cost is paid for twice over: by the onboarding gate's splash-hold (M8 ruling 3),
+//      which keeps `RootView` blank until the same `userSettings` stream answers, and by
+//      `hasReadSetting` below, which the shell gates the gate on so the cover is a guarantee rather
+//      than a matter of which stream answers first.
 //   4. **`nowMs` is a parameter as well as a clock read.** Kotlin's `onStart`/`onStop` read
 //      `clock.now()` themselves; the two methods below do the same when `nowMs` is `nil`, which is
 //      the production spelling. The parameter exists because the shell already holds a reading when
@@ -69,10 +71,17 @@ public final class AppLockManager {
 
     /// Whether the setting stream has produced its first value.
     ///
-    /// Internal on purpose, the `PendingDeleteController.windowTask(id:)` precedent: the app never
-    /// needs it, and this package's tests use it to wait for the state Kotlin's `isLocked.first()`
-    /// suspends until.
-    private(set) var hasReadSetting = false
+    /// **The shell must not draw the gate until this is `true`.** ``isLocked`` starts `true` on
+    /// purpose (divergence 3), which means that before the first emission it says "locked" for a
+    /// setting nobody has read yet — and a gate drawn in that window fires ``AppLockScreen``'s
+    /// automatic prompt at someone who never enabled the lock. Ruling 3's splash-hold (the blank
+    /// `RootView` frame until `userSettings` answers) reads the same stream and usually covers it,
+    /// but "usually" is task-ordering luck; this is the signal that makes it a guarantee.
+    ///
+    /// Public for that reason, and only that reason: it is not part of the state machine, and no
+    /// caller should branch on it for anything but "may I draw the gate yet". This package's tests
+    /// also use it to wait for the state Kotlin's `isLocked.first()` suspends until.
+    public private(set) var hasReadSetting = false
 
     /// `MutableStateFlow(false)` (`AppLockManager.kt:24`) — a cold start begins locked when the
     /// setting is on, because nothing has unlocked this session yet.

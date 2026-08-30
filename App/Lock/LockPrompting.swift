@@ -22,6 +22,17 @@
 // A fresh `LAContext` per evaluation on purpose: a context caches its last successful
 // authentication for `touchIDAuthenticationAllowableReuseDuration`, and re-using one would let a
 // second lock be opened by the first unlock.
+//
+// ONE ERROR IS NOT LIKE THE OTHERS, and it is deliberately not special-cased here.
+// `LAError.passcodeNotSet` throws immediately on a device with no passcode at all, so the gate
+// answers `false` for ever and the app cannot be opened. It is unreachable through the app's own
+// affordances — the settings toggle is disabled while
+// `canEvaluatePolicy(.deviceOwnerAuthentication)` is false (M8 ruling 4), so the lock cannot be
+// turned on in that state — but the flag lives in the Keychain and survives a reinstall, so a
+// phone whose passcode is removed *after* the lock was enabled would arrive here. Android has the
+// same hole for the same reason (`BiometricManager.canAuthenticate` gates the toggle, not the
+// prompt), so this port keeps it rather than inventing an escape hatch Android has no twin for.
+// `scripts/m8-manual-qa.md` §3.12 is where the passcode path is checked by hand.
 
 import LocalAuthentication
 

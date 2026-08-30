@@ -159,34 +159,52 @@ both sides of the 30 s boundary and the boundary itself, runs on a fake clock. W
 reach is the part that belongs to iOS: whether a *real* background stay of a *real* 31 seconds
 re-locks, and whether the system's own authentication sheet appears and unlocks.
 
-**Before you start.** In the simulator, enrol a face: **Features → Face ID → Enrolled**. Without an
-enrolment the toggle in §4 is disabled and reads **"Bu cihazda ekran kilidi tanımlı değil"** — which
-is itself step 3.6, so run that one first if you like.
+**Before you start.** Step 3.1 is the one to run *without* an enrolled biometric; every step after
+it needs one. So run 3.1 first, then enrol a face — **Features → Face ID → Enrolled** — and carry on
+from 3.2.
+
+### When the device has no screen lock
+
+- [ ] **3.1 No biometric and no passcode disables the toggle and swaps its subtitle.** On a
+  simulator with **no** Face ID enrolment and **no** device passcode (**Features → Face ID →
+  Enrolled** *off*, and no passcode under **Settings → Face ID & Passcode**), open the More tab →
+  **Güvenlik** section.
+  *Expected:* the **"Uygulama kilidi"** row is **greyed out and cannot be tapped**, and its subtitle
+  is **"Bu cihazda ekran kilidi tanımlı değil"** — not the usual **"30 sn arka planda kaldıktan
+  sonra biyometri veya cihaz kilidi iste"**. Tapping it does nothing.
+  *Why this step exists:* `appLockAvailable = LAContext().canEvaluatePolicy(.deviceOwnerAuthentication)`
+  is the twin of Android's `BiometricManager.canAuthenticate(BIOMETRIC_WEAK or DEVICE_CREDENTIAL)`
+  (`MoreScreen.kt:94-98`), and the subtitle swap plus the disabled toggle are
+  `MoreScreen.kt:263-270`. Enabling a lock that cannot then be opened is the one way to brick the
+  app, which is why the row is disabled rather than merely failing at the prompt.
+  *Ownership note:* the row and its subtitle belong to the More hub (T6, `FeatureSettings`); this
+  step is here because the **availability rule** is the lock's, and nothing else in the milestone
+  hand-checks it. If §4 grows a duplicate, delete this one rather than keeping both.
 
 ### Turning the lock on
 
-- [ ] **3.1 Enabling app lock re-authenticates first.** More tab → **Güvenlik** section → tap the
+- [ ] **3.2 Enabling app lock re-authenticates first.** More tab → **Güvenlik** section → tap the
   **"Uygulama kilidi"** toggle on.
   *Expected:* the system authentication sheet appears **before** the toggle moves, titled
   **"Uygulama kilidini etkinleştir"**. Approve it (**Features → Face ID → Matching Face**).
   *Expected:* the toggle is now on. *Why this step exists:* the confirmation is what stops someone
   holding an unlocked phone from locking its owner out (M8 ruling 4).
-- [ ] **3.2 A refused confirmation leaves the setting alone.** Turn the toggle off, then on again
+- [ ] **3.3 A refused confirmation leaves the setting alone.** Turn the toggle off, then on again
   and **cancel** the sheet (or **Features → Face ID → Non-matching Face**).
   *Expected:* the toggle springs back to off and nothing is written. Kill and relaunch the app —
   it is still off.
-- [ ] **3.3 Disabling needs no confirmation.** With the lock on, tap the toggle off.
+- [ ] **3.4 Disabling needs no confirmation.** With the lock on, tap the toggle off.
   *Expected:* it goes off immediately, with no sheet. Android does the same, deliberately: a
   confirmation to *remove* a protection you are already past protects nobody.
 
 ### The 30 s background grace — both sides of the boundary
 
-- [ ] **3.4 Under 30 s in the background does not lock.** With the lock on and the app unlocked,
+- [ ] **3.5 Under 30 s in the background does not lock.** With the lock on and the app unlocked,
   press **Home** (⇧⌘H), count **ten seconds**, and reopen Salus.
   *Expected:* the app comes back exactly where it was. **No lock screen, no authentication sheet.**
   *Why this step exists:* answering a message or copying a code out of another app must not cost an
   unlock — the grace is what makes the lock livable.
-- [ ] **3.5 Over 30 s in the background locks.** Press **Home** again, wait **at least 35 seconds**
+- [ ] **3.6 Over 30 s in the background locks.** Press **Home** again, wait **at least 35 seconds**
   by a real clock, and reopen Salus.
   *Expected:* the lock screen covers everything: a large lock badge, the title **"Salus kilitli"**
   and a **"Kilidi aç"** pill. The authentication sheet appears **on its own**, without you tapping
@@ -195,36 +213,36 @@ is itself step 3.6, so run that one first if you like.
   same session. Do not try to test the boundary by hand — `AppLockManagerTests` pins it to the
   millisecond; what this step proves is only that the scenePhase transitions reach the manager at
   all.
-- [ ] **3.6 A cold start is locked.** With the lock on, kill the app from the app switcher and
+- [ ] **3.7 A cold start is locked.** With the lock on, kill the app from the app switcher and
   relaunch it.
   *Expected:* the lock screen again, and the prompt again — a fresh process has no unlock behind it.
-- [ ] **3.7 The tab bar and any pushed screen survive the lock.** Before step 3.5, push a detail
+- [ ] **3.8 The tab bar and any pushed screen survive the lock.** Before step 3.6, push a detail
   screen (Medications → a medication). Then background for 35 s, return, and unlock.
   *Expected:* you land back on **that detail screen**, not on a tab root. The gate is an overlay
   above the navigation stacks, never a destination, so nothing is popped by it.
 
 ### The prompt, and what a refusal does
 
-- [ ] **3.8 Face ID unlocks.** On the lock screen, approve the sheet (**Features → Face ID →
+- [ ] **3.9 Face ID unlocks.** On the lock screen, approve the sheet (**Features → Face ID →
   Matching Face**).
   *Expected:* the gate disappears and the app is usable. Backgrounding for under 30 s from here does
-  not bring it back (re-run 3.4 to confirm the unlock stuck for the session).
-- [ ] **3.9 Cancelling leaves the gate up, and the button is the retry.** Background for 35 s,
+  not bring it back (re-run 3.5 to confirm the unlock stuck for the session).
+- [ ] **3.10 Cancelling leaves the gate up, and the button is the retry.** Background for 35 s,
   return, and **cancel** the sheet.
   *Expected:* the sheet goes away and the lock screen is still there — no error message, no toast,
   nothing moves. Tap **"Kilidi aç"**.
   *Expected:* the sheet comes back. This is Android verbatim: only the success callback is
   implemented, so a failure is silence and the button is the only retry.
-- [ ] **3.10 A non-matching face does not unlock.** Repeat 3.9 with **Features → Face ID →
+- [ ] **3.11 A non-matching face does not unlock.** Repeat 3.10 with **Features → Face ID →
   Non-matching Face** until iOS offers the passcode.
   *Expected:* the gate stays up through every failure, and iOS eventually offers **"Parola Kullan"**.
-- [ ] **3.11 The passcode is a real fallback.** Take that passcode option and enter the device
+- [ ] **3.12 The passcode is a real fallback.** Take that passcode option and enter the device
   passcode (set one under **Settings → Face ID & Passcode** if the simulator has none).
   *Expected:* the gate opens. *Why this step exists:* the policy is
   `.deviceOwnerAuthentication`, the twin of Android's `BIOMETRIC_WEAK or DEVICE_CREDENTIAL` — a
   phone whose face fails must still be openable by its owner. If this ever asks *only* for a face,
   the policy has been narrowed to `.deviceOwnerAuthenticationWithBiometrics` and that is a bug.
-- [ ] **3.12 Disabling the setting while the gate is up removes it instantly.** This one needs two
+- [ ] **3.13 Disabling the setting while the gate is up removes it instantly.** This one needs two
   hands: it cannot be reached from behind the lock, so use a build where you can toggle the setting
   from another device or re-check it in code review instead. *(No simulator route — recorded as
   covered by `AppLockManagerTests.disablingTheSettingWhileLockedUnlocksImmediately` and not
@@ -232,7 +250,7 @@ is itself step 3.6, so run that one first if you like.
 
 ### The Face ID usage description
 
-- [ ] **3.13 The purpose string is the app's, in the device's language.** On a **Turkish** device,
+- [ ] **3.14 The purpose string is the app's, in the device's language.** On a **Turkish** device,
   trigger the first prompt after a fresh install.
   *Expected:* iOS's own Face ID permission alert quotes **"Uygulama kilidini açmak için Salus'un
   Face ID iznine ihtiyacı var."** Switch the device to English, delete and reinstall, and repeat.
@@ -248,7 +266,7 @@ is itself step 3.6, so run that one first if you like.
 
 ### Device-only
 
-- [ ] **3.14 On a real device, the lock survives a reinstall of nothing else.** The flag lives in
+- [ ] **3.15 On a real device, the lock survives a reinstall of nothing else.** The flag lives in
   the Keychain (`KeychainAppLockFlagStore`, `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly`), not
   in `UserDefaults`, so deleting the app's data must not clear it. With the lock on, delete the app
   and reinstall it.
