@@ -14,7 +14,8 @@ import SalusProfile
 @testable import FeatureSettings
 
 /// A ``ProfileRepository`` whose profile a test sets and re-emits on every write — the twin of the
-/// Kotlin `MoreViewModelTest`'s `FakeProfileRepository(profiles: MutableStateFlow<Profile?>)`.
+/// Kotlin `MoreViewModelTest`'s `FakeProfileRepository(profiles: MutableStateFlow<Profile?>)` and
+/// of `ProfileViewModelTest`'s, which adds the `saved` list (`ProfileViewModelTest.kt:23-35`).
 ///
 /// `@unchecked Sendable` over a lock for the same reason `FakeSettingsPreferences.swift` is: the
 /// protocol's stream is not `@MainActor`-isolated. Push-capable so the "changing sex updates
@@ -23,7 +24,17 @@ import SalusProfile
 final class FakeProfileRepository: ProfileRepository, @unchecked Sendable {
     private let lock = NSLock()
     private var profileValue: Profile?
+    private var savedProfiles: [Profile] = []
     private var continuations: [UUID: AsyncThrowingStream<Profile?, any Error>.Continuation] = [:]
+
+    /// Every profile `saveProfile` was handed, in order — `ProfileViewModelTest.kt:25` (`saved`).
+    /// A write the ViewModel was supposed to refuse shows up here as an extra element, which is
+    /// what the three "writes nothing" cases assert against.
+    var saved: [Profile] {
+        lock.lock()
+        defer { lock.unlock() }
+        return savedProfiles
+    }
 
     init(profile: Profile? = nil) {
         profileValue = profile
@@ -57,7 +68,16 @@ final class FakeProfileRepository: ProfileRepository, @unchecked Sendable {
     }
 
     func saveProfile(_ profile: Profile) async throws {
+        recordSave(profile)
         setProfile(profile)
+    }
+
+    /// Split out for the same reason `getProfileSync` is: `NSLock` may not be held across a
+    /// suspension point under Swift 6.
+    private func recordSave(_ profile: Profile) {
+        lock.lock()
+        savedProfiles.append(profile)
+        lock.unlock()
     }
 
     /// The twin of `FakeProfileRepository.profiles.value = …` — flips the profile and pushes it to

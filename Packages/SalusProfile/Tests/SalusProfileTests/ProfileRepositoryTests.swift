@@ -121,3 +121,14 @@ struct ProfileRepositoryTests {
         return (ProfileRepositoryImpl(profileDao: dao, clock: clock), dao, clock)
     }
 }
+
+/// The companion constant `:feature:settings` and `:feature:onboarding` reach for
+/// (`ProfileRepository.kt:25-28`). It is the id the migration seeds, so it is pinned against the
+/// database's own constant rather than re-spelled.
+@Suite("ProfileRepositoryDefaults")
+struct ProfileRepositoryDefaultsTests {
+    @Test("the repository's default profile id is the database's")
+    func defaultProfileIdMirrorsTheDatabase() {
+        #expect(ProfileRepositoryDefaults.defaultProfileId == SalusDatabase.defaultProfileId)
+    }
+}

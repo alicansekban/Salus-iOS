@@ -15,8 +15,18 @@ public struct ReminderHealthKey: Hashable, Sendable {
     public init() {}
 }
 
-// TODO(M8): the settings hub itself, plus the keys its rows push. Until it lands the More tab's
-// root is the shell's placeholder, which carries the one row this milestone needs.
+/// The profile editor, pushed from the More tab's profile row (`SettingsNavigation.kt:17`, drawn
+/// by `:42-44`).
+///
+/// It carries no argument: there is exactly one profile row, seeded by the migration, so the editor
+/// has nothing to be told apart by — unlike the vitals and appointment editors, whose keys carry an
+/// `entryId`.
+public struct ProfileKey: Hashable, Sendable {
+    public init() {}
+}
+
+// TODO(M8): the settings hub itself, plus the remaining keys its rows push. Until it lands the More
+// tab's root is the shell's placeholder, which carries the one row this milestone needs.
 
 extension View {
     /// Registers every destination this feature owns.
@@ -28,6 +38,9 @@ extension View {
     public func settingsDestinations() -> some View {
         navigationDestination(for: ReminderHealthKey.self) { _ in
             ReminderHealthRoute()
+        }
+        .navigationDestination(for: ProfileKey.self) { _ in
+            ProfileRoute()
         }
     }
 }

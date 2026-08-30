@@ -7,10 +7,13 @@
 //
 //   `viewModelOf(::ReminderHealthViewModel)` → `makeReminderHealthViewModel`, a closure, so each
 //                                              Route gets a fresh one exactly as `viewModel` does.
+//   `viewModelOf(::ProfileViewModel)`        → `makeProfileViewModel`, the same shape.
 //
 // TODO(M8): the settings hub's own ViewModel and the preferences it reads.
 
 import SalusCommon
+import SalusNavigation
+import SalusProfile
 import SalusReminder
 import SwiftUI
 
@@ -21,6 +24,7 @@ import SwiftUI
 @MainActor
 public struct SettingsModule {
     public let makeReminderHealthViewModel: @MainActor () -> ReminderHealthViewModel
+    public let makeProfileViewModel: @MainActor () -> ProfileViewModel
 }
 
 /// Builds the feature's graph — the twin of `val settingsModule = module { … }`.
@@ -32,13 +36,21 @@ public struct SettingsModule {
 ///   decides that once, behind the single `#available(iOS 26.0, *)` in the app
 ///   (`AppCompositionRoot.makeAlarmKitBackend`), and passes the answer on rather than letting a
 ///   second `#available` appear down here.
+///
+/// The parameter list is the dependency list — the shape Koin's `module { }` block has — so the
+/// `function_parameter_count` warning is answered with a disable rather than by bundling
+/// dependencies into a struct that would exist only to satisfy a count. The same targeted-disable
+/// precedent `MoreViewModel.onEvent` sets for `cyclomatic_complexity`.
 @MainActor
+// swiftlint:disable:next function_parameter_count
 public func makeSettingsModule(
     reminderEnvironment: any ReminderEnvironment,
     reminderAuthorization: any ReminderAuthorizationRequesting,
     reminderSyncState: any ReminderSyncStateStore,
     clock: any SalusClock,
-    alarmKitSupported: Bool
+    alarmKitSupported: Bool,
+    profileRepository: any ProfileRepository,
+    navigator: Navigator
 ) -> SettingsModule {
     SettingsModule(
         makeReminderHealthViewModel: {
@@ -49,6 +61,9 @@ public func makeSettingsModule(
                 clock: clock,
                 alarmKitSupported: alarmKitSupported
             )
+        },
+        makeProfileViewModel: {
+            ProfileViewModel(profileRepository: profileRepository, navigator: navigator)
         }
     )
 }

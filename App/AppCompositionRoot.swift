@@ -372,7 +372,9 @@ final class AppCompositionRoot {
             reminderAuthorization: reminder.environment,
             reminderSyncState: reminder.syncState,
             clock: clock,
-            alarmKitSupported: reminder.alarmKitSupported
+            alarmKitSupported: reminder.alarmKitSupported,
+            profileRepository: infrastructure.profileRepository,
+            navigator: infrastructure.navigator
         )
         return FeatureModules(
             reminder: reminder,
