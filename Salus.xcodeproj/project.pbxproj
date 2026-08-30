@@ -18,6 +18,7 @@
 		23F65989585616FBE8ED64EA /* FeatureMedications in Frameworks */ = {isa = PBXBuildFile; productRef = A09472DCFC9DF142C53A2DB6 /* FeatureMedications */; };
 		31B1435CF5BE4BF05CC0C0C1 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 322C707DD49C5D019E45E256 /* Localizable.xcstrings */; };
 		3321C284993CDAECC785BB87 /* SalusDatabase in Frameworks */ = {isa = PBXBuildFile; productRef = 23E6F4A762A65FDBF66C5851 /* SalusDatabase */; };
+		3465E87C8F8A0E450EA3DB25 /* AppLockScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17EC8F7F2D16791CF7D4063F /* AppLockScreen.swift */; };
 		3D484E56042E4D7001156A70 /* AppCompositionRoot+Modules.swift in Sources */ = {isa = PBXBuildFile; fileRef = C46AC39F5A2F807756E92213 /* AppCompositionRoot+Modules.swift */; };
 		537EC5AA135769AF924F7DC3 /* SalusCommon in Frameworks */ = {isa = PBXBuildFile; productRef = AC3FBAE5BFB699978B2666B6 /* SalusCommon */; };
 		551793D6452E4FC23ACF2654 /* SalusNavigation in Frameworks */ = {isa = PBXBuildFile; productRef = ACCBF7E12A2FD2C767BEFFBE /* SalusNavigation */; };
@@ -30,6 +31,7 @@
 		A016D85074A4509AC99FF2FF /* SalusModel in Frameworks */ = {isa = PBXBuildFile; productRef = 8ECECD06AD0F99DA3A276AD5 /* SalusModel */; };
 		B049FC0314FE8C521DE31994 /* SalusApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = F703871BE6F4C3CF92AA8959 /* SalusApp.swift */; };
 		B08C36EA11ED996DB0731323 /* SalusSettings in Frameworks */ = {isa = PBXBuildFile; productRef = 57D3E1D1FDC2AE9506EA16BD /* SalusSettings */; };
+		B1AB01B38B995823C20C59CD /* LockPrompting.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC743CA17A5881148ADB706C /* LockPrompting.swift */; };
 		C2326DF7EB01BFBC5283C249 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3682A16DBF8B254394C1B404 /* RootView.swift */; };
 		C9CA768F60D2F662068FC166 /* SalusUI in Frameworks */ = {isa = PBXBuildFile; productRef = 886E308EC0BDC87438F00E5C /* SalusUI */; };
 		D9E03062854D4C95BAF2AB90 /* FeatureSettings in Frameworks */ = {isa = PBXBuildFile; productRef = E9250C08C6EC71E8E58894A2 /* FeatureSettings */; };
@@ -44,6 +46,7 @@
 		0C40A21C37AD104957DD4999 /* AppStrings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStrings.swift; sourceTree = "<group>"; };
 		0CB7EF65297E10E2C5CF4C2D /* SalusDatabase */ = {isa = PBXFileReference; lastKnownFileType = folder; name = SalusDatabase; path = Packages/SalusDatabase; sourceTree = SOURCE_ROOT; };
 		15AD79D550BC94771443016D /* AppCompositionRoot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppCompositionRoot.swift; sourceTree = "<group>"; };
+		17EC8F7F2D16791CF7D4063F /* AppLockScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLockScreen.swift; sourceTree = "<group>"; };
 		1967360C450E679E57DA1D68 /* PrivacyOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyOverlay.swift; sourceTree = "<group>"; };
 		2A068E62066834CBBAD1DFE8 /* FeatureAppointments */ = {isa = PBXFileReference; lastKnownFileType = folder; name = FeatureAppointments; path = Packages/Features/FeatureAppointments; sourceTree = SOURCE_ROOT; };
 		2E7A0AF160F41F13451BB006 /* PlaceholderScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaceholderScreen.swift; sourceTree = "<group>"; };
@@ -66,6 +69,7 @@
 		ABE62DF92DB777EA452EBEAF /* SalusModel */ = {isa = PBXFileReference; lastKnownFileType = folder; name = SalusModel; path = Packages/SalusModel; sourceTree = SOURCE_ROOT; };
 		AC11B0F74C84F76888F4B842 /* tr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = tr; path = tr.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		B817341D6CF4C638CED0FA9A /* FeatureMedications */ = {isa = PBXFileReference; lastKnownFileType = folder; name = FeatureMedications; path = Packages/Features/FeatureMedications; sourceTree = SOURCE_ROOT; };
+		BC743CA17A5881148ADB706C /* LockPrompting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LockPrompting.swift; sourceTree = "<group>"; };
 		C46AC39F5A2F807756E92213 /* AppCompositionRoot+Modules.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppCompositionRoot+Modules.swift"; sourceTree = "<group>"; };
 		C9D663E6B65CEEF73E47F04C /* SalusProfile */ = {isa = PBXFileReference; lastKnownFileType = folder; name = SalusProfile; path = Packages/SalusProfile; sourceTree = SOURCE_ROOT; };
 		CBB3D1F6577F9A1686EEF47C /* AppAlarmIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppAlarmIntents.swift; sourceTree = "<group>"; };
@@ -143,10 +147,20 @@
 			path = Resources;
 			sourceTree = "<group>";
 		};
+		7B26979369DD6CD398086DDA /* Lock */ = {
+			isa = PBXGroup;
+			children = (
+				17EC8F7F2D16791CF7D4063F /* AppLockScreen.swift */,
+				BC743CA17A5881148ADB706C /* LockPrompting.swift */,
+			);
+			path = Lock;
+			sourceTree = "<group>";
+		};
 		A8A07DF35E5624B1CA8B63A8 /* App */ = {
 			isa = PBXGroup;
 			children = (
 				3B1306692224BD06CE0E55BF /* InfoPlist.strings */,
+				7B26979369DD6CD398086DDA /* Lock */,
 				C6796801C34DB4173CAE4458 /* Reminder */,
 				6A392B2A08D6304DBF51378F /* Resources */,
 				15AD79D550BC94771443016D /* AppCompositionRoot.swift */,
@@ -296,9 +310,11 @@
 				3D484E56042E4D7001156A70 /* AppCompositionRoot+Modules.swift in Sources */,
 				20CE1EC6D03BC4A4DE7B0C06 /* AppCompositionRoot+Reminder.swift in Sources */,
 				1102517D43A6643370219A27 /* AppCompositionRoot.swift in Sources */,
+				3465E87C8F8A0E450EA3DB25 /* AppLockScreen.swift in Sources */,
 				0539B0B434063E373D3D798F /* AppStrings.swift in Sources */,
 				1F0578B19CE4AC5AB5CCC17F /* DebugReminderHandler.swift in Sources */,
 				0E8DF43BA69659B95A5AB53F /* DoseAlarmIntents.swift in Sources */,
+				B1AB01B38B995823C20C59CD /* LockPrompting.swift in Sources */,
 				FC66D0CB66008FBFBFEB19A3 /* PlaceholderScreen.swift in Sources */,
 				FCAEC19BE57D93E9ECEF0569 /* PrivacyOverlay.swift in Sources */,
 				71A7E5AF1C24B88439724AF9 /* RootTab.swift in Sources */,

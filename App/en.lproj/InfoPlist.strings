@@ -5,3 +5,7 @@
    app has. AlarmKit shows this sentence in its authorization prompt; without it, the prompt on an
    English device would read Turkish. */
 "NSAlarmKitUsageDescription" = "Salus needs alarm access so your medication reminders can ring as full-screen alarms.";
+
+/* iOS-M8, the app lock's Face ID prompt — the English peer of the Turkish base in `project.yml`.
+   iOS shows it above the Face ID sheet the lock gate raises. */
+"NSFaceIDUsageDescription" = "Salus needs Face ID access to unlock the app.";

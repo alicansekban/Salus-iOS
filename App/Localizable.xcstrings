@@ -1,6 +1,57 @@
 {
   "sourceLanguage" : "tr",
   "strings" : {
+    "app_lock_locked_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Salus is locked"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Salus kilitli"
+          }
+        }
+      }
+    },
+    "app_lock_prompt_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unlock Salus"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Salus kilidini aç"
+          }
+        }
+      }
+    },
+    "app_lock_unlock" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unlock"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kilidi aç"
+          }
+        }
+      }
+    },
     "more_cycle" : {
       "extractionState" : "manual",
       "localizations" : {

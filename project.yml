@@ -225,6 +225,17 @@ targets:
         NSAlarmKitUsageDescription:
           İlaç hatırlatmalarınızın tam ekran alarm olarak çalabilmesi için Salus'un alarm iznine
           ihtiyacı var.
+        # iOS-M8: the app lock. `LAContext.evaluatePolicy(.deviceOwnerAuthentication)` — the twin of
+        # Android's `BIOMETRIC_WEAK or DEVICE_CREDENTIAL` — raises `NSFaceIDUsageDescription` on a
+        # Face ID device, and iOS **terminates the app** on the first evaluation if the key is
+        # missing. Touch ID and the passcode fallback need no key of their own, which is why this
+        # one string covers the whole gate.
+        #
+        # Turkish for `NSAlarmKitUsageDescription`'s reason, and localized in the same two
+        # `.lproj/InfoPlist.strings` peers. The three values are one sentence in three places:
+        # edit them together.
+        NSFaceIDUsageDescription:
+          Uygulama kilidini açmak için Salus'un Face ID iznine ihtiyacı var.
 
     dependencies:
       - package: SalusDesignSystem

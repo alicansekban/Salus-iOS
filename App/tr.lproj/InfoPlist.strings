@@ -6,3 +6,8 @@
    both files present it answers `["tr"]` for `tr-TR`, `["en"]` for `en-US`, and `["tr"]` for
    anything else — which is spec §6.4 exactly. Edit the three together. */
 "NSAlarmKitUsageDescription" = "İlaç hatırlatmalarınızın tam ekran alarm olarak çalabilmesi için Salus'un alarm iznine ihtiyacı var.";
+
+/* iOS-M8, the app lock's Face ID prompt. The same three-places rule as above: this repeats the base
+   value `project.yml` writes into `App/Info.plist`, because a value in `Info.plist` alone is not a
+   *localization* and a `tr-TR` device would otherwise read the English peer. */
+"NSFaceIDUsageDescription" = "Uygulama kilidini açmak için Salus'un Face ID iznine ihtiyacı var.";

@@ -26,6 +26,8 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>NSAlarmKitUsageDescription</key>
 	<string>İlaç hatırlatmalarınızın tam ekran alarm olarak çalabilmesi için Salus'un alarm iznine ihtiyacı var.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Uygulama kilidini açmak için Salus'un Face ID iznine ihtiyacı var.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
