@@ -33,7 +33,7 @@ struct HomeHeader: View {
             Text(verbatim: HomeFormatting.fullDate(epochDay: todayEpochDay, locale: locale))
                 .font(SalusTypography.headlineMedium.font)
                 .tracking(SalusTypography.headlineMedium.tracking)
-            Text(HomeStrings.greeting(greeting))
+            Text(verbatim: HomeStrings.greeting(greeting))
                 .font(SalusTypography.bodyLarge.font)
                 .tracking(SalusTypography.bodyLarge.tracking)
         }

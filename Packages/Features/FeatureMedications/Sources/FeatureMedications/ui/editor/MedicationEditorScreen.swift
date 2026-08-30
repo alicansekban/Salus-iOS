@@ -180,7 +180,7 @@ struct MedicationEditorScreen: View {
         case .noDaysSelected: MedicationsStrings.editorErrorNoDays
         case .noDoseTimes: MedicationsStrings.editorErrorNoTimes
         }
-        return Text(message)
+        return Text(verbatim: message)
             .font(SalusTypography.bodyMedium.font)
             .foregroundStyle(theme.colorScheme.error)
     }

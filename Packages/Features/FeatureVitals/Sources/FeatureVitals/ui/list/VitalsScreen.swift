@@ -143,7 +143,7 @@ struct VitalsScreen: View {
             )
         ) {
             ForEach(VitalType.allCases, id: \.self) { type in
-                Text(type.vitalsLabel).tag(type)
+                Text(verbatim: type.vitalsLabel).tag(type)
             }
         } label: {
             EmptyView()

@@ -36,7 +36,7 @@ struct HomeCycleCard: View {
 
     /// `stringResource(R.string.today_cycle_day, cycle.cycleDay)` (`HomeScreen.kt:322-325`).
     private func day(_ cycleDay: Int) -> some View {
-        Text(HomeStrings.cycleDay(cycleDay))
+        Text(verbatim: HomeStrings.cycleDay(cycleDay))
             .font(SalusTypography.titleMedium.font)
             .tracking(SalusTypography.titleMedium.tracking)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -59,7 +59,7 @@ struct HomeCycleCard: View {
     @ViewBuilder private var periodOngoing: some View {
         if cycle.isPeriodOpen {
             Spacer().frame(height: SalusSpacing.sm)
-            Text(HomeStrings.cyclePeriodOngoing)
+            Text(verbatim: HomeStrings.cyclePeriodOngoing)
                 .font(SalusTypography.bodyMedium.font)
                 .tracking(SalusTypography.bodyMedium.tracking)
                 .foregroundStyle(theme.extendedColors.cycle.accent)

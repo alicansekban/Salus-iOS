@@ -35,7 +35,7 @@ struct DoseTimesSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: SalusSpacing.md) {
             // `MedicationEditorScreen.kt:387-390`.
-            Text(MedicationsStrings.editorTimesSection)
+            Text(verbatim: MedicationsStrings.editorTimesSection)
                 .font(SalusTypography.labelLarge.font)
                 .foregroundStyle(theme.colorScheme.onSurface)
 

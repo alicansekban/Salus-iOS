@@ -88,7 +88,7 @@ struct WeightEditorScreen: View {
                 Button {
                     onEvent(.saveClicked)
                 } label: {
-                    Text(VitalsStrings.save)
+                    Text(verbatim: VitalsStrings.save)
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
@@ -164,7 +164,7 @@ struct WeightEditorScreen: View {
             )
 
             if state.showInvalidWeight {
-                Text(VitalsStrings.invalidWeight)
+                Text(verbatim: VitalsStrings.invalidWeight)
                     .font(SalusTypography.bodySmall.font)
                     .foregroundStyle(theme.colorScheme.error)
             }

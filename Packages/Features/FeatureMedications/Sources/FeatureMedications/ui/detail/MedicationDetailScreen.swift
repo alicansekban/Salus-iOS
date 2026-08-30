@@ -90,7 +90,7 @@ struct MedicationDetailScreen: View {
             // `MedicationDetailScreen.kt:114-121` — the medication is gone (deleted from here, or
             // from the list while this screen was up) and the screen says so rather than drawing a
             // blank.
-            Text(MedicationsStrings.detailMissing)
+            Text(verbatim: MedicationsStrings.detailMissing)
                 .font(SalusTypography.bodyLarge.font)
                 .foregroundStyle(theme.colorScheme.onSurfaceVariant)
                 .multilineTextAlignment(.center)

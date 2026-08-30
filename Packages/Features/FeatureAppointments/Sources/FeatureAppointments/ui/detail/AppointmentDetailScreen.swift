@@ -100,7 +100,7 @@ struct AppointmentDetailScreen: View {
         } else if let appointment = state.appointment {
             detail(of: appointment)
         } else {
-            Text(AppointmentsStrings.detailMissing)
+            Text(verbatim: AppointmentsStrings.detailMissing)
                 .font(SalusTypography.bodyLarge.font)
                 .foregroundStyle(theme.colorScheme.onSurfaceVariant)
                 .multilineTextAlignment(.center)
@@ -131,15 +131,15 @@ struct AppointmentDetailScreen: View {
     /// `AppointmentDetailScreen.kt:181-231`.
     private func header(of appointment: Appointment) -> some View {
         SalusCard {
-            Text(appointment.title)
+            Text(verbatim: appointment.title)
                 .font(SalusTypography.headlineSmall.font)
             Spacer()
                 .frame(height: SalusSpacing.sm)
-            Text(appointment.startsAt.formatted(pattern: headerDatePattern))
+            Text(verbatim: appointment.startsAt.formatted(pattern: headerDatePattern))
                 .font(SalusTypography.bodyLarge.font)
                 .foregroundStyle(theme.extendedColors.appointments.accent)
             Text(
-                AppointmentsStrings.detailTime(
+                verbatim: AppointmentsStrings.detailTime(
                     time: appointment.startsAt.formatted(pattern: timePattern),
                     durationMinutes: appointment.durationMinutes
                 )
@@ -189,7 +189,7 @@ struct AppointmentDetailScreen: View {
             SalusSectionHeader(title: AppointmentsStrings.detailNotes)
             SalusCard {
                 if let appointmentNotes {
-                    Text(appointmentNotes)
+                    Text(verbatim: appointmentNotes)
                         .font(SalusTypography.bodyLarge.font)
                 }
                 if let healthNotes = state.healthNotes {
@@ -197,11 +197,11 @@ struct AppointmentDetailScreen: View {
                         Spacer()
                             .frame(height: SalusSpacing.md)
                     }
-                    Text(AppointmentsStrings.detailHealthNotes)
+                    Text(verbatim: AppointmentsStrings.detailHealthNotes)
                         .font(SalusTypography.labelMedium.font)
                         .tracking(SalusTypography.labelMedium.tracking)
                         .foregroundStyle(theme.colorScheme.onSurfaceVariant)
-                    Text(healthNotes)
+                    Text(verbatim: healthNotes)
                         .font(SalusTypography.bodyMedium.font)
                 }
             }
@@ -333,7 +333,7 @@ private struct IconRow: View {
                 // Decoration: the text beside it already says what this is
                 // (`contentDescription = null`).
                 .accessibilityHidden(true)
-            Text(text)
+            Text(verbatim: text)
                 .font(SalusTypography.bodyLarge.font)
         }
     }

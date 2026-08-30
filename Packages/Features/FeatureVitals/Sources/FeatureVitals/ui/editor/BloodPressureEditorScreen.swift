@@ -79,7 +79,7 @@ struct BloodPressureEditorScreen: View {
                 Button {
                     onEvent(.saveClicked)
                 } label: {
-                    Text(VitalsStrings.save)
+                    Text(verbatim: VitalsStrings.save)
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
@@ -174,7 +174,7 @@ struct BloodPressureEditorScreen: View {
 
                 // `BloodPressureEditorScreen.kt:133-139` — one message for four rejections.
                 if let error = state.error {
-                    Text(Self.message(for: error))
+                    Text(verbatim: Self.message(for: error))
                         .font(SalusTypography.bodySmall.font)
                         .foregroundStyle(theme.colorScheme.error)
                 }

@@ -272,7 +272,7 @@ struct AppointmentEditorScreen: View {
     /// override, so it takes `onSurface` like every other `Text` on the screen.
     private var reminderOffsetsSection: some View {
         VStack(alignment: .leading, spacing: SalusSpacing.xs) {
-            Text(AppointmentsStrings.remindersLabel)
+            Text(verbatim: AppointmentsStrings.remindersLabel)
                 .font(SalusTypography.titleSmall.font)
                 .tracking(SalusTypography.titleSmall.tracking)
                 .foregroundStyle(theme.colorScheme.onSurface)
@@ -309,7 +309,7 @@ struct AppointmentEditorScreen: View {
             Button {
                 onEvent(.addToCalendarClicked)
             } label: {
-                Text(AppointmentsStrings.addToCalendar)
+                Text(verbatim: AppointmentsStrings.addToCalendar)
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.bordered)
@@ -323,7 +323,7 @@ struct AppointmentEditorScreen: View {
         Button {
             onEvent(.saveClicked)
         } label: {
-            Text(AppointmentsStrings.save)
+            Text(verbatim: AppointmentsStrings.save)
                 .frame(maxWidth: .infinity)
         }
         .buttonStyle(.borderedProminent)
@@ -334,7 +334,7 @@ struct AppointmentEditorScreen: View {
     /// The `supportingText` / error line both error messages are drawn as
     /// (`AppointmentEditorScreen.kt:150-154, 293-298`).
     private func errorText(_ message: String) -> some View {
-        Text(message)
+        Text(verbatim: message)
             .font(SalusTypography.bodySmall.font)
             .foregroundStyle(theme.colorScheme.error)
     }

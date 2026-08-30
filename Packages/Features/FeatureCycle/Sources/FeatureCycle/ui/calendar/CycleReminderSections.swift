@@ -46,11 +46,11 @@ struct CycleReminderCard: View {
         SalusCard {
             HStack(alignment: .center, spacing: 0) {
                 VStack(alignment: .leading, spacing: 0) {
-                    Text(CycleStrings.reminderTitle)
+                    Text(verbatim: CycleStrings.reminderTitle)
                         .font(SalusTypography.titleMedium.font)
                         .tracking(SalusTypography.titleMedium.tracking)
                         .foregroundStyle(theme.colorScheme.onSurface)
-                    Text(subtitle)
+                    Text(verbatim: subtitle)
                         .font(SalusTypography.bodySmall.font)
                         .tracking(SalusTypography.bodySmall.tracking)
                         .foregroundStyle(theme.colorScheme.onSurfaceVariant)
@@ -116,13 +116,13 @@ struct CycleReminderOptionRow: View {
     var body: some View {
         Button(action: onTap) {
             HStack(alignment: .center, spacing: 0) {
-                Text(label)
+                Text(verbatim: label)
                     .font(SalusTypography.bodyMedium.font)
                     .tracking(SalusTypography.bodyMedium.tracking)
                     .foregroundStyle(theme.colorScheme.onSurface)
                     // `Modifier.weight(1f)` (`CycleScreen.kt:438`).
                     .frame(maxWidth: .infinity, alignment: .leading)
-                Text(value)
+                Text(verbatim: value)
                     .font(SalusTypography.bodyMedium.font)
                     .tracking(SalusTypography.bodyMedium.tracking)
                     .foregroundStyle(theme.extendedColors.cycle.accent)
@@ -214,7 +214,7 @@ struct CycleReminderTimeSheet: View {
     var body: some View {
         VStack(spacing: SalusSpacing.lg) {
             // Kotlin's `title` slot (`CycleScreen.kt:496`).
-            Text(CycleStrings.reminderTimeLabel)
+            Text(verbatim: CycleStrings.reminderTimeLabel)
                 .font(SalusTypography.titleMedium.font)
                 .tracking(SalusTypography.titleMedium.tracking)
                 .foregroundStyle(theme.colorScheme.onSurface)
@@ -252,7 +252,7 @@ struct CycleReminderTimeSheet: View {
     /// Material's `TextButton`: the label, in the accent, over the 48-pt touch target.
     private func textButton(_ label: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Text(label)
+            Text(verbatim: label)
                 .font(SalusTypography.labelLarge.font)
                 .tracking(SalusTypography.labelLarge.tracking)
                 .foregroundStyle(theme.extendedColors.cycle.accent)

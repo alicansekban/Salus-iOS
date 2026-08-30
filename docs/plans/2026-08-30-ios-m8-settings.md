@@ -463,9 +463,9 @@ are still outstanding too** — this milestone does not close them.
 
 ## Task 14 / Task 16 — pending at the time of writing
 
-- **T14 (VoiceOver + Dynamic Type): COMPLETE** — landed in two commits after T13 closed this record
+- **T14 (VoiceOver + Dynamic Type): COMPLETE** — landed in three commits after T13 closed this record
   (see "T14 — the VoiceOver + Dynamic Type pass" below for commits and the verdict). Added
-  `docs/a11y-audit-m8.md`, six code-label/trait/fix declarations, QA §6, and filled this subsection.
+  `docs/a11y-audit-m8.md`, the label/trait/fix declarations, QA §6, and filled this subsection.
 - **T16 (parity ledger, Android docs commit): PENDING.** `salus-android/docs/parity-ledger.md` row →
   "iOS-M8 ✅ (cases: 20 More + 8 Profile + 6+7 onboarding + 6 lock + strings parity ×2 locales)",
   S-2 closed; the commit lands **local-only, never pushed** (M7 rule). **State to be appended by the
@@ -502,17 +502,28 @@ SUCCEEDED. QA §6 is the user's and is **NOT RUN**.
 
 ### What T14 deferred (rows in `docs/a11y-audit-m8.md`)
 
-Five pre-existing `Text(_:)`-on-resolved-string sites on the M2–M6 surfaces (`HomeHeader`'s
-greeting, `VitalsListSections`' row texts, `MedicationDetailSections`' name/value texts,
-`AppointmentDetailScreen`'s detail texts, `CycleSummarySections`/`CycleDayScreen`) — same-class as
-the M7 verbatim rule, deliberately outside M8's scope (a whole-branch mechanical sweep, not per-
-milestone). Plus the M-2 app-lock disabled-switch explanatory copy (Android ships none).
+**Deferred by design:**
+
+- **M-2** — the app-lock disabled-switch explanatory copy (`MoreScreen.kt` shows the same disabled
+  switch with no string; a new catalog key would be needed). Android ships none.
+
+**Deferred in round 1, landed in Fix round 2.** Round 1 initially deferred five pre-existing
+`Text(_:)`-on-resolved-string sites on the M2–M6 surfaces as a whole-branch sweep. The review
+ruling — *"easy fixes on existing screens land in M8"* — reversed that: the full sweep now lands
+here (`fix(a11y): land the five deferred Text(verbatim:) conversions`), across FeatureHome
+(`HomeHeader`, `HomeCycleCard`), FeatureVitals (`VitalsScreen`, `VitalsListSections`, the three
+editors, `VitalsEditorField`), FeatureMedications (detail, list `MedicationCard`, both editors,
+`DoseTimesSection`), FeatureAppointments (detail, list, editor) and FeatureCycle (`CycleScreen`,
+`CycleCalendarSections`, `CycleSummarySections`, `CycleReminderSections`, `CycleDayScreen`).
+
+**M-2 is therefore the only row still deferred.**
 
 ### T14's audit result
 
 The M7/M8 screens were already a11y-wired by their own tasks (T8's onboarding header/hero/counter,
 the M7 sparkline precedent, shared component decoratives). T14's remaining code work was the six
-fixes above; the rotor walk, focus-order and AX5-TR layout checks are the user's, per QA §6.
+fixes above plus the whole-branch verbatim sweep (all in Fix round 2); the rotor walk, focus-order
+and AX5-TR layout checks are the user's, per QA §6.
 
 ## CI summary — `scripts/ci.sh` at `76e14bf`
 

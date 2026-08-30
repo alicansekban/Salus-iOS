@@ -145,7 +145,7 @@ struct AppointmentsScreen: View {
             LazyVStack(alignment: .leading, spacing: SalusSpacing.sm, pinnedViews: .sectionHeaders) {
                 if state.upcoming.isEmpty {
                     // `AppointmentsScreen.kt:152-160`.
-                    Text(AppointmentsStrings.noUpcoming)
+                    Text(verbatim: AppointmentsStrings.noUpcoming)
                         .font(SalusTypography.titleMedium.font)
                         .foregroundStyle(theme.colorScheme.onSurfaceVariant)
                         .padding(.horizontal, SalusSpacing.lg)
@@ -210,7 +210,7 @@ private struct DayHeader: View {
     @Environment(\.salusTheme) private var theme
 
     var body: some View {
-        Text(label)
+        Text(verbatim: label)
             .font(SalusTypography.titleSmall.font)
             .foregroundStyle(theme.colorScheme.onSurfaceVariant)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -276,13 +276,13 @@ private struct AppointmentCard: View {
     /// (`AppointmentsScreen.kt:250-267`).
     private var details: some View {
         HStack(alignment: .top, spacing: 0) {
-            Text(item.startsAt.formatted(pattern: timePattern))
+            Text(verbatim: item.startsAt.formatted(pattern: timePattern))
                 .font(SalusTypography.titleMedium.font)
                 .foregroundStyle(theme.extendedColors.appointments.accent)
                 .frame(width: timeColumnWidth, alignment: .leading)
 
             VStack(alignment: .leading, spacing: 0) {
-                Text(item.title)
+                Text(verbatim: item.title)
                     .font(SalusTypography.titleMedium.font)
                     .foregroundStyle(theme.colorScheme.onSurface)
                 if let doctorName = item.doctorName {
@@ -311,7 +311,7 @@ private struct DetailRow: View {
                 // Decoration: the text beside it already says what this is
                 // (`contentDescription = null`).
                 .accessibilityHidden(true)
-            Text(text)
+            Text(verbatim: text)
                 .font(SalusTypography.bodyMedium.font)
         }
         .foregroundStyle(theme.colorScheme.onSurfaceVariant)

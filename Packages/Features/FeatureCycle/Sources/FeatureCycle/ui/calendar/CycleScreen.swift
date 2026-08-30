@@ -85,7 +85,7 @@ struct CycleScreen: View {
     /// The medical disclaimer is pinned below the scroll area so it is always visible
     /// (`CycleScreen.kt:144-153`).
     private var disclaimer: some View {
-        Text(CycleStrings.disclaimer)
+        Text(verbatim: CycleStrings.disclaimer)
             .font(SalusTypography.bodySmall.font)
             .tracking(SalusTypography.bodySmall.tracking)
             .foregroundStyle(theme.colorScheme.onSurfaceVariant)

@@ -45,7 +45,7 @@ struct VitalsEditorField: View {
             // Kotlin's `label = { Text(…) }`, which Material keeps on the border once the field is
             // filled. Repeating it as the placeholder costs nothing on an empty field and is what
             // the platform draws before the first character.
-            Text(label)
+            Text(verbatim: label)
                 .font(SalusTypography.labelMedium.font)
                 .tracking(SalusTypography.labelMedium.tracking)
                 .foregroundStyle(isError ? theme.colorScheme.error : theme.colorScheme.onSurfaceVariant)

@@ -73,7 +73,7 @@ Every surface is listed; "no finding" rows are still an audit result.
 | # | Finding | Verdict | Where |
 |---|---------|---------|-------|
 | H-1 | The sparkline is `.accessibilityHidden(true)` (inside `SalusSparkline`); tap-cards combine into a button with a default action. | Already shipped | `SalusSparkline.swift`, `HomeScreen.swift` |
-| H-2 | `HomeHeader`'s greeting (`HomeStrings.greeting(_:)`) renders through `Text(_:)`. | **DEFERRED** — pre-existing on an M6 surface; `HomeStrings.greeting` resolves a localized format string and the M7 record already accepted the verbatim sweep as out of scope for M8 (the `Text(verbatim:)` rule applies to lines this task touches). Flagged for the whole-branch verbatim sweep. | `HomeHeader.swift:36` |
+| H-2 | `HomeHeader`'s greeting (`HomeStrings.greeting(_:)`) renders through `Text(_:)`. | **FIXED (round 2)** — `Text(verbatim:)`. The whole-branch verbatim sweep is the ruling the audit doc deferred it under; it lands here. | `HomeHeader.swift:36` |
 
 ### Vitals (`FeatureVitals`: list + 3 editors)
 
@@ -81,28 +81,28 @@ Every surface is listed; "no finding" rows are still an audit result.
 |---|---------|---------|-------|
 | V-1 | List rows combine into a button with default action; the row headline/date/supporting/note texts render `Text(verbatim:)` (the M7 fix already landed here). | Already shipped | `VitalsListSections.swift` |
 | V-2 | The `Picker` segment labels (`.tag`) are `Text` inside a `Picker` — correctly labelled by SwiftUI. | No finding | `VitalsScreen.swift`, `VitalsListSections.swift` |
-| V-3 | The three editors' text rows (`entry.headline`, `entry.measuredAt.formatted…`) render via `Text(_:)` in `VitalsListSections`. | **DEFERRED** — pre-existing M2 surface; same verbatim-sweep bucket as H-2. | `VitalsListSections.swift:205,208` |
+| V-3 | The three editors' text rows (`entry.headline`, `entry.measuredAt.formatted…`) render via `Text(_:)` in `VitalsListSections`. | **FIXED (round 2)** — `Text(verbatim:)` on `VitalsListSections`' headline/date/supporting/note and on the vitals editors' save/invalid/supporting labels. | `VitalsListSections.swift`, the three editors, `VitalsEditorField.swift` |
 
 ### Medications (`FeatureMedications`: list/detail/editor)
 
 | # | Finding | Verdict | Where |
 |---|---------|---------|-------|
 | ME-1 | `MedicationCard` combines into a button with default action; the `recordedDoses`/reminder texts and detail rows render `Text(verbatim:)`. | Already shipped | `MedicationCard.swift` |
-| ME-2 | `MedicationDetailSections` renders `medication.name`, `subtitle`, `when(item)`, `label`, `value` through `Text(_:)`. | **DEFERRED** — pre-existing M5 surface; same bucket. | `MedicationDetailSections.swift` |
+| ME-2 | `MedicationDetailSections` renders `medication.name`, `subtitle`, `when(item)`, `label`, `value` through `Text(_:)`. | **FIXED (round 2)** — `Text(verbatim:)` across `MedicationDetailSections`, `MedicationDetailScreen`, `MedicationCard`, `MedicationEditorSections`, `MedicationEditorScreen`, `DoseTimesSection`. | `MedicationDetailSections.swift` et al. |
 
 ### Appointments (`FeatureAppointments`: list/detail/editor)
 
 | # | Finding | Verdict | Where |
 |---|---------|---------|-------|
 | AP-1 | List rows combine into a button with default action; detail/list decorative icons are `.accessibilityHidden(true)`. | Already shipped | `AppointmentsScreen.swift`, `AppointmentDetailScreen.swift` |
-| AP-2 | Detail renders `appointment.title`, `appointment.startsAt.formatted…`, `healthNotes` via `Text(_:)`. | **DEFERRED** — pre-existing M4 surface; same bucket. | `AppointmentDetailScreen.swift` |
+| AP-2 | Detail renders `appointment.title`, `appointment.startsAt.formatted…`, `healthNotes` via `Text(_:)`. | **FIXED (round 2)** — `Text(verbatim:)` across `AppointmentDetailScreen`, `AppointmentsScreen`, `AppointmentEditorScreen`. | `AppointmentDetailScreen.swift` et al. |
 
 ### Cycle (`FeatureCycle`: calendar/log)
 
 | # | Finding | Verdict | Where |
 |---|---------|---------|-------|
 | C-1 | Calendar day cells carry an explicit `accessibilityLabel`; the summary row combines with a label; the disabled future-press decoration is hidden. | Already shipped | `CycleCalendarSections.swift` |
-| C-2 | `CycleSummarySections`/detail render `predictionText`, `text` values, day numbers (`dayNumber(_:)`) via `Text(_:)`. | **DEFERRED** — pre-existing M6 surface; same bucket. | `CycleSummarySections.swift`, `CycleDayScreen.swift` |
+| C-2 | `CycleSummarySections`/detail render `predictionText`, `text` values, day numbers (`dayNumber(_:)`) via `Text(_:)`. | **FIXED (round 2)** — `Text(verbatim:)` across `CycleScreen`, `CycleCalendarSections`, `CycleSummarySections`, `CycleReminderSections`, `CycleDayScreen`. | `CycleSummarySections.swift`, `CycleDayScreen.swift` et al. |
 
 ### Reminder Health (`FeatureSettings` — reminder-health screens, in the M8 scope)
 
@@ -116,19 +116,16 @@ Every surface is listed; "no finding" rows are still an audit result.
 
 ## Deferred rows, consolidated
 
-The M8 record's deferred list. These are pre-existing `Text(_:)` on resolved strings across the six
-M2–M6 surfaces (H-2, V-3, ME-2, AP-2, C-2), all same-bucket; they render the `Strings` enum values
-that ARE the fallback `LocalizedStringKey` for Turkish/English, so the visible defect only appears on
-a device set to a **third** locale, and fixing them is a mechanical verbatim sweep across files this
-milestone does not otherwise touch. They belong to a whole-branch sweep (M16's record keeps the
-verbatim rule; these are the rows it will pick up).
-
 **Deferred by design, not forgotten:**
 
 | Row | Why deferred |
 |-----|--------------|
 | M-2 app-lock disabled-switch copy | Needs a new catalog key; Android has none. |
-| H-2, V-3, ME-2, AP-2, C-2 verbatim sweep | Pre-existing surfaces; mechanical, same-class, cross-milestone. |
+
+Round 1 of this task deferred the five pre-existing `Text(_:)`-on-resolved-string sites (H-2,
+V-3, ME-2, AP-2, C-2) as a cross-milestone verbatim sweep. The review ruling (Fix round 2) lands
+**easy fixes on existing screens in M8**: the whole sweep is done here, so **M-2 is now the only
+deferred row**, and the audit rows above are all **FIXED (round 2)**.
 
 ## What the executor did NOT check
 

@@ -148,7 +148,7 @@ extension MedicationEditorScreen {
 
     /// `MedicationEditorScreen.kt:207-210` — the screen's one section title.
     var scheduleSectionLabel: some View {
-        Text(MedicationsStrings.editorScheduleSection)
+        Text(verbatim: MedicationsStrings.editorScheduleSection)
             .font(SalusTypography.titleMedium.font)
             .foregroundStyle(theme.colorScheme.onSurface)
     }
@@ -208,7 +208,7 @@ extension MedicationEditorScreen {
     /// `MedicationEditorScreen.kt:279-282`) — not `SalusSectionHeader`, which is the screen-level
     /// title `scheduleSectionLabel` is.
     private func fieldLabel(_ text: String) -> some View {
-        Text(text)
+        Text(verbatim: text)
             .font(SalusTypography.labelLarge.font)
             .foregroundStyle(theme.colorScheme.onSurface)
     }

@@ -80,7 +80,7 @@ struct CycleDayScreen: View {
 
     /// The `titleMedium` header Kotlin writes above each chip group (`CycleDayScreen.kt:109-112`).
     private func sectionTitle(_ text: String) -> some View {
-        Text(text)
+        Text(verbatim: text)
             .font(SalusTypography.titleMedium.font)
             .foregroundStyle(theme.colorScheme.onSurface)
     }

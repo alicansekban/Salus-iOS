@@ -29,13 +29,13 @@ struct CycleSummaryCard: View {
                 // `state.cycleDayNumber?.let { … }` (`CycleScreen.kt:334-339`) — absent before the
                 // first recorded period.
                 if let day = state.cycleDayNumber {
-                    Text(CycleStrings.dayNumber(day))
+                    Text(verbatim: CycleStrings.dayNumber(day))
                         .font(SalusTypography.titleMedium.font)
                         .tracking(SalusTypography.titleMedium.tracking)
                         .foregroundStyle(theme.colorScheme.onSurface)
                 }
 
-                Text(predictionText)
+                Text(verbatim: predictionText)
                     .font(SalusTypography.bodyMedium.font)
                     .tracking(SalusTypography.bodyMedium.tracking)
                     .foregroundStyle(theme.colorScheme.onSurface)
@@ -65,7 +65,7 @@ struct CycleSummaryCard: View {
 
     /// The two `bodySmall` / `onSurfaceVariant` lines below the prediction.
     private func supporting(_ text: String) -> some View {
-        Text(text)
+        Text(verbatim: text)
             .font(SalusTypography.bodySmall.font)
             .tracking(SalusTypography.bodySmall.tracking)
             .foregroundStyle(theme.colorScheme.onSurfaceVariant)

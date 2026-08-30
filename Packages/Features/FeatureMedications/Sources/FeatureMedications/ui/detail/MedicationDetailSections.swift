@@ -52,10 +52,10 @@ struct MedicationDetailHeader: View {
                 .padding(.trailing, SalusSpacing.lg)
 
                 VStack(alignment: .leading, spacing: 0) {
-                    Text(medication.name)
+                    Text(verbatim: medication.name)
                         .font(SalusTypography.headlineSmall.font)
                         .foregroundStyle(theme.colorScheme.onSurface)
-                    Text(subtitle)
+                    Text(verbatim: subtitle)
                         .font(SalusTypography.bodyMedium.font)
                         .foregroundStyle(theme.colorScheme.onSurfaceVariant)
 
@@ -107,10 +107,10 @@ struct MedicationRemindersCard: View {
         SalusCard {
             HStack(alignment: .center, spacing: 0) {
                 VStack(alignment: .leading, spacing: 0) {
-                    Text(MedicationsStrings.remindersTitle)
+                    Text(verbatim: MedicationsStrings.remindersTitle)
                         .font(SalusTypography.titleMedium.font)
                         .foregroundStyle(theme.colorScheme.onSurface)
-                    Text(description)
+                    Text(verbatim: description)
                         .font(SalusTypography.bodySmall.font)
                         .foregroundStyle(theme.colorScheme.onSurfaceVariant)
                 }
@@ -224,7 +224,7 @@ struct MedicationHistorySection: View {
             SalusSectionHeader(title: MedicationsStrings.detailHistory)
             SalusCard {
                 if history.isEmpty {
-                    Text(MedicationsStrings.detailHistoryEmpty)
+                    Text(verbatim: MedicationsStrings.detailHistoryEmpty)
                         .font(SalusTypography.bodyMedium.font)
                         .foregroundStyle(theme.colorScheme.onSurfaceVariant)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -246,7 +246,7 @@ struct MedicationHistorySection: View {
     /// `MedicationDetailScreen.kt:312-328`.
     private func row(_ item: IntakeHistoryItem) -> some View {
         HStack(alignment: .center, spacing: SalusSpacing.sm) {
-            Text(when(item))
+            Text(verbatim: when(item))
                 .font(SalusTypography.bodyMedium.font)
                 .foregroundStyle(theme.colorScheme.onSurface)
                 // `Modifier.weight(1f)` (`MedicationDetailScreen.kt:322`).
@@ -307,11 +307,11 @@ private struct LabelledValue: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text(label)
+            Text(verbatim: label)
                 .font(SalusTypography.labelMedium.font)
                 .tracking(SalusTypography.labelMedium.tracking)
                 .foregroundStyle(theme.colorScheme.onSurfaceVariant)
-            Text(value)
+            Text(verbatim: value)
                 .font(SalusTypography.bodyLarge.font)
                 .foregroundStyle(theme.colorScheme.onSurface)
         }

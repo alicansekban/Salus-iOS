@@ -70,7 +70,7 @@ struct VitalsListContent: View {
     private var entryList: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: SalusSpacing.md) {
-                Text(headerText)
+                Text(verbatim: headerText)
                     .font(SalusTypography.headlineSmall.font)
                     .foregroundStyle(theme.colorScheme.onBackground)
 
@@ -113,7 +113,7 @@ struct VitalsListContent: View {
             )
         ) {
             ForEach(ChartRange.allCases, id: \.self) { range in
-                Text(range.vitalsLabel).tag(range)
+                Text(verbatim: range.vitalsLabel).tag(range)
             }
         } label: {
             EmptyView()
@@ -202,19 +202,19 @@ private struct VitalsRow: View {
     /// `VitalsScreen.kt:296-320`.
     private var details: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text(entry.headline)
+            Text(verbatim: entry.headline)
                 .font(SalusTypography.titleMedium.font)
                 .foregroundStyle(theme.colorScheme.onSurface)
-            Text(entry.measuredAt.formatted(pattern: rowDatePattern))
+            Text(verbatim: entry.measuredAt.formatted(pattern: rowDatePattern))
                 .font(SalusTypography.bodyMedium.font)
                 .foregroundStyle(theme.colorScheme.onSurfaceVariant)
             if let supporting = entry.supportingText {
-                Text(supporting)
+                Text(verbatim: supporting)
                     .font(SalusTypography.bodySmall.font)
                     .foregroundStyle(theme.colorScheme.onSurfaceVariant)
             }
             if let note = entry.note {
-                Text(note)
+                Text(verbatim: note)
                     .font(SalusTypography.bodySmall.font)
                     .foregroundStyle(theme.colorScheme.onSurfaceVariant)
             }

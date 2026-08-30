@@ -83,7 +83,7 @@ struct GlucoseEditorScreen: View {
                 Button {
                     onEvent(.saveClicked)
                 } label: {
-                    Text(VitalsStrings.save)
+                    Text(verbatim: VitalsStrings.save)
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
@@ -147,7 +147,7 @@ struct GlucoseEditorScreen: View {
 
             // `GlucoseEditorScreen.kt:111-115` — the supporting text exists only while flagged.
             if state.showInvalidValue {
-                Text(VitalsStrings.invalidGlucose)
+                Text(verbatim: VitalsStrings.invalidGlucose)
                     .font(SalusTypography.bodySmall.font)
                     .foregroundStyle(theme.colorScheme.error)
             }

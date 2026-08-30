@@ -54,7 +54,7 @@ struct CycleMonthHeader: View {
             }
             // `titleLarge`'s tracking is 0.0, so no `.tracking(_:)` — `SalusTypography.swift`'s
             // rule 4.
-            Text(title)
+            Text(verbatim: title)
                 .font(SalusTypography.titleLarge.font)
                 .foregroundStyle(theme.colorScheme.onSurface)
                 .multilineTextAlignment(.center)
@@ -98,7 +98,7 @@ struct CycleWeekdayHeader: View {
         let labels = SalusWeekdaySymbols.narrowMondayFirst(locale: locale)
         HStack(spacing: 0) {
             ForEach(labels.indices, id: \.self) { index in
-                Text(labels[index])
+                Text(verbatim: labels[index])
                     .font(SalusTypography.labelMedium.font)
                     .tracking(SalusTypography.labelMedium.tracking)
                     .foregroundStyle(theme.colorScheme.onSurfaceVariant)
@@ -169,7 +169,7 @@ struct CycleDayCellView: View {
     /// (`clearAndSetSemantics`) because it is already the first word of the merged label; here the
     /// merge above does that, so the number carries no label of its own.
     private var number: some View {
-        Text(String(cell.dayOfMonth))
+        Text(verbatim: String(cell.dayOfMonth))
             .font(SalusTypography.bodyMedium.font)
             .fontWeight(cell.isToday ? .bold : .regular)
             .tracking(SalusTypography.bodyMedium.tracking)
@@ -278,7 +278,7 @@ struct CycleLegendItem: View {
             Circle()
                 .fill(color)
                 .frame(width: legendDotSize, height: legendDotSize)
-            Text(label)
+            Text(verbatim: label)
                 .font(SalusTypography.labelSmall.font)
                 .tracking(SalusTypography.labelSmall.tracking)
                 .foregroundStyle(theme.colorScheme.onSurface)

@@ -74,11 +74,11 @@ struct MedicationCard: View {
                 .padding(.trailing, SalusSpacing.lg)
 
                 VStack(alignment: .leading, spacing: 0) {
-                    Text(item.medication.name)
+                    Text(verbatim: item.medication.name)
                         .font(SalusTypography.titleMedium.font)
                         .foregroundStyle(theme.colorScheme.onSurface)
                     if let strength {
-                        Text(strength)
+                        Text(verbatim: strength)
                             .font(SalusTypography.bodyMedium.font)
                             .foregroundStyle(theme.colorScheme.onSurfaceVariant)
                     }
@@ -91,7 +91,7 @@ struct MedicationCard: View {
             }
 
             // `MedicationsScreen.kt:226-231`.
-            Text(scheduleSummary(schedules: item.schedules, strings: .localized, locale: locale))
+            Text(verbatim: scheduleSummary(schedules: item.schedules, strings: .localized, locale: locale))
                 .font(SalusTypography.bodyMedium.font)
                 .foregroundStyle(theme.colorScheme.onSurface)
 
@@ -126,7 +126,7 @@ struct MedicationCard: View {
     /// The label and its bar (`MedicationsScreen.kt:201-216`).
     private func recordedDoses(percent: Int) -> some View {
         VStack(alignment: .trailing, spacing: SalusSpacing.xs) {
-            Text(MedicationsStrings.recordedDoses(percent: percent))
+            Text(verbatim: MedicationsStrings.recordedDoses(percent: percent))
                 .font(SalusTypography.labelMedium.font)
                 .foregroundStyle(theme.extendedColors.medications.accent)
             ProgressView(value: Double(percent) / percentMax)
