@@ -9,6 +9,10 @@
 
 import Foundation
 
+/// The error the fakes throw when a test asks one of `finish()`'s writes to fail — iOS-only, no
+/// Kotlin twin, because the Kotlin collaborators cannot fail at all (divergence 3).
+struct FakeWriteFailure: Error, Equatable {}
+
 /// The three writes `OnboardingViewModel.finish()` performs, in the order ruling 7 fixes.
 enum FinishWrite: String, Sendable, Equatable {
     case profile

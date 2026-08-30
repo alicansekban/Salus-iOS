@@ -39,11 +39,21 @@ struct OnboardingViewModelTests {
         let orderLog: FinishOrderLog
     }
 
-    /// `OnboardingViewModelTest.kt:82-88`.
-    private func makeFixture(includeNotificationStep: Bool = true) -> Fixture {
+    /// `OnboardingViewModelTest.kt:82-88`. `failing` has no Kotlin twin — see
+    /// ``aFailingWriteAbortsBeforeTheCompletionFlagAndLeavesTheStepRetryable()``.
+    private func makeFixture(
+        includeNotificationStep: Bool = true,
+        failing: FailingWrite? = nil
+    ) -> Fixture {
         let orderLog = FinishOrderLog()
-        let repository = FakeProfileRepository(orderLog: orderLog)
-        let vitals = FakeVitalsQuickEntry(orderLog: orderLog)
+        let repository = FakeProfileRepository(
+            orderLog: orderLog,
+            saveFailure: failing == .profile ? FakeWriteFailure() : nil
+        )
+        let vitals = FakeVitalsQuickEntry(
+            orderLog: orderLog,
+            failure: failing == .weight ? FakeWriteFailure() : nil
+        )
         let preferences = FakeOnboardingPreferences(orderLog: orderLog)
         let vm = OnboardingViewModel(
             profileRepository: repository,
@@ -185,6 +195,59 @@ struct OnboardingViewModelTests {
         #expect(fixture.repository.profile?.healthNotes == nil)
         #expect(fixture.preferences.completed)
         #expect(fixture.orderLog.writes == [.profile, .completionFlag])
+    }
+
+    // MARK: - iOS-only
+
+    /// **iOS-only — no Kotlin twin.** `ProfileRepository.saveProfile(_:)` and
+    /// `VitalsQuickEntry.recordWeight(…)` are `throws` on iOS (`ProfileRepository.swift:24-31`,
+    /// `VitalsQuickEntry.swift:13`) where the Kotlin `suspend fun`s cannot fail, so
+    /// `OnboardingViewModelTest.kt` has no case to port for the abort path. Divergence 3 in
+    /// `OnboardingViewModel.swift` is what this pins: a throw stops the sequence *before*
+    /// `preferences.setCompleted()`, so the gate stays shut and ruling 7's "replay rather than
+    /// strand" still holds, and it clears `isSaving`, so the final step is tappable again rather
+    /// than permanently disabled.
+    ///
+    /// A `false` **return** from `recordWeight` is a different thing and is deliberately not
+    /// covered here: Kotlin discards it (`OnboardingViewModel.kt:99-105`) and so does the port, so
+    /// an out-of-range weight still completes the flow.
+    @Test(
+        "a failing write aborts before the completion flag and leaves the step retryable",
+        arguments: [FailingWrite.profile, .weight]
+    )
+    func aFailingWriteAbortsBeforeTheCompletionFlagAndLeavesTheStepRetryable(failing: FailingWrite) async {
+        let fixture = makeFixture(failing: failing)
+        let vm = fixture.vm
+        vm.goTo(.weight)
+        // A weight that parses, so `finish()` actually reaches `recordWeight`.
+        vm.onEvent(.weightChanged("72,4"))
+        vm.goTo(.notifications)
+
+        vm.onEvent(.nextClicked)
+        #expect(vm.state.isSaving, "the write is in flight")
+        await waitUntil("the failed write to reopen the final step") { vm.state.isSaving == false }
+
+        #expect(fixture.preferences.completed == false, "the completion flag must not be written")
+        #expect(fixture.orderLog.writes == failing.writesBeforeTheFailure)
+        #expect(vm.state.isSaving == false)
+        // The flow never left its last step, and the button is live again.
+        #expect(vm.state.step == .notifications)
+        #expect(vm.state.canContinue)
+    }
+}
+
+/// Which of `finish()`'s two throwing collaborators fails — iOS-only, no Kotlin twin.
+enum FailingWrite: Sendable, Equatable {
+    case profile
+    case weight
+
+    /// What made it into the log before the throw: nothing when the profile write fails, the
+    /// profile alone when the weight write does. The completion flag is in neither.
+    var writesBeforeTheFailure: [FinishWrite] {
+        switch self {
+        case .profile: []
+        case .weight: [.profile]
+        }
     }
 }
 

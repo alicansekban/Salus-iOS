@@ -27,6 +27,7 @@ final class FakeVitalsQuickEntry: VitalsQuickEntry, @unchecked Sendable {
     private let lock = NSLock()
     private var entries: [RecordedWeight] = []
     private let orderLog: FinishOrderLog?
+    private let failure: (any Error)?
 
     /// `OnboardingViewModelTest.kt:50` — `val recorded`.
     var recorded: [RecordedWeight] {
@@ -35,12 +36,21 @@ final class FakeVitalsQuickEntry: VitalsQuickEntry, @unchecked Sendable {
         return entries
     }
 
-    init(orderLog: FinishOrderLog? = nil) {
+    /// - Parameter failure: iOS-only, no Kotlin twin — makes `recordWeight` throw, so the abort
+    ///   path of divergence 3 is testable. The Kotlin fake cannot fail. A `false` *return* is a
+    ///   different thing and stays unavailable here, because the port discards it exactly as the
+    ///   Kotlin does.
+    init(orderLog: FinishOrderLog? = nil, failure: (any Error)? = nil) {
         self.orderLog = orderLog
+        self.failure = failure
     }
 
-    /// `OnboardingViewModelTest.kt:52-59` — records and answers true.
+    /// `OnboardingViewModelTest.kt:52-59` — records and answers true, plus the injected failure:
+    /// it throws *before* recording, so a failed write leaves no entry behind.
     func recordWeight(kilograms: Double, epochMs: Int64, timeZoneId: String) async throws -> Bool {
+        if let failure {
+            throw failure
+        }
         append(RecordedWeight(kilograms: kilograms, epochMs: epochMs, timeZoneId: timeZoneId))
         return true
     }

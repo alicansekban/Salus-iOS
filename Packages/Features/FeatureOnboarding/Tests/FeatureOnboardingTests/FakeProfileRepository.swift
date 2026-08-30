@@ -31,11 +31,20 @@ final class FakeProfileRepository: ProfileRepository, @unchecked Sendable {
     private var profileValue: Profile?
     private var continuations: [UUID: AsyncThrowingStream<Profile?, any Error>.Continuation] = [:]
     private let orderLog: FinishOrderLog?
+    private let saveFailure: (any Error)?
 
     /// `OnboardingViewModelTest.kt:26` — the flow starts on the seeded row.
-    init(profile: Profile? = FakeProfileRepository.seeded, orderLog: FinishOrderLog? = nil) {
+    ///
+    /// - Parameter saveFailure: iOS-only, no Kotlin twin — makes `saveProfile(_:)` throw, so the
+    ///   abort path of divergence 3 is testable. The Kotlin fake cannot fail.
+    init(
+        profile: Profile? = FakeProfileRepository.seeded,
+        orderLog: FinishOrderLog? = nil,
+        saveFailure: (any Error)? = nil
+    ) {
         profileValue = profile
         self.orderLog = orderLog
+        self.saveFailure = saveFailure
     }
 
     /// `OnboardingViewModelTest.kt:37-45` — the row the v1 migration seeds.
@@ -77,8 +86,12 @@ final class FakeProfileRepository: ProfileRepository, @unchecked Sendable {
         profile
     }
 
-    /// `OnboardingViewModelTest.kt:32-34`.
+    /// `OnboardingViewModelTest.kt:32-34`, plus the injected failure: it throws *before* writing
+    /// anything, so a failed save leaves neither a profile nor a log entry behind.
     func saveProfile(_ profile: Profile) async throws {
+        if let saveFailure {
+            throw saveFailure
+        }
         setProfile(profile)
         orderLog?.record(.profile)
     }
