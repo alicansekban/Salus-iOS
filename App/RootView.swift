@@ -1,5 +1,6 @@
 import FeatureAppointments
 import FeatureCycle
+import FeatureHome
 import FeatureMedications
 import FeatureSettings
 import FeatureVitals
@@ -112,7 +113,9 @@ struct RootView: View {
     /// Android's `vitalsEntries` / `homeEntries` `NavEntry` providers. The shell therefore never
     /// names a key; `medicationsDestinations()`, `vitalsDestinations()`,
     /// `appointmentsDestinations()`, `settingsDestinations()` and `cycleDestinations()` below are
-    /// those modifiers, and the one remaining tab keeps its placeholder until its feature lands.
+    /// those modifiers, and the one remaining tab — More — keeps its placeholder until M8 lands the
+    /// settings hub. Home registers no modifier of its own: its cards push another feature's key
+    /// or switch tab, so `FeatureHome` ships no `homeDestinations()` (plan ruling 8).
     ///
     /// `cycleDestinations()` is applied twice, which is the shape a feature without a tab takes:
     /// cycle is reached from the More list and from a tapped cycle reminder, which lands on Home
@@ -222,13 +225,31 @@ struct RootView: View {
 
         case .home:
             NavigationStack(path: backStacks.binding(for: tab)) {
-                // TODO(M7): the home dashboard replaces this placeholder. Its cycle card pushes
-                // the same `CycleKey` the More row does, onto this stack — which is why the
-                // destinations are registered here already: a tapped cycle reminder lands on Home
-                // today (iOS-M6 ruling 2), with no card to have put it there.
-                PlaceholderScreen(tab: tab)
-                    .cycleDestinations()
+                HomeRoute(
+                    onOpenMedications: { backStacks.switchTopLevel(.medications) },
+                    onOpenAppointments: { backStacks.switchTopLevel(.appointments) },
+                    // Cycle is the one card that pushes instead of switching tabs: it has no tab of
+                    // its own (iOS-M6 ruling 1), so it opens on Home's own stack. Through the
+                    // navigator rather than `backStacks.push`, because the shell is the only thing
+                    // that mutates a back stack and a card is not the shell — the More row does the
+                    // same with the same key.
+                    onOpenCycle: { root.navigator.navigate(CycleKey()) },
+                    onOpenVitals: { backStacks.switchTopLevel(.vitals) }
+                )
+                // `cycleDestinations()` stays on this stack because two things now push `CycleKey`
+                // onto it: the card above, and a tapped cycle reminder, which `RootTab.hosting`
+                // routes to Home (iOS-M6 ruling 2). The two cannot be confused — `pushCycleCalendar`
+                // memoizes the reminder's push on Home's stack depth, and `observeNavigationCommands`
+                // clears that memo on every `.navigate` while Home is selected, so a card push
+                // invalidates it rather than being counted as one.
+                //
+                // There is no `homeDestinations()`: the dashboard pushes nothing of its own — every
+                // card either switches tab or pushes another feature's key (plan ruling 8).
+                .cycleDestinations()
             }
+            // On the stack, not inside its root — the pushed `CycleKey` destination is rendered by
+            // the stack, so an environment value set on the root would not reach it.
+            .environment(\.homeModule, root.homeModule)
             .environment(\.cycleModule, root.cycleModule)
 
         default:

@@ -1,5 +1,6 @@
 import FeatureAppointments
 import FeatureCycle
+import FeatureHome
 import FeatureMedications
 import FeatureSettings
 import FeatureVitals
@@ -109,6 +110,11 @@ final class AppCompositionRoot {
     /// instances at construction time so Reminder Health reads them and offers the two prompts.
     let settingsModule: SettingsModule
 
+    /// `homeModule` (`feature/home/.../di/HomeModule.kt`), built once and handed to the Home tab
+    /// through the environment. Its `TodayRepository` joins what the other modules own, and its
+    /// "Al" button is Medications' `MarkDoseTakenUseCase` — the seam ``doseActions`` names.
+    let homeModule: HomeModule
+
     /// `reminderModule`'s `single<ReminderEnvironment>` (`ReminderModule.kt:20`) — the honest
     /// read of what the OS will and will not let the reminder pipeline do. Reminder Health
     /// (iOS-M3 Task 8) is what shows it to the user.
@@ -190,6 +196,7 @@ final class AppCompositionRoot {
         medicationsModule = modules.medications
         cycleModule = modules.cycle
         settingsModule = modules.settings
+        homeModule = modules.home
 
         // `reminderModule` (`ReminderModule.kt:18-28`), assembled in one place — see
         // `makeReminderGraph`. The properties below are eight views of that one sub-graph.
@@ -364,6 +371,7 @@ final class AppCompositionRoot {
             snackbar: infrastructure.snackbar,
             navigator: infrastructure.navigator
         )
+        let home = makeHomeGraph(infrastructure: infrastructure, medications: scheduled.medications)
         let settings = makeSettingsModule(
             reminderEnvironment: reminder.environment,
             reminderAuthorization: reminder.environment,
@@ -377,7 +385,8 @@ final class AppCompositionRoot {
             appointments: scheduled.appointments,
             medications: scheduled.medications,
             cycle: scheduled.cycle,
-            settings: settings
+            settings: settings,
+            home: home
         )
     }
 
@@ -457,7 +466,10 @@ final class AppCompositionRoot {
 }
 
 /// The process-lifetime singletons, handed back from `makeInfrastructure` in one piece.
-private struct Infrastructure {
+///
+/// `internal` rather than `private` because ``AppCompositionRoot/makeHomeGraph(infrastructure:medications:)``
+/// lives in `AppCompositionRoot+Modules.swift` and takes it.
+struct Infrastructure {
     let clock: any SalusClock
     let idGenerator: any IdGenerator
     let database: SalusDatabase
@@ -469,23 +481,4 @@ private struct Infrastructure {
     let pendingDelete: PendingDeleteController
     let navigator: Navigator
     let snackbar: SalusSnackbarController
-}
-
-/// The modules that own a reminder handler, handed back from `makeScheduledModules` in one piece.
-/// A milestone that gives a fourth feature a reminder adds one field here.
-private struct ScheduledModules {
-    let appointments: AppointmentsModule
-    let medications: MedicationsModule
-    let cycle: CycleModule
-}
-
-/// The feature modules, handed back from `makeFeatureModules` in one piece with the reminder
-/// sub-graph they were wired against. A milestone that adds a feature adds one field here.
-private struct FeatureModules {
-    let reminder: ReminderGraph
-    let vitals: VitalsModule
-    let appointments: AppointmentsModule
-    let medications: MedicationsModule
-    let cycle: CycleModule
-    let settings: SettingsModule
 }
