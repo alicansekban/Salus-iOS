@@ -77,6 +77,14 @@ options:
 # port, and `swift test` never compiles a catalog, so a missing or mis-specified translation
 # surfaces nowhere else — and puts the dashboard through the iOS SDK rather than the macOS host,
 # which is where the today cards and the weight sparkline are actually built.
+#
+# M8 adds `FeatureOnboarding`, the seventh feature package. M0 created it and nothing has linked it
+# until now, so the eight-step gate had never been compiled against the iOS SDK. Linking it compiles
+# its String Catalog — the 45 keys of `:feature:onboarding`, and `swift test` never compiles a
+# catalog at all — and puts the two iOS-only branches of the flow through a compiler for the first
+# time: the name field's `.textContentType(.name)` and the notes editor's
+# `.textInputAutocapitalization(.sentences)`, both behind `#if os(iOS)` and both invisible to the
+# macOS host build. The shell mounts the gate in a later task; the link is what makes the code real.
 packages:
   SalusDesignSystem:
     path: Packages/SalusDesignSystem
@@ -106,6 +114,8 @@ packages:
     path: Packages/Features/FeatureCycle
   FeatureHome:
     path: Packages/Features/FeatureHome
+  FeatureOnboarding:
+    path: Packages/Features/FeatureOnboarding
   SalusReminder:
     path: Packages/SalusReminder
 
@@ -266,6 +276,8 @@ targets:
         product: FeatureCycle
       - package: FeatureHome
         product: FeatureHome
+      - package: FeatureOnboarding
+        product: FeatureOnboarding
       - package: SalusReminder
         product: SalusReminder
 

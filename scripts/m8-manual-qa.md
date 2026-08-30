@@ -12,6 +12,171 @@ section at a time and the numbering follows the plan rather than the reading ord
 
 ---
 
+## §1. Onboarding (Task 8)
+
+Written by Task 8 (`Packages/Features/FeatureOnboarding/Sources/FeatureOnboarding/ui/
+OnboardingScreen.swift`, `OnboardingHeader.swift`, `OnboardingHero.swift`,
+`OnboardingStepContent.swift`, plus `OnboardingModule.swift`). The automated half is
+`OnboardingUiStateTests` + `OnboardingViewModelTests` (T2/T7): the step machine, the gates and the
+three writes `finish()` performs. What no test can reach is the eight step bodies, the header, the
+two hero clusters and the keyboard behaviour — those are visual and run only on a device or
+simulator.
+
+**Before you start — the gate is not mounted yet.** Task 8 ships the screens and the module; the
+overlay is hung above `RootView` by **Task 11** (ruling 3: onboarding outermost, app lock beneath).
+Until T11 lands, none of the rows below can be run at all — not "NOT RUN because nobody ran them"
+but "there is no way to reach the flow". Run §1 only after T11.
+
+**How to get back to a first launch.** The gate is `onboarding_completed` in `UserDefaults`
+(Android-verbatim key). Delete the app from the simulator and reinstall — that clears the defaults
+*and* the database, which is what makes §1.9's "the profile row was empty before" checkable. Do not
+try to reset by editing defaults by hand; the weight row in §1.9 needs an empty vitals history too.
+
+**The order under test** is `OnboardingStep.allCases`: Welcome → Ad → Cinsiyet → Doğum tarihi →
+Boy → Kilo → Sağlık notları → Bildirimler. Welcome carries no header, so the counter runs **1/7 …
+7/7** over the seven asking steps, never 1/8.
+
+### The flow renders and walks
+
+- [ ] **1.1 The eight steps render in order.** Fresh install, launch.
+  *Expected:* the **Welcome cover** first — a large rounded shield cluster, **"Salus'a Hoş
+  Geldiniz"** centred under it, the body paragraph under that, and a full-width **"Başla"** pill
+  with a forward arrow at its trailing edge. **No header**: no back button, no progress bar, no
+  counter, and no skip button. Tap **Başla** and walk forward with **Devam Et**, checking each
+  step in turn:
+  1. **Ad** — "Adınız Nedir?" over a pill text field placeholdered **"Örn: Ayşe"**;
+  2. **Cinsiyet** — badge, left-aligned heading, three option rows **Kadın / Erkek / Diğer**;
+  3. **Doğum tarihi** — "Doğum Tarihiniz" over the date field showing **"Tarih seçin"**;
+  4. **Boy** — decimal field, suffix **cm**, placeholder **"Örn: 170"**;
+  5. **Kilo** — decimal field, suffix **kg**, placeholder **"Örn: 70"**;
+  6. **Sağlık notları** — a 240 pt note area with the green **"Yalnızca bu cihazda"** lock chip
+     pinned to its bottom-right, and a shield privacy card under it;
+  7. **Bildirimler** — the bell/heart hero cluster, the body paragraph, one benefit card
+     (**"Zamanında Hatırlatma"** over "Asla bir dozu kaçırmayın."), and the primary button now
+     reading **"İzin Ver"** with a **tick** rather than an arrow.
+  *Why this step exists:* the order and the two hero steps are `OnboardingStep.kt` + Kotlin's
+  `OnboardingStepContent.kt:64-188` verbatim; a step in the wrong place is the port's most likely
+  regression.
+- [ ] **1.2 The header counts 1/7 … 7/7 and the bar only ever grows.** On each step after Welcome,
+  read the header.
+  *Expected:* section title centred — **Kişisel Bilgiler** on the five personal steps
+  (Ad, Cinsiyet, Doğum tarihi, Boy, Kilo), **Sağlık Notları** on the notes step,
+  **Gizlilik Tercihleri** on the notifications step — over a short 128 pt bar, with a filled circle
+  at the trailing edge reading **1/7**, **2/7**, … **7/7**. The bar grows monotonically across the
+  whole flow and **never resets** when the section title changes.
+- [ ] **1.3 Back walks in-flow and the first step is a no-op.** From **Kilo**, tap the header's
+  back chevron three times.
+  *Expected:* Boy → Doğum tarihi → Cinsiyet, each with the counter and bar going down. Keep tapping
+  back to **Ad**, then tap back once more.
+  *Expected:* the **Welcome cover** returns (`stepIndex` 1 → 0). On Welcome there is no header and
+  therefore no back button at all — and **the flow cannot be escaped**: there is no swipe-from-edge
+  and no system back that leaves it (ruling 8, `OnboardingScreen.swift`'s `BackHandler` note).
+  Try the edge swipe on Welcome and on Ad and record that nothing happens.
+- [ ] **1.4 Values survive a walk back and forward.** Type **Ayşe** on Ad, pick **Kadın**, set a
+  birth date, type **170** on Boy. Walk back to Ad and forward again.
+  *Expected:* every answer is still there — the name field still reads Ayşe, Kadın is still the
+  selected row, the date still shows, Boy still reads 170.
+
+### The gates
+
+- [ ] **1.5 Cinsiyet is the one hard gate.** Arrive on **Cinsiyet** with nothing picked.
+  *Expected:* **Devam Et** is visibly **disabled** (dimmed) and does nothing when tapped, and there
+  is **no skip button** on this step — it is the only asking step that is not skippable
+  (`isSkippable`, ruling 8). Tap **Kadın**: the row fills with the cycle accent, the button enables,
+  and Devam Et advances.
+- [ ] **1.6 A present-but-unusable measurement blocks Devam Et; empty does not.** On **Boy**, type
+  **12**.
+  *Expected:* the field turns to its error style and the supporting text reads **"50 ile 250 cm
+  arasında bir değer girin."**; **Devam Et** is disabled. Clear the field to empty.
+  *Expected:* the error goes away and **Devam Et** enables again — an unanswered step is allowed
+  through, only a wrong answer is not. Repeat on **Kilo** with **5** and the message **"20 ile 400
+  kg arasında bir değer girin."**
+- [ ] **1.7 A Turkish decimal comma is a valid weight.** On **Kilo**, type **72,4** on the Turkish
+  keyboard (the decimal key types a comma).
+  *Expected:* **no error**, **Devam Et** enabled. *Why this step exists:* `MeasurementInput`
+  normalises comma→dot (divergence (h)); Kotlin's `toDoubleOrNull` accepts no comma, so this is the
+  one input where the two platforms take different characters for the same number. Record the
+  numeric value that reaches the weight chart in §1.9 — it must be **72,4 kg**, not 724 and not 72.
+
+### Skip clears the step
+
+- [ ] **1.8 Şimdilik Atla clears the step's own answer and advances.** For each of **Ad**, **Doğum
+  tarihi**, **Boy**, **Kilo**, **Sağlık notları** in turn: type/pick an answer, tap **Şimdilik
+  Atla**, then walk **back** to that step.
+  *Expected:* the step is **empty again** — the name field blank, the date field back to "Tarih
+  seçin", the measurement fields blank, the note area back to its placeholder. Skip **clears**, it
+  does not merely pass by (ruling 8). Also confirm the skip button reads **"Daha Sonra"** on the
+  notifications step and **"Şimdilik Atla"** everywhere else, and that it is absent on Welcome and
+  on Cinsiyet.
+
+### Finishing writes three things, in order
+
+- [ ] **1.9 Bitir writes the profile, then the weight, then the flag.** Walk the flow answering
+  **Ad = Ayşe**, **Cinsiyet = Kadın**, a birth date, **Boy = 170**, **Kilo = 72,4**, a note. On the
+  last step the primary button reads **"İzin Ver"** (notifications) — tap it, answer the system
+  permission sheet either way (see §1.10), and the flow closes.
+  *Expected, in the app:*
+  a. the gate disappears and the **Home tab** is showing — no onboarding on any later launch,
+     including after a force-quit;
+  b. **Daha Fazla › Profil** shows **Ayşe**, the sex **Kadın**, the birth date and **170** cm, and
+     the note text in the notes field;
+  c. **Ölçümler › Kilo** has **exactly one** entry, **72,4 kg**, timestamped now — the weight is a
+     measurement, not a profile field (ruling 7), so it lands in the vitals history and the chart
+     starts from it.
+  *Why the order matters:* the profile is written first and the flag last, so a crash midway
+  replays the flow rather than stranding a half-filled profile behind a closed gate. There is **no
+  error UI** on this step by design (ruling H-4): if a write fails the button simply re-enables and
+  the step stays open.
+- [ ] **1.10 Denial is not a dead end.** Reinstall and walk to **Bildirimler**. Tap **İzin Ver** and
+  **Reddet** on the system sheet.
+  *Expected:* the flow finishes anyway — exactly as if you had allowed (divergence (e)). Reinstall
+  once more and this time tap **Daha Sonra** instead.
+  *Expected:* the flow finishes and **no system permission sheet is ever shown** — the skip button
+  advances without asking. In both cases **Daha Fazla › Hatırlatıcılar** is where the permission can
+  be fixed later, and it should report notifications as not authorised.
+
+### Type sizes and locales
+
+- [ ] **1.11 Turkish at AX5 does not clip.** Settings › Accessibility › Display & Text Size › Larger
+  Text, slider to the **largest** (AX5). Walk all eight steps in Turkish.
+  *Expected:* every heading and body paragraph **wraps** rather than truncating with an ellipsis;
+  the header's section title and the **1/7** counter stay legible and do not overlap the back
+  button; the primary pill's label wraps or the pill grows rather than the text being cut; the
+  longest strings in the flow — `onboarding_sex_body`, `onboarding_notes_privacy_body` and
+  `onboarding_notifications_body` — are readable end to end by scrolling. Short steps stay
+  **vertically centred**; long ones simply scroll (that is the one layout trick in
+  `OnboardingScreen.swift`'s `steps`).
+- [ ] **1.12 English is a full peer.** Switch the device (or the app, via Daha Fazla › Dil, which
+  applies on next launch — divergence (a)) to English, reinstall, walk the flow.
+  *Expected:* every string above appears in English — "Welcome to Salus", "Continue", "Skip For
+  Now", "Allow", "Later", "Finish", "Step 2 of 7" for the bar's VoiceOver label — and nothing shows
+  a raw key such as `onboarding_next`. *Why this step exists:* a `.xcstrings` is compiled only by
+  Xcode, so `swift test` cannot see a missing translation at all.
+
+### Accessibility
+
+- [ ] **1.13 VoiceOver reads the position once, not twice.** Turn VoiceOver on and swipe through the
+  header of any asking step.
+  *Expected:* the progress bar announces **"Adım 2 / 7"**; the counter circle beside it is **not**
+  focusable and announces nothing — the same fact twice in a row is the thing being avoided (the M7
+  sparkline precedent). The two hero clusters (Welcome, Bildirimler) are likewise skipped entirely.
+  *Known gap, and it is a finding rather than a pass:* the header's **back button has no spoken
+  label** — Android's `onboarding_back` ("Geri") is not in this port's catalog. VoiceOver falls back
+  to the SF Symbol's own description. Record what it actually says; restoring the key is a decision
+  for T14.
+
+## What was executed when this section was written (iOS-M8 Task 8)
+
+**Nothing.** Task 8 ran `scripts/test-packages.sh FeatureOnboarding SalusUI` (2/2 packages passed),
+`scripts/build-app.sh` (BUILD SUCCEEDED — the first build that compiles `FeatureOnboarding` against
+the iOS SDK at all, since this task links it in `project.yml`) and `scripts/lint.sh` (0 violations).
+Every §1 row above is **NOT RUN**, and until Task 11 mounts the overlay above `RootView` none of
+them is even reachable — the eight step bodies, the two hero clusters and the header have never
+been drawn on any hardware. The eight `#Preview`s in `OnboardingScreen.swift`, one per step, ship
+for the user's own inspection; no agent has rendered them either.
+
+---
+
 ## §2. The secure screen (Task 10)
 
 Three mechanisms, one setting, and only one of them is behind the setting's switch — that is

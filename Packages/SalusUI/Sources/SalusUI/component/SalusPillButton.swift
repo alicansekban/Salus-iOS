@@ -47,6 +47,7 @@ public struct SalusPillButton: View {
     private let tonal: Bool
     private let accent: FeatureAccent?
     private let systemImage: String?
+    private let trailingSystemImage: String?
     private let fillsWidth: Bool
     private let action: () -> Void
 
@@ -56,6 +57,12 @@ public struct SalusPillButton: View {
     ///   - systemImage: SF Symbol name for the leading icon, which labels the action and leads the
     ///     text (`SalusPillButton.kt:34-35`). Kotlin takes an `ImageVector` from `Icons`; the iOS
     ///     twin of that catalogue is SF Symbols, named rather than referenced.
+    ///   - trailingSystemImage: SF Symbol name for the trailing icon, which "points at what
+    ///     happens next" (`SalusPillButton.kt:34-35`, `trailingIcon` at `:46`). Unported until
+    ///     iOS-M8 because no caller passed one; the onboarding footer is the first
+    ///     (`OnboardingScreen.kt:145`), so the parameter arrives with it rather than the whole
+    ///     button being reimplemented at the call site. Additive and defaulted, so every existing
+    ///     call site draws exactly what it drew before.
     ///   - fillsWidth: whether the drawn capsule fills the width it is proposed — the twin of a
     ///     caller's `Modifier.fillMaxWidth()`. Defaults to `false`, the content-width pill every
     ///     existing call site draws.
@@ -65,6 +72,7 @@ public struct SalusPillButton: View {
         tonal: Bool = false,
         accent: FeatureAccent? = nil,
         systemImage: String? = nil,
+        trailingSystemImage: String? = nil,
         fillsWidth: Bool = false,
         action: @escaping () -> Void
     ) {
@@ -73,6 +81,7 @@ public struct SalusPillButton: View {
         self.tonal = tonal
         self.accent = accent
         self.systemImage = systemImage
+        self.trailingSystemImage = trailingSystemImage
         self.fillsWidth = fillsWidth
         self.action = action
     }
@@ -87,6 +96,12 @@ public struct SalusPillButton: View {
                 Text(text)
                     .font(SalusTypography.labelLarge.font)
                     .tracking(SalusTypography.labelLarge.tracking)
+                // `trailingIcon` (`SalusPillButton.kt:58-65`), the same `ButtonIconSize` and the
+                // same `SalusSpacing.sm` gap the leading icon gets.
+                if let trailingSystemImage {
+                    Image(systemName: trailingSystemImage)
+                        .font(.system(size: Self.iconSize))
+                }
             }
             // `ButtonDefaults.ContentPadding`'s 24 dp horizontal, which Kotlin inherits without
             // naming it — the same `SalusSpacing.xl` the empty state's pill already uses.
@@ -148,6 +163,7 @@ public struct SalusPillButton: View {
         VStack(spacing: SalusSpacing.sm) {
             // The two rows of `SalusPillButtonPreview` (`SalusPillButton.kt:104-115`).
             SalusPillButton(text: "Log period", systemImage: "plus", action: {})
+            SalusPillButton(text: "Next", trailingSystemImage: "arrow.forward", action: {})
             SalusPillButton(text: "View details", tonal: true, action: {})
             // The accent and disabled rows, which Kotlin's preview does not draw.
             SalusPillButton(text: "Log period", accent: theme.extendedColors.cycle, action: {})
@@ -169,6 +185,6 @@ public struct SalusPillButton: View {
         }
         .padding(SalusSpacing.lg)
     }
-    .frame(height: 440)
+    .frame(height: 480)
     .salusTheme(theme)
 }
