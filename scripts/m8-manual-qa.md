@@ -663,10 +663,12 @@ no simulator, no device, no preview render.
 
 ## §5. Language (Task 12)
 
-Written by Task 12 (`Packages/Features/FeatureSettings/Sources/FeatureSettings/data/
-UserDefaultsAppLocaleController.swift` and `.../domain/AppLocaleController.swift`, both T3;
-`.../ui/more/MoreSelectionDialog.swift` + `MoreScreen.swift`, the footnote T12 added; `project.yml`'s
-`options.developmentLanguage: tr` + `settings.base.DEVELOPMENT_LANGUAGE: tr`). §4.9 checks the
+Written by Task 12. The files, under
+`Packages/Features/FeatureSettings/Sources/FeatureSettings/`:
+`data/UserDefaultsAppLocaleController.swift` and `domain/AppLocaleController.swift` (both T3),
+`ui/more/MoreSelectionDialog.swift` + `ui/more/MoreScreen.swift` (the footnote T12 added); plus
+`project.yml`'s `options.developmentLanguage: tr` + `settings.base.DEVELOPMENT_LANGUAGE: tr`, and
+`App/RootTab.swift` + `App/RootView.swift` for §5.10. §4.9 checks the
 *dialog*; this section checks the *pipeline*: what the picked language does to the app after it
 restarts, and what it does to a user who never opens the dialog at all.
 
@@ -692,8 +694,9 @@ several rows below change it and the last one restores it.
 
 ### The pick survives, and lands, on the next launch
 
-- [ ] **5.1 Türkçe → relaunch → Turkish.** On a device whose own language is **English**, open
-  More → **Dil**, tap **Türkçe**, then kill and relaunch the app.
+- [ ] **5.1 Türkçe → relaunch → Turkish.** On a device whose own language is **English** and with
+  no override set, the app starts in English — so open **More → Language** (not "Dil"; the row is
+  still English at this point), tap **Türkçe**, then kill and relaunch the app.
   *Expected:* the whole app is Turkish — More's header is **"Diğer"** and the section labels are
   **"Takip"** / **"Görünüm"** / **"Güvenlik"**, with the **Dil** row's subtitle **Türkçe**.
   Settings → Salus (the iOS Settings page) now offers a **Preferred Language** row reading

@@ -30,8 +30,7 @@
 //
 // The two `more_cycle*` copies that lived here while `PlaceholderScreen` drew the cycle row were
 // deleted with it in iOS-M8 T6: the More hub now owns the row and reads `FeatureSettings`' own
-// copies, so the app catalog carries only the three `app_lock_*` keys (`AppStringCatalogTests`
-// pins exactly those).
+// copies.
 //
 // TOOLCHAIN NOTE, the same one every `*Strings.swift` carries: a `.xcstrings` is compiled into
 // `.lproj/Localizable.strings` by **Xcode's** build system only, so the pin test

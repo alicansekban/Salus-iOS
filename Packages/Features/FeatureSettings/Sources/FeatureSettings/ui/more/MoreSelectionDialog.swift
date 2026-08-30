@@ -48,7 +48,9 @@ struct MoreSelectionDialog: View {
     /// (`SettingsStrings.languageRelaunchNote`), because only the language pick defers its effect
     /// to the next launch — **recorded divergence (a)**, ruling 6. Kotlin's `SelectionDialog` has
     /// no such parameter: appcompat recreates the activity, so there is nothing to warn about.
-    /// Defaulted to `nil` so the theme and colour-theme call sites stay the Kotlin shape.
+    /// Defaulted to `nil` so the theme and colour-theme call sites stay the Kotlin shape — which is
+    /// also why it is the one `var` here: only a `var` gets a memberwise default, so `let` would
+    /// force those two call sites to pass `footnote: nil`.
     var footnote: String?
     let onDismiss: () -> Void
 
