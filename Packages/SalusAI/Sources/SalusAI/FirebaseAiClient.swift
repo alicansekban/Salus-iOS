@@ -1,10 +1,14 @@
 // Ported 1:1 from Android
 // `core/ai/src/main/kotlin/com/alicansekban/salus/core/ai/FirebaseAiClient.kt`.
 //
-// This is the only file in the app that talks to Firebase AI Logic. It must live behind
-// `#if canImport(FirebaseAI)` because `swift test` runs on a macOS host that can never link the
-// Firebase iOS frameworks: the `SalusAI` package builds and its tests pass without this file,
-// and the file is only compiled into the real iOS app build, which resolves the SPM dependency.
+// This is the only file in the app that talks to Firebase AI Logic. It lives behind
+// `#if canImport(FirebaseAI)` as defence-in-depth and for code organisation, not as a load-bearing
+// host-build mechanism: the firebase-ios-sdk ships macOS targets, so `canImport(FirebaseAI)` is true
+// on a macOS host too, which means the guard does not by itself keep the file out of `swift test`.
+// What keeps `swift test` green is that the Firebase products resolve on the host — the manifest
+// declares them as target dependencies — so an import is available; the guard simply localises this
+// Firebase-only file so the rest of the module reads as SDK-free, and it would also protect a build
+// where the dependency failed to resolve on a non-iOS platform.
 #if canImport(FirebaseAI)
 
     import FirebaseAI
