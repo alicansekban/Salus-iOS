@@ -8,13 +8,14 @@
 //                                                          over by the factory below.
 //   `viewModelOf(::HomeViewModel)`                       → `makeHomeViewModel`.
 //
-// **Two of the ViewModel's five dependencies are constructed here rather than resolved**, because
-// Android resolves them from modules iOS does not have yet: `AiSummaryRepository` (iOS-M10) and
-// `PremiumRepository` (iOS-M9). Their iOS stand-ins are this package's own
-// ``AiUsageSummaryAvailability`` — real, over the shipped `AiUsageDataSource` — and
-// ``FreeOnlyPremiumStatus``, which answers `false` until the store lands (divergence (d)). Both are
-// bound behind the two feature-local protocols, so the milestone that brings the real one changes
-// this file and nothing else.
+// **One of the ViewModel's five dependencies is constructed here rather than resolved**, because
+// Android resolves it from a module iOS does not have yet: `AiSummaryRepository` (iOS-M10). Its
+// iOS stand-in is this package's own ``AiUsageSummaryAvailability`` — real, over the shipped
+// `AiUsageDataSource`. The other, `PremiumRepository` (iOS-M9), is bound behind the feature-local
+// ``HomePremiumStatus`` protocol by the composition root, which builds
+// ``PremiumRepositoryHomePremiumStatus`` over the real repository and passes it in — the twin of
+// Koin's `single<PremiumRepository>` (`HomeModule.kt:11-23`), and what keeps `SalusPremium` out of
+// this file's import list.
 //
 // The module exposes **only** the ViewModel factory. `CycleModule` publishes its repository because
 // a second feature reads periods through it; nothing reads the dashboard's join but the dashboard,
@@ -56,6 +57,7 @@ public func makeHomeModule(
     vitalsDao: VitalsDao,
     preferences: SalusPreferencesDataSource,
     aiUsage: AiUsageDataSource,
+    homePremiumStatus: any HomePremiumStatus,
     clock: any SalusClock,
     doseActions: any DoseActions,
     profileId: String = SalusDatabase.defaultProfileId
@@ -72,14 +74,13 @@ public func makeHomeModule(
         profileId: profileId
     )
     let aiSummaryAvailability = AiUsageSummaryAvailability(aiUsage: aiUsage)
-    let premiumStatus = FreeOnlyPremiumStatus()
 
     return HomeModule(
         makeHomeViewModel: {
             HomeViewModel(
                 repository: repository,
                 aiSummaryAvailability: aiSummaryAvailability,
-                premiumStatus: premiumStatus,
+                premiumStatus: homePremiumStatus,
                 clock: clock,
                 doseActions: doseActions
             )
