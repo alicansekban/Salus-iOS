@@ -59,6 +59,7 @@ public final class RevenueCatPurchasesGateway: PurchasesGateway {
     }
 
     public func currentOffering() async -> PaywallOffering? {
+        guard isConfigured else { return nil }
         do {
             let plans = try await Purchases.shared.offerings()
                 .current?
