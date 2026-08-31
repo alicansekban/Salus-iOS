@@ -179,3 +179,37 @@ intro gate returns early, and `currentOffering()` yields nothing — the paywall
 | 6.1 | Build and launch with a blank `Secrets.local.xcconfig` (no RevenueCat key). | The app launches and runs **fully free**: no crash, no premium features unlocked, and the tab bar draws the classic palette. | **NOT RUN** |
 | 6.2 | Open the paywall (More premium row) on the keyless build. | The body shows the `paywall_error_offering` text ("Planlar şu an yüklenemedi…") centred, with "Tekrar dene" and "Satın almaları geri yükle". No crash. | **NOT RUN** |
 | 6.3 | Complete onboarding on the keyless build. | The intro paywall does **not** fire, and `paywall_intro_shown` is **not** marked. | **NOT RUN** |
+
+---
+
+## §7. The review-round regressions (post-review fixes)
+
+Written after the branch review, from the three defects it turned up and the one the user hit
+first. Each row is the *symptom* rather than the code, because these are the cases the automated
+half structurally cannot reach: two are hit-testing and scene-phase behaviour, one is a fresh
+clone, one is a plist the simulator resolves.
+
+**7.1 — the Face ID loop** (`Packages/SalusCommon/Sources/SalusCommon/AppLockManager.swift`,
+divergence 5). The Face ID sheet drives the scene `.active → .inactive → .active`, and the shell
+forwards that last `.active` to `sceneDidBecomeActive()`. Ported literally, Kotlin's
+`backgroundedAt == null ||` branch re-locked the app the instant its own prompt succeeded, so the
+gate came back and fired the prompt again. Now only a scene that actually reached the background
+may re-lock, and its stamp is spent once. The automated half is
+`AppLockManagerTests`' two `.inactive`-round-trip cases; what they cannot reach is a real
+`LAContext`.
+
+**7.2 — the paywall host's touch layer** (`App/PaywallHost.swift`). `Color.clear` is hit-testable,
+and the host is an unconditional full-bleed sibling at the top of `RootView`'s `ZStack`, so it
+took every tap in the app until `.allowsHitTesting(false)` was added. There is no test target in
+the app, so a tap is the only detector.
+
+| # | Step | Expected | Status |
+|---|------|----------|--------|
+| 7.1 | More → turn the app lock on, authenticate the toggle's own prompt. | The toggle turns on. The lock gate does **not** appear behind it, and no second Face ID prompt fires. | **NOT RUN** |
+| 7.2 | With the lock on, background the app for **more than** 30 s and return; authenticate. | The gate appears once, the prompt succeeds once, and the app's content is drawn. The prompt does **not** fire again. | **NOT RUN** |
+| 7.3 | With the lock on and the session unlocked, pull down Control Centre (or take a call) and dismiss it. | Nothing happens: no gate, no prompt. The scene went `.inactive` and back, which is not leaving the app. | **NOT RUN** |
+| 7.4 | With the lock on, background the app for **less than** 30 s and return, then wait a minute and pull Control Centre down and back. | Neither return re-locks. The short stay is judged once and cannot age into a re-lock. | **NOT RUN** |
+| 7.5 | On any tab, tap a card, a tab-bar item and a toolbar button. | Every one responds. (Before the fix nothing did: the paywall host's transparent layer swallowed the whole window.) | **NOT RUN** |
+| 7.6 | Open the paywall, dismiss it with the close button, then tap around the shell again. | The sheet closes and the shell is still fully interactive. | **NOT RUN** |
+| 7.7 | In a **fresh clone** with no `App/Secrets.local.xcconfig`, run `xcodegen generate`. | It succeeds. `App/Secrets.xcconfig` is committed and `#include?`s the local file only if it exists. | **NOT RUN** |
+| 7.8 | Build with a blank key but `SALUS_REVENUECAT_API_KEY` set in the scheme's environment. | The SDK **is** configured from the environment: the paywall loads real plans instead of `offeringUnavailable`. (Before the fix the always-present, empty Info.plist entry won and the environment was never read.) | **NOT RUN** |
