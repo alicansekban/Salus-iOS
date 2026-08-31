@@ -15,11 +15,13 @@ Milestone plans live in `docs/plans/`. Toolchain and CI usage: `README.md`.
   milestone that needs it and never before: **GRDB** (iOS-M1/M2 persistence), **`purchases-ios`**
   (RevenueCat, premium), **`firebase-ios-sdk`** (FirebaseAI + FirebaseAppCheck, AI). Charts, PDF,
   crypto and biometrics come from the system. Nothing else is ever added, and the allowlist stays
-  closed at three. The tree today has **exactly one** remote SPM dependency, arrived with iOS-M1:
-  **GRDB.swift**, pinned `from: "7.11.1"`, declared in `Packages/SalusDatabase/Package.swift` and
-  nowhere else. The other 23 manifests still declare `dependencies: []` or local
-  `.package(path:)` entries only; the app reaches GRDB transitively, by linking `SalusDatabase`.
-  A second `.package(url:)` line anywhere is a finding unless it is `purchases-ios` or
+  closed at three. The tree today has **exactly two** remote SPM dependencies: **GRDB.swift**,
+  pinned `from: "7.11.1"`, declared in `Packages/SalusDatabase/Package.swift` (arrived with
+  iOS-M1), and **`purchases-ios`**, pinned `from: "5.87.1"`, declared in
+  `Packages/SalusPremium/Package.swift` (arrived with iOS-M9). The other 22 manifests still
+  declare `dependencies: []` or local `.package(path:)` entries only; the app reaches GRDB
+  transitively, by linking `SalusDatabase`, and `purchases-ios` transitively, by linking
+  `SalusPremium`. A third `.package(url:)` line anywhere is a finding unless it is
   `firebase-ios-sdk` arriving with its own milestone. — *enforcement: review of every
   `Package.swift` / `project.yml` diff.*
 - Offline-first, local-only: no backend of ours, no analytics, no ad-hoc networking. The
@@ -157,7 +159,7 @@ Milestone plans live in `docs/plans/`. Toolchain and CI usage: `README.md`.
 - **`.macOS(.v14)` in a manifest is a test-host concession, not a target.** `swift test` cannot
   run a bundle on an iOS simulator, so a package whose host build cannot succeed under
   `[.iOS(.v17)]` alone also declares `.macOS(.v14)`. **iOS 17 remains the ship target** and never
-  ship-conditions on macOS. There are exactly three reasons a package qualifies, and 20 of the 24
+  ship-conditions on macOS. There are exactly three reasons a package qualifies, and 21 of the 24
   do:
   - **Reaches SwiftUI** — directly (`SalusDesignSystem`, and `SalusNavigation` since its
     `TabBackStacks` holds one `NavigationPath` per tab) or transitively (`SalusUI` and the ten
@@ -170,15 +172,17 @@ Milestone plans live in `docs/plans/`. Toolchain and CI usage: `README.md`.
     `SalusDatabase` inherits the concession — that is expected, not a smell.
   - **Reaches `Observation`** — `SalusCommon`, whose `PendingDeleteController` is `@Observable`
     (iOS 17 / macOS 14; the host build otherwise fails with *"'Observable()' is only available in
-    macOS 14.0 or newer"*), plus its dependents `SalusSettings` and `SalusTesting`. Three
-    packages, arrived with iOS-M1. `Observation` is not a UI framework, so the domain-layer rule
+    macOS 14.0 or newer"*), plus its dependents `SalusSettings` and `SalusTesting`, and
+    `SalusPremium` (its `PremiumRepositoryImpl` is `@Observable`, arrived with iOS-M9). Four
+    packages. `Observation` is not a UI framework, so the domain-layer rule
     below still holds — this is the same host-build mechanics as the two above, not an exception
     to it.
 
-  The remaining four — `SalusModel`, `SalusBackup`, `SalusNotifications`,
-  `SalusPremium` — stay `[.iOS(.v17)]`
+  The remaining three — `SalusModel`, `SalusBackup`, `SalusNotifications` — stay `[.iOS(.v17)]`
   alone; do not add `.macOS` to a package that does not need it, and never add it to silence
-  something other than these three. — *enforcement:
+  something other than these three. (`SalusPremium` left this list in iOS-M9: it gained
+  `.macOS(.v14)` because its `PremiumRepositoryImpl` is `@Observable` — the "Reaches `Observation`"
+  reason above — while `purchases-ios` declares a macOS 10.15 floor.) — *enforcement:
   `scripts/test-packages.sh` (host build) + `scripts/build-app.sh` (real iOS build).*
 
 ## Port fidelity rules

@@ -86,3 +86,96 @@ resolves the theme from `effectivePremiumTheme(status, storedTheme)`.
 | 2.6 | Complete onboarding on a **fresh install** (post-onboarding intro). | The intro paywall fires **once**, after onboarding completes, with the `.onboarding` headline. It does not fire on a subsequent launch (the `paywall_intro_shown` flag is set). | **NOT RUN** |
 | 2.7 | Launch a second time after the intro has shown. | The intro does **not** appear again; the app opens straight to the shell. | **NOT RUN** |
 | 2.8 | With a key-less build, complete onboarding. | The intro paywall does **not** fire (nothing can be sold), and `paywall_intro_shown` is **not** marked — so a later keyed build still gets to announce premium once. | **NOT RUN** |
+
+---
+
+## §3. The entitlement lifecycle (Task 10)
+
+Written by Task 10 from the `SalusPremium` repository and gateway
+(`Packages/SalusPremium/Sources/SalusPremium/PremiumRepository.swift`,
+`RevenueCatPurchasesGateway.swift`) and the shell theme resolution (`App/RootView.swift`). The
+automated half is the `PremiumRepositoryImplTests` 5-case table plus the `EffectiveThemeTests`
+4-case table; what no test can reach is a real sandbox store, a real cancellation, and the
+offline path — the store's own state machine, which only a device with a sandbox account
+exercises.
+
+**How the status flows.** `PremiumRepositoryImpl` seeds `.free`, then maps every
+`Purchases.customerInfoStream` update through `premiumStatusOf(entitlementActive:hasBillingIssue:)`
+— an active entitlement with a billing issue is `.gracePeriod`, without one `.premium`, and an
+inactive entitlement is `.free` whatever the billing flag says. `RootView` mirrors
+`premiumRepository.status` and resolves the palette with
+`effectivePremiumTheme(status, storedTheme)`: a `.premium`/`.gracePeriod` user keeps the stored
+selection, a `.free` user is drawn `.classic` regardless.
+
+| # | Step | Expected | Status |
+|---|------|----------|--------|
+| 3.1 | Purchase premium (sandbox) with a theme selected (e.g. `OCEAN`). | The theme **unlocks**: the palette repaints to the stored selection everywhere it is drawn, without relaunch. Backing out of the store sheet and re-opening also keeps the entitlement. | **NOT RUN** |
+| 3.2 | Cancel the subscription in the sandbox store, then let the grace period end. | The theme **lapses back to classic**: a previously-premium user returns to the classic palette once the store reports `.free`, and the stored `premium_theme` selection is retained for a future resubscribe. | **NOT RUN** |
+| 3.3 | Restore purchases with an active entitlement (a second device, or after a reinstall). | The restore finds the entitlement, refreshes the repository, and the theme unlocks. | **NOT RUN** |
+| 3.4 | Restore purchases with **no** entitlement (a fresh sandbox account). | The restore runs, finds nothing, and the paywall shows the `paywall_error_restore` line ("Mağazaya ulaşılamadı ya da bu hesapta bir abonelik bulunamadı.") — the app stays free. | **NOT RUN** |
+| 3.5 | Purchase premium, then go **offline** (airplane mode) and relaunch. | The cached entitlement stays: the app still draws the premium theme from the last known status — the repository keeps the last non-nil snapshot and never downgrades on a store that does not answer. | **NOT RUN** |
+
+---
+
+## §4. The intro paywall (Task 10)
+
+Written by Task 10 from `IntroPaywallGate` (`Packages/Features/FeaturePaywall/Sources/FeaturePaywall/domain/IntroPaywallGate.swift`)
+and its `RootView` `.task` mount. The automated half is the `IntroPaywallGateTests` 4-case table
+(waits for onboarding, marks-before-shows, never re-marks, keyless no-op); what no test can reach
+is a real first launch on a device — the once-per-install announcement.
+
+**How it fires.** `IntroPaywallGate.run()` guards on `isBillingConfigured()` (a keyless build
+returns immediately, flag untouched), waits for `userSettings.first { $0.onboardingCompleted }`,
+checks `paywall_intro_shown`, marks it shown **before** opening the paywall (process-death-safe),
+then `paywallController.show(.onboarding)`.
+
+| # | Step | Expected | Status |
+|---|------|----------|--------|
+| 4.1 | Fresh install, complete onboarding (keyed build). | The intro paywall fires **once**, right after onboarding completes, with the `.onboarding` headline. | **NOT RUN** |
+| 4.2 | Launch a second time after the intro has shown. | The intro does **not** appear again; the app opens straight to the shell (`paywall_intro_shown` is set). | **NOT RUN** |
+| 4.3 | Fresh install, complete onboarding on a **key-less** build. | The intro does **not** fire (nothing can be sold), and `paywall_intro_shown` is **not** marked — so a later keyed build still gets to announce premium once. | **NOT RUN** |
+
+---
+
+## §5. The `PaywallSource` → headline mapping (Task 10)
+
+Written by Task 10 from `PaywallViewModel.headlineKey(for:)`
+(`Packages/Features/FeaturePaywall/Sources/FeaturePaywall/ui/PaywallViewModel.swift`) and the
+`PaywallStrings` accessors. The automated half is the `PaywallViewModelTests` cases
+`theTwoNonFeatureEntryPointsKeepTheGenericTitle` and `everyFeatureSourceGetsAHeadlineOfItsOwn`;
+what no test can reach is the rendered headline on a real sheet for each entry point.
+
+**The mapping.** `.onboarding` and `.settings` share the generic `paywall_title`; `.themes` →
+`paywall_title_themes`; `.trends` → `paywall_title_trends`; `.aiSummary` →
+`paywall_title_ai_summary`; `.doctorReport` → `paywall_title_doctor_report`; `.backup` →
+`paywall_title_backup`. The trends and AI rows are **no-ops** until M10/M11 (their screens do not
+exist yet), but the source mapping itself is testable from the entry points that do exist.
+
+| # | Step | Expected | Status |
+|---|------|----------|--------|
+| 5.1 | Open the paywall from the More premium row. | The sheet's headline is the generic `paywall_title` ("Salus Premium"). | **NOT RUN** |
+| 5.2 | Open the paywall from the More → theme dialog (premium row). | The sheet's headline is `paywall_title_themes` ("Premium temalara eriş"). | **NOT RUN** |
+| 5.3 | Open the paywall from the doctor-report entry (More → doctor report, premium-gated). | The sheet's headline is `paywall_title_doctor_report` ("AI doktor raporuna eriş"). | **NOT RUN** |
+| 5.4 | Open the paywall from the post-onboarding intro. | The sheet's headline is the generic `paywall_title` — the `.onboarding` source shares it with `.settings`. | **NOT RUN** |
+| 5.5 | (M10/M11) Open the paywall from the trends and AI-summary rows. | The headline is `paywall_title_trends` / `paywall_title_ai_summary` respectively — **no-op until those milestones ship the rows**; the mapping is already wired. | **NOT RUN** |
+
+---
+
+## §6. The keyless build (Task 10)
+
+Written by Task 10 from `App/SalusApp.swift` (the `Purchases.configure` guard) and
+`RevenueCatPurchasesGateway` (`isConfigured`). The automated half is the keyless path in the
+`IntroPaywallGateTests` and the repository's never-downgrade cases; what no test can reach is a
+launched app with no RevenueCat key at all.
+
+**How it works.** `SalusApp.init` reads `SALUS_REVENUECAT_API_KEY` (from the git-ignored
+`App/Secrets.local.xcconfig`) and calls `Purchases.configure` only when it is non-blank. A blank
+key leaves `Purchases.isConfigured == false`, so the gateway reports `isConfigured == false`, the
+intro gate returns early, and `currentOffering()` yields nothing — the paywall surfaces
+`offeringUnavailable`. The app runs fully free and never crashes.
+
+| # | Step | Expected | Status |
+|---|------|----------|--------|
+| 6.1 | Build and launch with a blank `Secrets.local.xcconfig` (no RevenueCat key). | The app launches and runs **fully free**: no crash, no premium features unlocked, and the tab bar draws the classic palette. | **NOT RUN** |
+| 6.2 | Open the paywall (More premium row) on the keyless build. | The body shows the `paywall_error_offering` text ("Planlar şu an yüklenemedi…") centred, with "Tekrar dene" and "Satın almaları geri yükle". No crash. | **NOT RUN** |
+| 6.3 | Complete onboarding on the keyless build. | The intro paywall does **not** fire, and `paywall_intro_shown` is **not** marked. | **NOT RUN** |
