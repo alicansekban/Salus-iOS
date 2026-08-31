@@ -33,7 +33,7 @@ public final class PremiumRepositoryImpl: PremiumRepository {
     public private(set) var currentStatus: PremiumStatus = .free
 
     private let gateway: any PurchasesGateway
-    nonisolated private let currentStatusStream: CurrentValueStream<PremiumStatus>
+    private nonisolated let currentStatusStream: CurrentValueStream<PremiumStatus>
 
     public init(gateway: any PurchasesGateway) {
         self.gateway = gateway
@@ -52,7 +52,7 @@ public final class PremiumRepositoryImpl: PremiumRepository {
     /// change (`PremiumRepositoryImplTest` reads ``currentStatus`` directly, the Android test reads
     /// `status.value`; this stream serves consumers). `nonisolated` because the backer is itself
     /// thread-safe and the protocol requires it outside the main actor.
-    nonisolated public var status: AsyncStream<PremiumStatus> {
+    public nonisolated var status: AsyncStream<PremiumStatus> {
         currentStatusStream.stream
     }
 

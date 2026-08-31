@@ -103,6 +103,17 @@ public enum PaywallStrings {
         }
     }
 
+    /// Resolves a catalog key to its localized text, falling back to the key itself when unknown.
+    ///
+    /// The sheet needs this for the two places a key is chosen at runtime rather than by an
+    /// accessor: the headline (`headlineKey(for:)`) and the feature rows (`featureRows`), whose
+    /// label keys are data. `internal` because the sheet is the only consumer and it lives in this
+    /// module; the parity test reads the catalog file directly, never through this.
+    static func resolve(_ key: String) -> String {
+        guard let key = Key(rawValue: key) else { return key }
+        return localized(key)
+    }
+
     // MARK: - Keys
 
     /// The catalog keys, named once. Internal so the parity test can prove every accessor asks for
