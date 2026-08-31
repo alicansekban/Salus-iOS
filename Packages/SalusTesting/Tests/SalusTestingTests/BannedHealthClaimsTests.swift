@@ -30,8 +30,28 @@ struct BannedHealthClaimsTests {
         .deletingLastPathComponent() // Packages
         .deletingLastPathComponent() // <repository root>
 
-    /// This test suite's own guard file — the one file the scan is allowed to skip
-    /// (`BannedHealthClaims.kt:131-134`).
+    /// This test suite's own guard file, plus the AI package's deliberate spellings — the files the
+    /// scan is allowed to skip (`BannedHealthClaims.kt:131-134`).
+    ///
+    /// `BannedHealthClaims.swift` is exempt, as always: a guard that explains the rule has to spell
+    /// the banned words out to do it. The three `SalusAI` files are exempt for the same reason, on
+    /// Android parity: `:core:ai` is never scanned on Android — the scan runs per-module from
+    /// `:feature:trends` and `:feature:paywall` — so its whole package is free to spell the banned
+    /// vocabulary in the ways an AI package must. `PromptBuilder.swift` holds the system instruction
+    /// that *forbids* the model from producing the words (forbidding requires spelling them);
+    /// `PromptBuilderTests.swift` asserts system copy contains them and user copy does not;
+    /// `SummaryModels.swift` explains in a doc comment why a field is deliberately not named with
+    /// the banned vocabulary. On iOS the scan is repo-wide over `Packages/`, so each of these needs
+    /// a named exemption instead of the Android answer (the module not being scanned at all).
+    static let exemptFileNames: Set<String> = [
+        "BannedHealthClaims.swift",
+        "PromptBuilder.swift",
+        "PromptBuilderTests.swift",
+        "SummaryModels.swift"
+    ]
+
+    /// Backwards-compatible alias for the historic single-name shape, kept as the reference for
+    /// what the scan used to skip before `SalusAI` joined the tree.
     static let exemptFileName = "BannedHealthClaims.swift"
 
     @Test(
@@ -72,7 +92,7 @@ struct BannedHealthClaimsTests {
                 Self.repositoryRoot.appendingPathComponent("Packages"),
                 Self.repositoryRoot.appendingPathComponent("App")
             ],
-            exemptFileName: Self.exemptFileName
+            exemptFileNames: Self.exemptFileNames
         )
     }
 
@@ -129,7 +149,7 @@ struct BannedHealthClaimsTests {
             .write(to: root.appendingPathComponent("Offender.swift"), atomically: true, encoding: .utf8)
 
         #expect(throws: BannedHealthClaims.ScanError.self) {
-            try BannedHealthClaims.assertSourcesNameNothingBanned(roots: [root], exemptFileName: Self.exemptFileName)
+            try BannedHealthClaims.assertSourcesNameNothingBanned(roots: [root], exemptFileNames: ["BannedHealthClaims.swift"])
         }
     }
 
@@ -141,7 +161,7 @@ struct BannedHealthClaimsTests {
         // A path typo would otherwise make the guard pass by scanning nothing at all
         // (`BannedHealthClaims.kt:144-145`).
         #expect(throws: BannedHealthClaims.ScanError.self) {
-            try BannedHealthClaims.assertSourcesNameNothingBanned(roots: [root], exemptFileName: Self.exemptFileName)
+            try BannedHealthClaims.assertSourcesNameNothingBanned(roots: [root], exemptFileNames: ["BannedHealthClaims.swift"])
         }
     }
 

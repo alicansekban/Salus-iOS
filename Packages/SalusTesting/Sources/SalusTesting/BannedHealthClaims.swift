@@ -142,7 +142,7 @@ public enum BannedHealthClaims {
         }
     }
 
-    /// Checks that every Swift file under `roots`, apart from `exemptFileName`, names nothing on
+    /// Checks that every Swift file under `roots`, apart from `exemptFileNames`, names nothing on
     /// `stems` — and that at least one file was scanned (`BannedHealthClaims.kt:135-146`).
     ///
     /// Comments are guarded as well as copy, because that is the route the word actually travels:
@@ -155,10 +155,12 @@ public enum BannedHealthClaims {
     ///
     /// - Parameters:
     ///   - roots: directories to walk, resolved by the caller.
-    ///   - exemptFileName: the guard's own file name. A guard that explains the rule has to spell
-    ///     the banned words out to do it, so it is the one file the scan skips; passing a name
-    ///     that matches nothing is fine and simply scans everything.
-    public static func assertSourcesNameNothingBanned(roots: [URL], exemptFileName: String) throws {
+    ///   - exemptFileNames: the files that say the banned words on purpose. A guard test that
+    ///     explains the rule, or an AI system instruction that forbids the model from producing
+    ///     them, has to spell the banned vocabulary out — so each such file is skipped by name.
+    ///     Passing names that match nothing is fine and simply scans everything. Defaults to empty
+    ///     so a caller that only ever scans one guard file keeps the old shape.
+    public static func assertSourcesNameNothingBanned(roots: [URL], exemptFileNames: Set<String> = []) throws {
         var scanned = 0
 
         for root in roots {
@@ -170,7 +172,7 @@ public enum BannedHealthClaims {
             guard let enumerator else { throw ScanError.unreadableRoot(root.path) }
 
             for case let url as URL in enumerator {
-                guard url.pathExtension == swiftExtension, url.lastPathComponent != exemptFileName else { continue }
+                guard url.pathExtension == swiftExtension, !exemptFileNames.contains(url.lastPathComponent) else { continue }
                 try assertFileNamesNothingBanned(url)
                 scanned += 1
             }
