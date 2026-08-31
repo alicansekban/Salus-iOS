@@ -17,7 +17,7 @@
 // The five cross-feature callbacks Kotlin's `homeEntries` takes — `onOpenMedications`,
 // `onOpenAppointments`, `onOpenCycle`, `onOpenVitals`, `onOpenAiSummary` — are `HomeRoute`'s
 // parameters here rather than this file's, since there is no entry builder to thread them through.
-// The fifth is absent in iOS-M7 along with the AI card (plan ruling 1, divergence (f)).
+// The fifth arrived with the AI card in iOS-M10.
 
 /// The dashboard, the Home tab's root (`HomeNavigation.kt:9-10`).
 public struct HomeKey: Hashable, Sendable {

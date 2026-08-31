@@ -27,13 +27,13 @@ import SwiftUI
 ///
 /// The template's Route: the module comes from the environment, the ViewModel is built once and
 /// owned for the route's lifetime, and the stateless `HomeScreen` gets `state`, `onEvent` and the
-/// four shell callbacks. `onOpenAiSummary`, Kotlin's fifth, is absent along with the AI card — see
-/// the note in `sections` (plan ruling 1).
+/// five shell callbacks. `onOpenAiSummary`, Kotlin's fifth, arrives with the AI card (iOS-M10).
 public struct HomeRoute: View {
     private let onOpenMedications: () -> Void
     private let onOpenAppointments: () -> Void
     private let onOpenCycle: () -> Void
     private let onOpenVitals: () -> Void
+    private let onOpenAiSummary: () -> Void
 
     @Environment(\.homeModule) private var module
     @State private var viewModel: HomeViewModel?
@@ -43,16 +43,19 @@ public struct HomeRoute: View {
     ///   - onOpenAppointments: switches to the Appointments tab.
     ///   - onOpenCycle: pushes the cycle calendar onto Home's own stack.
     ///   - onOpenVitals: switches to the Vitals tab.
+    ///   - onOpenAiSummary: pushes the AI health summary onto Home's own stack.
     public init(
         onOpenMedications: @escaping () -> Void,
         onOpenAppointments: @escaping () -> Void,
         onOpenCycle: @escaping () -> Void,
-        onOpenVitals: @escaping () -> Void
+        onOpenVitals: @escaping () -> Void,
+        onOpenAiSummary: @escaping () -> Void
     ) {
         self.onOpenMedications = onOpenMedications
         self.onOpenAppointments = onOpenAppointments
         self.onOpenCycle = onOpenCycle
         self.onOpenVitals = onOpenVitals
+        self.onOpenAiSummary = onOpenAiSummary
     }
 
     public var body: some View {
@@ -64,7 +67,8 @@ public struct HomeRoute: View {
                     onOpenMedications: onOpenMedications,
                     onOpenAppointments: onOpenAppointments,
                     onOpenCycle: onOpenCycle,
-                    onOpenVitals: onOpenVitals
+                    onOpenVitals: onOpenVitals,
+                    onOpenAiSummary: onOpenAiSummary
                 )
             } else {
                 // A dropped injection draws the spinner rather than a half-built graph — the
@@ -103,6 +107,7 @@ struct HomeScreen: View {
     let onOpenAppointments: () -> Void
     let onOpenCycle: () -> Void
     let onOpenVitals: () -> Void
+    let onOpenAiSummary: () -> Void
 
     @Environment(\.salusTheme) private var theme
 
@@ -151,15 +156,24 @@ struct HomeScreen: View {
                 HomeVitalsCard(vitals: vitals, onTap: onOpenVitals)
             }
 
-            // THE AI SUMMARY SECTION IS ABSENT, and that is plan ruling 1. Android draws a fifth
-            // header and an `AiSummaryCard` here (`HomeScreen.kt:132-138`), last on purpose because
-            // it summarises everything above it. Its two dependencies — `AiSummaryRepository` and
-            // `PremiumRepository` — are M0 stubs on iOS, so the card would open a screen that does
-            // not exist and promise a free credit nothing can spend. It arrives with the milestone
-            // that brings the AI summary screen (iOS-M10), together with `onOpenAiSummary`,
-            // `home_ai_summary_title/description/free_credit` and the `SalusSectionHeader` above
-            // it. `HomeUiState.freeAiSummaryAvailable` and `isPremium` are already carried, so this
-            // is the only place that changes. Recorded as divergence (f).
+            // The AI summary card, last on purpose because it summarises everything above it
+            // (`HomeScreen.kt:132-138`). Always drawn once loaded, and for every user: the free
+            // credit line is the only conditional, shown when the one-off free summary is still
+            // unspent and the user is not entitled.
+            SalusSectionHeader(title: HomeStrings.aiSummaryTitle)
+            HomeDashboardCard(onTap: onOpenAiSummary) {
+                VStack(alignment: .leading, spacing: SalusSpacing.xs) {
+                    Text(verbatim: HomeStrings.aiSummaryDescription)
+                        .font(SalusTypography.bodyMedium.font)
+                        .tracking(SalusTypography.bodyMedium.tracking)
+                    if state.freeAiSummaryAvailable, !state.isPremium {
+                        Text(verbatim: HomeStrings.aiSummaryFreeCredit)
+                            .font(SalusTypography.bodySmall.font)
+                            .tracking(SalusTypography.bodySmall.tracking)
+                            .foregroundStyle(theme.colorScheme.onSurfaceVariant)
+                    }
+                }
+            }
 
             // `Spacer(Modifier.height(sm))` (`HomeScreen.kt:140`).
             Spacer().frame(height: SalusSpacing.sm)
@@ -311,7 +325,8 @@ private enum PreviewData {
         onOpenMedications: {},
         onOpenAppointments: {},
         onOpenCycle: {},
-        onOpenVitals: {}
+        onOpenVitals: {},
+        onOpenAiSummary: {}
     )
 }
 
@@ -322,7 +337,8 @@ private enum PreviewData {
         onOpenMedications: {},
         onOpenAppointments: {},
         onOpenCycle: {},
-        onOpenVitals: {}
+        onOpenVitals: {},
+        onOpenAiSummary: {}
     )
 }
 
@@ -333,6 +349,7 @@ private enum PreviewData {
         onOpenMedications: {},
         onOpenAppointments: {},
         onOpenCycle: {},
-        onOpenVitals: {}
+        onOpenVitals: {},
+        onOpenAiSummary: {}
     )
 }
