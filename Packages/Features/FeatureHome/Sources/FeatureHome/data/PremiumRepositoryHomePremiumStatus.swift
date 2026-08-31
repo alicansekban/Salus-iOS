@@ -27,14 +27,19 @@ import SalusPremium
 /// ``PremiumRepository`` is `Sendable` with a nonisolated `status` too, so the mapping needs no
 /// actor — the repository's stream is itself thread-safe (`PremiumRepositoryImpl.status` is
 /// `nonisolated` for the same reason).
-final class PremiumRepositoryHomePremiumStatus: HomePremiumStatus {
+///
+/// `public` because the composition root — the app target, outside this package — constructs it,
+/// exactly as it constructs every real `PremiumRepository`-backed binding (`HomeModule.swift`'s
+/// note, T9). The ``HomePremiumStatus`` protocol stays feature-local (ruling 5); this concrete
+/// adapter is deliberately the one thing Home ships for the root to build against `SalusPremium`.
+public final class PremiumRepositoryHomePremiumStatus: HomePremiumStatus {
     private let premiumRepository: any PremiumRepository
 
-    init(premiumRepository: any PremiumRepository) {
+    public init(premiumRepository: any PremiumRepository) {
         self.premiumRepository = premiumRepository
     }
 
-    var isPremium: AsyncStream<Bool> {
+    public var isPremium: AsyncStream<Bool> {
         // Read before the stream is built: the repository's `status` re-seeds from the current
         // value on every subscription, so nothing written between here and the first iteration
         // is missed.

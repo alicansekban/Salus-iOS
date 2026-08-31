@@ -3,11 +3,13 @@ import FeatureCycle
 import FeatureHome
 import FeatureMedications
 import FeatureOnboarding
+import FeaturePaywall
 import FeatureSettings
 import FeatureVitals
 import SalusDesignSystem
 import SalusModel
 import SalusNavigation
+import SalusPremium
 import SalusUI
 import SwiftUI
 
@@ -58,6 +60,14 @@ struct RootView: View {
     /// — a curtain that appears a frame late is a flicker, one that never lifts is a broken app.
     @State private var secureScreenEnabled = false
 
+    /// The stored `premium_theme` — what the user *selected*. `effectivePremiumTheme` folds it
+    /// with `premiumStatus` to produce what they are *entitled* to draw (iOS-M9).
+    @State private var premiumTheme: PremiumTheme = .classic
+
+    /// The current entitlement from `premiumRepository.status`. Free → `.classic` regardless of
+    /// `premiumTheme`; entitled → the selected palette (`EffectiveTheme.kt:13`).
+    @State private var premiumStatus: PremiumStatus = .free
+
     /// The stored `onboarding_completed`, mirrored out of the same one loop as the two above — and
     /// the only one of the three that is an **optional**, because here `nil` is a state rather than
     /// a missing value: "Null until DataStore has answered; the splash stays up so Home never
@@ -82,13 +92,12 @@ struct RootView: View {
     /// calendar, so the depth alone identifies it.
     @State private var reminderPushedCycleDepth: Int?
 
-    /// `Theme.kt:99-104`. The premium palette is pinned to `.classic` until M9 wires entitlement:
-    /// the stored `premium_theme` is what the user *selected*, and `SalusTheme.resolve` wants what
-    /// they are *entitled* to — a distinction there is nothing to evaluate against yet.
+    /// `Theme.kt:99-104`. The premium palette is resolved from entitlement via
+    /// `effectivePremiumTheme` — a free user draws `.classic`, a lapsed selection survives.
     private var theme: SalusResolvedTheme {
         SalusTheme.resolve(
             mode: themeMode,
-            premiumTheme: .classic,
+            premiumTheme: effectivePremiumTheme(premiumStatus, premiumTheme),
             systemIsDark: systemColorScheme == .dark
         )
     }
@@ -119,45 +128,33 @@ struct RootView: View {
     var body: some View {
         ZStack {
             tabs
-            // The gates, in Android's z-order (`MainActivity.kt:99-106`) — later is on top, so the
-            // lock covers the app and onboarding covers the lock. Overlays over the `TabView` and
-            // outside every `NavigationStack`, which is what keeps the back stack and any pending
-            // reminder deep link intact behind them (`MainActivity.kt:96-98`, ruling 3) and what
-            // keeps them clear of the cycle-calendar depth memo (`D-M7-ab`): neither pushes nor
-            // pops anything, so `reminderPushedCycleDepth` still means what it meant.
+            // The gates, in Android's z-order — later is on top. Overlays over the `TabView` and
+            // outside every `NavigationStack`, keeping back stacks and deep links intact.
             if gates.showsLock {
                 AppLockGate(manager: root.appLockManager)
             }
             if gates.showsOnboarding {
                 OnboardingRoute()
-                    // On the gate itself rather than on the `ZStack`: the module is this one
-                    // overlay's dependency, and the gate is not a destination, so there is no stack
-                    // that would have to carry it (`OnboardingModule.swift`'s `@Entry` doc).
                     .environment(\.onboardingModule, root.onboardingModule)
             }
-            // Topmost, and only while nothing has been decided. Above the two gates rather than
-            // below them because `RootGates` already keeps the lock down during the hold, and a
-            // cover that is unconditionally the outermost thing is the one that cannot be raced.
+            // Topmost, only while nothing has been decided.
             if gates.holdsSplash {
                 SplashHoldCover()
             }
+            // The paywall, above the TabView and outside every NavigationStack — the same z-order
+            // the gates use. Driven by `paywallController.request`.
+            PaywallHost()
         }
-        // `nil` for `.system`, which leaves the window to the OS (`ThemeMode.preferredColorScheme`).
-        // Outside the `ZStack` so the gates get it too — the system chrome they raise (the Face ID
-        // sheet, a keyboard in onboarding) reads the window's scheme, not the app's palette.
         .preferredColorScheme(themeMode.preferredColorScheme)
-        // A reminder tapped while the app was closed arrives before this view exists, so the ref
-        // waits in the router and this reads it on the first update as well as on later taps.
-        //
-        // Out here rather than on the `TabView` so the splash-hold cannot change its identity: the
-        // `ZStack` is unconditional, and everything that varies is a child of it. That is also why
-        // the hold is a cover rather than an `if/else` around the whole shell — a branch swapped at
-        // the top would tear down and restart all four subscriptions below, and
-        // `observeNavigationCommands` would drop whatever was published while it was gone.
+        // Out here rather than on the `TabView` so the splash-hold cannot change the `ZStack`'s
+        // identity — a branch swapped at the top would tear down every subscription below.
         .onChange(of: root.reminderOpenRouter.pending, initial: true) { _, _ in openTappedReminder() }
         .task { await observeUserSettings() }
+        .task { await observePremiumStatus() }
         .task { await observeNavigationCommands() }
         .task { await root.logSeededProfile() }
+        // The one-time premium intro, after onboarding resolves (`IntroPaywallGate.kt:39`).
+        .task { await root.introPaywallGate.run() }
         // The §6.2 secure screen, applied over the `TabView` and outside every `NavigationStack`:
         // the always-on app-switcher blur, plus the screenshot mask and the capture hide that
         // `secure_screen_enabled` adds. Both gates and the splash-hold are BELOW this line, so the
@@ -176,10 +173,7 @@ struct RootView: View {
         TabView(selection: selection) {
             ForEach(RootTab.allCases) { tab in
                 tabStack(for: tab)
-                    // `Text(verbatim:)` rather than `Label(_:systemImage:)`: the title is an
-                    // already-resolved `AppStrings` value, and a resolved string never goes
-                    // through an initializer that could read it back as a `LocalizedStringKey`
-                    // against the main bundle (`c726e22`).
+                    // `Text(verbatim:)`: the title is a resolved `AppStrings` value (`c726e22`).
                     .tabItem {
                         Label { Text(verbatim: tab.label) } icon: { Image(systemName: tab.symbolName) }
                     }
@@ -443,6 +437,14 @@ struct RootView: View {
             themeMode = settings.themeMode
             secureScreenEnabled = settings.secureScreenEnabled
             onboardingCompleted = settings.onboardingCompleted
+            premiumTheme = settings.premiumTheme
+        }
+    }
+
+    /// Mirrors `premiumRepository.status` into `premiumStatus` for the `theme` fold.
+    private func observePremiumStatus() async {
+        for await status in root.premiumRepository.status {
+            premiumStatus = status
         }
     }
 

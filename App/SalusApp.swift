@@ -1,3 +1,4 @@
+import RevenueCat
 import SwiftUI
 import UIKit
 
@@ -28,9 +29,33 @@ struct SalusApp: App {
     /// this window or the first submitted request raises, and the notification-centre delegate must
     /// exist by then or a reminder tapped from a cold start is delivered to nobody.
     init() {
+        // iOS-M9: configure RevenueCat **before** composing the root, whose gateway reads
+        // `Purchases.isConfigured`. A keyless build (blank `Secrets.local.xcconfig`) never
+        // configures, so every SDK call in `RevenueCatPurchasesGateway` short-circuits to the
+        // safe free/offeringUnavailable state — the app runs fully free and never crashes.
+        Self.configureRevenueCat()
         let compositionRoot = AppCompositionRoot()
         _compositionRoot = State(initialValue: compositionRoot)
         compositionRoot.startReminderEngine()
+    }
+
+    /// Reads the RevenueCat API key supplied in `Secrets.local.xcconfig` and configures the SDK.
+    ///
+    /// The key reaches here from the build setting, which XcodeGen lands in the Info.plist; a
+    /// developer can also set it through `SALUS_REVENUECAT_API_KEY` in the scheme's environment,
+    /// which is the second read below. Either way, an empty value is legitimate: it means the
+    /// store is not configured for this build and the app stays free.
+    ///
+    /// `static` because it runs at the top of `init`, before any stored property is initialized.
+    private static func configureRevenueCat() {
+        // The build setting flows into the built Info.plist via `$(SALUS_REVENUECAT_API_KEY)`;
+        // the environment fallback covers a key supplied without regenerating the project.
+        let apiKey = Bundle.main.infoDictionary?["SALUS_REVENUECAT_API_KEY"] as? String
+            ?? ProcessInfo.processInfo.environment["SALUS_REVENUECAT_API_KEY"]
+            ?? ""
+        guard !apiKey.isEmpty else { return }
+        guard !Purchases.isConfigured else { return }
+        Purchases.configure(withAPIKey: apiKey)
     }
 
     var body: some Scene {

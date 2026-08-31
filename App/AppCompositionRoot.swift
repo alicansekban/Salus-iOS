@@ -3,6 +3,7 @@ import FeatureCycle
 import FeatureHome
 import FeatureMedications
 import FeatureOnboarding
+import FeaturePaywall
 import FeatureSettings
 import FeatureVitals
 import Foundation
@@ -12,6 +13,7 @@ import SalusCommon
 import SalusDatabase
 import SalusModel
 import SalusNavigation
+import SalusPremium
 import SalusProfile
 import SalusReminder
 import SalusSettings
@@ -129,6 +131,11 @@ final class AppCompositionRoot {
     /// on the gate itself rather than on a `NavigationStack`.
     let onboardingModule: OnboardingModule
 
+    /// The premium singletons (`makePremiumGraph`): repo, controller, module, intro gate.
+    let premiumRepository: any PremiumRepository
+    let paywallController: PaywallController
+    let paywallModule: PaywallModule
+    let introPaywallGate: IntroPaywallGate
     /// `reminderModule`'s `single<ReminderEnvironment>` (`ReminderModule.kt:20`) — the honest
     /// read of what the OS will and will not let the reminder pipeline do. Reminder Health
     /// (iOS-M3 Task 8) is what shows it to the user.
@@ -200,6 +207,10 @@ final class AppCompositionRoot {
         settingsModule = modules.settings
         homeModule = modules.home
         onboardingModule = modules.onboarding
+        premiumRepository = modules.premiumRepository
+        paywallController = modules.paywallController
+        paywallModule = modules.paywallModule
+        introPaywallGate = modules.introPaywallGate
 
         // `reminderModule` (`ReminderModule.kt:18-28`), assembled in one place — see
         // `makeReminderGraph`. The properties below are eight views of that one sub-graph.
@@ -381,7 +392,14 @@ final class AppCompositionRoot {
             snackbar: infrastructure.snackbar,
             navigator: infrastructure.navigator
         )
-        let home = makeHomeGraph(infrastructure: infrastructure, medications: scheduled.medications)
+        let premium = makePremiumGraph(preferences: infrastructure.preferences)
+        let home = makeHomeGraph(
+            infrastructure: infrastructure,
+            medications: scheduled.medications,
+            homePremiumStatus: PremiumRepositoryHomePremiumStatus(
+                premiumRepository: premium.premiumRepository
+            )
+        )
         let settings = makeSettingsModule(
             reminderEnvironment: reminder.environment,
             reminderAuthorization: reminder.environment,
@@ -390,18 +408,11 @@ final class AppCompositionRoot {
             alarmKitSupported: reminder.alarmKitSupported,
             profileRepository: infrastructure.profileRepository,
             navigator: infrastructure.navigator,
-            // The four More-specific deps (T6). `preferencesDataSource` is the one
-            // `SalusPreferencesDataSource` the root already owns; the factory builds the
-            // `SettingsPreferencesImpl` over it inside the package, because that impl is the one
-            // of the four that is `internal` to `FeatureSettings`. The other three are `public`
-            // and are built here, where every other singleton is: `localeController` is the
-            // `UserDefaultsAppLocaleController` over `.standard`, `premiumStatus` is the
-            // `FreeOnlyMorePremiumStatus` stand-in (ruling 5) and `paywallRequester` is the
-            // `NoOpPaywallRequester` stand-in (ruling 5 — M9 swaps the last two here).
+            // The four More-specific deps (T6), M8 stand-ins deleted.
             preferencesDataSource: infrastructure.preferences,
             localeController: UserDefaultsAppLocaleController(defaults: .standard),
-            premiumStatus: FreeOnlyMorePremiumStatus(),
-            paywallRequester: NoOpPaywallRequester()
+            premiumRepository: premium.premiumRepository,
+            paywallController: premium.paywallController
         )
         return FeatureModules(
             reminder: reminder,
@@ -411,9 +422,11 @@ final class AppCompositionRoot {
             cycle: scheduled.cycle,
             settings: settings,
             home: home,
-            // The one module built out of another feature's, after Home and for the same reason:
-            // its weight step is Vitals' `VitalsQuickEntry` (ruling 7). See `makeOnboardingGraph`.
-            onboarding: makeOnboardingGraph(infrastructure: infrastructure, vitals: vitals)
+            onboarding: makeOnboardingGraph(infrastructure: infrastructure, vitals: vitals),
+            premiumRepository: premium.premiumRepository,
+            paywallController: premium.paywallController,
+            paywallModule: premium.paywallModule,
+            introPaywallGate: premium.introPaywallGate
         )
     }
 
@@ -462,32 +475,5 @@ final class AppCompositionRoot {
             navigator: infrastructure.navigator
         )
         return ScheduledModules(appointments: appointments, medications: medications, cycle: cycle)
-    }
-
-    /// Opens `<Application Support>/salus.db`, creating the directory first.
-    ///
-    /// `SalusDatabase.init` does not create parent directories, and `Application Support` — unlike
-    /// `Documents` — is not created for an app by the system. Two things can fail here, and both
-    /// are fatal: a health log that cannot open its store must not run silently, showing empty
-    /// screens and quietly discarding everything the user types into it. Android reaches the same
-    /// end by a different road — Room throws on first query — so this is the port of a behaviour,
-    /// not a new policy.
-    private static func openDatabase(clock: any SalusClock) -> SalusDatabase {
-        let fileManager = FileManager.default
-        do {
-            let directory = try fileManager.url(
-                for: .applicationSupportDirectory,
-                in: .userDomainMask,
-                appropriateFor: nil,
-                create: false
-            )
-            try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
-            let path = directory.appendingPathComponent(SalusDatabase.name).path
-            return try SalusDatabase(path: path, clock: clock)
-        } catch {
-            let reason = String(describing: error)
-            logger.critical("cannot open \(SalusDatabase.name, privacy: .public): \(reason, privacy: .private)")
-            fatalError("Salus cannot open its database (\(SalusDatabase.name)): \(reason)")
-        }
     }
 }

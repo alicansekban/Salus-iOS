@@ -3,14 +3,17 @@ import FeatureCycle
 import FeatureHome
 import FeatureMedications
 import FeatureOnboarding
+import FeaturePaywall
 import FeatureSettings
 import FeatureVitals
 import SalusCommon
 import SalusDatabase
 import SalusNavigation
+import SalusPremium
 import SalusProfile
 import SalusSettings
 import SalusUI
+import UIKit
 
 /// The module bundles `AppCompositionRoot`'s builders hand back, and the one module builder that no
 /// longer fits beside them.
@@ -37,7 +40,8 @@ extension AppCompositionRoot {
     /// the dashboard reads.
     static func makeHomeGraph(
         infrastructure: Infrastructure,
-        medications: MedicationsModule
+        medications: MedicationsModule,
+        homePremiumStatus: any HomePremiumStatus
     ) -> HomeModule {
         let database = infrastructure.database
         return makeHomeModule(
@@ -47,6 +51,7 @@ extension AppCompositionRoot {
             vitalsDao: VitalsDao(database: database),
             preferences: infrastructure.preferences,
             aiUsage: infrastructure.aiUsage,
+            homePremiumStatus: homePremiumStatus,
             clock: infrastructure.clock,
             doseActions: medications.makeMarkDoseTakenUseCase(),
             profileId: SalusDatabase.defaultProfileId
@@ -77,6 +82,69 @@ extension AppCompositionRoot {
             preferencesDataSource: infrastructure.preferences,
             clock: infrastructure.clock
         )
+    }
+
+    /// The premium singletons, built once here. `premiumModule` (`PremiumModule.kt:13-19`) is
+    /// `single<PremiumRepository>` over `single<PurchasesGateway>`; the `paywallModule` and the
+    /// intro gate ride on the same two. `Purchases.isConfigured` is already final here — `SalusApp`
+    /// configures RevenueCat before composing the root.
+    static func makePremiumGraph(preferences: SalusPreferencesDataSource) -> PremiumGraph {
+        let purchasesGateway = RevenueCatPurchasesGateway()
+        let premiumRepository: any PremiumRepository = PremiumRepositoryImpl(gateway: purchasesGateway)
+        let paywallController = PaywallController()
+        let paywallModule = makePaywallModule(
+            gateway: purchasesGateway,
+            premiumRepository: premiumRepository,
+            paywallController: paywallController,
+            makePurchaseHost: {
+                // The key window the store sheet attaches to, captured at presentation time.
+                let window = UIApplication.shared.connectedScenes
+                    .compactMap { $0 as? UIWindowScene }
+                    .flatMap(\.windows)
+                    .first(where: \.isKeyWindow)
+                    .flatMap { WindowPurchaseHost(window: $0) }
+                return window ?? WindowPurchaseHost(window: nil)
+            }
+        )
+        return PremiumGraph(
+            premiumRepository: premiumRepository,
+            paywallController: paywallController,
+            paywallModule: paywallModule,
+            introPaywallGate: IntroPaywallGate(
+                preferences: preferences,
+                paywallController: paywallController,
+                isBillingConfigured: { purchasesGateway.isConfigured }
+            )
+        )
+    }
+
+    /// Opens `<Application Support>/salus.db`, creating the directory first.
+    ///
+    /// `SalusDatabase.init` does not create parent directories, and `Application Support` — unlike
+    /// `Documents` — is not created for an app by the system. Two things can fail here, and both
+    /// are fatal: a health log that cannot open its store must not run silently, showing empty
+    /// screens and quietly discarding everything the user types into it. Android reaches the same
+    /// end by a different road — Room throws on first query — so this is the port of a behaviour,
+    /// not a new policy.
+    static func openDatabase(clock: any SalusClock) -> SalusDatabase {
+        let fileManager = FileManager.default
+        do {
+            let directory = try fileManager.url(
+                for: .applicationSupportDirectory,
+                in: .userDomainMask,
+                appropriateFor: nil,
+                create: false
+            )
+            try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
+            let path = directory.appendingPathComponent(SalusDatabase.name).path
+            return try SalusDatabase(path: path, clock: clock)
+        } catch {
+            let reason = String(describing: error)
+            AppCompositionRoot.logger.critical(
+                "cannot open \(SalusDatabase.name, privacy: .public): \(reason, privacy: .private)"
+            )
+            fatalError("Salus cannot open its database (\(SalusDatabase.name)): \(reason)")
+        }
     }
 
     /// `get<SalusPreferencesDataSource>().userSettings.map { it.appLockEnabled }.distinctUntilChanged()`
@@ -149,4 +217,17 @@ struct FeatureModules {
     let settings: SettingsModule
     let home: HomeModule
     let onboarding: OnboardingModule
+    let premiumRepository: any PremiumRepository
+    let paywallController: PaywallController
+    let paywallModule: PaywallModule
+    let introPaywallGate: IntroPaywallGate
+}
+
+/// The premium sub-graph `makePremiumGraph` hands back — the repository, paywall controller and
+/// module, and the intro gate every premium-gated caller shares.
+struct PremiumGraph {
+    let premiumRepository: any PremiumRepository
+    let paywallController: PaywallController
+    let paywallModule: PaywallModule
+    let introPaywallGate: IntroPaywallGate
 }

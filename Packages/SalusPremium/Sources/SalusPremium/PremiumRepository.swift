@@ -33,6 +33,7 @@ public final class PremiumRepositoryImpl: PremiumRepository {
     public private(set) var currentStatus: PremiumStatus = .free
 
     private let gateway: any PurchasesGateway
+    // swiftlint:disable:next modifier_order
     private nonisolated let currentStatusStream: CurrentValueStream<PremiumStatus>
 
     public init(gateway: any PurchasesGateway) {
@@ -48,6 +49,7 @@ public final class PremiumRepositoryImpl: PremiumRepository {
         }
     }
 
+    // swiftlint:disable modifier_order
     /// The ported twin of `StateFlow`: yields the current value on subscription, then once per
     /// change (`PremiumRepositoryImplTest` reads ``currentStatus`` directly, the Android test reads
     /// `status.value`; this stream serves consumers). `nonisolated` because the backer is itself
@@ -55,6 +57,7 @@ public final class PremiumRepositoryImpl: PremiumRepository {
     public nonisolated var status: AsyncStream<PremiumStatus> {
         currentStatusStream.stream
     }
+    // swiftlint:enable modifier_order
 
     public func refresh() async {
         // A nil answer means the store was unreachable, not that the user is free: dropping a

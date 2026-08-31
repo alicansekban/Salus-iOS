@@ -116,6 +116,8 @@ packages:
     path: Packages/Features/FeatureHome
   FeatureOnboarding:
     path: Packages/Features/FeatureOnboarding
+  FeaturePaywall:
+    path: Packages/Features/FeaturePaywall
   SalusReminder:
     path: Packages/SalusReminder
   SalusPremium:
@@ -150,8 +152,22 @@ targets:
     sources:
       - path: App
 
+    # iOS-M9: the git-ignored `Secrets.local.xcconfig`, included so the
+    # `SALUS_REVENUECAT_API_KEY` build setting resolves. A developer copies
+    # `App/Secrets.xcconfig.example` to create it; if it is absent the build setting resolves
+    # to blank — a keyless build that runs fully free and never crashes.
+    configFiles:
+      Debug: App/Secrets.local.xcconfig
+      Release: App/Secrets.local.xcconfig
+
     settings:
       base:
+        # iOS-M9: the RevenueCat API key, read from the git-ignored `Secrets.local.xcconfig`
+        # (blank on a keyless build). `$(…)` resolves the xcconfig's value and lands it in the
+        # built Info.plist, where `SalusApp.init` reads it via `Bundle.main.infoDictionary`
+        # (and `ProcessInfo.processInfo.environment`). A blank value is a legitimate build:
+        # RevenueCat stays unconfigured and the app runs fully free.
+        SALUS_REVENUECAT_API_KEY: $(SALUS_REVENUECAT_API_KEY)
         PRODUCT_BUNDLE_IDENTIFIER: com.alicansekban.salus
         PRODUCT_NAME: Salus
         MARKETING_VERSION: "0.1.0"
@@ -199,6 +215,9 @@ targets:
         CFBundleDisplayName: Salus
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        # iOS-M9: the RevenueCat API key, resolved from `Secrets.local.xcconfig` at build time.
+        # Read by `SalusApp.init` through `Bundle.main.infoDictionary`; blank on a keyless build.
+        SALUS_REVENUECAT_API_KEY: $(SALUS_REVENUECAT_API_KEY)
         # An empty `UILaunchScreen` opts the app into the modern launch-screen path. Without
         # it iOS runs the app letterboxed at a legacy screen size — which would also make the
         # verification screenshot lie about how the shell lays out.
@@ -280,6 +299,8 @@ targets:
         product: FeatureHome
       - package: FeatureOnboarding
         product: FeatureOnboarding
+      - package: FeaturePaywall
+        product: FeaturePaywall
       - package: SalusReminder
         product: SalusReminder
       # iOS-M9 Task 2 (the store seam): the app links `SalusPremium` so the shell can bind

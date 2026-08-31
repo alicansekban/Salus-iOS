@@ -57,19 +57,21 @@ in the same commit.
 ## Dependencies
 
 The dependency allowlist is closed and is exactly three (`CLAUDE.md`), each arriving with the
-milestone that needs it. One of the three has arrived:
+milestone that needs it. Two of the three have arrived:
 
 | Dependency | Version | Declared in | Why |
 | --- | --- | --- | --- |
 | [GRDB.swift](https://github.com/groue/GRDB.swift) | `from: "7.11.1"` (resolved 7.11.1) | `Packages/SalusDatabase/Package.swift` | SQLite persistence — the twin of Android's Room layer (iOS-M1/M2) |
+| [purchases-ios](https://github.com/RevenueCat/purchases-ios) | `from: "5.87.1"` (resolved 5.87.1) | `Packages/SalusPremium/Package.swift` | RevenueCat billing — the premium/entitlement store seam (iOS-M9) |
 
-The remaining two, not yet added: `purchases-ios` (RevenueCat, premium) and `firebase-ios-sdk`
-(FirebaseAI + FirebaseAppCheck, AI). Charts, PDF, crypto and biometrics come from the system.
+The remaining one, not yet added: `firebase-ios-sdk` (FirebaseAI + FirebaseAppCheck, AI). Charts,
+PDF, crypto and biometrics come from the system.
 
-`SalusDatabase` is the only package that names GRDB; the other 23 manifests declare
-`dependencies: []` or local `.package(path:)` entries only, and the app reaches GRDB
-transitively by linking `SalusDatabase`. Two resolution files are committed so a clean clone and
-a CI run build the reviewed revision: `Packages/SalusDatabase/Package.resolved` (SwiftPM) and
+`SalusDatabase` is the only package that names GRDB and `SalusPremium` the only one that names
+`purchases-ios`; the other 23 manifests declare `dependencies: []` or local `.package(path:)`
+entries only, and the app reaches both remotes transitively by linking `SalusDatabase`/`SalusPremium`.
+Three resolution files are committed so a clean clone and a CI run build the reviewed revision:
+`Packages/SalusDatabase/Package.resolved` and `Packages/SalusPremium/Package.resolved` (SwiftPM) and
 `Salus.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved` (Xcode). Every other
 `Package.resolved` stays git-ignored — a graph of local paths pins nothing.
 

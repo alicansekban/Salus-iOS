@@ -59,3 +59,30 @@ with at least one product. Without a key the sheet shows the `offeringUnavailabl
 | 1.12 | Tap the close button. | The paywall dismisses (slides down) and the app returns to where it was. | **NOT RUN** |
 | 1.13 | VoiceOver: swipe through the sheet. | The close button reads "Kapat"; each feature row reads its label once (the icon is hidden); each plan card reads as a selected/unselected radio; the CTA, restore and policy links are reachable. | **NOT RUN** |
 | 1.14 | Dynamic Type at AX5 (Turkish). | The headline, feature rows, plan cards and actions all scale; nothing clips or overlaps. | **NOT RUN** |
+
+---
+
+## §2. The shell wiring (Task 9)
+
+Written by Task 9 (`App/SalusApp.swift`, `App/AppCompositionRoot.swift`, `App/PaywallHost.swift`,
+`App/RootView.swift`). The automated half is the fake-backed repository/gate tests plus the
+intro-gate cases; what no test can reach is a running app with a real (or missing) store key — the
+keyless build, the `PaywallHost` cover over the shell, the theme that repaints on entitlement, and
+the once post-onboarding announcement.
+
+**Before the rows below make sense.** The app now configures RevenueCat in `SalusApp.init` when
+`SALUS_REVENUECAT_API_KEY` is non-blank (read from the git-ignored `App/Secrets.local.xcconfig`).
+The composition root wires the real `PremiumRepository`, `PaywallController`, `PaywallModule` and
+`IntroPaywallGate`; `RootView` mounts `PaywallHost` (a `fullScreenCover`) above the `TabView` and
+resolves the theme from `effectivePremiumTheme(status, storedTheme)`.
+
+| # | Step | Expected | Status |
+|---|------|----------|--------|
+| 2.1 | Build and launch with a blank `Secrets.local.xcconfig` (no RevenueCat key). | The app launches and runs **fully free**: no crash, no premium features unlocked, and the tab bar draws the classic palette. The paywall, opened from More or the intro, shows the `paywall_error_offering` state ("Planlar şu an yüklenemedi…") plus "Tekrar dene" and "Satın almaları geri yükle". | **NOT RUN** |
+| 2.2 | Open the paywall from the More premium row. | The `PaywallHost` `fullScreenCover` slides up full-screen **over the tab bar** (the tab bar is covered, not pushed away). It closes with the sheet's close button (slides down), returning to wherever the user was. | **NOT RUN** |
+| 2.3 | Set a premium theme (e.g. `OCEAN`) in the More → theme dialog while FREE. | The tab bar and app keep drawing **classic**: `effectivePremiumTheme` downgrades a non-premium user to `.classic` regardless of the stored selection. | **NOT RUN** |
+| 2.4 | Purchase premium (sandbox) with a theme selected. | The theme **unlocks**: the palette repaints to the stored selection (e.g. ocean) everywhere it is drawn, without relaunch. Backing out of the store sheet and re-opening also keeps the entitlement. | **NOT RUN** |
+| 2.5 | Force the entitlement to lapse (cancel the subscription, let the grace period end). | The theme **lapses back to classic**: a previously-premium user returns to the classic palette once the store reports FREE, and the stored `premium_theme` selection is retained for a future resubscribe. | **NOT RUN** |
+| 2.6 | Complete onboarding on a **fresh install** (post-onboarding intro). | The intro paywall fires **once**, after onboarding completes, with the `.onboarding` headline. It does not fire on a subsequent launch (the `paywall_intro_shown` flag is set). | **NOT RUN** |
+| 2.7 | Launch a second time after the intro has shown. | The intro does **not** appear again; the app opens straight to the shell. | **NOT RUN** |
+| 2.8 | With a key-less build, complete onboarding. | The intro paywall does **not** fire (nothing can be sold), and `paywall_intro_shown` is **not** marked — so a later keyed build still gets to announce premium once. | **NOT RUN** |
