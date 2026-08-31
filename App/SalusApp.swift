@@ -48,11 +48,15 @@ struct SalusApp: App {
     ///
     /// `static` because it runs at the top of `init`, before any stored property is initialized.
     private static func configureRevenueCat() {
-        // The build setting flows into the built Info.plist via `$(SALUS_REVENUECAT_API_KEY)`;
-        // the environment fallback covers a key supplied without regenerating the project.
-        let apiKey = Bundle.main.infoDictionary?["SALUS_REVENUECAT_API_KEY"] as? String
-            ?? ProcessInfo.processInfo.environment["SALUS_REVENUECAT_API_KEY"]
-            ?? ""
+        // The build setting flows into the built Info.plist via `$(SALUS_REVENUECAT_API_KEY)`.
+        // **The plist entry always exists**, blank build or not — `$(…)` of an empty setting
+        // substitutes an empty string, it does not drop the key — so a `??` chain over the
+        // optional would stop here and the environment could never be reached. Emptiness, not
+        // absence, is what falls through to the scheme's environment.
+        let fromPlist = Bundle.main.infoDictionary?["SALUS_REVENUECAT_API_KEY"] as? String ?? ""
+        let apiKey = fromPlist.isEmpty
+            ? ProcessInfo.processInfo.environment["SALUS_REVENUECAT_API_KEY"] ?? ""
+            : fromPlist
         guard !apiKey.isEmpty else { return }
         guard !Purchases.isConfigured else { return }
         Purchases.configure(withAPIKey: apiKey)
