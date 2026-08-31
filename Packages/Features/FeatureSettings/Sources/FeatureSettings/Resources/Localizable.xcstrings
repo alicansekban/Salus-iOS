@@ -1,1502 +1,1502 @@
 {
-  "sourceLanguage" : "tr",
-  "strings" : {
-    "about_app_name" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Salus"
+  "sourceLanguage": "tr",
+  "strings": {
+    "about_app_name": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Salus"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Salus"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Salus"
           }
         }
       }
     },
-    "about_description" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Salus is a device-first health companion that helps you track your appointments, medications, cycle, and health measurements in one place."
+    "about_description": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Salus is a device-first health companion that helps you track your appointments, medications, cycle, and health measurements in one place."
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Salus; randevularınızı, ilaçlarınızı, döngünüzü ve sağlık ölçümlerinizi tek bir yerden takip etmenize yardımcı olan cihaz öncelikli bir sağlık asistanıdır."
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Salus; randevularınızı, ilaçlarınızı, döngünüzü ve sağlık ölçümlerinizi tek bir yerden takip etmenize yardımcı olan cihaz öncelikli bir sağlık asistanıdır."
           }
         }
       }
     },
-    "about_privacy_body" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Your health records are stored only on your device and never leave it. No accounts, no analytics, no data collection. Salus uses the network for two things: verifying your subscription (Google Play and our subscription provider, RevenueCat) and — if you use them — the AI features. The AI features only ever receive anonymous statistical summaries; your health records are never sent."
+    "about_privacy_body": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your health records are stored only on your device and never leave it. No accounts, no analytics, no data collection. Salus uses the network for two things: verifying your subscription (Google Play and our subscription provider, RevenueCat) and — if you use them — the AI features. The AI features only ever receive anonymous statistical summaries; your health records are never sent."
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sağlık kayıtlarınız yalnızca cihazınızda saklanır ve cihazınızdan asla çıkmaz. Hesap yoktur, analitik yoktur, veri toplanmaz. Salus ağı yalnızca iki şey için kullanır: aboneliğinizi doğrulamak (Google Play ve abonelik altyapımız RevenueCat) ve — kullanırsanız — AI özellikleri. AI özelliklerine yalnızca anonim istatistik özetleri gönderilir; sağlık kayıtlarınız asla gönderilmez."
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sağlık kayıtlarınız yalnızca cihazınızda saklanır ve cihazınızdan asla çıkmaz. Hesap yoktur, analitik yoktur, veri toplanmaz. Salus ağı yalnızca iki şey için kullanır: aboneliğinizi doğrulamak (Google Play ve abonelik altyapımız RevenueCat) ve — kullanırsanız — AI özellikleri. AI özelliklerine yalnızca anonim istatistik özetleri gönderilir; sağlık kayıtlarınız asla gönderilmez."
           }
         }
       }
     },
-    "about_privacy_title" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Privacy"
+    "about_privacy_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Privacy"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Gizlilik"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gizlilik"
           }
         }
       }
     },
-    "about_title" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "About the app"
+    "about_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "About the app"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Uygulama hakkında"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uygulama hakkında"
           }
         }
       }
     },
-    "about_version" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Version %1$@"
+    "about_version": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Version %1$@"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sürüm %1$@"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sürüm %1$@"
           }
         }
       }
     },
-    "color_theme_classic" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Classic"
+    "color_theme_classic": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Classic"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Klasik"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Klasik"
           }
         }
       }
     },
-    "color_theme_forest" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Forest"
+    "color_theme_forest": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Forest"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Orman"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Orman"
           }
         }
       }
     },
-    "color_theme_ocean" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ocean"
+    "color_theme_ocean": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ocean"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Okyanus"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Okyanus"
           }
         }
       }
     },
-    "color_theme_sunset" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sunset"
+    "color_theme_sunset": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sunset"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Gün batımı"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gün batımı"
           }
         }
       }
     },
-    "language_english" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "English"
+    "language_english": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "English"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "English"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "English"
           }
         }
       }
     },
-    "language_relaunch_note" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The change applies the next time you open the app."
+    "language_relaunch_note": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The change applies the next time you open the app."
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Değişiklik, uygulamayı yeniden açtığınızda uygulanır."
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Değişiklik, uygulamayı yeniden açtığınızda uygulanır."
           }
         }
       }
     },
-    "language_system" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "System language"
+    "language_system": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "System language"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sistem dili"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sistem dili"
           }
         }
       }
     },
-    "language_title" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Language"
+    "language_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Language"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dil"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dil"
           }
         }
       }
     },
-    "language_turkish" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Türkçe"
+    "language_turkish": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Türkçe"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Türkçe"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Türkçe"
           }
         }
       }
     },
-    "more_cycle" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cycle tracking"
+    "more_cycle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cycle tracking"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Regl Takibi"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Regl Takibi"
           }
         }
       }
     },
-    "more_cycle_subtitle" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Calendar, predictions and symptoms"
+    "more_cycle_subtitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Calendar, predictions and symptoms"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Takvim, tahminler ve belirtiler"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Takvim, tahminler ve belirtiler"
           }
         }
       }
     },
-    "more_profile" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Profile"
+    "more_profile": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Profile"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Profil"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Profil"
           }
         }
       }
     },
-    "more_profile_incomplete" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Complete your profile"
+    "more_profile_incomplete": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Complete your profile"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Profilini tamamla"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Profilini tamamla"
           }
         }
       }
     },
-    "more_section_tracking" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tracking"
+    "more_section_tracking": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tracking"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Takip"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Takip"
           }
         }
       }
     },
-    "more_title" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "More"
+    "more_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "More"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Daha Fazla"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Daha Fazla"
           }
         }
       }
     },
-    "more_trends" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Trends"
+    "more_trends": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trends"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Analizler"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analizler"
           }
         }
       }
     },
-    "more_trends_subtitle" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Patterns in your records and period comparisons"
+    "more_trends_subtitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Patterns in your records and period comparisons"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kayıtlarındaki örüntüler ve dönem karşılaştırmaları"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kayıtlarındaki örüntüler ve dönem karşılaştırmaları"
           }
         }
       }
     },
-    "profile_birth_date" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Date of birth"
+    "profile_birth_date": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Date of birth"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Doğum Tarihi"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doğum Tarihi"
           }
         }
       }
     },
-    "profile_birth_date_select" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pick a date"
+    "profile_birth_date_select": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pick a date"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tarih seçin"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tarih seçin"
           }
         }
       }
     },
-    "profile_health_notes" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Health notes"
+    "profile_health_notes": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Health notes"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sağlık Notları"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sağlık Notları"
           }
         }
       }
     },
-    "profile_health_notes_placeholder" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Chronic conditions, allergies, medications you take…"
+    "profile_health_notes_placeholder": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chronic conditions, allergies, medications you take…"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kronik hastalıklar, alerjiler, kullandığın ilaçlar…"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kronik hastalıklar, alerjiler, kullandığın ilaçlar…"
           }
         }
       }
     },
-    "profile_height" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Height"
+    "profile_height": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Height"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Boy"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Boy"
           }
         }
       }
     },
-    "profile_height_invalid" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Enter a value between 50 and 250 cm."
+    "profile_height_invalid": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter a value between 50 and 250 cm."
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "50 ile 250 cm arasında bir değer girin."
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "50 ile 250 cm arasında bir değer girin."
           }
         }
       }
     },
-    "profile_height_placeholder" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "e.g. 170"
+    "profile_height_placeholder": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "e.g. 170"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Örn: 170"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Örn: 170"
           }
         }
       }
     },
-    "profile_name" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Name"
+    "profile_name": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Name"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ad"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ad"
           }
         }
       }
     },
-    "profile_name_placeholder" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "e.g. Ayşe"
+    "profile_name_placeholder": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "e.g. Ayşe"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Örn: Ayşe"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Örn: Ayşe"
           }
         }
       }
     },
-    "profile_save" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Save"
+    "profile_save": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kaydet"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kaydet"
           }
         }
       }
     },
-    "profile_sex" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sex"
+    "profile_sex": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sex"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cinsiyet"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cinsiyet"
           }
         }
       }
     },
-    "profile_sex_cycle_appears" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cycle tracking is added to the More tab. Any cycle data you recorded before is still there."
+    "profile_sex_confirm_body": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This removes Cycle tracking from the More tab. Your recorded cycle data is not deleted and comes back if you change this again."
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Regl Takibi, Daha Fazla sekmesine eklenir. Daha önce kaydettiğin regl verilerin olduğu gibi durur."
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu seçimle Regl Takibi, Daha Fazla sekmesinden kaldırılır. Kayıtlı regl verilerin silinmez; seçimi geri aldığında geri gelir."
           }
         }
       }
     },
-    "profile_sex_cycle_disappears" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cycle tracking is removed from the More tab. Your recorded cycle data is not deleted and comes back if you change this again."
+    "profile_sex_confirm_cancel": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Regl Takibi, Daha Fazla sekmesinden kaldırılır. Kayıtlı regl verilerin silinmez; seçimi geri aldığında geri gelir."
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vazgeç"
           }
         }
       }
     },
-    "profile_sex_confirm_body" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This removes Cycle tracking from the More tab. Your recorded cycle data is not deleted and comes back if you change this again."
+    "profile_sex_confirm_ok": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bu seçimle Regl Takibi, Daha Fazla sekmesinden kaldırılır. Kayıtlı regl verilerin silinmez; seçimi geri aldığında geri gelir."
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kaydet"
           }
         }
       }
     },
-    "profile_sex_confirm_cancel" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cancel"
+    "profile_sex_confirm_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove Cycle tracking?"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vazgeç"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Regl Takibi kaldırılsın mı?"
           }
         }
       }
     },
-    "profile_sex_confirm_ok" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Save"
+    "profile_sex_cycle_appears": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cycle tracking is added to the More tab. Any cycle data you recorded before is still there."
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kaydet"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Regl Takibi, Daha Fazla sekmesine eklenir. Daha önce kaydettiğin regl verilerin olduğu gibi durur."
           }
         }
       }
     },
-    "profile_sex_confirm_title" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Remove Cycle tracking?"
+    "profile_sex_cycle_disappears": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cycle tracking is removed from the More tab. Your recorded cycle data is not deleted and comes back if you change this again."
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Regl Takibi kaldırılsın mı?"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Regl Takibi, Daha Fazla sekmesinden kaldırılır. Kayıtlı regl verilerin silinmez; seçimi geri aldığında geri gelir."
           }
         }
       }
     },
-    "profile_sex_female" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Female"
+    "profile_sex_female": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Female"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kadın"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kadın"
           }
         }
       }
     },
-    "profile_sex_male" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Male"
+    "profile_sex_male": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Male"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Erkek"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Erkek"
           }
         }
       }
     },
-    "profile_sex_other" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Other"
+    "profile_sex_other": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Other"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Diğer"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diğer"
           }
         }
       }
     },
-    "profile_title" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Profile"
+    "profile_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Profile"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Profil"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Profil"
           }
         }
       }
     },
-    "reminder_health_all_ok" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Everything looks good — reminders should arrive on time."
+    "reminder_health_all_ok": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Everything looks good — reminders should arrive on time."
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Her şey yolunda görünüyor — hatırlatıcılar zamanında gelecektir."
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Her şey yolunda görünüyor — hatırlatıcılar zamanında gelecektir."
           }
         }
       }
     },
-    "reminder_health_background_refresh_ok" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Salus can refresh the reminder list in the background."
+    "reminder_health_background_refresh_ok": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Salus can refresh the reminder list in the background."
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Salus hatırlatıcı listesini arka planda tazeleyebiliyor."
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Salus hatırlatıcı listesini arka planda tazeleyebiliyor."
           }
         }
       }
     },
-    "reminder_health_background_refresh_problem" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Background App Refresh is off — the reminder list is only refreshed while the app is open."
+    "reminder_health_background_refresh_problem": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Background App Refresh is off — the reminder list is only refreshed while the app is open."
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Arka plan yenilemesi kapalı — hatırlatıcı listesi yalnızca uygulamayı açtığınızda tazelenir."
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arka plan yenilemesi kapalı — hatırlatıcı listesi yalnızca uygulamayı açtığınızda tazelenir."
           }
         }
       }
     },
-    "reminder_health_background_refresh_title" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Background App Refresh"
+    "reminder_health_background_refresh_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Background App Refresh"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Arka plan yenilemesi"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arka plan yenilemesi"
           }
         }
       }
     },
-    "reminder_health_fix" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Fix"
+    "reminder_health_fix": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fix"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Düzelt"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Düzelt"
           }
         }
       }
     },
-    "reminder_health_full_screen_ok" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Medication alarms will take over the lock screen."
+    "reminder_health_full_screen_ok": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Medication alarms will take over the lock screen."
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "İlaç alarmları kilit ekranını kaplayarak çalacak."
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İlaç alarmları kilit ekranını kaplayarak çalacak."
           }
         }
       }
     },
-    "reminder_health_full_screen_problem" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Medication alarms cannot take over the screen — a dose still arrives as a notification with sound, but no alarm opens on the lock screen."
+    "reminder_health_full_screen_problem": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Medication alarms cannot take over the screen — a dose still arrives as a notification with sound, but no alarm opens on the lock screen."
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "İlaç alarmları ekranı kaplayamıyor — doz saati geldiğinde sesli bildirim gelir, ama kilit ekranında alarm açılmaz."
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İlaç alarmları ekranı kaplayamıyor — doz saati geldiğinde sesli bildirim gelir, ama kilit ekranında alarm açılmaz."
           }
         }
       }
     },
-    "reminder_health_full_screen_title" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Full-screen medication alarms"
+    "reminder_health_full_screen_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Full-screen medication alarms"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tam ekran ilaç alarmları"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tam ekran ilaç alarmları"
           }
         }
       }
     },
-    "reminder_health_intro" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "For reminders to arrive on time, Salus needs the settings below. All checks run on this device only — nothing leaves it."
+    "reminder_health_intro": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "For reminders to arrive on time, Salus needs the settings below. All checks run on this device only — nothing leaves it."
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hatırlatıcıların zamanında gelmesi için Salus'un aşağıdaki ayarlara ihtiyacı var. Tüm kontroller yalnızca bu cihazda çalışır — hiçbir veri dışarı çıkmaz."
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hatırlatıcıların zamanında gelmesi için Salus'un aşağıdaki ayarlara ihtiyacı var. Tüm kontroller yalnızca bu cihazda çalışır — hiçbir veri dışarı çıkmaz."
           }
         }
       }
     },
-    "reminder_health_last_sync" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Last reminder pass: %1$@"
+    "reminder_health_last_sync": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Last reminder pass: %1$@"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Son hatırlatıcı taraması: %1$@"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Son hatırlatıcı taraması: %1$@"
           }
         }
       }
     },
-    "reminder_health_never_synced" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The reminder pass has not run on this device yet."
+    "reminder_health_never_synced": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The reminder pass has not run on this device yet."
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hatırlatıcı taraması bu cihazda henüz çalışmadı."
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hatırlatıcı taraması bu cihazda henüz çalışmadı."
           }
         }
       }
     },
-    "reminder_health_notifications_ok" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Notifications are enabled."
+    "reminder_health_notifications_ok": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notifications are enabled."
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bildirimler açık."
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bildirimler açık."
           }
         }
       }
     },
-    "reminder_health_notifications_problem" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Notifications are off — reminders cannot be shown."
+    "reminder_health_notifications_problem": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notifications are off — reminders cannot be shown."
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bildirimler kapalı — hatırlatıcılar gösterilemez."
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bildirimler kapalı — hatırlatıcılar gösterilemez."
           }
         }
       }
     },
-    "reminder_health_notifications_title" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Notifications"
+    "reminder_health_notifications_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notifications"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bildirimler"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bildirimler"
           }
         }
       }
     },
-    "reminder_health_title" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Reminder health"
+    "reminder_health_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reminder health"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hatırlatıcı sağlığı"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hatırlatıcı sağlığı"
           }
         }
       }
     },
-    "settings_about" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "About the app"
+    "settings_about": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "About the app"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Uygulama hakkında"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uygulama hakkında"
           }
         }
       }
     },
-    "settings_about_desc" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Version and app info"
+    "settings_about_desc": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Version and app info"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sürüm ve uygulama bilgileri"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sürüm ve uygulama bilgileri"
           }
         }
       }
     },
-    "settings_app_lock" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "App lock"
+    "settings_app_lock": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App lock"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Uygulama kilidi"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uygulama kilidi"
           }
         }
       }
     },
-    "settings_app_lock_confirm_title" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Enable app lock"
+    "settings_app_lock_confirm_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enable app lock"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Uygulama kilidini etkinleştir"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uygulama kilidini etkinleştir"
           }
         }
       }
     },
-    "settings_app_lock_desc" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Require biometrics or device credential after 30 s in the background"
+    "settings_app_lock_desc": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Require biometrics or device credential after 30 s in the background"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "30 sn arka planda kaldıktan sonra biyometri veya cihaz kilidi iste"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "30 sn arka planda kaldıktan sonra biyometri veya cihaz kilidi iste"
           }
         }
       }
     },
-    "settings_app_lock_unavailable" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No screen lock is set up on this device"
+    "settings_app_lock_unavailable": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No screen lock is set up on this device"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bu cihazda ekran kilidi tanımlı değil"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu cihazda ekran kilidi tanımlı değil"
           }
         }
       }
     },
-    "settings_cancel" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cancel"
+    "settings_cancel": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vazgeç"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vazgeç"
           }
         }
       }
     },
-    "settings_color_theme" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Color theme"
+    "settings_color_theme": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Color theme"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Renk teması"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Renk teması"
           }
         }
       }
     },
-    "settings_doctor_report" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Doctor report (PDF)"
+    "settings_doctor_report": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doctor report (PDF)"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Doktor Raporu (PDF)"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doktor Raporu (PDF)"
           }
         }
       }
     },
-    "settings_doctor_report_desc" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Export your records as a PDF and share them"
+    "settings_doctor_report_desc": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Export your records as a PDF and share them"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kayıtlarını PDF olarak dışa aktar ve paylaş"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kayıtlarını PDF olarak dışa aktar ve paylaş"
           }
         }
       }
     },
-    "settings_language" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Language"
+    "settings_language": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Language"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dil"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dil"
           }
         }
       }
     },
-    "settings_notifications" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Notification settings"
+    "settings_notifications": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notification settings"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bildirim ayarları"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bildirim ayarları"
           }
         }
       }
     },
-    "settings_notifications_desc" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Manage channels, sound and vibration in system settings"
+    "settings_notifications_desc": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Manage channels, sound and vibration in system settings"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kanal, ses ve titreşimi sistem ayarlarından yönet"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kanal, ses ve titreşimi sistem ayarlarından yönet"
           }
         }
       }
     },
-    "settings_premium" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Salus Premium"
+    "settings_premium": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Salus Premium"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Salus Premium"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Salus Premium"
           }
         }
       }
     },
-    "settings_premium_active" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "You are a Premium member"
+    "settings_premium_active": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You are a Premium member"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Premium üyesin"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Premium üyesin"
           }
         }
       }
     },
-    "settings_premium_promo" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "AI summaries, advanced trends and more"
+    "settings_premium_promo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI summaries, advanced trends and more"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "AI özetleri, gelişmiş trendler ve daha fazlası"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "AI özetleri, gelişmiş trendler ve daha fazlası"
           }
         }
       }
     },
-    "settings_reminders" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Reminders"
+    "settings_reminders": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reminders"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hatırlatıcılar"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hatırlatıcılar"
           }
         }
       }
     },
-    "settings_reminders_desc" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Review how reminders are running"
+    "settings_reminders_desc": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Review how reminders are running"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hatırlatıcıların çalışma durumunu incele"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hatırlatıcıların çalışma durumunu incele"
           }
         }
       }
     },
-    "settings_section_app" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "App"
+    "settings_section_app": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Uygulama"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uygulama"
           }
         }
       }
     },
-    "settings_section_appearance" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Appearance"
+    "settings_section_appearance": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Appearance"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Görünüm"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Görünüm"
           }
         }
       }
     },
-    "settings_section_notifications" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Notifications"
+    "settings_section_notifications": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notifications"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bildirimler"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bildirimler"
           }
         }
       }
     },
-    "settings_section_security" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Security"
+    "settings_section_security": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Security"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Güvenlik"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Güvenlik"
           }
         }
       }
     },
-    "settings_secure_screen" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Block screenshots"
+    "settings_secure_screen": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Block screenshots"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ekran görüntüsünü engelle"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ekran görüntüsünü engelle"
           }
         }
       }
     },
-    "settings_secure_screen_desc" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hides screenshots and the recents preview"
+    "settings_secure_screen_desc": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hides screenshots and the recents preview"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ekran görüntülerini ve son uygulamalar önizlemesini gizler"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ekran görüntülerini ve son uygulamalar önizlemesini gizler"
           }
         }
       }
     },
-    "settings_theme" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Theme"
+    "settings_theme": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Theme"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tema"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tema"
           }
         }
       }
     },
-    "theme_dark" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dark"
+    "theme_dark": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dark"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Koyu"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Koyu"
           }
         }
       }
     },
-    "theme_light" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Light"
+    "theme_light": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Light"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Açık"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Açık"
           }
         }
       }
     },
-    "theme_system" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "System default"
+    "theme_system": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "System default"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sistem varsayılanı"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sistem varsayılanı"
           }
         }
       }
     },
-    "theme_title" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Theme"
+    "theme_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Theme"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tema"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tema"
           }
         }
       }
     }
   },
-  "version" : "1.0"
+  "version": "1.0"
 }
