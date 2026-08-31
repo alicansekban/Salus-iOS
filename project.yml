@@ -152,13 +152,13 @@ targets:
     sources:
       - path: App
 
-    # iOS-M9: the git-ignored `Secrets.local.xcconfig`, included so the
-    # `SALUS_REVENUECAT_API_KEY` build setting resolves. A developer copies
-    # `App/Secrets.xcconfig.example` to create it; if it is absent the build setting resolves
-    # to blank — a keyless build that runs fully free and never crashes.
+    # iOS-M9: the committed base configuration, which declares `SALUS_REVENUECAT_API_KEY` blank
+    # and then `#include?`s the git-ignored `Secrets.local.xcconfig` that may override it. The
+    # file named here must exist in a fresh clone — XcodeGen validates config file paths and
+    # refuses to generate otherwise — which is why it is this one and not the local file.
     configFiles:
-      Debug: App/Secrets.local.xcconfig
-      Release: App/Secrets.local.xcconfig
+      Debug: App/Secrets.xcconfig
+      Release: App/Secrets.xcconfig
 
     settings:
       base:
