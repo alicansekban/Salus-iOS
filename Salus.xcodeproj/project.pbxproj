@@ -17,6 +17,7 @@
 		1F0578B19CE4AC5AB5CCC17F /* DebugReminderHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C21605CC5C2E2D933AFE62F /* DebugReminderHandler.swift */; };
 		1F2A3ABC31C5E56E096402D3 /* AiHealthLanguageProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F9E9049E82ED2E281E9C07E /* AiHealthLanguageProvider.swift */; };
 		20CE1EC6D03BC4A4DE7B0C06 /* AppCompositionRoot+Reminder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 837A905B9212600BCAD4F423 /* AppCompositionRoot+Reminder.swift */; };
+		2153458D02BAAAE25097CC3A /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 060BB0FDE51AC42B923DB32F /* GoogleService-Info.plist */; };
 		23F65989585616FBE8ED64EA /* FeatureMedications in Frameworks */ = {isa = PBXBuildFile; productRef = A09472DCFC9DF142C53A2DB6 /* FeatureMedications */; };
 		31B1435CF5BE4BF05CC0C0C1 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 322C707DD49C5D019E45E256 /* Localizable.xcstrings */; };
 		3321C284993CDAECC785BB87 /* SalusDatabase in Frameworks */ = {isa = PBXBuildFile; productRef = 23E6F4A762A65FDBF66C5851 /* SalusDatabase */; };
@@ -44,6 +45,7 @@
 		B1AB01B38B995823C20C59CD /* LockPrompting.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC743CA17A5881148ADB706C /* LockPrompting.swift */; };
 		C2326DF7EB01BFBC5283C249 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3682A16DBF8B254394C1B404 /* RootView.swift */; };
 		C9CA768F60D2F662068FC166 /* SalusUI in Frameworks */ = {isa = PBXBuildFile; productRef = 886E308EC0BDC87438F00E5C /* SalusUI */; };
+		CDED585704408706415DDCC0 /* RootView+Previews.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5F9D30994E04E2DA784C2A9 /* RootView+Previews.swift */; };
 		D9E03062854D4C95BAF2AB90 /* FeatureSettings in Frameworks */ = {isa = PBXBuildFile; productRef = E9250C08C6EC71E8E58894A2 /* FeatureSettings */; };
 		DA4B13A08A43ECDAE0D2FB35 /* FeatureCycle in Frameworks */ = {isa = PBXBuildFile; productRef = 5DF81EBE222F89283ED6ED69 /* FeatureCycle */; };
 		E6D8F62A94D311D909FEF6B3 /* AppAlarmIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBB3D1F6577F9A1686EEF47C /* AppAlarmIntents.swift */; };
@@ -53,6 +55,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		060BB0FDE51AC42B923DB32F /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		061B25B94B5030AB40007508 /* SalusPremium */ = {isa = PBXFileReference; lastKnownFileType = folder; name = SalusPremium; path = Packages/SalusPremium; sourceTree = SOURCE_ROOT; };
 		069ADE1695ADB2AA5AA05801 /* Secrets.local.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.local.xcconfig; sourceTree = "<group>"; };
 		095041F0094FA2361E9C69EE /* PaywallHost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallHost.swift; sourceTree = "<group>"; };
@@ -81,6 +84,7 @@
 		837A905B9212600BCAD4F423 /* AppCompositionRoot+Reminder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppCompositionRoot+Reminder.swift"; sourceTree = "<group>"; };
 		92401A60F464F47C5E0F8036 /* SalusDesignSystem */ = {isa = PBXFileReference; lastKnownFileType = folder; name = SalusDesignSystem; path = Packages/SalusDesignSystem; sourceTree = SOURCE_ROOT; };
 		9B8F2A890F3F3F21B89FEE3C /* FeatureCycle */ = {isa = PBXFileReference; lastKnownFileType = folder; name = FeatureCycle; path = Packages/Features/FeatureCycle; sourceTree = SOURCE_ROOT; };
+		A5F9D30994E04E2DA784C2A9 /* RootView+Previews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RootView+Previews.swift"; sourceTree = "<group>"; };
 		A67DE1AE6F3D7139BE6B48DF /* FeatureOnboarding */ = {isa = PBXFileReference; lastKnownFileType = folder; name = FeatureOnboarding; path = Packages/Features/FeatureOnboarding; sourceTree = SOURCE_ROOT; };
 		A853DA3BEE5AEAF0DC4959BF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		ABE62DF92DB777EA452EBEAF /* SalusModel */ = {isa = PBXFileReference; lastKnownFileType = folder; name = SalusModel; path = Packages/SalusModel; sourceTree = SOURCE_ROOT; };
@@ -202,6 +206,7 @@
 				837A905B9212600BCAD4F423 /* AppCompositionRoot+Reminder.swift */,
 				0C40A21C37AD104957DD4999 /* AppStrings.swift */,
 				4C21605CC5C2E2D933AFE62F /* DebugReminderHandler.swift */,
+				060BB0FDE51AC42B923DB32F /* GoogleService-Info.plist */,
 				A853DA3BEE5AEAF0DC4959BF /* Info.plist */,
 				322C707DD49C5D019E45E256 /* Localizable.xcstrings */,
 				095041F0094FA2361E9C69EE /* PaywallHost.swift */,
@@ -209,6 +214,7 @@
 				1032A49894F75CD828D5BA26 /* RootGates.swift */,
 				814A06AA9BCDD69E3C76C98E /* RootTab.swift */,
 				3682A16DBF8B254394C1B404 /* RootView.swift */,
+				A5F9D30994E04E2DA784C2A9 /* RootView+Previews.swift */,
 				814D8ECF9C6A2402529D7DF1 /* Salus.entitlements */,
 				F703871BE6F4C3CF92AA8959 /* SalusApp.swift */,
 				069ADE1695ADB2AA5AA05801 /* Secrets.local.xcconfig */,
@@ -342,6 +348,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2153458D02BAAAE25097CC3A /* GoogleService-Info.plist in Resources */,
 				09EF295DE4AD83F20308E424 /* InfoPlist.strings in Resources */,
 				31B1435CF5BE4BF05CC0C0C1 /* Localizable.xcstrings in Resources */,
 				913F6C91A354A0813950BD24 /* salus_alarm.caf in Resources */,
@@ -371,6 +378,7 @@
 				FCAEC19BE57D93E9ECEF0569 /* PrivacyOverlay.swift in Sources */,
 				01626160451B48B804DCFB04 /* RootGates.swift in Sources */,
 				71A7E5AF1C24B88439724AF9 /* RootTab.swift in Sources */,
+				CDED585704408706415DDCC0 /* RootView+Previews.swift in Sources */,
 				C2326DF7EB01BFBC5283C249 /* RootView.swift in Sources */,
 				B049FC0314FE8C521DE31994 /* SalusApp.swift in Sources */,
 				7A7E19B0A72C770F33130FD3 /* WindowPurchaseHost.swift in Sources */,
