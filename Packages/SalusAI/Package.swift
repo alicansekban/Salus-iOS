@@ -44,6 +44,8 @@ let package = Package(
             dependencies: [
                 "SalusAI",
                 .product(name: "SalusDatabase", package: "SalusDatabase"),
+                .product(name: "SalusPremium", package: "SalusPremium"),
+                .product(name: "SalusSettings", package: "SalusSettings"),
                 .product(name: "SalusTesting", package: "SalusTesting")
             ]
         )
