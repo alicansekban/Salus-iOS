@@ -108,6 +108,32 @@ struct IntroPaywallGateTests {
         await job.value
     }
 
+    /// Pins the gate's core invariant that the first test's setup cannot: there, onboarding is
+    /// completed before `run()` executes, so the wait resolves on the first element and never
+    /// exercises the predicate. Here the gate is started while onboarding is still incomplete and
+    /// must NOT fire — the paywall stays closed and the one-time flag stays unset — until
+    /// onboarding completes. This is the `Flow.first { }` twin: `first { }` suspends until an
+    /// element matching the predicate arrives, it does not return the first element unconditionally.
+    @Test("does not fire while onboarding is incomplete, then fires once it completes")
+    func doesNotFireWhileOnboardingIsIncompleteThenFiresOnceItCompletes() async throws {
+        let fixture = try makeFixture(billingConfigured: true)
+        let source = fixture.source
+        let controller = fixture.controller
+
+        let job = Task { await fixture.gate.run() }
+
+        // Onboarding is still on screen; the gate must not cover it, and must not burn the flag.
+        #expect(controller.request == nil)
+        #expect(await !currentSettings(source).paywallIntroShown)
+
+        source.setOnboardingCompleted(true)
+        await waitUntil("the paywall opens") { controller.request?.source == .onboarding }
+
+        #expect(await (currentSettings(source)).paywallIntroShown)
+        #expect(controller.request?.source == .onboarding)
+        await job.value
+    }
+
     @Test("never shows or re-marks the intro once it has been shown")
     func neverShowsOrReMarksTheIntroOnceItHasBeenShown() async throws {
         let fixture = try makeFixture(billingConfigured: true) { source in

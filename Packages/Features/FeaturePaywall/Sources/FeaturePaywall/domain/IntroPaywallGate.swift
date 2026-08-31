@@ -55,9 +55,15 @@ public final class IntroPaywallGate {
         guard isBillingConfigured() else { return }
 
         // `userSettings.first { it.onboardingCompleted }` — the `Flow.first { }` twin
-        // (`IntroPaywallGate.kt:39`).
-        var iterator = preferences.userSettings.makeAsyncIterator()
-        let settings = await iterator.next() ?? UserSettings()
+        // (`IntroPaywallGate.kt:39`). The predicate is load-bearing: `first { }` suspends until an
+        // element matching it arrives, so on a fresh install the gate waits for onboarding to
+        // complete instead of firing on the very first (incomplete) element and covering the form.
+        var settings: UserSettings?
+        for await value in preferences.userSettings where value.onboardingCompleted {
+            settings = value
+            break
+        }
+        guard let settings else { return }
         guard !settings.paywallIntroShown else { return }
 
         // Marked before shown: if the process dies in between, the user misses one announcement —
