@@ -63,13 +63,15 @@ milestone that needs it. Two of the three have arrived:
 | --- | --- | --- | --- |
 | [GRDB.swift](https://github.com/groue/GRDB.swift) | `from: "7.11.1"` (resolved 7.11.1) | `Packages/SalusDatabase/Package.swift` | SQLite persistence — the twin of Android's Room layer (iOS-M1/M2) |
 | [purchases-ios](https://github.com/RevenueCat/purchases-ios) | `from: "5.87.1"` (resolved 5.87.1) | `Packages/SalusPremium/Package.swift` | RevenueCat billing — the premium/entitlement store seam (iOS-M9) |
+| [firebase-ios-sdk](https://github.com/firebase/firebase-ios-sdk) | `from: "12.18.0"` (resolved 12.18.0) | `Packages/SalusAI/Package.swift` | FirebaseAI + FirebaseAppCheck + FirebaseCore — the AI client (iOS-M10) |
 
-The remaining one, not yet added: `firebase-ios-sdk` (FirebaseAI + FirebaseAppCheck, AI). Charts,
-PDF, crypto and biometrics come from the system.
+The allowlist is now closed at three. Charts, PDF, crypto and biometrics come from the system.
 
-`SalusDatabase` is the only package that names GRDB and `SalusPremium` the only one that names
-`purchases-ios`; the other 23 manifests declare `dependencies: []` or local `.package(path:)`
-entries only, and the app reaches both remotes transitively by linking `SalusDatabase`/`SalusPremium`.
+`SalusDatabase` is the only package that names GRDB, `SalusPremium` the only one that names
+`purchases-ios`, and `SalusAI` the only one that names `firebase-ios-sdk`; the other 22 manifests
+declare `dependencies: []` or local `.package(path:)` entries only, and the app reaches all three
+remotes transitively by linking `SalusDatabase`/`SalusPremium`/`SalusAI` (and `FirebaseCore`
+directly, for the `FirebaseApp.configure()` call in `SalusApp.init`).
 Three resolution files are committed so a clean clone and a CI run build the reviewed revision:
 `Packages/SalusDatabase/Package.resolved` and `Packages/SalusPremium/Package.resolved` (SwiftPM) and
 `Salus.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved` (Xcode). Every other

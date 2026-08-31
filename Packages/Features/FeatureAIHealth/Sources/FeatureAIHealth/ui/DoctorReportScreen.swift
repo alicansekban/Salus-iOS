@@ -9,9 +9,8 @@
 //   `SalusEmptyState` → the same component, with the SF Symbol twin of each Material icon.
 //   `Column(verticalScroll(rememberScrollState()))` → `ScrollView` + `VStack`.
 //
-// The in-app preview is Task 7's: this task ships the state and the open/close lifecycle, and the
-// screen presents a placeholder full-screen cover that shows the preview state. The page-by-page
-// PDFKit renderer fills it in Task 7.
+// The in-app preview is Task 7's: the state and the open/close lifecycle shipped in Task 6, and
+// this task fills the full-screen cover with the PDFKit renderer (`DoctorReportPreviewScreen`).
 
 import SalusAI
 import SalusDesignSystem
@@ -109,10 +108,12 @@ struct DoctorReportScreen: View {
         .background(theme.colorScheme.background)
         #if os(iOS)
             .fullScreenCover(isPresented: previewBinding) {
-                PreviewPlaceholder(
-                    preview: state.preview,
-                    onDismiss: { onEvent(.previewDismissed) }
-                )
+                if case let .ready(url) = state.preview {
+                    DoctorReportPreviewScreen(
+                        url: url,
+                        onClose: { onEvent(.previewDismissed) }
+                    )
+                }
             }
         #endif
     }
@@ -272,62 +273,6 @@ private struct MessageBody: View {
         )
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(SalusSpacing.lg)
-    }
-}
-
-/// The in-app preview, presented as a full-screen cover (`DoctorReportScreen.kt:319-371`).
-///
-/// Task 7 fills this with the page-by-page PDFKit renderer. This task ships the state and the
-/// open/close lifecycle, so the placeholder shows the preview state and offers the close button.
-private struct PreviewPlaceholder: View {
-    let preview: DoctorReportPreview
-    let onDismiss: () -> Void
-
-    @Environment(\.salusTheme) private var theme
-
-    var body: some View {
-        VStack(spacing: 0) {
-            HStack {
-                Text(verbatim: AiHealthStrings.doctorReportPreviewTitle)
-                    .font(SalusTypography.titleMedium.font)
-                    .tracking(SalusTypography.titleMedium.tracking)
-                Spacer()
-                Button(action: onDismiss) {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 18))
-                        .foregroundStyle(theme.colorScheme.onSurface)
-                }
-                .accessibilityLabel(AiHealthStrings.doctorReportPreviewClose)
-            }
-            .padding(SalusSpacing.lg)
-
-            Spacer()
-
-            switch preview {
-            case .hidden:
-                EmptyView()
-
-            case .opening:
-                LoadingBody(message: AiHealthStrings.doctorReportPreviewLoading)
-
-            case .ready:
-                Text(verbatim: AiHealthStrings.doctorReportPreviewTitle)
-                    .font(SalusTypography.bodyMedium.font)
-                    .tracking(SalusTypography.bodyMedium.tracking)
-                    .foregroundStyle(theme.colorScheme.onSurfaceVariant)
-
-            case .failed:
-                MessageBody(
-                    systemImage: "exclamationmark.triangle",
-                    title: AiHealthStrings.doctorReportPreviewErrorTitle,
-                    message: AiHealthStrings.doctorReportPreviewErrorMessage
-                )
-            }
-
-            Spacer()
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(theme.colorScheme.background)
     }
 }
 

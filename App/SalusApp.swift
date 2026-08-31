@@ -1,3 +1,4 @@
+import FirebaseCore
 import RevenueCat
 import SwiftUI
 import UIKit
@@ -34,6 +35,14 @@ struct SalusApp: App {
         // configures, so every SDK call in `RevenueCatPurchasesGateway` short-circuits to the
         // safe free/offeringUnavailable state — the app runs fully free and never crashes.
         Self.configureRevenueCat()
+        // iOS-M10 Task 7: configure Firebase **before** composing the root, whose AI graph builds
+        // `FirebaseAiClient`. The Google plist is optional and git-ignored, so a keyless build has
+        // no `FirebaseApp`; `FirebaseAiClient.isConfigured` answers that and every AI screen shows
+        // its "unavailable" state honestly. The guard keeps a build with no plist from crashing
+        // out of `FirebaseApp.configure()`.
+        if Bundle.main.url(forResource: "GoogleService-Info", withExtension: "plist") != nil {
+            FirebaseApp.configure()
+        }
         let compositionRoot = AppCompositionRoot()
         _compositionRoot = State(initialValue: compositionRoot)
         compositionRoot.startReminderEngine()

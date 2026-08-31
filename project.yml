@@ -124,6 +124,16 @@ packages:
     path: Packages/SalusReminder
   SalusPremium:
     path: Packages/SalusPremium
+  # iOS-M10 Task 7: `SalusAI` is the AI package the app links so the shell can build the real
+  # `FirebaseAiClient` graph, and `firebase-ios-sdk` is its remote dependency — the third and
+  # final entry on the closed allowlist. The app imports `FirebaseCore` directly in `SalusApp.swift`
+  # to configure Firebase at launch, so the app names the product itself rather than reaching it
+  # only transitively through `SalusAI`.
+  SalusAI:
+    path: Packages/SalusAI
+  firebase-ios-sdk:
+    url: https://github.com/firebase/firebase-ios-sdk.git
+    from: "12.18.0"
 
 settings:
   base:
@@ -312,6 +322,13 @@ targets:
       # `purchases-ios` transitively, exactly as it already reaches GRDB through `SalusDatabase`.
       - package: SalusPremium
         product: SalusPremium
+      # iOS-M10 Task 7: the app links `SalusAI` (the AI repositories and `FirebaseAiClient`) and
+      # `FirebaseCore` (the `FirebaseApp.configure()` call in `SalusApp.init`). The app reaches
+      # `firebase-ios-sdk` transitively through `SalusAI` and directly through `FirebaseCore`.
+      - package: SalusAI
+        product: SalusAI
+      - package: firebase-ios-sdk
+        product: FirebaseCore
 
     scheme:
       testTargets: []

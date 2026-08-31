@@ -29,6 +29,9 @@ Package.resolved
 # Secrets / local config
 *.local.xcconfig
 GoogleService-Info.plist
+# iOS-M10 Task 7: the Firebase Google-services plist is optional and never committed — a keyless
+# build runs the AI screens in their "unavailable" state. The file lives at `App/GoogleService-Info.plist`.
+App/GoogleService-Info.plist
 
 # macOS
 .DS_Store
