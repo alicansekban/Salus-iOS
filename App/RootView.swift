@@ -332,7 +332,10 @@ struct RootView: View {
                     // that mutates a back stack and a card is not the shell — the More row does the
                     // same with the same key.
                     onOpenCycle: { root.navigator.navigate(CycleKey()) },
-                    onOpenVitals: { backStacks.switchTopLevel(.vitals) }
+                    onOpenVitals: { backStacks.switchTopLevel(.vitals) },
+                    // TODO(M10 Task 7): wire the AI card to `root.navigator.navigate(AiSummaryKey())`.
+                    // A no-op for now so the app compiles before the full AI graph lands.
+                    onOpenAiSummary: { }
                 )
                 // `cycleDestinations()` stays on this stack because two things now push `CycleKey`
                 // onto it: the card above, and a tapped cycle reminder, which `RootTab.hosting`

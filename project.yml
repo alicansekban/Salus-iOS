@@ -114,6 +114,8 @@ packages:
     path: Packages/Features/FeatureCycle
   FeatureHome:
     path: Packages/Features/FeatureHome
+  FeatureAIHealth:
+    path: Packages/Features/FeatureAIHealth
   FeatureOnboarding:
     path: Packages/Features/FeatureOnboarding
   FeaturePaywall:
@@ -297,6 +299,8 @@ targets:
         product: FeatureCycle
       - package: FeatureHome
         product: FeatureHome
+      - package: FeatureAIHealth
+        product: FeatureAIHealth
       - package: FeatureOnboarding
         product: FeatureOnboarding
       - package: FeaturePaywall
