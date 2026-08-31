@@ -20,7 +20,10 @@ let package = Package(
         .package(path: "../SalusCommon"),
         .package(path: "../SalusPremium"),
         .package(path: "../SalusSettings"),
-        .package(path: "../SalusTesting")
+        .package(path: "../SalusTesting"),
+        // The third and final remote dependency on the allowlist (Android :core:ai parity).
+        // FirebaseAI + FirebaseAppCheck arrive together with iOS-M10; the allowlist closes here.
+        .package(url: "https://github.com/firebase/firebase-ios-sdk.git", from: "12.18.0")
     ],
     targets: [
         .target(
@@ -30,7 +33,10 @@ let package = Package(
                 .product(name: "SalusModel", package: "SalusModel"),
                 .product(name: "SalusCommon", package: "SalusCommon"),
                 .product(name: "SalusPremium", package: "SalusPremium"),
-                .product(name: "SalusSettings", package: "SalusSettings")
+                .product(name: "SalusSettings", package: "SalusSettings"),
+                .product(name: "FirebaseAI", package: "firebase-ios-sdk"),
+                .product(name: "FirebaseAppCheck", package: "firebase-ios-sdk"),
+                .product(name: "FirebaseCore", package: "firebase-ios-sdk")
             ]
         ),
         .testTarget(
