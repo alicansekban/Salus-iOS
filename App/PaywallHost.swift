@@ -45,6 +45,13 @@ struct PaywallHost: View {
 
     var body: some View {
         Color.clear
+            // **Load-bearing.** `Color` is hit-testable whatever its alpha — `Color.clear` is how a
+            // deliberately invisible tap target is spelled — and this one is an unconditional,
+            // full-bleed sibling at the top of `RootView`'s `ZStack` (the gates below it are all
+            // behind an `if`). Without this it would take every tap in the app, tab bar included,
+            // and nothing underneath would ever respond. The view is here to *present*, not to
+            // draw or to receive.
+            .allowsHitTesting(false)
             .fullScreenCover(isPresented: isPresented) {
                 PaywallRoute()
                     // The module is injected here, on the presented content, exactly as every other
