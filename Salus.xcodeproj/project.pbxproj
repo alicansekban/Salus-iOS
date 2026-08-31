@@ -15,6 +15,7 @@
 		0E9E0DAA19047413F9B8EF0D /* FeatureAIHealth in Frameworks */ = {isa = PBXBuildFile; productRef = C7390788843E1825E51A8168 /* FeatureAIHealth */; };
 		1102517D43A6643370219A27 /* AppCompositionRoot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15AD79D550BC94771443016D /* AppCompositionRoot.swift */; };
 		1F0578B19CE4AC5AB5CCC17F /* DebugReminderHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C21605CC5C2E2D933AFE62F /* DebugReminderHandler.swift */; };
+		1F2A3ABC31C5E56E096402D3 /* AiHealthLanguageProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F9E9049E82ED2E281E9C07E /* AiHealthLanguageProvider.swift */; };
 		20CE1EC6D03BC4A4DE7B0C06 /* AppCompositionRoot+Reminder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 837A905B9212600BCAD4F423 /* AppCompositionRoot+Reminder.swift */; };
 		23F65989585616FBE8ED64EA /* FeatureMedications in Frameworks */ = {isa = PBXBuildFile; productRef = A09472DCFC9DF142C53A2DB6 /* FeatureMedications */; };
 		31B1435CF5BE4BF05CC0C0C1 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 322C707DD49C5D019E45E256 /* Localizable.xcstrings */; };
@@ -69,6 +70,7 @@
 		4F54D86E0A2A967EA71D0327 /* SalusCommon */ = {isa = PBXFileReference; lastKnownFileType = folder; name = SalusCommon; path = Packages/SalusCommon; sourceTree = SOURCE_ROOT; };
 		69A1B55BADFFC2D672DBFB8E /* Salus.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Salus.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		6A163935FC35E7AA1B312E8E /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.xcconfig; sourceTree = "<group>"; };
+		6F9E9049E82ED2E281E9C07E /* AiHealthLanguageProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AiHealthLanguageProvider.swift; sourceTree = "<group>"; };
 		7C55BD8FCF59C4D3D0B3D410 /* AlarmActionBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmActionBridge.swift; sourceTree = "<group>"; };
 		7E5895AE298994F9E378CD48 /* FeatureVitals */ = {isa = PBXFileReference; lastKnownFileType = folder; name = FeatureVitals; path = Packages/Features/FeatureVitals; sourceTree = SOURCE_ROOT; };
 		80918512BF78D2B9D3F0B433 /* salus_alarm.caf */ = {isa = PBXFileReference; path = salus_alarm.caf; sourceTree = "<group>"; };
@@ -188,6 +190,7 @@
 				7B26979369DD6CD398086DDA /* Lock */,
 				C6796801C34DB4173CAE4458 /* Reminder */,
 				6A392B2A08D6304DBF51378F /* Resources */,
+				6F9E9049E82ED2E281E9C07E /* AiHealthLanguageProvider.swift */,
 				15AD79D550BC94771443016D /* AppCompositionRoot.swift */,
 				C46AC39F5A2F807756E92213 /* AppCompositionRoot+Modules.swift */,
 				837A905B9212600BCAD4F423 /* AppCompositionRoot+Reminder.swift */,
@@ -342,6 +345,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1F2A3ABC31C5E56E096402D3 /* AiHealthLanguageProvider.swift in Sources */,
 				82BFDB838C5B33E74EC797EA /* AlarmActionBridge.swift in Sources */,
 				E6D8F62A94D311D909FEF6B3 /* AppAlarmIntents.swift in Sources */,
 				3D484E56042E4D7001156A70 /* AppCompositionRoot+Modules.swift in Sources */,

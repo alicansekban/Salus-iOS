@@ -1,3 +1,4 @@
+import FeatureAIHealth
 import FeatureAppointments
 import FeatureCycle
 import FeatureHome
@@ -6,6 +7,7 @@ import FeatureOnboarding
 import FeaturePaywall
 import FeatureSettings
 import FeatureVitals
+import SalusAI
 import SalusCommon
 import SalusDatabase
 import SalusNavigation
@@ -118,6 +120,50 @@ extension AppCompositionRoot {
         )
     }
 
+    /// The AI health graph — `FeatureAIHealth`'s `makeAiHealthModule`, wired with the real
+    /// production dependencies from the root's own singletons.
+    ///
+    /// `FirebaseAiClient` is the real client: it answers `AiResult.unavailable` on a build with no
+    /// GoogleServices plist, so the screens render their "unavailable" state honestly before the
+    /// Task 7 configure work lands. Nothing else here is Task 7's — the plist configuration is the
+    /// only remaining piece, and this is its consumption point.
+    static func makeAiHealthGraph(
+        infrastructure: Infrastructure,
+        premium: PremiumGraph
+    ) -> AiHealthModule {
+        let database = infrastructure.database
+        let aiUsage = infrastructure.aiUsage
+        let aggregator: any HealthPeriodReader = HealthStatsAggregator(
+            vitalsDao: VitalsDao(database: database),
+            medicationDao: MedicationDao(database: database),
+            profileId: SalusDatabase.defaultProfileId
+        )
+        let summaryRepository: any AiSummaryRepository = AiSummaryRepositoryImpl(
+            aiClient: FirebaseAiClient(),
+            aggregator: aggregator,
+            summaryDao: GRDBAiSummaryDao(database: database),
+            usageDataSource: aiUsage,
+            premiumRepository: premium.premiumRepository,
+            clock: infrastructure.clock
+        )
+        let doctorReportRepository: any DoctorReportRepository = DoctorReportRepositoryImpl(
+            aiClient: FirebaseAiClient(),
+            periodReader: aggregator,
+            usageDataSource: aiUsage,
+            premiumRepository: premium.premiumRepository,
+            generator: IosPdfReportGenerator(clock: infrastructure.clock),
+            clock: infrastructure.clock
+        )
+        return makeAiHealthModule(
+            summaryRepository: summaryRepository,
+            doctorReportRepository: doctorReportRepository,
+            premiumRepository: premium.premiumRepository,
+            paywallController: premium.paywallController,
+            languageProvider: ResourceAiLanguageProvider(),
+            clock: infrastructure.clock
+        )
+    }
+
     /// Opens `<Application Support>/salus.db`, creating the directory first.
     ///
     /// `SalusDatabase.init` does not create parent directories, and `Application Support` — unlike
@@ -217,6 +263,7 @@ struct FeatureModules {
     let settings: SettingsModule
     let home: HomeModule
     let onboarding: OnboardingModule
+    let aiHealth: AiHealthModule
     let premiumRepository: any PremiumRepository
     let paywallController: PaywallController
     let paywallModule: PaywallModule

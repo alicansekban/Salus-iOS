@@ -1,3 +1,4 @@
+import FeatureAIHealth
 import FeatureAppointments
 import FeatureCycle
 import FeatureHome
@@ -125,6 +126,13 @@ final class AppCompositionRoot {
     /// ``MedicationsModule/makeMarkDoseTakenUseCase()`` in ``makeHomeGraph(infrastructure:medications:)``.
     let homeModule: HomeModule
 
+    /// `aiHealthModule` (`feature/aihealth/.../di/AiHealthModule.kt`), built once and injected on
+    /// the shell so `AiSummaryRoute` and `DoctorReportRoute` can reach their ViewModels. It owns
+    /// the AI repositories (summary + doctor report) built over the real `FirebaseAiClient`, the
+    /// `HealthStatsAggregator` and the two DAOs, so Task 7's Firebase graph needs no re-wiring
+    /// here — this is the finished edge, and the only thing Task 7 adds is the plist config.
+    let aiHealthModule: AiHealthModule
+
     /// `onboardingModule` (`feature/onboarding/.../di/OnboardingModule.kt:10-23`), built once and
     /// handed to the onboarding gate through the environment. Unlike every module above it belongs
     /// to no tab: the flow is an overlay over the whole shell (ruling 3), so `RootView` injects it
@@ -207,6 +215,7 @@ final class AppCompositionRoot {
         settingsModule = modules.settings
         homeModule = modules.home
         onboardingModule = modules.onboarding
+        aiHealthModule = modules.aiHealth
         premiumRepository = modules.premiumRepository
         paywallController = modules.paywallController
         paywallModule = modules.paywallModule
@@ -356,7 +365,6 @@ final class AppCompositionRoot {
     private static func makeFeatureModules(infrastructure: Infrastructure) -> FeatureModules {
         let database = infrastructure.database
         let clock = infrastructure.clock
-        let idGenerator = infrastructure.idGenerator
         // The one cycle in the graph, broken here. `makeReminderGraph` builds the handler registry
         // and the scheduler together as one immutable value, the appointment handler needs the
         // repository, and the repository needs a scheduler — so the modules are built first against
@@ -367,7 +375,7 @@ final class AppCompositionRoot {
         let reminder = makeReminderGraph(
             database: database,
             clock: clock,
-            idGenerator: idGenerator,
+            idGenerator: infrastructure.idGenerator,
             // `single<ReminderHandler>(named(APPOINTMENT))` (`AppointmentsModule.kt:32-35`) and its
             // `named(MEDICATION)` (`MedicationsModule.kt:35-38`) and `named(CYCLE)`
             // (`CycleModule.kt:37-45`) twins reaching `getAll()` — the registry is what Koin's
@@ -387,7 +395,7 @@ final class AppCompositionRoot {
             vitalsDao: VitalsDao(database: database),
             preferences: infrastructure.preferences,
             clock: clock,
-            idGenerator: idGenerator,
+            idGenerator: infrastructure.idGenerator,
             pendingDeletes: infrastructure.pendingDelete,
             snackbar: infrastructure.snackbar,
             navigator: infrastructure.navigator
@@ -423,6 +431,7 @@ final class AppCompositionRoot {
             settings: settings,
             home: home,
             onboarding: makeOnboardingGraph(infrastructure: infrastructure, vitals: vitals),
+            aiHealth: makeAiHealthGraph(infrastructure: infrastructure, premium: premium),
             premiumRepository: premium.premiumRepository,
             paywallController: premium.paywallController,
             paywallModule: premium.paywallModule,

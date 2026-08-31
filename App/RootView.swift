@@ -1,3 +1,4 @@
+import FeatureAIHealth
 import FeatureAppointments
 import FeatureCycle
 import FeatureHome
@@ -299,10 +300,11 @@ struct RootView: View {
                 MoreRoute(
                     onOpenCycle: { root.navigator.navigate(CycleKey()) },
                     onOpenDoctorReport: {
-                        // TODO(M10): the doctor report is another feature's screen, whose key this
-                        // shell cannot name yet. Cross-feature navigation is a shell callback
-                        // (spec §4), so when `FeatureAIHealth` lands this pushes its key through
-                        // `root.navigator`.
+                        // The doctor report lives in `FeatureAIHealth` (iOS-M10 Task 6). Its key is
+                        // this feature's to name, so the shell pushes it through the navigator the
+                        // same way it pushes `CycleKey` above — registering the destination is
+                        // `aiHealthDestinations()` below.
+                        root.navigator.navigate(DoctorReportKey())
                     },
                     onOpenTrends: {
                         // TODO(M11): trends is another feature's screen, whose key this shell
@@ -314,12 +316,16 @@ struct RootView: View {
                 )
                 .settingsDestinations()
                 .cycleDestinations()
+                // The AI health destinations — `AiSummaryKey` is pushed from Home, `DoctorReportKey`
+                // from More (this stack), so both register here.
+                .aiHealthDestinations()
             }
             // On the stack, not inside its root — a pushed `ReminderHealthKey`, `AboutKey`,
             // `ProfileKey` or `CycleKey` destination is rendered by the stack, so an environment
             // value set on the root would not reach it.
             .environment(\.settingsModule, root.settingsModule)
             .environment(\.cycleModule, root.cycleModule)
+            .environment(\.aiHealthModule, root.aiHealthModule)
 
         case .home:
             NavigationStack(path: backStacks.binding(for: tab)) {
@@ -333,9 +339,11 @@ struct RootView: View {
                     // same with the same key.
                     onOpenCycle: { root.navigator.navigate(CycleKey()) },
                     onOpenVitals: { backStacks.switchTopLevel(.vitals) },
-                    // TODO(M10 Task 7): wire the AI card to `root.navigator.navigate(AiSummaryKey())`.
-                    // A no-op for now so the app compiles before the full AI graph lands.
-                    onOpenAiSummary: { }
+                    // The AI summary lives in `FeatureAIHealth` (iOS-M10 Task 5). Its key is that
+                    // feature's to name, so the shell pushes it through the navigator the same way
+                    // it pushes `CycleKey` above — registering the destination is
+                    // `aiHealthDestinations()` below.
+                    onOpenAiSummary: { root.navigator.navigate(AiSummaryKey()) }
                 )
                 // `cycleDestinations()` stays on this stack because two things now push `CycleKey`
                 // onto it: the card above, and a tapped cycle reminder, which `RootTab.hosting`
@@ -351,11 +359,16 @@ struct RootView: View {
                 // There is no `homeDestinations()`: the dashboard pushes nothing of its own — every
                 // card either switches tab or pushes another feature's key (plan ruling 8).
                 .cycleDestinations()
+                // The AI summary card pushes `AiSummaryKey` onto this stack, so the destination is
+                // registered here.
+                .aiHealthDestinations()
             }
-            // On the stack, not inside its root — the pushed `CycleKey` destination is rendered by
-            // the stack, so an environment value set on the root would not reach it.
+            // On the stack, not inside its root — the pushed `CycleKey` and `AiSummaryKey`
+            // destinations are rendered by the stack, so an environment value set on the root view
+            // would not reach either.
             .environment(\.homeModule, root.homeModule)
             .environment(\.cycleModule, root.cycleModule)
+            .environment(\.aiHealthModule, root.aiHealthModule)
         }
         // No `default:` clause on purpose: `RootTab` lives in this target, so an exhaustive switch
         // is what makes a sixth tab added to the enum land as a compile error here rather than as a
