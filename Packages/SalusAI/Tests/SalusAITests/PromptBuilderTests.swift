@@ -1,5 +1,5 @@
-import Testing
 import SalusModel
+import Testing
 
 @testable import SalusAI
 
@@ -187,8 +187,8 @@ struct PromptBuilderTests {
     func periodLineReportsTypeDayCountAndDistinctRecordDays() {
         let monthly = stats(
             periodType: .monthly,
-            startEpochDay: 20_000,
-            endEpochDay: 20_029,
+            startEpochDay: 20000,
+            endEpochDay: 20029,
             distinctRecordDays: 12
         )
 
@@ -224,24 +224,23 @@ struct PromptBuilderTests {
     func promptsAreDeterministicForIdenticalStats() {
         let input = stats(systolic: metric(), loggedDoses: 4, takenDoses: 3)
 
-        #expect(
-            PromptBuilder.summaryPrompt(input, language: .tr)
-                == PromptBuilder.summaryPrompt(input, language: .tr)
-        )
-        #expect(
-            PromptBuilder.doctorReportPrompt(input, language: .en)
-                == PromptBuilder.doctorReportPrompt(input, language: .en)
-        )
+        let firstSummary = PromptBuilder.summaryPrompt(input, language: .tr)
+        let secondSummary = PromptBuilder.summaryPrompt(input, language: .tr)
+        #expect(firstSummary == secondSummary)
+
+        let firstReport = PromptBuilder.doctorReportPrompt(input, language: .en)
+        let secondReport = PromptBuilder.doctorReportPrompt(input, language: .en)
+        #expect(firstReport == secondReport)
     }
 
     @Test("prompts never contain raw epoch day values")
     func promptsNeverContainRawEpochDayValues() {
-        let input = stats(startEpochDay: 20_000, endEpochDay: 20_006, systolic: metric())
+        let input = stats(startEpochDay: 20000, endEpochDay: 20006, systolic: metric())
 
         for language in [AiLanguage.tr, .en] {
             for prompt in [
                 PromptBuilder.summaryPrompt(input, language: language),
-                PromptBuilder.doctorReportPrompt(input, language: language),
+                PromptBuilder.doctorReportPrompt(input, language: language)
             ] {
                 #expect(!prompt.user.contains("20000"))
                 #expect(!prompt.user.contains("20006"))
@@ -261,8 +260,8 @@ struct PromptBuilderTests {
 
     private func stats(
         periodType: SummaryPeriod = .weekly,
-        startEpochDay: Int = 20_000,
-        endEpochDay: Int = 20_006,
+        startEpochDay: Int = 20000,
+        endEpochDay: Int = 20006,
         distinctRecordDays: Int = 5,
         systolic: MetricStats? = nil,
         diastolic: MetricStats? = nil,

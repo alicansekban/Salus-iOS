@@ -35,15 +35,15 @@ public func disclaimerFor(_ language: AiLanguage) -> String {
 ///
 /// Public and shared rather than per-repository: the summary and the doctor report draw on the
 /// same counter, so two limits would let a user make ten calls by alternating between them.
-public let DAILY_AI_CALL_LIMIT = 5
+public let dailyAiCallLimit = 5
 
 /// Recorded days a period needs before a model call is worth making. A week of two readings
 /// produces confident-sounding prose about noise, which is the worst thing this feature can do.
 ///
 /// The doctor report reads the same threshold: below it the deterministic tables are still
 /// printed, but the AI narrative is left out rather than written about nothing.
-public extension SummaryPeriod {
-    var minimumRecordDays: Int {
+extension SummaryPeriod {
+    public var minimumRecordDays: Int {
         switch self {
         case .weekly: weeklyMinRecordDays
         case .monthly: monthlyMinRecordDays

@@ -115,7 +115,7 @@ public protocol AiSummaryRepository: Sendable {
 /// 3. **Entitlement.** A user who is not entitled and has spent their free summary hits the
 ///    paywall. A "not entitled" answer is re-checked against the store once first — see
 ///    `resolveEntitlement`.
-/// 4. **Daily quota.** `DAILY_AI_CALL_LIMIT` calls per day, entitled or not — the cost ceiling.
+/// 4. **Daily quota.** `dailyAiCallLimit` calls per day, entitled or not — the cost ceiling.
 /// 5. **The call.** Only an `AiResult.success` spends anything; a failure leaves the free summary
 ///    and the counter exactly as they were, so an offline attempt is free.
 ///
@@ -206,7 +206,7 @@ public final class AiSummaryRepositoryImpl: AiSummaryRepository {
 
         // Gate 4 — `callsOn` and never `callsToday`: the stored count is only reset by the next
         // write, so before the day's first call it still belongs to a previous day.
-        if usage.callsOn(todayEpochDay: todayEpochDay) >= DAILY_AI_CALL_LIMIT {
+        if usage.callsOn(todayEpochDay: todayEpochDay) >= dailyAiCallLimit {
             return .dailyLimitReached
         }
 

@@ -48,8 +48,8 @@ private func metricLines(_ stats: HealthPeriodStats, _ copy: PromptCopy) -> [Str
     }
 }
 
-private extension HealthPeriodStats {
-    func dayCount() -> Int {
+extension HealthPeriodStats {
+    fileprivate func dayCount() -> Int {
         max(endEpochDay - startEpochDay + 1, 0)
     }
 }
@@ -84,8 +84,8 @@ private func format(_ value: Double) -> String {
 private let tenthsScale = 10.0
 private let tenthsScaleL: Int64 = 10
 
-private extension AiLanguage {
-    func promptCopy() -> PromptCopy {
+extension AiLanguage {
+    fileprivate func promptCopy() -> PromptCopy {
         switch self {
         case .tr: TurkishCopy()
         case .en: EnglishCopy()
@@ -110,33 +110,37 @@ private protocol PromptCopy {
 }
 
 private struct TurkishCopy: PromptCopy {
-    let system: String = """
-        Sen bir sağlık verisi gözlemcisisin. Sana yalnızca sayısal ölçüm özetleri verilir ve bu özetleri yorumlarsın.
+    let system = """
+    Sen bir sağlık verisi gözlemcisisin. Sana yalnızca sayısal ölçüm özetleri verilir ve bu özetleri yorumlarsın.
 
-        Kurallar:
-        - Yalnızca gözlem ve eğilim anlat; hastalık adı verme, teşhis koyma.
-        - Tedavi, ilaç, doz veya takviye önerme.
-        - Endişe verici görünen değerlerde "değerlerinizi doktorunuzla paylaşın" yönlendirmesini yap.
-        - Sana verilen sayıların dışına çıkma; veri olmayan konuda tahmin yürütme.
-        - Doz oranını yeniden adlandırma: "uyum", "uyum oranı", "tedaviye uyum" veya "planlanan doz" yazma. Bu oran yalnızca kaydedilen dozların ne kadarının alındı işaretlendiğini gösterir; hiç kaydedilmemiş dozlar bu sayının içinde yoktur. Doz cümlesini sana verildiği anlamda, "kaydedilen doz" ifadesiyle kur.
-        - Yanıtını Türkçe yaz.
-        - Düz metin kullan; markdown yazma. Yıldız (*), alt çizgi (_), ters tırnak (`) ve başlık işareti (#) kullanma; kalın veya italik yapmaya çalışma.
-        - Kısa bölümler halinde yaz; her maddeye satır başında "- " koy.
-        """
+    Kurallar:
+    - Yalnızca gözlem ve eğilim anlat; hastalık adı verme, teşhis koyma.
+    - Tedavi, ilaç, doz veya takviye önerme.
+    - Endişe verici görünen değerlerde "değerlerinizi doktorunuzla paylaşın" yönlendirmesini yap.
+    - Sana verilen sayıların dışına çıkma; veri olmayan konuda tahmin yürütme.
+    - Doz oranını yeniden adlandırma: "uyum", "uyum oranı", "tedaviye uyum" veya "planlanan doz" \
+    yazma. Bu oran yalnızca kaydedilen dozların ne kadarının alındı işaretlendiğini gösterir; hiç \
+    kaydedilmemiş dozlar bu sayının içinde yoktur. Doz cümlesini sana verildiği anlamda, "kaydedilen doz" \
+    ifadesiyle kur.
+    - Yanıtını Türkçe yaz.
+    - Düz metin kullan; markdown yazma. Yıldız (*), alt çizgi (_), ters tırnak (`) ve başlık \
+    işareti (#) kullanma; kalın veya italik yapmaya çalışma.
+    - Kısa bölümler halinde yaz; her maddeye satır başında "- " koy.
+    """
 
-    let measurementsHeader: String = "Ölçümler:"
+    let measurementsHeader = "Ölçümler:"
 
-    let noMeasurements: String = "Bu dönemde sayısal ölçüm kaydı yok."
+    let noMeasurements = "Bu dönemde sayısal ölçüm kaydı yok."
 
-    let summaryTask: String =
+    let summaryTask =
         "Görev: Yukarıdaki verilere dayanarak yaklaşık 150-200 kelimelik bir özet yaz. "
             + "Gözlemleri ve eğilimleri anlat, veri bulunmayan konulara girme."
 
-    let doctorReportTask: String = """
-        Görev: Yukarıdaki verilere dayanarak iki bölüm yaz.
-        1) "Dönem özeti": verilerdeki gözlemler ve eğilimler.
-        2) "Doktorunuza sorabilecekleriniz": 3-5 madde halinde soru önerisi; her soruyu yukarıdaki sayılara dayandır.
-        """
+    let doctorReportTask = """
+    Görev: Yukarıdaki verilere dayanarak iki bölüm yaz.
+    1) "Dönem özeti": verilerdeki gözlemler ve eğilimler.
+    2) "Doktorunuza sorabilecekleriniz": 3-5 madde halinde soru önerisi; her soruyu yukarıdaki sayılara dayandır.
+    """
 
     func periodLine(_ period: SummaryPeriod, dayCount: Int, recordDays: Int) -> String {
         "Dönem: \(periodName(period)) — \(dayCount) gün; \(recordDays) günde kayıt var."
@@ -178,33 +182,36 @@ private struct TurkishCopy: PromptCopy {
 }
 
 private struct EnglishCopy: PromptCopy {
-    let system: String = """
-        You are a health data observer. You are given only numeric measurement summaries and you interpret them.
+    let system = """
+    You are a health data observer. You are given only numeric measurement summaries and you interpret them.
 
-        Rules:
-        - Describe observations and trends only; do not diagnose and do not name any illness.
-        - Do not recommend treatment, medication, dosage or supplements.
-        - When a value looks concerning, tell the reader to talk to your doctor and share these values.
-        - Never go beyond the numbers you are given; do not speculate where data is missing.
-        - Do not rename the dose ratio: never write "adherence", "compliance" or "planned doses". It reports only how many of the *recorded* doses were marked taken; doses that were never logged are absent from it. Phrase the sentence the way it was given to you, in terms of recorded doses.
-        - Write your answer in English.
-        - Use plain text, not markdown. Never write asterisks (*), underscores (_), backticks (`) or heading marks (#), and do not attempt bold or italics.
-        - Write short sections; start each list item with "- " at the beginning of the line.
-        """
+    Rules:
+    - Describe observations and trends only; do not diagnose and do not name any illness.
+    - Do not recommend treatment, medication, dosage or supplements.
+    - When a value looks concerning, tell the reader to talk to your doctor and share these values.
+    - Never go beyond the numbers you are given; do not speculate where data is missing.
+    - Do not rename the dose ratio: never write "adherence", "compliance" or "planned doses". \
+    It reports only how many of the *recorded* doses were marked taken; doses that were never logged \
+    are absent from it. Phrase the sentence the way it was given to you, in terms of recorded doses.
+    - Write your answer in English.
+    - Use plain text, not markdown. Never write asterisks (*), underscores (_), backticks (`) \
+    or heading marks (#), and do not attempt bold or italics.
+    - Write short sections; start each list item with "- " at the beginning of the line.
+    """
 
-    let measurementsHeader: String = "Measurements:"
+    let measurementsHeader = "Measurements:"
 
-    let noMeasurements: String = "No numeric measurement was recorded in this period."
+    let noMeasurements = "No numeric measurement was recorded in this period."
 
-    let summaryTask: String =
+    let summaryTask =
         "Task: Write an approximately 150-200 word summary based on the data above. "
             + "Describe observations and trends, and stay silent about anything the data does not cover."
 
-    let doctorReportTask: String = """
-        Task: Write two sections based on the data above.
-        1) "Period summary": observations and trends in the data.
-        2) "Questions you can ask your doctor": 3-5 bulleted suggestions, each grounded in the numbers above.
-        """
+    let doctorReportTask = """
+    Task: Write two sections based on the data above.
+    1) "Period summary": observations and trends in the data.
+    2) "Questions you can ask your doctor": 3-5 bulleted suggestions, each grounded in the numbers above.
+    """
 
     func periodLine(_ period: SummaryPeriod, dayCount: Int, recordDays: Int) -> String {
         "Period: \(periodName(period)) — \(dayCount) days; records on \(recordDays) days."

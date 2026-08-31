@@ -27,8 +27,8 @@ extension String {
 /// Rewrites what a line *is*: a heading loses its hashes, a list item trades its `-`/`*`/`+`
 /// for a bullet. Handled before `stripInlineMarkers` so a leading `*` is understood as a list
 /// marker rather than an unpaired emphasis marker.
-private extension String {
-    func stripBlockMarkers() -> String {
+extension String {
+    private func stripBlockMarkers() -> String {
         let indent = String(prefix { $0 == " " || $0 == "\t" })
         let body = String(dropFirst(indent.count))
         if body.range(of: headingPattern, options: .regularExpression) != nil {
@@ -41,7 +41,7 @@ private extension String {
     }
 
     /// Removes emphasis and code markers, keeping the text they wrapped.
-    func stripInlineMarkers() -> String {
+    private func stripInlineMarkers() -> String {
         emphasisPatterns.reduce(self) { text, pattern in
             text.replacingOccurrences(
                 of: pattern,
@@ -64,17 +64,17 @@ private let emphasisPatterns = [
     "\\*\\*(.+?)\\*\\*",
     "__(.+?)__",
     "\\*(.+?)\\*",
-    "`(.+?)`",
+    "`(.+?)`"
 ]
 
-private extension String {
+extension String {
     /// The trailing whitespace of a line, trimmed. `trimEnd()` in Kotlin.
-    var trimmingTrailingWhitespace: String {
+    private var trimmingTrailingWhitespace: String {
         String(reversed().drop(while: { $0 == " " || $0 == "\t" }).reversed())
     }
 
     /// The leading whitespace of a line, trimmed. `trimStart()` in Kotlin.
-    var trimmingLeadingWhitespace: String {
+    private var trimmingLeadingWhitespace: String {
         String(drop(while: { $0 == " " || $0 == "\t" }))
     }
 }

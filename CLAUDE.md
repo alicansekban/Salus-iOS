@@ -266,7 +266,7 @@ Milestone plans live in `docs/plans/`. Toolchain and CI usage: `README.md`.
   about someone's treatment (spec §7, §12). — *enforcement: `SalusTesting`'s `BannedHealthClaims`,
   the twin of Android's, run repo-wide from
   `Packages/SalusTesting/Tests/SalusTestingTests/BannedHealthClaimsTests.swift`: "no Swift source in
-  the repository names anything banned" (`assertSourcesNameNothingBanned(roots:exemptFileName:)`)
+  the repository names anything banned" (`assertSourcesNameNothingBanned(roots:exemptFileNames:)`)
   and "no string catalog in the repository names anything banned"
   (`assertCatalogsNameNothingBanned(paths:)`). Both fail loudly if the scan reaches zero files, so a
   broken path cannot pass as a clean tree. Both scans cover `Packages/` **and** `App/`: the catalog

@@ -494,7 +494,7 @@ package**: `Sources/Feature<Name>/Resources/Localizable.xcstrings`, `tr` as the 
   third locale). Per-package usage: `Tests/FeatureVitalsTests/VitalsStringsTests.swift:274`,
   `:283`, `:302`, `:311`.
 - `BannedHealthClaims.assertCatalogsNameNothingBanned(paths:)` and
-  `assertSourcesNameNothingBanned(roots:exemptFileName:)` — run repo-wide from
+  `assertSourcesNameNothingBanned(roots:exemptFileNames:)` — run repo-wide from
   `Packages/SalusTesting/Tests/SalusTestingTests/BannedHealthClaimsTests.swift:68` ("no Swift source
   in the repository names anything banned") and `:79` ("no string catalog in the repository names
   anything banned"). Both fail loudly if the scan reaches zero files.

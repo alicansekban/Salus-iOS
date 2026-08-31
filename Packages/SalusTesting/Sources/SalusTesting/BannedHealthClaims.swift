@@ -172,7 +172,8 @@ public enum BannedHealthClaims {
             guard let enumerator else { throw ScanError.unreadableRoot(root.path) }
 
             for case let url as URL in enumerator {
-                guard url.pathExtension == swiftExtension, !exemptFileNames.contains(url.lastPathComponent) else { continue }
+                guard url.pathExtension == swiftExtension,
+                      !exemptFileNames.contains(url.lastPathComponent) else { continue }
                 try assertFileNamesNothingBanned(url)
                 scanned += 1
             }

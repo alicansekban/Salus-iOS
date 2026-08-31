@@ -194,7 +194,7 @@ public final class DoctorReportRepositoryImpl: DoctorReportRepository {
         // `callsOn` and never `callsToday`: the stored count is only reset by the next write, so
         // before the day's first call it still belongs to a previous day.
         let usage = await usageDataSource.usage.firstValue() ?? .default
-        if usage.callsOn(todayEpochDay: todayEpochDay) >= DAILY_AI_CALL_LIMIT {
+        if usage.callsOn(todayEpochDay: todayEpochDay) >= dailyAiCallLimit {
             return nil
         }
 
