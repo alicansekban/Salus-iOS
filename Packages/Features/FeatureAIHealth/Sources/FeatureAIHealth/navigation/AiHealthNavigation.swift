@@ -14,9 +14,8 @@
 // `SalusTransitions.push` (`AiHealthNavigation.kt:17`) has no twin either: a `NavigationStack`
 // push already animates that way, where Navigation 3 has to be told.
 //
-// The doctor-report key is absent, and that is the milestone split: `DoctorReportKey` belongs to
-// Task 6 of iOS-M10, which ships the report screen. This file registers only what this task's
-// summary screen owns.
+// The doctor-report key is registered here too: `DoctorReportKey` belongs to Task 6 of iOS-M10,
+// which ships the report screen, and it is pushed from the More tab through the shell's navigator.
 
 import SwiftUI
 
@@ -29,16 +28,26 @@ public struct AiSummaryKey: Hashable, Sendable {
     public init() {}
 }
 
+/// The premium doctor report, pushed from the More tab (`AiHealthNavigation.kt:22-23`). Like
+/// `AiSummaryKey` it is not a tab root, so it carries the push transition and the shell hides the
+/// bottom bar for it automatically.
+public struct DoctorReportKey: Hashable, Sendable {
+    public init() {}
+}
+
 extension View {
-    /// Registers every destination this feature owns (`AiHealthNavigation.kt:16-23`).
+    /// Registers every destination this feature owns (`AiHealthNavigation.kt:25-32`).
     ///
-    /// Applied by the shell to whichever tab's `NavigationStack` can reach the AI summary. The
-    /// `entry<AiSummaryKey>` block Kotlin registers becomes one chained modifier: SwiftUI matches
-    /// on the concrete key type, so each destination is its own line rather than a `when` over a
-    /// sealed key.
+    /// Applied by the shell to whichever tab's `NavigationStack` can reach the AI summary and the
+    /// doctor report. The `entry<AiSummaryKey>` / `entry<DoctorReportKey>` blocks Kotlin registers
+    /// become one chained modifier: SwiftUI matches on the concrete key type, so each destination
+    /// is its own line rather than a `when` over a sealed key.
     public func aiHealthDestinations() -> some View {
         navigationDestination(for: AiSummaryKey.self) { _ in
             AiSummaryRoute()
+        }
+        .navigationDestination(for: DoctorReportKey.self) { _ in
+            DoctorReportRoute()
         }
     }
 }

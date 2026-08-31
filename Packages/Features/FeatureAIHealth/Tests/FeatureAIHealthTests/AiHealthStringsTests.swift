@@ -6,11 +6,11 @@ import Testing
 
 /// The twin of Android's `feature/aihealth/src/main/res/values/strings.xml` (`tr`, the source
 /// language) and `values-en/strings.xml`, and the drift detector between them: the `ai_summary_*`
-/// keys and `ai_language_code`, with both of their translations pinned here, copied from the XML.
+/// keys, the `doctor_report_*` keys and `ai_language_code`, with both of their translations pinned
+/// here, copied from the XML.
 ///
-/// The doctor-report keys are deliberately absent, and that is the milestone split: `doctor_report_*`
-/// belongs to Task 6 of iOS-M10, which ships the report screen. When Task 6 lands, the keys and
-/// this pin grow together in the same commit.
+/// The doctor-report keys arrived with Task 6 of iOS-M10, which ships the report screen, so the
+/// pin below is 47 — the full Android XML.
 ///
 /// The catalog is read off disk rather than through `Bundle.module`. Android's own parity checks
 /// read the XML for the first reason: `String(localized:)` answers for ONE locale — the host's —
@@ -139,16 +139,167 @@ struct AiHealthStringsTests {
             key: "ai_language_code",
             turkish: "tr",
             english: "en"
+        ),
+        AiHealthStringSample(
+            key: "doctor_report_title",
+            turkish: "Doktor Raporu",
+            english: "Doctor report"
+        ),
+        AiHealthStringSample(
+            key: "doctor_report_back",
+            turkish: "Geri",
+            english: "Back"
+        ),
+        AiHealthStringSample(
+            key: "doctor_report_idle_title",
+            turkish: "Doktoruna göstermek için rapor oluştur",
+            english: "Create a report to show your doctor"
+        ),
+        AiHealthStringSample(
+            key: "doctor_report_idle_message",
+            turkish: "Seçtiğin dönemdeki tansiyon, şeker ve kilo kayıtların ile ilaç kaydı "
+                + "özetin PDF olarak hazırlanır. Uygunsa yapay zekâ değerlendirmesi de eklenir.",
+            english: "Your blood pressure, glucose and weight records for the selected period, "
+                + "plus a summary of your recorded doses, are prepared as a PDF. An AI assessment "
+                + "is added when there is enough data."
+        ),
+        AiHealthStringSample(
+            key: "doctor_report_generate",
+            turkish: "Rapor oluştur",
+            english: "Create report"
+        ),
+        AiHealthStringSample(
+            key: "doctor_report_generating",
+            turkish: "Raporun hazırlanıyor…",
+            english: "Preparing your report…"
+        ),
+        AiHealthStringSample(
+            key: "doctor_report_ready_title",
+            turkish: "Raporun hazır",
+            english: "Your report is ready"
+        ),
+        AiHealthStringSample(
+            key: "doctor_report_ready_message",
+            turkish: "Kayıtların ve yapay zekâ değerlendirmesi PDF'e eklendi. Göndermeden önce "
+                + "önizleyebilir, sonra doktorunla paylaşabilirsin.",
+            english: "Your records and the AI assessment are in the PDF. Preview it before you "
+                + "send it, then share it with your doctor."
+        ),
+        AiHealthStringSample(
+            key: "doctor_report_ready_without_narrative",
+            turkish: "Kayıtların PDF'e eklendi. Yapay zekâ değerlendirmesi bu raporda "
+                + "oluşturulamadı; tablolar eksiksiz.",
+            english: "Your records are in the PDF. The AI assessment could not be produced for "
+                + "this report; the tables are complete."
+        ),
+        AiHealthStringSample(
+            key: "doctor_report_share",
+            turkish: "Paylaş",
+            english: "Share"
+        ),
+        AiHealthStringSample(
+            key: "doctor_report_preview",
+            turkish: "Önizle",
+            english: "Preview"
+        ),
+        AiHealthStringSample(
+            key: "doctor_report_regenerate",
+            turkish: "Yeniden oluştur",
+            english: "Create again"
+        ),
+        AiHealthStringSample(
+            key: "doctor_report_disclaimer",
+            turkish: "Bu rapor bilgilendirme amaçlıdır, tıbbi tavsiye değildir. Sağlık "
+                + "kararların için doktoruna danış.",
+            english: "This report is for information only and is not medical advice. Talk to "
+                + "your doctor about health decisions."
+        ),
+        AiHealthStringSample(
+            key: "doctor_report_preview_title",
+            turkish: "Rapor önizleme",
+            english: "Report preview"
+        ),
+        AiHealthStringSample(
+            key: "doctor_report_preview_close",
+            turkish: "Önizlemeyi kapat",
+            english: "Close preview"
+        ),
+        AiHealthStringSample(
+            key: "doctor_report_preview_loading",
+            turkish: "Önizleme hazırlanıyor…",
+            english: "Preparing the preview…"
+        ),
+        AiHealthStringSample(
+            key: "doctor_report_preview_page",
+            turkish: "Sayfa %1$lld / %2$lld",
+            english: "Page %1$lld of %2$lld"
+        ),
+        AiHealthStringSample(
+            key: "doctor_report_preview_error_title",
+            turkish: "Önizleme açılamadı",
+            english: "Preview could not be opened"
+        ),
+        AiHealthStringSample(
+            key: "doctor_report_preview_error_message",
+            turkish: "Rapor dosyası bu cihazda açılamadı. Raporu yeniden oluşturup tekrar "
+                + "deneyebilirsin.",
+            english: "The report file could not be opened on this device. Create the report "
+                + "again and try once more."
+        ),
+        AiHealthStringSample(
+            key: "doctor_report_premium_title",
+            turkish: "Doktor raporu Premium'a özel",
+            english: "The doctor report is a Premium feature"
+        ),
+        AiHealthStringSample(
+            key: "doctor_report_premium_message",
+            turkish: "Kayıtlarını PDF olarak dışa aktarmak ve doktorunla paylaşmak Premium ile "
+                + "mümkün.",
+            english: "Exporting your records as a PDF and sharing them with your doctor comes "
+                + "with Premium."
+        ),
+        AiHealthStringSample(
+            key: "doctor_report_premium_action",
+            turkish: "Premium'a geç",
+            english: "Go Premium"
+        ),
+        AiHealthStringSample(
+            key: "doctor_report_insufficient_title",
+            turkish: "Bu dönemde kayıt yok",
+            english: "No records in this period"
+        ),
+        AiHealthStringSample(
+            key: "doctor_report_insufficient_message",
+            turkish: "Seçtiğin dönemde hiç kaydın bulunmuyor, bu yüzden raporda gösterilecek bir "
+                + "şey yok. Kayıt tutmaya başlayınca raporunu oluşturabilirsin.",
+            english: "There are no records at all in the period you picked, so there is nothing "
+                + "to put in a report. Start logging and you can create one."
+        ),
+        AiHealthStringSample(
+            key: "doctor_report_error_title",
+            turkish: "Rapor oluşturulamadı",
+            english: "Report could not be created"
+        ),
+        AiHealthStringSample(
+            key: "doctor_report_error_message",
+            turkish: "Rapor dosyası cihazına yazılamadı. Depolama alanını kontrol edip tekrar dene.",
+            english: "The report file could not be written to your device. Check your available "
+                + "storage and try again."
+        ),
+        AiHealthStringSample(
+            key: "doctor_report_retry",
+            turkish: "Tekrar dene",
+            english: "Try again"
         )
     ]
 
     static let expectedKeys = Set(samples.map(\.key))
 
-    @Test("the catalog holds exactly the 20 keys this task's screen owns")
-    func catalogHoldsExactlyTheTwentyKeys() throws {
+    @Test("the catalog holds exactly the 47 keys this feature's screens own")
+    func catalogHoldsExactlyTheFortySevenKeys() throws {
         // Pinned as a number as well as a set: a row deleted from the table together with its key
         // from the catalog would otherwise agree with itself and pass.
-        #expect(Self.samples.count == 20)
+        #expect(Self.samples.count == 47)
 
         try StringCatalogParity.assertKeys(of: Self.loadCatalog(), are: Self.expectedKeys)
     }

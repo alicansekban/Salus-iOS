@@ -43,11 +43,20 @@ struct BannedHealthClaimsTests {
     /// `SummaryModels.swift` explains in a doc comment why a field is deliberately not named with
     /// the banned vocabulary. On iOS the scan is repo-wide over `Packages/`, so each of these needs
     /// a named exemption instead of the Android answer (the module not being scanned at all).
-    static let exemptFileNames: Set<String> = [
+    static let exemptFileNames: Set = [
         "BannedHealthClaims.swift",
         "PromptBuilder.swift",
         "PromptBuilderTests.swift",
-        "SummaryModels.swift"
+        "SummaryModels.swift",
+        // The doctor report's `ReportBlocks.swift` and `ReportCopy.swift` explain in doc comments
+        // why the dose line is worded as "recorded doses" and never the banned term — the same
+        // reason `SummaryModels.swift` is exempt. `ReportBlocksTests.swift` asserts the banned
+        // words are absent from the produced copy, the way `PromptBuilderTests.swift` does. All
+        // three are in `:feature:aihealth`, which Android never scans (the scan runs per-module
+        // from `:feature:trends` and `:feature:paywall`), so the repo-wide iOS scan needs the names.
+        "ReportBlocks.swift",
+        "ReportCopy.swift",
+        "ReportBlocksTests.swift"
     ]
 
     /// Backwards-compatible alias for the historic single-name shape, kept as the reference for
@@ -149,7 +158,10 @@ struct BannedHealthClaimsTests {
             .write(to: root.appendingPathComponent("Offender.swift"), atomically: true, encoding: .utf8)
 
         #expect(throws: BannedHealthClaims.ScanError.self) {
-            try BannedHealthClaims.assertSourcesNameNothingBanned(roots: [root], exemptFileNames: ["BannedHealthClaims.swift"])
+            try BannedHealthClaims.assertSourcesNameNothingBanned(
+                roots: [root],
+                exemptFileNames: ["BannedHealthClaims.swift"]
+            )
         }
     }
 
@@ -161,7 +173,10 @@ struct BannedHealthClaimsTests {
         // A path typo would otherwise make the guard pass by scanning nothing at all
         // (`BannedHealthClaims.kt:144-145`).
         #expect(throws: BannedHealthClaims.ScanError.self) {
-            try BannedHealthClaims.assertSourcesNameNothingBanned(roots: [root], exemptFileNames: ["BannedHealthClaims.swift"])
+            try BannedHealthClaims.assertSourcesNameNothingBanned(
+                roots: [root],
+                exemptFileNames: ["BannedHealthClaims.swift"]
+            )
         }
     }
 

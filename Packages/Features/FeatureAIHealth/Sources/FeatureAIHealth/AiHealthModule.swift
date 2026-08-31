@@ -10,10 +10,7 @@
 //   `languageProvider` property, built by the composition root and passed in — the iOS production
 //   implementation reads `Bundle.main.preferredLocalizations` and lives in the app target.
 //   `viewModelOf(::AiSummaryViewModel)` → `makeAiSummaryViewModel`.
-//
-// The doctor-report registrations (`PdfReportGenerator`, `DoctorReportRepository`,
-// `viewModelOf(::DoctorReportViewModel)`) are absent, and that is the milestone split: they belong
-// to Task 6 of iOS-M10, which ships the report screen.
+//   `viewModelOf(::DoctorReportViewModel)` → `makeDoctorReportViewModel` (Task 6 of iOS-M10).
 
 import SalusAI
 import SalusCommon
@@ -22,12 +19,15 @@ import SwiftUI
 
 /// Everything this feature's views need, built by the composition root (`AiHealthModule.kt:22-33`).
 ///
-/// `@MainActor` because the ViewModel it makes is: the factory is called from a view's `.task`,
+/// `@MainActor` because the ViewModels it makes are: the factories are called from a view's `.task`,
 /// which already runs there.
 @MainActor
 public struct AiHealthModule {
     /// Koin's `viewModelOf(::AiSummaryViewModel)` (`AiHealthModule.kt:32`).
     public let makeAiSummaryViewModel: @MainActor () -> AiSummaryViewModel
+
+    /// Koin's `viewModelOf(::DoctorReportViewModel)` (`AiHealthModule.kt:41`).
+    public let makeDoctorReportViewModel: @MainActor () -> DoctorReportViewModel
 }
 
 /// Builds the feature's graph — the twin of `val aiHealthModule = module { … }`.
@@ -37,6 +37,7 @@ public struct AiHealthModule {
 @MainActor
 public func makeAiHealthModule(
     summaryRepository: any AiSummaryRepository,
+    doctorReportRepository: any DoctorReportRepository,
     premiumRepository: any PremiumRepository,
     paywallController: PaywallController,
     languageProvider: any AiLanguageProvider,
@@ -46,6 +47,15 @@ public func makeAiHealthModule(
         makeAiSummaryViewModel: {
             AiSummaryViewModel(
                 repository: summaryRepository,
+                premiumRepository: premiumRepository,
+                paywallController: paywallController,
+                languageProvider: languageProvider,
+                clock: clock
+            )
+        },
+        makeDoctorReportViewModel: {
+            DoctorReportViewModel(
+                repository: doctorReportRepository,
                 premiumRepository: premiumRepository,
                 paywallController: paywallController,
                 languageProvider: languageProvider,

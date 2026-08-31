@@ -3,10 +3,8 @@
 // `ai_language_code`, name and text verbatim, resolved against this package's own bundle exactly
 // as `R.string` resolves against `:feature:aihealth`.
 //
-// THE DOCTOR-REPORT KEYS ARE NOT HERE, and that is the milestone split: `doctor_report_*` belongs
-// to Task 6 of iOS-M10, which ships the report screen. This catalog carries only what this task's
-// summary screen reads, so the key-set pin below is 20 where the Android XML is 44. When Task 6
-// lands, the keys and the pin grow together in the same commit.
+// The `doctor_report_*` keys arrived with Task 6 of iOS-M10, which ships the report screen, so
+// the key-set pin below is 47 — the full Android XML.
 //
 // `ai_language_code` is the one key that is not user-visible: it is the language the model answers
 // in, resolved by the resource system rather than derived from a locale by hand, so whatever
@@ -58,6 +56,43 @@ public enum AiHealthStrings {
     public static var unavailableTitle: String { localized(.unavailableTitle) }
     public static var unavailableMessage: String { localized(.unavailableMessage) }
 
+    // MARK: - The doctor report screen (24)
+
+    public static var doctorReportTitle: String { localized(.doctorReportTitle) }
+    public static var doctorReportBack: String { localized(.doctorReportBack) }
+
+    public static var doctorReportIdleTitle: String { localized(.doctorReportIdleTitle) }
+    public static var doctorReportIdleMessage: String { localized(.doctorReportIdleMessage) }
+    public static var doctorReportGenerate: String { localized(.doctorReportGenerate) }
+
+    public static var doctorReportGenerating: String { localized(.doctorReportGenerating) }
+
+    public static var doctorReportReadyTitle: String { localized(.doctorReportReadyTitle) }
+    public static var doctorReportReadyMessage: String { localized(.doctorReportReadyMessage) }
+    public static var doctorReportReadyWithoutNarrative: String { localized(.doctorReportReadyWithoutNarrative) }
+    public static var doctorReportShare: String { localized(.doctorReportShare) }
+    public static var doctorReportPreview: String { localized(.doctorReportPreview) }
+    public static var doctorReportRegenerate: String { localized(.doctorReportRegenerate) }
+    public static var doctorReportDisclaimer: String { localized(.doctorReportDisclaimer) }
+
+    public static var doctorReportPreviewTitle: String { localized(.doctorReportPreviewTitle) }
+    public static var doctorReportPreviewClose: String { localized(.doctorReportPreviewClose) }
+    public static var doctorReportPreviewLoading: String { localized(.doctorReportPreviewLoading) }
+    public static var doctorReportPreviewPage: String { localized(.doctorReportPreviewPage) }
+    public static var doctorReportPreviewErrorTitle: String { localized(.doctorReportPreviewErrorTitle) }
+    public static var doctorReportPreviewErrorMessage: String { localized(.doctorReportPreviewErrorMessage) }
+
+    public static var doctorReportPremiumTitle: String { localized(.doctorReportPremiumTitle) }
+    public static var doctorReportPremiumMessage: String { localized(.doctorReportPremiumMessage) }
+    public static var doctorReportPremiumAction: String { localized(.doctorReportPremiumAction) }
+
+    public static var doctorReportInsufficientTitle: String { localized(.doctorReportInsufficientTitle) }
+    public static var doctorReportInsufficientMessage: String { localized(.doctorReportInsufficientMessage) }
+
+    public static var doctorReportErrorTitle: String { localized(.doctorReportErrorTitle) }
+    public static var doctorReportErrorMessage: String { localized(.doctorReportErrorMessage) }
+    public static var doctorReportRetry: String { localized(.doctorReportRetry) }
+
     // MARK: - The model language (1)
 
     /// The language the model answers in, resolved by the resource system (`ai_language_code`).
@@ -89,6 +124,35 @@ public enum AiHealthStrings {
         case retry = "ai_summary_retry"
         case unavailableTitle = "ai_summary_unavailable_title"
         case unavailableMessage = "ai_summary_unavailable_message"
+
+        // The doctor report screen (24).
+        case doctorReportTitle = "doctor_report_title"
+        case doctorReportBack = "doctor_report_back"
+        case doctorReportIdleTitle = "doctor_report_idle_title"
+        case doctorReportIdleMessage = "doctor_report_idle_message"
+        case doctorReportGenerate = "doctor_report_generate"
+        case doctorReportGenerating = "doctor_report_generating"
+        case doctorReportReadyTitle = "doctor_report_ready_title"
+        case doctorReportReadyMessage = "doctor_report_ready_message"
+        case doctorReportReadyWithoutNarrative = "doctor_report_ready_without_narrative"
+        case doctorReportShare = "doctor_report_share"
+        case doctorReportPreview = "doctor_report_preview"
+        case doctorReportRegenerate = "doctor_report_regenerate"
+        case doctorReportDisclaimer = "doctor_report_disclaimer"
+        case doctorReportPreviewTitle = "doctor_report_preview_title"
+        case doctorReportPreviewClose = "doctor_report_preview_close"
+        case doctorReportPreviewLoading = "doctor_report_preview_loading"
+        case doctorReportPreviewPage = "doctor_report_preview_page"
+        case doctorReportPreviewErrorTitle = "doctor_report_preview_error_title"
+        case doctorReportPreviewErrorMessage = "doctor_report_preview_error_message"
+        case doctorReportPremiumTitle = "doctor_report_premium_title"
+        case doctorReportPremiumMessage = "doctor_report_premium_message"
+        case doctorReportPremiumAction = "doctor_report_premium_action"
+        case doctorReportInsufficientTitle = "doctor_report_insufficient_title"
+        case doctorReportInsufficientMessage = "doctor_report_insufficient_message"
+        case doctorReportErrorTitle = "doctor_report_error_title"
+        case doctorReportErrorMessage = "doctor_report_error_message"
+        case doctorReportRetry = "doctor_report_retry"
 
         /// The model language (1).
         case languageCode = "ai_language_code"
