@@ -6,6 +6,8 @@ import PackageDescription
 
 let package = Package(
     name: "FeaturePaywall",
+    // Turkish is the default AND the fallback locale (spec 6.4), matching Android's values/.
+    defaultLocalization: "tr",
     // macOS 14 is inherited from SalusDesignSystem/SalusUI so `swift test` runs on
     // a macOS host; iOS 17 remains the ship target. See SalusUI/Package.swift.
     platforms: [.iOS(.v17), .macOS(.v14)],
@@ -31,6 +33,9 @@ let package = Package(
                 .product(name: "SalusModel", package: "SalusModel"),
                 .product(name: "SalusPremium", package: "SalusPremium"),
                 .product(name: "SalusSettings", package: "SalusSettings")
+            ],
+            resources: [
+                .process("Resources")
             ]
         ),
         .testTarget(
