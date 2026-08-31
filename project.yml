@@ -118,6 +118,8 @@ packages:
     path: Packages/Features/FeatureOnboarding
   SalusReminder:
     path: Packages/SalusReminder
+  SalusPremium:
+    path: Packages/SalusPremium
 
 settings:
   base:
@@ -280,6 +282,11 @@ targets:
         product: FeatureOnboarding
       - package: SalusReminder
         product: SalusReminder
+      # iOS-M9 Task 2 (the store seam): the app links `SalusPremium` so the shell can bind
+      # `WindowPurchaseHost` (divergence (c)) to the gateway's `PurchaseHost`. The package gains
+      # `purchases-ios` transitively, exactly as it already reaches GRDB through `SalusDatabase`.
+      - package: SalusPremium
+        product: SalusPremium
 
     scheme:
       testTargets: []

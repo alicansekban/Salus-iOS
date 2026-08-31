@@ -23,6 +23,7 @@ xcuserdata/
 # CI run and a clean clone build the exact revision that was reviewed.
 Package.resolved
 !Packages/SalusDatabase/Package.resolved
+!Packages/SalusPremium/Package.resolved
 !Salus.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
 
 # Secrets / local config
