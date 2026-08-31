@@ -13,6 +13,7 @@
 // They live beside `MoreViewModelTests` rather than in it so that suite stays the ported Kotlin
 // table (and under the `type_body_length` gate).
 
+import SalusPremium
 import Testing
 
 @testable import FeatureSettings
@@ -24,17 +25,17 @@ struct MoreEffectQueueTests {
     private func makeEntitledViewModel() -> MoreViewModel {
         MoreViewModel(
             profileRepository: FakeProfileRepository(),
-            premiumStatus: FakeMorePremiumStatus(value: .entitled),
+            premiumRepository: FakePremiumRepository(value: .premium),
             preferences: FakeSettingsPreferences(),
             localeController: FakeAppLocaleController(),
-            paywallRequester: FakePaywallRequester()
+            paywallController: PaywallController()
         )
     }
 
     private func loaded() async -> MoreViewModel {
         let viewModel = makeEntitledViewModel()
         await waitUntil("the entitled state to load") {
-            !viewModel.state.isLoading && viewModel.state.premiumStatus == .entitled
+            !viewModel.state.isLoading && viewModel.state.premiumStatus == .premium
         }
         return viewModel
     }

@@ -19,6 +19,7 @@
 
 import Foundation
 import SalusModel
+import SalusPremium
 import Testing
 
 @testable import FeatureSettings
@@ -40,33 +41,34 @@ struct MoreViewModelTests {
     }
 
     /// The five fakes the Kotlin test holds as fields, rebuilt per case so no state leaks across
-    /// them (`MoreViewModelTest.kt:103-110`).
+    /// them (`MoreViewModelTest.kt:103-110`). The paywall is the real `PaywallController`, whose
+    /// `request` the test reads exactly as the Kotlin test reads `paywallController.request.value`.
     private func makeViewModel(
         profile: Profile? = nil,
-        premiumStatus: MorePremiumStatusValue = .free,
+        premiumStatus: PremiumStatus = .free,
         preferences: FakeSettingsPreferences = FakeSettingsPreferences(),
         locale: FakeAppLocaleController = FakeAppLocaleController(),
         profileRepository: FakeProfileRepository? = nil,
-        premium: FakeMorePremiumStatus? = nil,
-        paywall: FakePaywallRequester = FakePaywallRequester()
+        premium: FakePremiumRepository? = nil,
+        paywall: PaywallController = PaywallController()
     ) -> (
         vm: MoreViewModel,
         repository: FakeProfileRepository,
-        premium: FakeMorePremiumStatus,
+        premium: FakePremiumRepository,
         preferences: FakeSettingsPreferences,
         locale: FakeAppLocaleController,
-        paywall: FakePaywallRequester
+        paywall: PaywallController
     ) {
         let repository = profileRepository ?? FakeProfileRepository(profile: profile)
-        let premiumStatusFake = premium ?? FakeMorePremiumStatus(value: premiumStatus)
+        let premiumRepository = premium ?? FakePremiumRepository(value: premiumStatus)
         let vm = MoreViewModel(
             profileRepository: repository,
-            premiumStatus: premiumStatusFake,
+            premiumRepository: premiumRepository,
             preferences: preferences,
             localeController: locale,
-            paywallRequester: paywall
+            paywallController: paywall
         )
-        return (vm, repository, premiumStatusFake, preferences, locale, paywall)
+        return (vm, repository, premiumRepository, preferences, locale, paywall)
     }
 
     // MARK: - Cycle visibility
@@ -230,13 +232,13 @@ struct MoreViewModelTests {
         #expect(fixture.vm.state.premiumStatus == .free)
 
         // The Kotlin flips `premium.status.value = PremiumStatus.GRACE_PERIOD`; the iOS fake flips
-        // to `.entitled` (divergence 1 — grace is folded).
-        fixture.premium.setValue(.entitled)
-        await waitUntil("the entitled state to propagate") {
-            fixture.vm.state.premiumStatus == .entitled
+        // to `.gracePeriod` — the real three-state value now.
+        fixture.premium.setValue(.gracePeriod)
+        await waitUntil("the grace-period state to propagate") {
+            fixture.vm.state.premiumStatus == .gracePeriod
         }
 
-        #expect(fixture.vm.state.premiumStatus == .entitled)
+        #expect(fixture.vm.state.premiumStatus == .gracePeriod)
     }
 
     /// `MoreViewModelTest.kt:270-282`.
@@ -246,18 +248,18 @@ struct MoreViewModelTests {
         await waitUntil("the initial state to load") { !fixture.vm.state.isLoading }
 
         fixture.vm.onEvent(.premiumClicked)
-        await waitUntil("the paywall to open from settings") { fixture.paywall.last != nil }
+        await waitUntil("the paywall to open from settings") { fixture.paywall.request != nil }
 
-        #expect(fixture.paywall.last == .settings)
+        #expect(fixture.paywall.request?.source == .settings)
         #expect(fixture.vm.pendingEffects.isEmpty)
     }
 
     /// `MoreViewModelTest.kt:288-304`.
     @Test("an entitled user tapping premium is sent to subscription management")
     func anEntitledUserTappingPremiumIsSentToSubscriptionManagement() async {
-        let fixture = makeViewModel(premiumStatus: .entitled)
+        let fixture = makeViewModel(premiumStatus: .premium)
         await waitUntil("the entitled state to load") {
-            !fixture.vm.state.isLoading && fixture.vm.state.premiumStatus == .entitled
+            !fixture.vm.state.isLoading && fixture.vm.state.premiumStatus == .premium
         }
 
         fixture.vm.onEvent(.premiumClicked)
@@ -265,17 +267,16 @@ struct MoreViewModelTests {
 
         let effects = fixture.vm.consumeEffects()
         #expect(effects == [.openUrl("https://apps.apple.com/account/subscriptions")])
-        // The paywall must not open — divergence (2): `PaywallRequester` is the stand-in, but the
-        // gate routing is the same.
-        #expect(fixture.paywall.last == nil)
+        // The paywall must not open.
+        #expect(fixture.paywall.request == nil)
     }
 
-    /// `MoreViewModelTest.kt:306-320`. The grace period is folded into `.entitled` (divergence 1).
+    /// `MoreViewModelTest.kt:306-320`.
     @Test("a grace period user tapping premium is sent to subscription management")
     func aGracePeriodUserTappingPremiumIsSentToSubscriptionManagement() async {
-        let fixture = makeViewModel(premiumStatus: .entitled)
+        let fixture = makeViewModel(premiumStatus: .gracePeriod)
         await waitUntil("the entitled state to load") {
-            !fixture.vm.state.isLoading && fixture.vm.state.premiumStatus == .entitled
+            !fixture.vm.state.isLoading && fixture.vm.state.premiumStatus == .gracePeriod
         }
 
         fixture.vm.onEvent(.premiumClicked)
@@ -287,7 +288,7 @@ struct MoreViewModelTests {
         } else {
             Issue.record("expected an openUrl effect, got \(String(describing: effects.first))")
         }
-        #expect(fixture.paywall.last == nil)
+        #expect(fixture.paywall.request == nil)
     }
 
     // MARK: - Doctor report
@@ -299,18 +300,18 @@ struct MoreViewModelTests {
         await waitUntil("the initial state to load") { !fixture.vm.state.isLoading }
 
         fixture.vm.onEvent(.doctorReportClicked)
-        await waitUntil("the paywall to open from doctorReport") { fixture.paywall.last != nil }
+        await waitUntil("the paywall to open from doctorReport") { fixture.paywall.request != nil }
 
-        #expect(fixture.paywall.last == .doctorReport)
+        #expect(fixture.paywall.request?.source == .doctorReport)
         #expect(fixture.vm.pendingEffects.isEmpty)
     }
 
     /// `MoreViewModelTest.kt:342-355`.
     @Test("an entitled user tapping the doctor report opens it")
     func anEntitledUserTappingTheDoctorReportOpensIt() async {
-        let fixture = makeViewModel(premiumStatus: .entitled)
+        let fixture = makeViewModel(premiumStatus: .premium)
         await waitUntil("the entitled state to load") {
-            !fixture.vm.state.isLoading && fixture.vm.state.premiumStatus == .entitled
+            !fixture.vm.state.isLoading && fixture.vm.state.premiumStatus == .premium
         }
 
         fixture.vm.onEvent(.doctorReportClicked)
@@ -318,15 +319,15 @@ struct MoreViewModelTests {
 
         let effects = fixture.vm.consumeEffects()
         #expect(effects == [.openDoctorReport])
-        #expect(fixture.paywall.last == nil)
+        #expect(fixture.paywall.request == nil)
     }
 
-    /// `MoreViewModelTest.kt:357-369`. The grace period is folded into `.entitled` (divergence 1).
+    /// `MoreViewModelTest.kt:357-369`.
     @Test("a grace period user reaches the doctor report")
     func aGracePeriodUserReachesTheDoctorReport() async {
-        let fixture = makeViewModel(premiumStatus: .entitled)
+        let fixture = makeViewModel(premiumStatus: .gracePeriod)
         await waitUntil("the entitled state to load") {
-            !fixture.vm.state.isLoading && fixture.vm.state.premiumStatus == .entitled
+            !fixture.vm.state.isLoading && fixture.vm.state.premiumStatus == .gracePeriod
         }
 
         fixture.vm.onEvent(.doctorReportClicked)
@@ -354,9 +355,9 @@ struct MoreViewModelTests {
     /// `MoreViewModelTest.kt:386-401`.
     @Test("a premium user's colour theme is persisted and the dialog closes")
     func aPremiumUsersColourThemeIsPersistedAndTheDialogCloses() async {
-        let fixture = makeViewModel(premiumStatus: .entitled)
+        let fixture = makeViewModel(premiumStatus: .premium)
         await waitUntil("the entitled state to load") {
-            !fixture.vm.state.isLoading && fixture.vm.state.premiumStatus == .entitled
+            !fixture.vm.state.isLoading && fixture.vm.state.premiumStatus == .premium
         }
 
         fixture.vm.onEvent(.dialogRequested(.colorTheme))
@@ -372,15 +373,15 @@ struct MoreViewModelTests {
         #expect(fixture.preferences.premiumThemeValueSync == .ocean)
         #expect(fixture.vm.state.premiumTheme == .ocean)
         #expect(fixture.vm.state.activeDialog == nil)
-        #expect(fixture.paywall.last == nil)
+        #expect(fixture.paywall.request == nil)
     }
 
-    /// `MoreViewModelTest.kt:403-414`. The grace period is folded into `.entitled` (divergence 1).
+    /// `MoreViewModelTest.kt:403-414`.
     @Test("a grace period user may still change the colour theme")
     func aGracePeriodUserMayStillChangeTheColourTheme() async {
-        let fixture = makeViewModel(premiumStatus: .entitled)
+        let fixture = makeViewModel(premiumStatus: .gracePeriod)
         await waitUntil("the entitled state to load") {
-            !fixture.vm.state.isLoading && fixture.vm.state.premiumStatus == .entitled
+            !fixture.vm.state.isLoading && fixture.vm.state.premiumStatus == .gracePeriod
         }
 
         fixture.vm.onEvent(.colorThemeSelected(.forest))
@@ -389,7 +390,7 @@ struct MoreViewModelTests {
         }
 
         #expect(fixture.preferences.premiumThemeValueSync == .forest)
-        #expect(fixture.paywall.last == nil)
+        #expect(fixture.paywall.request == nil)
     }
 
     /// `MoreViewModelTest.kt:416-431`.
@@ -406,10 +407,10 @@ struct MoreViewModelTests {
 
         fixture.vm.onEvent(.colorThemeSelected(.forest))
         await waitUntil("the paywall to open from themes and the dialog to close") {
-            fixture.paywall.last == .themes && fixture.vm.state.activeDialog == nil
+            fixture.paywall.request?.source == .themes && fixture.vm.state.activeDialog == nil
         }
 
-        #expect(fixture.paywall.last == .themes)
+        #expect(fixture.paywall.request?.source == .themes)
         #expect(fixture.preferences.premiumThemeValueSync == .classic)
         #expect(fixture.vm.state.premiumTheme == .classic)
         #expect(fixture.vm.state.activeDialog == nil)

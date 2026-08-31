@@ -30,8 +30,8 @@
 //      (`AppointmentEditorScreen.swift:79`), which fires on every append rather than once at
 //      appear. `restartObservation()` (ruling 3) is called where the ViewModel is created, not
 //      from a second `.task` that depended on the first one having already run.
-//   6. **`effectivePremiumTheme` is two-state** (the collapse `MoreViewModel` makes, div. 1):
-//      `status == .entitled ? selected : .classic`, folding `GRACE_PERIOD` and `PREMIUM`.
+//   6. **`effectivePremiumTheme` reads the real three-state `PremiumStatus`** — the twin of
+//      `core/premium/.../EffectiveTheme.kt` (`isEntitled`: premium or grace get the pick, else Classic).
 //   7. **The selection dialogs are a `.sheet` over ``MoreSelectionDialog``**, not an alert: a
 //      SwiftUI `alert`/`confirmationDialog` holds plain buttons only and cannot draw Kotlin's
 //      `RadioButton(selected = …)` (`MoreScreen.kt:504`), so the stored choice would be invisible.
@@ -56,6 +56,7 @@ import LocalAuthentication
 import SalusDesignSystem
 import SalusModel
 import SalusNavigation
+import SalusPremium
 import SalusUI
 import SwiftUI
 
@@ -246,7 +247,7 @@ struct MoreScreen: View {
                     MoreCard(
                         icon: "crown.fill",
                         title: SettingsStrings.settingsPremium,
-                        subtitle: state.premiumStatus == .entitled
+                        subtitle: state.premiumStatus.isEntitled
                             ? SettingsStrings.settingsPremiumActive
                             : SettingsStrings.settingsPremiumPromo,
                         onClick: { onEvent(.premiumClicked) }
@@ -296,7 +297,7 @@ struct MoreScreen: View {
                         // `effectivePremiumTheme(status, selected)` (div. 6): the palette actually
                         // drawn, not the stored pick — a lapsed subscriber sees Classic here; the
                         // dialog still shows their stored choice as selected.
-                        subtitle: SettingsStrings.colorTheme(effectivePremiumTheme(
+                        subtitle: SettingsStrings.colorTheme(SalusPremium.effectivePremiumTheme(
                             state.premiumStatus,
                             state.premiumTheme
                         )),
@@ -483,7 +484,7 @@ struct MoreScreen: View {
                 isLoading: false,
                 showCycle: false,
                 premiumTheme: .ocean,
-                premiumStatus: .entitled
+                premiumStatus: .premium
             ),
             versionName: "1.0.0",
             appLockAvailable: false,

@@ -1,14 +1,17 @@
-// The two T4 fakes the `MoreViewModelTest` needs that are not T3 fakes: a `ProfileRepository` whose
-// profile a test sets and re-emits, and a `PaywallRequester` that records the sources it was asked
-// to show. The T3 fakes — `FakeSettingsPreferences`, `FakeAppLocaleController`,
-// `FakeMorePremiumStatus` — are reused and extended where the 20 cases need push propagation.
+// The T4 fake the `MoreViewModelTest` needs that is not a T3 fake: a `ProfileRepository` whose
+// profile a test sets and re-emits. The T3 fakes — `FakeSettingsPreferences`,
+// `FakeAppLocaleController`, `FakePremiumRepository` — are reused and extended where the 20 cases
+// need push propagation. The paywall is the real `PaywallController` (a concrete `@MainActor`
+// class), so the tests read its `request` directly, exactly as the Kotlin test reads
+// `paywallController.request.value?.source`.
 //
 // No Android twin — the Kotlin `MoreViewModelTest` declares its `FakeProfileRepository`,
-// `FakePremiumRepository` and `FakePaywallController` inline; the iOS fakes live in their own files
-// so the M9 `PaywallController` swap and any later test can reuse them.
+// `FakePremiumRepository` and `PaywallController` inline; the iOS fakes live in their own files so
+// any later test can reuse them.
 
 import Foundation
 import SalusModel
+import SalusPremium
 import SalusProfile
 
 @testable import FeatureSettings
@@ -20,7 +23,7 @@ import SalusProfile
 /// `@unchecked Sendable` over a lock for the same reason `FakeSettingsPreferences.swift` is: the
 /// protocol's stream is not `@MainActor`-isolated. Push-capable so the "changing sex updates
 /// visibility without recreating the view model" case can flip the profile after the ViewModel has
-/// subscribed and see the new value propagate — the same shape `FakeMorePremiumStatus` uses.
+/// subscribed and see the new value propagate — the same shape `FakePremiumRepository` uses.
 final class FakeProfileRepository: ProfileRepository, @unchecked Sendable {
     private let lock = NSLock()
     private var profileValue: Profile?
@@ -96,28 +99,5 @@ final class FakeProfileRepository: ProfileRepository, @unchecked Sendable {
         lock.lock()
         continuations[id] = nil
         lock.unlock()
-    }
-}
-
-/// A ``PaywallRequester`` that records every `source` it was asked to show — the twin of the
-/// Kotlin `MoreViewModelTest`'s `PaywallController`, whose `request` `StateFlow` the test reads.
-///
-/// `@MainActor` because every `MoreViewModel` event handler that calls `show(_:)` runs on the main
-/// actor, and the recorder is read from the same actor in the test — no cross-actor hop, no lock.
-@MainActor
-final class FakePaywallRequester: PaywallRequester {
-    /// The sources `show(_:)` was called with, in order. The Kotlin test reads
-    /// `paywallController.request.value?.source` (the latest); the iOS test reads `last` for the
-    /// same answer and `sources` when it wants the whole trail.
-    private(set) var sources: [PaywallSource] = []
-
-    func show(_ source: PaywallSource) {
-        sources.append(source)
-    }
-
-    /// The most recent source, or nil if `show` was never called — the twin of
-    /// `paywallController.request.value?.source`.
-    var last: PaywallSource? {
-        sources.last
     }
 }

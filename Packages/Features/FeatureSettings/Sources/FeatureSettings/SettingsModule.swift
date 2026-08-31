@@ -17,6 +17,7 @@
 
 import SalusCommon
 import SalusNavigation
+import SalusPremium
 import SalusProfile
 import SalusReminder
 import SalusSettings
@@ -65,17 +66,16 @@ public func makeSettingsModule(
     navigator: Navigator,
     preferencesDataSource: SalusPreferencesDataSource,
     localeController: any AppLocaleController,
-    premiumStatus: any MorePremiumStatus,
-    paywallRequester: any PaywallRequester
+    premiumRepository: any PremiumRepository,
+    paywallController: PaywallController
 ) -> SettingsModule {
     // Exactly one More-specific dep is built inside the factory: `SettingsPreferencesImpl` is
     // `internal` to this package, so the app target cannot construct it — the composition root
     // passes the `SalusPreferencesDataSource` it already owns and the impl is wrapped around it
     // here. The other three arrive as parameters, because their types are `public`: the
-    // `UserDefaultsAppLocaleController`, the `FreeOnlyMorePremiumStatus` stand-in and the
-    // `NoOpPaywallRequester` stand-in are all constructed by the composition root (ruling 5 — M9
-    // swaps the last two for the real store-backed ones, and swapping them there is the whole
-    // reason they are not built here).
+    // `UserDefaultsAppLocaleController`, the `PremiumRepository` and the `PaywallController` are
+    // all constructed by the composition root (ruling 5 — the store-backed ones live there, which
+    // is the whole reason they are not built here).
     let morePreferences = SettingsPreferencesImpl(dataSource: preferencesDataSource)
     return SettingsModule(
         makeReminderHealthViewModel: {
@@ -93,10 +93,10 @@ public func makeSettingsModule(
         makeMoreViewModel: {
             MoreViewModel(
                 profileRepository: profileRepository,
-                premiumStatus: premiumStatus,
+                premiumRepository: premiumRepository,
                 preferences: morePreferences,
                 localeController: localeController,
-                paywallRequester: paywallRequester
+                paywallController: paywallController
             )
         },
         navigator: navigator

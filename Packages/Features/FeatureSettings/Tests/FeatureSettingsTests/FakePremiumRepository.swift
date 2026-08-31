@@ -1,25 +1,24 @@
-// A ``MorePremiumStatus`` a test can flip from `.free` to `.entitled`, for `MoreViewModelTests`
-// (T4). The production stand-in `FreeOnlyMorePremiumStatus` always emits `.free`; the fake is the
-// only way a ViewModel test exercises the entitled branch before iOS-M9.
+// A ``PremiumRepository`` a test can flip between `PremiumStatus` values, for `MoreViewModelTests`
+// (T7). The real `PremiumRepositoryImpl` reads the store; the fake is the only way a ViewModel test
+// exercises the entitled branches (`.premium`/`.gracePeriod`) without a store.
 //
 // `@unchecked Sendable` over a lock rather than an actor for the same reason
 // `FakeSettingsPreferences.swift` is: the protocol's stream is not `@MainActor`-isolated.
 
 import Foundation
+import SalusPremium
 
-@testable import FeatureSettings
-
-/// A ``MorePremiumStatus`` whose value a test sets and re-emits on demand.
-final class FakeMorePremiumStatus: MorePremiumStatus, @unchecked Sendable {
+/// A ``PremiumRepository`` whose status a test sets and re-emits on demand.
+final class FakePremiumRepository: PremiumRepository, @unchecked Sendable {
     private let lock = NSLock()
-    private var value: MorePremiumStatusValue
-    private var continuations: [UUID: AsyncStream<MorePremiumStatusValue>.Continuation] = [:]
+    private var value: PremiumStatus
+    private var continuations: [UUID: AsyncStream<PremiumStatus>.Continuation] = [:]
 
-    init(value: MorePremiumStatusValue = .free) {
+    init(value: PremiumStatus = .free) {
         self.value = value
     }
 
-    var status: AsyncStream<MorePremiumStatusValue> {
+    var status: AsyncStream<PremiumStatus> {
         AsyncStream(bufferingPolicy: .bufferingNewest(1)) { continuation in
             let id = UUID()
             lock.lock()
@@ -34,8 +33,10 @@ final class FakeMorePremiumStatus: MorePremiumStatus, @unchecked Sendable {
         }
     }
 
+    func refresh() async {}
+
     /// Flips the value and pushes it to every open stream.
-    func setValue(_ newValue: MorePremiumStatusValue) {
+    func setValue(_ newValue: PremiumStatus) {
         lock.lock()
         value = newValue
         let pending = Array(continuations.values)

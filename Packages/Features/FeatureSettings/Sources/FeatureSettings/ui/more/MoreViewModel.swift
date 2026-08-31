@@ -1,35 +1,21 @@
 // Ported 1:1 from
 // `feature/settings/src/main/kotlin/com/alicansekban/salus/feature/settings/ui/more/MoreViewModel.kt`.
 //
-// The hub state, the five event gates and the buffered effects. Six divergences from the Kotlin
+// The hub state, the five event gates and the buffered effects. Four divergences from the Kotlin
 // twin, all forced by the platform and recorded here so a reader sees them without leaving the file:
 //
-//   1. **Two-state premium (ruling 5).** Kotlin reads `PremiumRepository.status`
-//      (`PremiumStatus`: `FREE`/`GRACE_PERIOD`/`PREMIUM`) and branches on `isEntitled` (= not
-//      `FREE`). iOS reads `MorePremiumStatus.status` (`MorePremiumStatusValue`: `.free`/`.entitled`)
-//      and branches on `== .entitled`. `.entitled` folds Android's `GRACE_PERIOD` and `PREMIUM` into
-//      one state, because the grace period is a billing-platform concept that has no meaning before
-//      the store exists (iOS-M9). The gate reads the **first value from the stream**, not `state`,
-//      exactly as the Kotlin comment warns (`MoreViewModel.kt:122-124`); the held value is updated
-//      atomically inside the observation's fold so `onEvent` reads the freshest entitlement even
-//      before the next emission has been published as state.
-//   2. **`PaywallController` → `PaywallRequester`.** Kotlin's `PaywallController` is a real class
-//      with a `request` `StateFlow`. iOS-M9 brings the real `PaywallController`; until then this
-//      feature-local ``PaywallRequester`` protocol is the stand-in. `show(_:)` takes a
-//      ``PaywallSource`` rather than being a no-op, so the gate's routing is testable today and the
-//      M9 swap is a binding change, not a logic one.
-//   3. **`appStoreSubscriptionsUrl`.** Kotlin sends an entitled user to Play's account-level
+//   1. **`appStoreSubscriptionsUrl`.** Kotlin sends an entitled user to Play's account-level
 //      subscription page (`PLAY_SUBSCRIPTIONS_URL`,
 //      `https://play.google.com/store/account/subscriptions`). iOS sends them to the App Store's
 //      (`https://apps.apple.com/account/subscriptions`) — the platform-mapped twin.
-//   4. **`Channel.BUFFERED` → `pendingEffects` array.** Kotlin's buffered `Channel<MoreEffect>`
+//   2. **`Channel.BUFFERED` → `pendingEffects` array.** Kotlin's buffered `Channel<MoreEffect>`
 //      never drops an effect fired while the screen is off-screen. iOS has no `Channel` and
 //      `@Observable` has no subscription-count hook, so the effects accumulate in
 //      ``pendingEffects`` and ``consumeEffects()`` drains them in order — nothing dropped, the
 //      array grows until consumed. The single-effect `ReminderHealthViewModel.pendingEffect` /
 //      `consumeEffect()` shape (M7) is the precedent, generalised to a queue because the More tab
 //      can fire two effects back-to-back (e.g. an entitled user tapping premium then trends).
-//   5. **`stateIn(WhileSubscribed(5_000))` → `restartObservation()`.** `@Observable` has no
+//   3. **`stateIn(WhileSubscribed(5_000))` → `restartObservation()`.** `@Observable` has no
 //      subscription-count hook, so the collection runs from `init` to `deinit` and
 //      ``restartObservation()`` re-runs it. `MoreRoute`'s `.task` calls the latter on every
 //      appearance (plan ruling 3, the `VitalsViewModel.restartHistoryObservation()` precedent). The
@@ -37,13 +23,13 @@
 //      which, like `TodayRepositoryImpl.observeTodayOverview()`, fixes its read once at creation —
 //      so a returning screen re-reads rather than drawing a stale snapshot. Divergence: Android
 //      re-captures after a five-second unsubscribed grace, iOS on every appearance.
-//   6. **Stream combine.** Kotlin `combine(profile, themeMode, appLock, secureScreen, secondaryState)`
+//   4. **Stream combine.** Kotlin `combine(profile, themeMode, appLock, secureScreen, secondaryState)`
 //      where `secondaryState = combine(language, activeDialog, premiumRepository.status,
 //      preferences.premiumTheme)`. `combine`'s typed overloads stop at five, so the four "secondary"
 //      values are folded into one before joining the rest. iOS spells each combine as a `latestOf*`
 //      fold from `SalusCommon`, and the two mutable holders (`language`, `activeDialog`) — Kotlin's
 //      `MutableStateFlow`s — are ``CurrentValueStream``s: `AsyncStream`s with a stored continuation
-//      the ViewModel yields into, the same shape `FakeMorePremiumStatus` uses for its test fake.
+//      the ViewModel yields into, the same shape `FakePremiumRepository` uses for its test fake.
 //      `throwingStream(over:)` re-types the non-throwing `AsyncStream`s so they can join the
 //      throwing `profileRepository.observeProfile()` in `latestOfFive`.
 
@@ -51,32 +37,8 @@ import Foundation
 import Observation
 import SalusCommon
 import SalusModel
+import SalusPremium
 import SalusProfile
-
-/// The stand-in for Android's `PaywallController` until iOS-M9 brings the real one — recorded
-/// divergence (2).
-///
-/// A protocol so the ViewModel stays testable without a real paywall surface, and so the M9 swap is
-/// a binding change: `AppCompositionRoot` constructs a real `PaywallController` and passes it where
-/// this protocol is asked for, the same way `ReminderEnvironment` is bound.
-public protocol PaywallRequester: Sendable {
-    /// Show the paywall for the given `source`, the twin of `PaywallController.request` getting a
-    /// `PaywallRequest(source)`. Isolated to the main actor because every `MoreViewModel` event
-    /// handler that calls it runs there, and the production `PaywallController` (M9) lives on the
-    /// main actor too — so the protocol requirement matches where its real and fake implementations
-    /// both run.
-    @MainActor
-    func show(_ source: PaywallSource)
-}
-
-/// Which feature asked for the paywall — the twin of Android's `PaywallSource`
-/// (`core/premium/.../PaywallController.kt`). Feature-local here until M9 lifts it into
-/// `SalusPremium`; the raw values match the Kotlin constant names.
-public enum PaywallSource: Sendable, Equatable {
-    case themes
-    case settings
-    case doctorReport
-}
 
 /// Drives the More tab (`MoreViewModel.kt:26-145`).
 @MainActor
@@ -85,11 +47,11 @@ public final class MoreViewModel {
     /// `MoreViewModel.kt:53-78` — what the screen draws.
     public private(set) var state = MoreUiState()
 
-    /// `Channel.BUFFERED`'s twin (divergence 4): the effects fired while the screen was off-screen,
+    /// `Channel.BUFFERED`'s twin (divergence 2): the effects fired while the screen was off-screen,
     /// waiting for ``consumeEffects()`` to drain them in order. Nothing is dropped.
     public private(set) var pendingEffects: [MoreEffect] = []
 
-    // The two mutable holders the Kotlin spells as `MutableStateFlow` (divergence 6). Each is a
+    // The two mutable holders the Kotlin spells as `MutableStateFlow` (divergence 4). Each is a
     // `CurrentValueStream` the ViewModel yields into from `onEvent`, and the observation folds them
     // into the `secondaryState` bundle exactly as the Kotlin `combine(language, activeDialog, …)`
     // does. Re-created on every `restartObservation()`, so a re-subscribe re-seeds them from the
@@ -101,15 +63,15 @@ public final class MoreViewModel {
     // swiftlint:disable:next implicitly_unwrapped_optional
     private var activeDialogHolder: CurrentValueStream<MoreDialog?>!
     /// The freshest entitlement the stream has produced, read by `onEvent`'s gates exactly as the
-    /// Kotlin reads `premiumRepository.status.value` (divergence 1). Updated atomically inside the
+    /// Kotlin reads `premiumRepository.status.value`. Updated atomically inside the
     /// fold so a gate between two emissions reads the latest value, not the one state last showed.
-    private var latestPremiumStatus: MorePremiumStatusValue = .free
+    private var latestPremiumStatus: PremiumStatus = .free
 
     private let profileRepository: any ProfileRepository
-    private let premiumStatus: any MorePremiumStatus
+    private let premiumRepository: any PremiumRepository
     private let preferences: any SettingsPreferences
     private let localeController: any AppLocaleController
-    private let paywallRequester: any PaywallRequester
+    private let paywallController: PaywallController
 
     /// The collection. Boxed so `deinit` can cancel it — see `CancellationBox`.
     private let observation = CancellationBox()
@@ -118,16 +80,16 @@ public final class MoreViewModel {
     /// Kotlin order (`MoreViewModel.kt:26-32`).
     public init(
         profileRepository: any ProfileRepository,
-        premiumStatus: any MorePremiumStatus,
+        premiumRepository: any PremiumRepository,
         preferences: any SettingsPreferences,
         localeController: any AppLocaleController,
-        paywallRequester: any PaywallRequester
+        paywallController: PaywallController
     ) {
         self.profileRepository = profileRepository
-        self.premiumStatus = premiumStatus
+        self.premiumRepository = premiumRepository
         self.preferences = preferences
         self.localeController = localeController
-        self.paywallRequester = paywallRequester
+        self.paywallController = paywallController
         restartObservation()
     }
 
@@ -161,17 +123,17 @@ public final class MoreViewModel {
             // Spec section 3: the gate is here, not in the screen. A free user may open the picker
             // and tap any palette — the tap opens the paywall and nothing is written, so an
             // unentitled selection can never reach the store and be restored on next launch. The
-            // gate reads the held entitlement (divergence 1), not `state.premiumStatus`, which is
+            // gate reads the held entitlement, not `state.premiumStatus`, which is
             // only current while the observation is mid-emission — the same reason the Kotlin reads
             // `premiumRepository.status.value`.
-            if latestPremiumStatus == .entitled {
+            if latestPremiumStatus.isEntitled {
                 Task { [preferences, activeDialog] in
                     await preferences.setPremiumTheme(theme)
                     activeDialog.send(nil)
                 }
             } else {
                 activeDialog.send(nil)
-                paywallRequester.show(.themes)
+                paywallController.show(.themes)
             }
 
         case let .selectLanguage(languageEvent):
@@ -195,21 +157,21 @@ public final class MoreViewModel {
         case .premiumClicked:
             // Someone who already pays has nothing to buy here: the row takes them to the store's
             // own subscription management, where cancelling and switching plans actually live. The
-            // gate reads the held entitlement (divergence 1), not `state`.
-            if latestPremiumStatus == .entitled {
+            // gate reads the held entitlement, not `state`.
+            if latestPremiumStatus.isEntitled {
                 pendingEffects.append(.openUrl(Self.appStoreSubscriptionsUrl))
             } else {
-                paywallRequester.show(.settings)
+                paywallController.show(.settings)
             }
 
         case .doctorReportClicked:
             // The doctor report is premium in full — there is no free credit for it, so an
-            // unentitled tap never reaches the screen. The gate reads the held entitlement
-            // (divergence 1), not `state`.
-            if latestPremiumStatus == .entitled {
+            // unentitled tap never reaches the screen. The gate reads the held entitlement, not
+            // `state`.
+            if latestPremiumStatus.isEntitled {
                 pendingEffects.append(.openDoctorReport)
             } else {
-                paywallRequester.show(.doctorReport)
+                paywallController.show(.doctorReport)
             }
 
         case .trendsClicked:
@@ -231,7 +193,7 @@ public final class MoreViewModel {
         return drained
     }
 
-    /// Re-runs the whole join, which re-captures the profile stream (plan ruling 3, divergence 5).
+    /// Re-runs the whole join, which re-captures the profile stream (plan ruling 3, divergence 3).
     ///
     /// **Why this is public.** `ProfileRepository.observeProfile()` is a fresh stream per access
     /// that re-runs its query on invalidation; `@Observable` has no subscription-count hook, so
@@ -261,7 +223,7 @@ public final class MoreViewModel {
             latestOfFour(
                 throwingStream(over: languageHolder.stream),
                 throwingStream(over: activeDialogHolder.stream),
-                throwingStream(over: premiumStatus.status),
+                throwingStream(over: premiumRepository.status),
                 throwingStream(over: preferences.premiumTheme)
             )
         ) { SecondaryState($0, $1, $2, $3) }
@@ -325,7 +287,7 @@ public final class MoreViewModel {
     }
 
     /// The App Store's account-level subscription page — the platform-mapped twin of Kotlin's
-    /// `PLAY_SUBSCRIPTIONS_URL` (divergence 3).
+    /// `PLAY_SUBSCRIPTIONS_URL` (divergence 1).
     private static let appStoreSubscriptionsUrl = "https://apps.apple.com/account/subscriptions"
 }
 
@@ -335,13 +297,13 @@ public final class MoreViewModel {
 private struct SecondaryState: Sendable, Equatable {
     let language: AppLanguage
     let activeDialog: MoreDialog?
-    let premiumStatus: MorePremiumStatusValue
+    let premiumStatus: PremiumStatus
     let premiumTheme: PremiumTheme
 
     init(
         _ language: AppLanguage,
         _ activeDialog: MoreDialog?,
-        _ premiumStatus: MorePremiumStatusValue,
+        _ premiumStatus: PremiumStatus,
         _ premiumTheme: PremiumTheme
     ) {
         self.language = language
@@ -352,8 +314,8 @@ private struct SecondaryState: Sendable, Equatable {
 }
 
 /// A `MutableStateFlow`'s twin for the two values the ViewModel needs to yield into from `onEvent`
-/// and fold into the combine (divergence 6). Emits the current value on subscription, then once per
-/// `send(_:)`, and never finishes — the same contract `FakeMorePremiumStatus` keeps and the Kotlin
+/// and fold into the combine (divergence 4). Emits the current value on subscription, then once per
+/// `send(_:)`, and never finishes — the same contract `FakePremiumRepository` keeps and the Kotlin
 /// `MutableStateFlow` keeps. `@unchecked Sendable` over a lock because the value is mutable state
 /// shared between the `onEvent` caller (main actor) and the observation's child tasks.
 private final class CurrentValueStream<Value: Sendable & Equatable>: @unchecked Sendable {

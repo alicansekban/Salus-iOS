@@ -16,7 +16,7 @@
 // "changing sex updates visibility" case needs a setter write to propagate through the held stream
 // without a re-subscribe. A one-shot fake (emit-once-then-open) could not carry those, so each
 // stream holds its continuation and the setter pushes the new value to it — the same shape
-// `FakeMorePremiumStatus.swift` uses for `status`. A value-equal write is still pushed, matching
+// `FakePremiumRepository.swift` uses for `status`. A value-equal write is still pushed, matching
 // `MutableStateFlow` (which re-emits on `value =` regardless of equality); the production
 // `SettingsPreferencesImpl` drops equal writes, but the fake is the simpler reference shape and no
 // T4 case depends on the dedupe.

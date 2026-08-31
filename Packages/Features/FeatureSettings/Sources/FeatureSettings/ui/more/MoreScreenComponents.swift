@@ -1,11 +1,12 @@
 // The private row-building helpers `MoreScreen` composes — extracted from `MoreScreen.swift` to
-// keep that file under the 500-line `file_length` gate. The four are the twin of the four
-// `@Composable` helpers `MoreScreen.kt:360-449` and `EffectiveTheme.kt:13` carry inline in the
-// Kotlin file: a section label, a tappable card, a toggle card, and the two-state
-// `effectivePremiumTheme` collapse.
+// keep that file under the 500-line `file_length` gate. The three are the twin of the three
+// `@Composable` helpers `MoreScreen.kt:360-449` carry inline in the Kotlin file: a section label, a
+// tappable card, and a toggle card. The `effectivePremiumTheme` collapse lives in `SalusPremium`
+// (`EffectiveTheme.swift`), the twin of `core/premium/.../EffectiveTheme.kt`.
 
 import SalusDesignSystem
 import SalusModel
+import SalusPremium
 import SalusUI
 import SwiftUI
 
@@ -96,15 +97,4 @@ struct MoreToggleCard: View {
             }
         }
     }
-}
-
-/// `effectivePremiumTheme(status, selected)` (divergence 6). The Kotlin
-/// `core/premium/.../EffectiveTheme.kt:13` reads `PremiumStatus.isEntitled`; the iOS collapse is
-/// two-state (`MorePremiumStatusValue`), so the gate reads `== .entitled` — the shape
-/// `MoreViewModel`'s gates use.
-func effectivePremiumTheme(
-    _ status: MorePremiumStatusValue,
-    _ selected: PremiumTheme
-) -> PremiumTheme {
-    status == .entitled ? selected : .classic
 }

@@ -1,19 +1,16 @@
 // Ported 1:1 from
 // `feature/settings/src/main/kotlin/com/alicansekban/salus/feature/settings/ui/more/MoreUiState.kt`.
 //
-// The three UDF types keep their Kotlin names and their Kotlin job. Two divergences are visible in
-// the types themselves, both recorded in `MoreViewModel.swift`'s header and restated here so a
-// reader of the state alone sees them:
+// The three UDF types keep their Kotlin names and their Kotlin job. One divergence is visible in
+// the types themselves, recorded in `MoreViewModel.swift`'s header and restated here so a reader of
+// the state alone sees it:
 //
-//   * `premiumStatus` is `MorePremiumStatusValue` (`.free`/`.entitled`), not Kotlin's three-state
-//     `PremiumStatus` — recorded divergence (1). The `.entitled` case folds Android's
-//     `GRACE_PERIOD` and `PREMIUM` into one; the gate that branched on `isEntitled` reads
-//     `== .entitled`. See `MorePremiumStatus.swift` for why the boundary collapses there.
 //   * The `MoreEffect` cases carry the same names as the Kotlin sealed interface; only the URL they
 //     hand the screen is platform-mapped — recorded divergence (3), `appStoreSubscriptionsUrl` in
 //     `MoreViewModel.swift`.
 
 import SalusModel
+import SalusPremium
 
 /// Which selection popup is open (`MoreUiState.kt:9-13`).
 public enum MoreDialog: Sendable, Equatable {
@@ -35,9 +32,9 @@ public struct MoreUiState: Sendable, Equatable {
     /// The stored selection, which is what the picker shows — free users see their pick too.
     public var premiumTheme: PremiumTheme
     public var language: AppLanguage
-    /// Two-state (ruling 5 / divergence 1): `.entitled` folds Android's `GRACE_PERIOD` and
-    /// `PREMIUM`. The gate reads `== .entitled`.
-    public var premiumStatus: MorePremiumStatusValue
+    /// The real three-state entitlement (`PremiumStatus.kt`): `free`/`premium`/`gracePeriod`, where
+    /// `gracePeriod` is still entitled. The gate reads `isEntitled`.
+    public var premiumStatus: PremiumStatus
     public var appLockEnabled: Bool
     public var secureScreenEnabled: Bool
     public var activeDialog: MoreDialog?
@@ -49,7 +46,7 @@ public struct MoreUiState: Sendable, Equatable {
         themeMode: ThemeMode = .system,
         premiumTheme: PremiumTheme = .classic,
         language: AppLanguage = .system,
-        premiumStatus: MorePremiumStatusValue = .free,
+        premiumStatus: PremiumStatus = .free,
         appLockEnabled: Bool = false,
         secureScreenEnabled: Bool = false,
         activeDialog: MoreDialog? = nil
