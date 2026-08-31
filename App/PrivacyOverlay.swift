@@ -332,12 +332,13 @@ private final class SecureScreenMask {
         // guess, and a wrong guess is the worst outcome available here: the app's layer would hang
         // under a *non-secure* layer, the mask would do nothing, and `isApplied` would still report
         // success. A count that is not 1 means UIKit's private view tree changed shape, so this
-        // fails loudly — no mask, and QA §2.4 is the detector — rather than half-applying.
+        // fails safely — no mask, and QA §2.4 is the detector — rather than half-applying.
         guard let sublayers = field.layer.sublayers, sublayers.count == 1, let canvas = sublayers.first
         else {
-            // Loud in a debug build, silent-and-safe in a shipped one: a UIKit shape change is a
-            // thing to discover while developing, not a reason to trap a user's app.
-            assertionFailure("secure UITextField no longer has exactly one sublayer; masking is off")
+            // Silent-and-safe in every build: a UIKit shape change (e.g. a simulator iOS version
+            // whose secure field layers differently) is a thing to discover via QA §2.4, not a
+            // reason to trap the app. The `assertionFailure` that was here crashed Debug builds
+            // on launch when the simulator's `UITextField` did not produce exactly one sublayer.
             field.removeFromSuperview()
             return false
         }
