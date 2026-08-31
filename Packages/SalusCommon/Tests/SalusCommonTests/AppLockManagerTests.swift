@@ -193,4 +193,53 @@ struct AppLockManagerTests {
 
         #expect(fixture.manager.isLocked)
     }
+
+    // MARK: - The `.inactive` round trip, which Android's process lifecycle never reports
+
+    /// No Kotlin twin, and it is a divergence rather than an omission: Android's
+    /// `ProcessLifecycleOwner` calls `onStart` only when the process really returns to the
+    /// foreground, so a `BiometricPrompt` drawn over the app is not a lifecycle event there at all.
+    /// iOS has no such filter — the Face ID sheet drives the scene `.active → .inactive → .active`,
+    /// and the shell forwards that last `.active` here. Re-locking on it is what put the gate back
+    /// up the instant its own prompt succeeded, so the prompt fired again, for ever.
+    ///
+    /// The rule this pins: **only a scene that actually went to the background may re-lock.**
+    @Test("returning from an inactive round trip never re-locks an unlocked session")
+    func returningFromAnInactiveRoundTripNeverReLocksAnUnlockedSession() async {
+        let fixture = await makeManager()
+
+        fixture.manager.sceneDidBecomeActive()
+        fixture.manager.unlock()
+
+        // The Face ID sheet went up and came back down: `.inactive` is never forwarded, so the
+        // manager sees a bare second `.active` with no `sceneDidEnterBackground` between them.
+        fixture.manager.sceneDidBecomeActive()
+
+        #expect(fixture.manager.isLocked == false)
+    }
+
+    /// The same rule one step later, and the reason the stamp is cleared rather than merely
+    /// guarded: a background stay that was already judged short must not be judged a second time.
+    /// Otherwise the same visit keeps ageing, and the first `.inactive` round trip that happens
+    /// more than 30 s later re-locks a session the user never left.
+    @Test("a background stay is judged once, so a later inactive round trip does not re-lock")
+    func aBackgroundStayIsJudgedOnceSoALaterInactiveRoundTripDoesNotReLock() async {
+        let fixture = await makeManager()
+
+        fixture.manager.sceneDidBecomeActive()
+        fixture.manager.unlock()
+
+        // A short visit to the background: judged, and it keeps the session.
+        fixture.manager.sceneDidEnterBackground()
+        fixture.clock.advance(byMilliseconds: AppLockManager.lockTimeoutMs - 1000)
+        fixture.manager.sceneDidBecomeActive()
+        #expect(fixture.manager.isLocked == false)
+
+        // Minutes of use later, a Control Centre pull returns the scene to `.active` without ever
+        // having left the app. The stay above is spent and must not be re-judged.
+        fixture.clock.advance(byMilliseconds: AppLockManager.lockTimeoutMs * 10)
+        fixture.manager.sceneDidBecomeActive()
+
+        #expect(fixture.manager.isLocked == false)
+    }
 }

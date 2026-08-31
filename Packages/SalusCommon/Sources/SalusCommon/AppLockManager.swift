@@ -7,7 +7,7 @@
 // framework anywhere in it. The shell owns the two things that *are* platform: the scenePhase
 // callbacks below and the `LAContext` prompt (`App/Lock/LockPrompting.swift`).
 //
-// Four divergences from the Kotlin twin, all forced by the platform and recorded here so a reader
+// Five divergences from the Kotlin twin, all forced by the platform and recorded here so a reader
 // sees them without leaving the file:
 //
 //   1. **`DefaultLifecycleObserver` → two methods the shell calls.** Kotlin registers the manager
@@ -37,6 +37,17 @@
 //      the production spelling. The parameter exists because the shell already holds a reading when
 //      it forwards a scenePhase change, and passing it keeps the pair of timestamps that decide the
 //      grace consistent with each other.
+//   5. **Only a scene that reached the background may re-lock.** Kotlin re-locks when
+//      `backgroundedAt == null || now - backgroundedAt > LOCK_TIMEOUT` (`AppLockManager.kt:33-35`),
+//      and the null half is unreachable-by-construction there: `ProcessLifecycleOwner.onStart`
+//      fires only when the process really returns to the foreground, so a `BiometricPrompt` drawn
+//      over the app is not a lifecycle event at all. iOS has no such filter — the Face ID sheet,
+//      Control Centre and an incoming call all drive the scene `.active → .inactive → .active`,
+//      and the shell forwards that last `.active` here. Ported literally, the null half therefore
+//      re-locked the app the instant its own unlock prompt succeeded, which put the gate back up,
+//      which fired the prompt again: the Face ID loop. So the null half is dropped (the cold start
+//      is already locked by `unlockedThisSession == false`) and the stamp is cleared once judged,
+//      so a stay ruled short cannot age into a re-lock at the next round trip.
 
 import Foundation
 import Observation
@@ -87,8 +98,10 @@ public final class AppLockManager {
     /// setting is on, because nothing has unlocked this session yet.
     private var unlockedThisSession = false
 
-    /// `backgroundedAtMs: Long?` (`AppLockManager.kt:25`). `nil` means "never backgrounded in this
-    /// process", which is a cold start and therefore locks.
+    /// `backgroundedAtMs: Long?` (`AppLockManager.kt:25`). `nil` means "no unjudged background stay
+    /// stands": either the app has never left in this process, or the stay it recorded has already
+    /// been ruled on by ``sceneDidBecomeActive(nowMs:)``. Either way there is nothing to re-lock for
+    /// (divergence 5) — a cold start is already locked by `unlockedThisSession == false`.
     private var backgroundedAtMs: Int64?
 
     /// The latest value of the setting stream, folded in by the observation (divergence 2).
@@ -122,18 +135,27 @@ public final class AppLockManager {
 
     /// The app returned to the foreground — `onStart(owner)` (`AppLockManager.kt:31-38`).
     ///
-    /// Re-locks when the app has never been backgrounded in this process (a cold start) or when it
-    /// stayed away for longer than ``lockTimeoutMs``. The comparison is Kotlin's strict `>`, so
-    /// exactly the timeout is still the same session.
+    /// Re-locks when the app stayed away for longer than ``lockTimeoutMs``. The comparison is
+    /// Kotlin's strict `>`, so exactly the timeout is still the same session.
+    ///
+    /// A scene that never reached the background does nothing here — divergence 5.
     ///
     /// - Parameter nowMs: the instant the app returned. `nil` reads the injected clock, which is
     ///   what Kotlin does (divergence 4).
     public func sceneDidBecomeActive(nowMs: Int64? = nil) {
+        // Kotlin's `backgroundedAt == null ||` branch (`AppLockManager.kt:33`) is deliberately not
+        // ported (divergence 5). There it can only ever be the cold start, because
+        // `ProcessLifecycleOwner` reports nothing else; here it would also be every
+        // `.active → .inactive → .active` round trip.
+        //
+        // The cold start needs no branch of its own: `unlockedThisSession` starts `false`, so the
+        // gate is already up before this is first called.
+        guard let leftAtMs = backgroundedAtMs else { return }
+        // Spent once, so a stay already judged short cannot age into a re-lock at the next round
+        // trip. Kotlin never clears it because `onStart` cannot fire without an `onStop` first.
+        backgroundedAtMs = nil
         let now = nowMs ?? clock.nowEpochMilliseconds()
-        // `backgroundedAt == null || now - backgroundedAt > LOCK_TIMEOUT` (`AppLockManager.kt:33-35`),
-        // with the null branch folded into the optional's own `?? true`.
-        let stayedAwayTooLong = backgroundedAtMs.map { now - $0 > Self.lockTimeoutMs } ?? true
-        if stayedAwayTooLong {
+        if now - leftAtMs > Self.lockTimeoutMs {
             unlockedThisSession = false
             publish()
         }
