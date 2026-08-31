@@ -17,10 +17,10 @@
 // must be reached to fail. There is nothing to port and nothing is lost.
 //
 // **Case 4 is ported whole**, not split. The research notes flagged it as partially deferred to
-// iOS-M9 because iOS has no `PremiumRepository` yet; plan ruling 1 answers that by carrying
+// iOS-M9 because iOS had no `PremiumRepository` at M7; plan ruling 1 answered that by carrying
 // ``HomePremiumStatus`` from day one, so a fake that emits `true` proves the ViewModel's arm exactly
-// as `PremiumStatus.PREMIUM` does on Android. What is deferred is the *production* binding
-// (`FreeOnlyPremiumStatus`, divergence (d)), not the case.
+// as `PremiumStatus.PREMIUM` does on Android. iOS-M9 delivered the production binding
+// (`PremiumRepositoryHomePremiumStatus` over the real `PremiumRepository`), resolving divergence (d).
 //
 // The two iOS-only cases cover what plan ruling 3 replaced `SharingStarted.WhileSubscribed(5_000)`
 // with, and the greeting table Kotlin never asserts:
