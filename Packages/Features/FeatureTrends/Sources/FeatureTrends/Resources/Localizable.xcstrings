@@ -477,6 +477,91 @@
         }
       }
     },
+    "trends_overlay_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Metrics together"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Metrikler bir arada"
+          }
+        }
+      }
+    },
+    "trends_overlay_subtitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The units differ, so each metric is placed on a shared scale between its own lowest and highest value. The shapes of the lines can be compared; their heights cannot."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Birimleri farklı olduğu için her metrik kendi en düşük ve en yüksek değerine göre ortak bir ölçeğe yerleştirildi. Çizgilerin biçimi karşılaştırılabilir; yükseklikleri karşılaştırılamaz."
+          }
+        }
+      }
+    },
+    "trends_overlay_subtitle_weekly" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Over long periods each point is one week's average. The units differ, so each metric is placed on a shared scale between its own lowest and highest weekly average. The shapes of the lines can be compared; their heights cannot."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uzun dönemlerde her nokta bir haftanın ortalamasıdır. Birimleri farklı olduğu için her metrik kendi en düşük ve en yüksek haftalık ortalamasına göre ortak bir ölçeğe yerleştirildi. Çizgilerin biçimi karşılaştırılabilir; yükseklikleri karşılaştırılamaz."
+          }
+        }
+      }
+    },
+    "trends_overlay_legend_entry" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ · %2$@–%3$@ %4$@"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ · %2$@–%3$@ %4$@"
+          }
+        }
+      }
+    },
+    "trends_overlay_chart_description" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Metrics shown together: %1$@"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bir arada gösterilen metrikler: %1$@"
+          }
+        }
+      }
+    },
     "trends_value_blood_pressure" : {
       "extractionState" : "manual",
       "localizations" : {

@@ -129,7 +129,12 @@ public struct TrendsReady: Equatable, Sendable {
     /// (Task 2). `nil` is the only way the card is left out.
     public var timeOfDay: TimeOfDayBreakdown?
 
-    public init(timeOfDay: TimeOfDayBreakdown? = nil) {
+    /// The multi-metric overlay, when at least two metrics have something to compare (Task 3).
+    /// `nil` is the only way the card is left out.
+    public var overlay: MetricOverlay?
+
+    public init(timeOfDay: TimeOfDayBreakdown? = nil, overlay: MetricOverlay? = nil) {
         self.timeOfDay = timeOfDay
+        self.overlay = overlay
     }
 }

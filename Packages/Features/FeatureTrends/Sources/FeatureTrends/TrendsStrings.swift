@@ -80,6 +80,24 @@ public enum TrendsStrings {
     public static var unitGlucoseMmol: String { localized(.unitGlucoseMmol) }
     public static var unitWeight: String { localized(.unitWeight) }
 
+    // MARK: - Multi-metric overlay (Task 3)
+
+    public static var overlayTitle: String { localized(.overlayTitle) }
+
+    public static var overlaySubtitle: String { localized(.overlaySubtitle) }
+    public static var overlaySubtitleWeekly: String { localized(.overlaySubtitleWeekly) }
+
+    /// `%1$s · %2$s–%3$s %4$s` — one legend line: metric, then the real range it covered, with
+    /// its unit.
+    public static func overlayLegendEntry(_ metric: String, _ min: String, _ max: String, _ unit: String) -> String {
+        String(format: localized(.overlayLegendEntry), metric, min, max, unit)
+    }
+
+    /// `%1$s` — the chart's spoken summary: the metrics shown together.
+    public static func overlayChartDescription(_ metrics: String) -> String {
+        String(format: localized(.overlayChartDescription), metrics)
+    }
+
     // MARK: - Keys
 
     /// The catalog keys, named once. Internal so the parity test can prove every accessor asks for
@@ -124,6 +142,13 @@ public enum TrendsStrings {
         case unitGlucose = "trends_unit_glucose"
         case unitGlucoseMmol = "trends_unit_glucose_mmol"
         case unitWeight = "trends_unit_weight"
+
+        case overlayTitle = "trends_overlay_title"
+
+        case overlaySubtitle = "trends_overlay_subtitle"
+        case overlaySubtitleWeekly = "trends_overlay_subtitle_weekly"
+        case overlayLegendEntry = "trends_overlay_legend_entry"
+        case overlayChartDescription = "trends_overlay_chart_description"
     }
 
     private static func localized(_ key: Key) -> String {

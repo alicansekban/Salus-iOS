@@ -149,7 +149,9 @@ struct ReadyBody: View {
                 if let timeOfDay = ready.timeOfDay {
                     TimeOfDayCard(breakdown: timeOfDay, glucoseUnit: state.glucoseUnit)
                 }
-                // Task 3 adds:   ready.overlay.map { MetricOverlayCard($0, unit: …) }
+                if let overlay = ready.overlay {
+                    MetricOverlayCard(overlay: overlay, glucoseUnit: state.glucoseUnit)
+                }
                 // Task 4 adds:   ready.doseWeeks.map { DoseWeeksCard($0, unit: …) }
                 // Task 5 adds:   ready.summaries.map { MetricSummaryCard($0, unit: …) }
             }
@@ -231,6 +233,127 @@ private struct TimeOfDayCard: View {
     /// `BarChartHeight` (`SalusBarChart.kt:156`) — tall enough for four labelled columns to be
     /// readable without dominating a card.
     private static let chartHeight: CGFloat = 200
+}
+
+/// The multi-metric overlay card: several metrics on one shared, unit-less axis
+/// (`TrendsScreen.kt:330-390`).
+///
+/// The analysis normalizes every series onto its own 0...1 span and carries the real numbers
+/// alongside, because the two belong together: this chart shows no numbers at all (a value on it
+/// could not belong to any of the series), so the legend below is the only place a line is
+/// attributed to a metric *and* a real range.
+///
+/// The subtitle names which average a point is, because "weekly average" and "daily average" are
+/// different claims about the same line (`Overlay.kt` — `bucket` travels with the overlay for
+/// exactly this reason).
+private struct MetricOverlayCard: View {
+    let overlay: MetricOverlay
+    let glucoseUnit: GlucoseUnit
+
+    @Environment(\.salusTheme) private var theme
+
+    var body: some View {
+        // The mapping from series to a chart is tested on its own (`OverlayChartModelTests`);
+        // nil here means fewer than two series remain, which the analysis makes unreachable
+        // today but which is answered rather than assumed away.
+        if let model = overlayChartModelOf(
+            overlay: overlay,
+            xLabel: { String($0) }
+        ) {
+            // The chart is silent to VoiceOver, so the legend is spoken as one summary — each
+            // line named with the metric and its real range, exactly as it is drawn.
+            let spokenLegend = model.legend.map { legendLine(for: $0) }
+
+            SalusCard(contentPadding: SalusSpacing.lg) {
+                Text(verbatim: TrendsStrings.overlayTitle)
+                    .font(SalusTypography.titleMedium.font)
+                    .tracking(SalusTypography.titleMedium.tracking)
+                    .foregroundStyle(theme.colorScheme.onSurface)
+                Spacer().frame(height: SalusSpacing.xs)
+                Text(verbatim: overlay.bucket.subtitle)
+                    .font(SalusTypography.bodyMedium.font)
+                    .tracking(SalusTypography.bodyMedium.tracking)
+                    .foregroundStyle(theme.colorScheme.onSurfaceVariant)
+                Spacer().frame(height: SalusSpacing.md)
+                SalusMultiSeriesChart(
+                    model: model.chart,
+                    contentDescription: TrendsStrings.overlayChartDescription(
+                        spokenLegend.joined(separator: ", ")
+                    )
+                )
+                Spacer().frame(height: SalusSpacing.md)
+                ForEach(model.legend, id: \.type) { item in
+                    legendRow(for: item)
+                        .foregroundStyle(item.role.swatchColor(theme.colorScheme))
+                }
+            }
+            .frame(maxWidth: .infinity)
+        }
+    }
+
+    /// One legend row: the line's colour swatch, then the metric name and its real range with the
+    /// unit (`trends_overlay_legend_entry`).
+    private func legendRow(for item: OverlayLegendItem) -> some View {
+        HStack(spacing: SalusSpacing.sm) {
+            Circle()
+                .fill(item.role.swatchColor(theme.colorScheme))
+                .frame(width: Self.swatchSize, height: Self.swatchSize)
+            Text(verbatim: legendLine(for: item))
+                .font(SalusTypography.bodySmall.font)
+                .tracking(SalusTypography.bodySmall.tracking)
+                .foregroundStyle(theme.colorScheme.onSurface)
+            Spacer()
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    /// The line's text: `%1$s · %2$s–%3$s %4$s` — metric, then the real range it covered, with
+    /// its unit. The min and max are written in the reader's unit (`MetricDisplay`), the way
+    /// every other number on this screen is.
+    private func legendLine(for item: OverlayLegendItem) -> String {
+        let minText = MetricDisplay.format(
+            type: item.type,
+            stored: item.min,
+            glucoseUnit: glucoseUnit
+        )
+        let maxText = MetricDisplay.format(
+            type: item.type,
+            stored: item.max,
+            glucoseUnit: glucoseUnit
+        )
+        return TrendsStrings.overlayLegendEntry(
+            item.type.metricLabel,
+            minText,
+            maxText,
+            item.type.unitLabel(glucoseUnit)
+        )
+    }
+
+    /// A colour swatch has to stay small — bigger than the marker on the line and it dominates
+    /// the row instead of keying it.
+    private static let swatchSize: CGFloat = 10
+}
+
+extension OverlayBucket {
+    /// The card's subtitle: the sentence that has to say which average a point is (`TrendsScreen.kt`).
+    fileprivate var subtitle: String {
+        switch self {
+        case .daily: TrendsStrings.overlaySubtitle
+        case .weekly: TrendsStrings.overlaySubtitleWeekly
+        }
+    }
+}
+
+extension SeriesRole {
+    /// The colour the legend swatch is drawn in, the same mapping the chart uses so a swatch can
+    /// never drift away from the line it stands for (`SeriesRole.chartColor()`).
+    fileprivate func swatchColor(_ scheme: SalusColorScheme) -> Color {
+        switch self {
+        case .primary: scheme.primary
+        case .secondary: scheme.tertiary
+        case .tertiary: scheme.secondary
+        }
+    }
 }
 
 /// A bar's value, written the way the metric is normally written (`TrendsScreen.kt:717-726`).

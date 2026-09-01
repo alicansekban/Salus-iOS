@@ -91,17 +91,46 @@ struct TrendsStringsTests {
         TrendsStringSample(key: "trends_unit_blood_pressure", turkish: "mmHg", english: "mmHg"),
         TrendsStringSample(key: "trends_unit_glucose", turkish: "mg/dL", english: "mg/dL"),
         TrendsStringSample(key: "trends_unit_glucose_mmol", turkish: "mmol/L", english: "mmol/L"),
-        TrendsStringSample(key: "trends_unit_weight", turkish: "kg", english: "kg")
+        TrendsStringSample(key: "trends_unit_weight", turkish: "kg", english: "kg"),
+        TrendsStringSample(key: "trends_overlay_title", turkish: "Metrikler bir arada", english: "Metrics together"),
+        TrendsStringSample(
+            key: "trends_overlay_subtitle",
+            turkish: "Birimleri farklı olduğu için her metrik kendi en düşük ve en yüksek değerine göre "
+                + "ortak bir ölçeğe yerleştirildi. Çizgilerin biçimi karşılaştırılabilir; yükseklikleri "
+                + "karşılaştırılamaz.",
+            english: "The units differ, so each metric is placed on a shared scale between its own lowest "
+                + "and highest value. The shapes of the lines can be compared; their heights cannot."
+        ),
+        TrendsStringSample(
+            key: "trends_overlay_subtitle_weekly",
+            turkish: "Uzun dönemlerde her nokta bir haftanın ortalamasıdır. Birimleri farklı olduğu için "
+                + "her metrik kendi en düşük ve en yüksek haftalık ortalamasına göre ortak bir ölçeğe "
+                + "yerleştirildi. Çizgilerin biçimi karşılaştırılabilir; yükseklikleri karşılaştırılamaz.",
+            english: "Over long periods each point is one week's average. The units differ, so each metric "
+                + "is placed on a shared scale between its own lowest and highest weekly average. The "
+                + "shapes of the lines can be compared; their heights cannot."
+        ),
+        TrendsStringSample(
+            key: "trends_overlay_legend_entry",
+            turkish: "%1$@ · %2$@–%3$@ %4$@",
+            english: "%1$@ · %2$@–%3$@ %4$@"
+        ),
+        TrendsStringSample(
+            key: "trends_overlay_chart_description",
+            turkish: "Bir arada gösterilen metrikler: %1$@",
+            english: "Metrics shown together: %1$@"
+        )
     ]
 
     static let expectedKeys = Set(samples.map(\.key))
 
-    @Test("the catalog holds exactly the 30 keys :feature:trends owns")
-    func catalogHoldsExactlyTheThirtyKeys() throws {
+    @Test("the catalog holds exactly the 35 keys :feature:trends owns")
+    func catalogHoldsExactlyTheThirtyFiveKeys() throws {
         // Pinned as a number as well as a set: a row deleted from the table together with its key
-        // from the catalog would otherwise agree with itself and pass. 30 = 14 Task-1 keys
-        // (title + back + 4 ranges + 3 locked + 2 empty + 3 error) + 16 Task-2 time-of-day keys.
-        #expect(Self.samples.count == 30)
+        // from the catalog would otherwise agree with itself and pass. 35 = 14 Task-1 keys
+        // (title + back + 4 ranges + 3 locked + 2 empty + 3 error) + 16 Task-2 time-of-day keys
+        // + 5 Task-3 overlay keys (title, subtitle, subtitle_weekly, legend_entry, chart_description).
+        #expect(Self.samples.count == 35)
 
         try StringCatalogParity.assertKeys(of: Self.loadCatalog(), are: Self.expectedKeys)
     }

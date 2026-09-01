@@ -64,10 +64,11 @@ public struct TrendsRepositoryImpl: TrendsRepository {
                 return .empty
             }
             // The analyses run in later tasks and fill `TrendsReady` field by field. Task 2 fills
-            // `timeOfDay`; the remaining cards arrive with their own tasks.
+            // `timeOfDay`; Task 3 fills `overlay`; the remaining cards arrive with their own tasks.
             return .ready(
                 TrendsReady(
-                    timeOfDay: timeOfDayBreakdownOrNull(records.measurements)
+                    timeOfDay: timeOfDayBreakdownOrNull(records.measurements),
+                    overlay: metricOverlayOrNull(records.measurements, days: days)
                 )
             )
         } catch is CancellationError {
