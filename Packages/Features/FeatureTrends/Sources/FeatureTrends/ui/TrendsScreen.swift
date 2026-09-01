@@ -108,7 +108,7 @@ struct TrendsBody: View {
     var body: some View {
         switch state.data {
         case .locked:
-            LockedBody(onUpgrade: { onEvent(.upgradeClicked) })
+            LockedBody(state: state, onUpgrade: { onEvent(.upgradeClicked) })
 
         case .empty:
             SalusEmptyState(
@@ -417,37 +417,64 @@ extension VitalType {
     }
 }
 
-/// The free user's whole screen: the paywall callout card (`TrendsScreen.kt:842-871`).
+/// The free user's whole screen: the real card stack drawn over invented records, put out of
+/// reach, with the paywall sitting on top of it (`TrendsScreen.kt:752-808`).
 ///
-/// Task 6 replaces this plain callout with the real sample-data stack behind a blur and scrim;
-/// until then the locked body is the one card this screen has to sell.
+/// It shows the *shape* of what a subscription buys without handing over one readable number.
+/// The records behind it are made up (`sampleTrendsReady`), so there is nothing of the user's to
+/// leak in the first place — the lock is about not making a free user read numbers that are not
+/// theirs and calling them a preview.
+///
+/// Three separate things put the backdrop out of reach, because the obvious one does not work
+/// everywhere: `.blur(radius: 16)` is the pretty one — unlike Android's `Modifier.blur`, a silent
+/// no-op below API 31, SwiftUI's blur draws on every iOS 17 platform, so it is a finish here
+/// rather than the guard (`D-M11-b`). The scrim is the guard, kept at `Color.background.opacity(0.6)`
+/// for visual depth and Android parity. And touches are swallowed with `.allowsHitTesting(false)`
+/// on the sample stack, so it cannot be scrolled or panned; the upgrade button lives in its own
+/// layer with `.allowsHitTesting(true)` and is the only thing on this body anyone can reach
+/// (`D-M11-a`).
 struct LockedBody: View {
+    let state: TrendsUiState
     let onUpgrade: () -> Void
 
     @Environment(\.salusTheme) private var theme
 
     var body: some View {
-        VStack {
-            Spacer()
-            SalusCard(contentPadding: SalusSpacing.lg) {
-                Text(verbatim: TrendsStrings.lockedTitle)
-                    .font(SalusTypography.titleMedium.font)
-                    .tracking(SalusTypography.titleMedium.tracking)
-                    .foregroundStyle(theme.colorScheme.onSurface)
-                Spacer().frame(height: SalusSpacing.sm)
-                Text(verbatim: TrendsStrings.lockedMessage)
-                    .font(SalusTypography.bodyMedium.font)
-                    .tracking(SalusTypography.bodyMedium.tracking)
-                    .foregroundStyle(theme.colorScheme.onSurfaceVariant)
-                Spacer().frame(height: SalusSpacing.lg)
-                SalusPillButton(text: TrendsStrings.lockedAction, action: onUpgrade)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.horizontal, SalusSpacing.lg)
-            Spacer()
+        ZStack {
+            // The entitled body's own `ReadyBody`, over `sampleTrendsReady`'s invented records.
+            // Deliberately the real composables and not a picture of them: a mock-up would start
+            // drifting away from the screen it is advertising the first time one of the cards
+            // changed. Sharing the stack itself is what makes that guarantee hold for a card
+            // *added* rather than changed.
+            ReadyBody(state: state, ready: sampleTrendsReady())
+                // Applied before the stack's own scroll and padding, so the chain reaching the
+                // column is the one it always was: the backdrop is unreachable by touch and
+                // blurred as a whole rather than card by card.
+                .allowsHitTesting(false)
+                .blur(radius: LockedBody.blurRadius)
+
+            // Drawn as its own layer rather than as the stack's background: a background would
+            // sit *behind* the cards, and this has to sit in front of them.
+            theme.colorScheme.background
+                .opacity(LockedBody.scrimOpacity)
+
+            LockedCallout(onUpgrade: onUpgrade)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
+
+    /// `LOCKED_BLUR_RADIUS` (`TrendsScreen.kt:1027`) — how far the sample stack is blurred.
+    ///
+    /// A radius of its own rather than a `SalusSpacing` value: this is a blur radius, not a
+    /// distance between two things, and borrowing a layout token for it would make both harder to
+    /// change. It is also the one part of the lock that Android cannot draw below API 31 — here
+    /// it draws everywhere (`D-M11-b`).
+    private static let blurRadius: CGFloat = 16
+
+    /// The scrim over the sample stack (`TrendsScreen.kt` — `BLURRED_SCRIM_ALPHA`).
+    ///
+    /// Kept for visual depth and Android parity even though the blur already destroys the glyphs.
+    private static let scrimOpacity = 0.6
 }
 
 /// The range-selector segmented control (`TrendsScreen.kt:729-750`, Android's
