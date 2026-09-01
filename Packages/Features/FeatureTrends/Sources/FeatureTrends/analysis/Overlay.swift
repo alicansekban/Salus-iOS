@@ -139,22 +139,6 @@ public func metricOverlayOrNull(
 /// Two lines are the fewest that can be compared with each other (`Overlay.kt:120`).
 let minOverlaySeries = 2
 
-/// The Monday an epoch day's week starts on (`Overlay.kt:141`).
-///
-/// Weeks start on Monday because that is what both locales this app ships in treat as the first
-/// day. Ported from `DoseWeeks.kt:55`; Task 4 reuses it for the dose card, where the two
-/// analyses' weeks have to line up to read against each other.
-func weekStartOf(_ epochDay: Int) -> Int {
-    epochDay - mod(epochDay + thursdayOffset, daysPerWeek)
-}
-
-/// `Int.mod` (`DoseWeeks.kt`) — a remainder that is always non-negative, unlike Swift's `%` which
-/// takes the dividend's sign and would answer a negative start for a negative epoch day.
-private func mod(_ dividend: Int, _ divisor: Int) -> Int {
-    let remainder = dividend % divisor
-    return remainder >= 0 ? remainder : remainder + divisor
-}
-
 private func overlaySeriesOrNull(
     _ measurements: [TrendMeasurement],
     type: VitalType,
@@ -218,9 +202,6 @@ private func overlaySeriesOrNull(
 
 /// Where a series with no spread of its own is drawn: down the middle (`Overlay.kt:168`).
 private let flatSeriesY: Float = 0.5
-
-private let thursdayOffset = 3
-private let daysPerWeek = 7
 
 extension [Double] {
     /// The arithmetic mean of a non-empty list; the empty case is guarded by callers before use.

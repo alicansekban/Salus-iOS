@@ -119,18 +119,56 @@ struct TrendsStringsTests {
             key: "trends_overlay_chart_description",
             turkish: "Bir arada gösterilen metrikler: %1$@",
             english: "Metrics shown together: %1$@"
+        ),
+        TrendsStringSample(
+            key: "trends_dose_weeks_title",
+            turkish: "Doz kaydı ve ölçümler",
+            english: "Doses and measurements"
+        ),
+        TrendsStringSample(
+            key: "trends_dose_weeks_subtitle",
+            turkish: "Her çubuk, o hafta kaydedilen dozların ne kadarının alındı olarak işaretlendiğini "
+                + "gösterir. Hiç kaydedilmemiş dozlar bu oranın dışındadır. Çubukların altında aynı "
+                + "haftaların ölçüm ortalamaları yer alır.",
+            english: "Each bar shows what share of that week's recorded doses were marked as taken. "
+                + "Doses that were never recorded are outside this ratio. Under the bars are the "
+                + "same weeks' measurement averages."
+        ),
+        TrendsStringSample(
+            key: "trends_dose_weeks_taken_ratio",
+            turkish: "Kaydedilen dozların alınma oranı: %%%1$lld",
+            english: "%1$lld%% of recorded doses were taken"
+        ),
+        TrendsStringSample(
+            key: "trends_dose_weeks_week_ratio",
+            turkish: "%1$@ · %2$@",
+            english: "%1$@ · %2$@"
+        ),
+        TrendsStringSample(
+            key: "trends_dose_weeks_average",
+            turkish: "%1$@ %2$@ %3$@",
+            english: "%1$@ %2$@ %3$@"
+        ),
+        TrendsStringSample(
+            key: "trends_dose_weeks_chart_description",
+            turkish: "Grafik: kaydedilen dozların alındı olarak işaretlenen oranı, %1$@ ile %2$@ "
+                + "arası haftalar. Haftalar aşağıda tek tek listelenmiştir.",
+            english: "Chart: share of recorded doses marked as taken, by week, from %1$@ to %2$@. "
+                + "Each week is listed below."
         )
     ]
 
     static let expectedKeys = Set(samples.map(\.key))
 
-    @Test("the catalog holds exactly the 35 keys :feature:trends owns")
-    func catalogHoldsExactlyTheThirtyFiveKeys() throws {
+    @Test("the catalog holds exactly the 41 keys :feature:trends owns")
+    func catalogHoldsExactlyTheFortyOneKeys() throws {
         // Pinned as a number as well as a set: a row deleted from the table together with its key
-        // from the catalog would otherwise agree with itself and pass. 35 = 14 Task-1 keys
+        // from the catalog would otherwise agree with itself and pass. 41 = 14 Task-1 keys
         // (title + back + 4 ranges + 3 locked + 2 empty + 3 error) + 16 Task-2 time-of-day keys
-        // + 5 Task-3 overlay keys (title, subtitle, subtitle_weekly, legend_entry, chart_description).
-        #expect(Self.samples.count == 35)
+        // + 5 Task-3 overlay keys (title, subtitle, subtitle_weekly, legend_entry, chart_description)
+        // + 6 Task-4 dose-weeks keys (title, subtitle, taken_ratio, week_ratio, average,
+        // chart_description).
+        #expect(Self.samples.count == 41)
 
         try StringCatalogParity.assertKeys(of: Self.loadCatalog(), are: Self.expectedKeys)
     }

@@ -98,6 +98,34 @@ public enum TrendsStrings {
         String(format: localized(.overlayChartDescription), metrics)
     }
 
+    // MARK: - Dose weeks (Task 4)
+
+    public static var doseWeeksTitle: String { localized(.doseWeeksTitle) }
+    public static var doseWeeksSubtitle: String { localized(.doseWeeksSubtitle) }
+
+    /// `%%%1$d` — the share sentence: `%` then the whole percent. Names what the number actually
+    /// measures: the denominator is the doses that were written down, so this may never be
+    /// shortened to a bare percentage.
+    public static func doseWeeksTakenRatio(_ percent: Int) -> String {
+        String(format: localized(.doseWeeksTakenRatio), percent)
+    }
+
+    /// `%1$s · %2$s` — one week's line: the week it started, then the share sentence.
+    public static func doseWeeksWeekRatio(_ week: String, _ ratio: String) -> String {
+        String(format: localized(.doseWeeksWeekRatio), week, ratio)
+    }
+
+    /// `%1$s %2$s %3$s` — one metric's weekly mean: name, value, unit.
+    public static func doseWeeksAverage(_ metric: String, _ value: String, _ unit: String) -> String {
+        String(format: localized(.doseWeeksAverage), metric, value, unit)
+    }
+
+    /// `%1$s ile %2$s arası haftalar` — the chart's spoken summary: what it plots and the span it
+    /// covers. The weeks themselves are announced by the rows under the chart, not repeated here.
+    public static func doseWeeksChartDescription(_ first: String, _ last: String) -> String {
+        String(format: localized(.doseWeeksChartDescription), first, last)
+    }
+
     // MARK: - Keys
 
     /// The catalog keys, named once. Internal so the parity test can prove every accessor asks for
@@ -149,6 +177,13 @@ public enum TrendsStrings {
         case overlaySubtitleWeekly = "trends_overlay_subtitle_weekly"
         case overlayLegendEntry = "trends_overlay_legend_entry"
         case overlayChartDescription = "trends_overlay_chart_description"
+
+        case doseWeeksTitle = "trends_dose_weeks_title"
+        case doseWeeksSubtitle = "trends_dose_weeks_subtitle"
+        case doseWeeksTakenRatio = "trends_dose_weeks_taken_ratio"
+        case doseWeeksWeekRatio = "trends_dose_weeks_week_ratio"
+        case doseWeeksAverage = "trends_dose_weeks_average"
+        case doseWeeksChartDescription = "trends_dose_weeks_chart_description"
     }
 
     private static func localized(_ key: Key) -> String {

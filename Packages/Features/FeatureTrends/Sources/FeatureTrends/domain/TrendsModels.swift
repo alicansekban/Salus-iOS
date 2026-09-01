@@ -133,8 +133,17 @@ public struct TrendsReady: Equatable, Sendable {
     /// `nil` is the only way the card is left out.
     public var overlay: MetricOverlay?
 
-    public init(timeOfDay: TimeOfDayBreakdown? = nil, overlay: MetricOverlay? = nil) {
+    /// The weekly dose-ratio analysis, when the window holds at least one logged dose (Task 4).
+    /// `nil` is the only way the card is left out.
+    public var doseWeeks: [DoseWeek]?
+
+    public init(
+        timeOfDay: TimeOfDayBreakdown? = nil,
+        overlay: MetricOverlay? = nil,
+        doseWeeks: [DoseWeek]? = nil
+    ) {
         self.timeOfDay = timeOfDay
         self.overlay = overlay
+        self.doseWeeks = doseWeeks
     }
 }

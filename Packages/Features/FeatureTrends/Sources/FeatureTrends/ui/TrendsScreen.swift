@@ -152,7 +152,9 @@ struct ReadyBody: View {
                 if let overlay = ready.overlay {
                     MetricOverlayCard(overlay: overlay, glucoseUnit: state.glucoseUnit)
                 }
-                // Task 4 adds:   ready.doseWeeks.map { DoseWeeksCard($0, unit: …) }
+                if let doseWeeks = ready.doseWeeks {
+                    DoseWeeksCard(weeks: doseWeeks, glucoseUnit: state.glucoseUnit)
+                }
                 // Task 5 adds:   ready.summaries.map { MetricSummaryCard($0, unit: …) }
             }
             .padding(.horizontal, SalusSpacing.lg)
@@ -386,7 +388,7 @@ extension DayPart {
 
 extension VitalType {
     /// `VitalType.metricLabelRes()` (`TrendsScreen.kt:896-902`).
-    fileprivate var metricLabel: String {
+    var metricLabel: String {
         switch self {
         case .bloodPressure: TrendsStrings.metricBloodPressure
         case .bloodGlucose: TrendsStrings.metricGlucose
@@ -398,7 +400,7 @@ extension VitalType {
 
     /// `VitalType.unitLabelRes(glucoseUnit)` (`TrendsScreen.kt:905-912`) — glucose is the one
     /// metric whose unit the user picks; the other two have exactly one.
-    fileprivate func unitLabel(_ glucoseUnit: GlucoseUnit) -> String {
+    func unitLabel(_ glucoseUnit: GlucoseUnit) -> String {
         switch self {
         case .bloodPressure: TrendsStrings.unitBloodPressure
 
