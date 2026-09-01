@@ -155,7 +155,9 @@ struct ReadyBody: View {
                 if let doseWeeks = ready.doseWeeks {
                     DoseWeeksCard(weeks: doseWeeks, glucoseUnit: state.glucoseUnit)
                 }
-                // Task 5 adds:   ready.summaries.map { MetricSummaryCard($0, unit: …) }
+                if let summaries = ready.summaries {
+                    MetricSummaryCard(summaries: summaries, glucoseUnit: state.glucoseUnit)
+                }
             }
             .padding(.horizontal, SalusSpacing.lg)
             .padding(.vertical, SalusSpacing.md)

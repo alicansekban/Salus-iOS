@@ -664,6 +664,210 @@
         }
       }
     },
+    "trends_summary_change_down" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Average is %1$@%% down on the previous period"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ortalama, önceki döneme göre %%%1$@ azaldı"
+          }
+        }
+      }
+    },
+    "trends_summary_change_flat" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Average is nearly the same as in the previous period"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ortalama, önceki döneme göre neredeyse aynı"
+          }
+        }
+      }
+    },
+    "trends_summary_change_no_previous" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This metric has no records in the previous period"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Önceki dönemde bu metriğin kaydı yok"
+          }
+        }
+      }
+    },
+    "trends_summary_change_not_computable" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Change from the previous period cannot be computed"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Önceki döneme göre değişim hesaplanamıyor"
+          }
+        }
+      }
+    },
+    "trends_summary_change_up" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Average is %1$@%% up on the previous period"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ortalama, önceki döneme göre %%%1$@ arttı"
+          }
+        }
+      }
+    },
+    "trends_summary_direction_falling" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moving down"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Düşme yönünde"
+          }
+        }
+      }
+    },
+    "trends_summary_direction_rising" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moving up"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yükselme yönünde"
+          }
+        }
+      }
+    },
+    "trends_summary_direction_stable" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No clear direction"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Belirgin bir yön yok"
+          }
+        }
+      }
+    },
+    "trends_summary_min_max" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lowest–highest: %1$@–%2$@ %3$@"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En düşük–en yüksek: %1$@–%2$@ %3$@"
+          }
+        }
+      }
+    },
+    "trends_summary_stats" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Readings: %1$lld · Average: %2$@ %3$@"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ölçüm: %1$lld · Ortalama: %2$@ %3$@"
+          }
+        }
+      }
+    },
+    "trends_summary_subtitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "For each metric, this period's number of readings, its average, and its lowest and highest value. The change compares that average against the previous period of the same length. For blood pressure, the systolic number is used."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Her metrik için bu dönemdeki ölçüm sayısı, ortalaması ve en düşük–en yüksek değeri. Değişim, bu ortalamayı aynı uzunluktaki bir önceki dönemin ortalamasıyla karşılaştırır. Tansiyonda büyük tansiyon (sistolik) değeri kullanılır."
+          }
+        }
+      }
+    },
+    "trends_summary_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Metric summary"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "İstatistik özeti"
+          }
+        }
+      }
+    },
     "trends_value_blood_pressure" : {
       "extractionState" : "manual",
       "localizations" : {

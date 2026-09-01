@@ -55,17 +55,23 @@ public struct TrendsRepositoryImpl: TrendsRepository {
         let timeZone = clock.timeZone()
         let todayEpochDay = clock.todayEpochDay()
         let days = (todayEpochDay - range.days + 1) ... todayEpochDay
+        // The window immediately before the one asked for, of exactly the same length. Equal
+        // length is what makes the comparison a comparison: a month measured against a quarter
+        // would differ by how long each was, not by how the metric moved.
+        let previousDays = (days.lowerBound - range.days) ... (days.lowerBound - 1)
 
         do {
             let records = try await reader.records(days: days, timeZone: timeZone)
             if records.isEmpty {
-                // Nothing to show and nobody to show it to: an empty window is one read, and the
-                // screen says "nothing yet".
+                // Nothing to compare, and nobody to show a comparison to. Returning here keeps
+                // an empty window at the one read it has always cost, instead of scanning a
+                // second year of rows to summarise a screen that will say "nothing yet".
                 return .empty
             }
-            // The analyses run in later tasks and fill `TrendsReady` field by field. Task 2 fills
-            // `timeOfDay`; Task 3 fills `overlay`; Task 4 fills `doseWeeks`; the remaining card
-            // arrives with its own task.
+            let previousRecords = try await reader.records(days: previousDays, timeZone: timeZone)
+            // The analyses run here rather than in the ViewModel or the screen: they are pure
+            // functions over a year of records, and the screen is handed a finished answer it
+            // only has to draw.
             return .ready(
                 TrendsReady(
                     timeOfDay: timeOfDayBreakdownOrNull(records.measurements),
@@ -74,6 +80,12 @@ public struct TrendsRepositoryImpl: TrendsRepository {
                         doses: records.doses,
                         measurements: records.measurements,
                         days: days
+                    ),
+                    // No window argument here: each list is already exactly one window's records,
+                    // because each came from its own read of one.
+                    summaries: metricSummariesOrNull(
+                        current: records.measurements,
+                        previous: previousRecords.measurements
                     )
                 )
             )

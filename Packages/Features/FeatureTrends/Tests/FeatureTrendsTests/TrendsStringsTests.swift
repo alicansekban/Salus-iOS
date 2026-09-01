@@ -155,20 +155,82 @@ struct TrendsStringsTests {
                 + "arası haftalar. Haftalar aşağıda tek tek listelenmiştir.",
             english: "Chart: share of recorded doses marked as taken, by week, from %1$@ to %2$@. "
                 + "Each week is listed below."
+        ),
+        TrendsStringSample(key: "trends_summary_title", turkish: "İstatistik özeti", english: "Metric summary"),
+        TrendsStringSample(
+            key: "trends_summary_subtitle",
+            turkish: "Her metrik için bu dönemdeki ölçüm sayısı, ortalaması ve en düşük–en yüksek değeri. "
+                + "Değişim, bu ortalamayı aynı uzunluktaki bir önceki dönemin ortalamasıyla karşılaştırır. "
+                + "Tansiyonda büyük tansiyon (sistolik) değeri kullanılır.",
+            english: "For each metric, this period's number of readings, its average, and its lowest "
+                + "and highest value. The change compares that average against the previous period of "
+                + "the same length. For blood pressure, the systolic number is used."
+        ),
+        TrendsStringSample(
+            key: "trends_summary_stats",
+            turkish: "Ölçüm: %1$lld · Ortalama: %2$@ %3$@",
+            english: "Readings: %1$lld · Average: %2$@ %3$@"
+        ),
+        TrendsStringSample(
+            key: "trends_summary_min_max",
+            turkish: "En düşük–en yüksek: %1$@–%2$@ %3$@",
+            english: "Lowest–highest: %1$@–%2$@ %3$@"
+        ),
+        TrendsStringSample(
+            key: "trends_summary_direction_rising",
+            turkish: "Yükselme yönünde",
+            english: "Moving up"
+        ),
+        TrendsStringSample(
+            key: "trends_summary_direction_falling",
+            turkish: "Düşme yönünde",
+            english: "Moving down"
+        ),
+        TrendsStringSample(
+            key: "trends_summary_direction_stable",
+            turkish: "Belirgin bir yön yok",
+            english: "No clear direction"
+        ),
+        TrendsStringSample(
+            key: "trends_summary_change_up",
+            turkish: "Ortalama, önceki döneme göre %%%1$@ arttı",
+            english: "Average is %1$@%% up on the previous period"
+        ),
+        TrendsStringSample(
+            key: "trends_summary_change_down",
+            turkish: "Ortalama, önceki döneme göre %%%1$@ azaldı",
+            english: "Average is %1$@%% down on the previous period"
+        ),
+        TrendsStringSample(
+            key: "trends_summary_change_flat",
+            turkish: "Ortalama, önceki döneme göre neredeyse aynı",
+            english: "Average is nearly the same as in the previous period"
+        ),
+        TrendsStringSample(
+            key: "trends_summary_change_no_previous",
+            turkish: "Önceki dönemde bu metriğin kaydı yok",
+            english: "This metric has no records in the previous period"
+        ),
+        TrendsStringSample(
+            key: "trends_summary_change_not_computable",
+            turkish: "Önceki döneme göre değişim hesaplanamıyor",
+            english: "Change from the previous period cannot be computed"
         )
     ]
 
     static let expectedKeys = Set(samples.map(\.key))
 
-    @Test("the catalog holds exactly the 41 keys :feature:trends owns")
-    func catalogHoldsExactlyTheFortyOneKeys() throws {
+    @Test("the catalog holds exactly the 53 keys :feature:trends owns")
+    func catalogHoldsExactlyTheFiftyThreeKeys() throws {
         // Pinned as a number as well as a set: a row deleted from the table together with its key
-        // from the catalog would otherwise agree with itself and pass. 41 = 14 Task-1 keys
+        // from the catalog would otherwise agree with itself and pass. 53 = 14 Task-1 keys
         // (title + back + 4 ranges + 3 locked + 2 empty + 3 error) + 16 Task-2 time-of-day keys
         // + 5 Task-3 overlay keys (title, subtitle, subtitle_weekly, legend_entry, chart_description)
         // + 6 Task-4 dose-weeks keys (title, subtitle, taken_ratio, week_ratio, average,
-        // chart_description).
-        #expect(Self.samples.count == 41)
+        // chart_description) + 12 Task-5 summary keys (title, subtitle, stats, min_max,
+        // direction_rising, direction_falling, direction_stable, change_up, change_down,
+        // change_flat, change_no_previous, change_not_computable).
+        #expect(Self.samples.count == 53)
 
         try StringCatalogParity.assertKeys(of: Self.loadCatalog(), are: Self.expectedKeys)
     }

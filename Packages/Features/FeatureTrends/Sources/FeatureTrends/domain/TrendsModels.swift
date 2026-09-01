@@ -137,13 +137,19 @@ public struct TrendsReady: Equatable, Sendable {
     /// `nil` is the only way the card is left out.
     public var doseWeeks: [DoseWeek]?
 
+    /// The metric summary, when the window holds at least one measurement (Task 5). `nil` is the
+    /// only way the card is left out.
+    public var summaries: MetricSummaries?
+
     public init(
         timeOfDay: TimeOfDayBreakdown? = nil,
         overlay: MetricOverlay? = nil,
-        doseWeeks: [DoseWeek]? = nil
+        doseWeeks: [DoseWeek]? = nil,
+        summaries: MetricSummaries? = nil
     ) {
         self.timeOfDay = timeOfDay
         self.overlay = overlay
         self.doseWeeks = doseWeeks
+        self.summaries = summaries
     }
 }

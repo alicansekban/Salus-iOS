@@ -126,6 +126,42 @@ public enum TrendsStrings {
         String(format: localized(.doseWeeksChartDescription), first, last)
     }
 
+    // MARK: - Metric summary (Task 5)
+
+    public static var summaryTitle: String { localized(.summaryTitle) }
+    public static var summarySubtitle: String { localized(.summarySubtitle) }
+
+    /// `%1$d · Ortalama: %2$s %3$s` — one metric's counts: how many readings the period holds,
+    /// then their mean and its unit.
+    public static func summaryStats(_ count: Int, _ average: String, _ unit: String) -> String {
+        String(format: localized(.summaryStats), count, average, unit)
+    }
+
+    /// `%1$s–%2$s %3$s` — the lowest and the highest reading of the period, in the unit they are
+    /// written in.
+    public static func summaryMinMax(_ min: String, _ max: String, _ unit: String) -> String {
+        String(format: localized(.summaryMinMax), min, max, unit)
+    }
+
+    public static var summaryDirectionRising: String { localized(.summaryDirectionRising) }
+    public static var summaryDirectionFalling: String { localized(.summaryDirectionFalling) }
+    public static var summaryDirectionStable: String { localized(.summaryDirectionStable) }
+
+    /// `%%%1$s arttı` — the change sentences. The sign lives in the verb rather than in front of
+    /// the number, and the percentage is written with the sign before it the way Turkish writes
+    /// one.
+    public static func summaryChangeUp(_ percent: String) -> String {
+        String(format: localized(.summaryChangeUp), percent)
+    }
+
+    public static func summaryChangeDown(_ percent: String) -> String {
+        String(format: localized(.summaryChangeDown), percent)
+    }
+
+    public static var summaryChangeFlat: String { localized(.summaryChangeFlat) }
+    public static var summaryChangeNoPrevious: String { localized(.summaryChangeNoPrevious) }
+    public static var summaryChangeNotComputable: String { localized(.summaryChangeNotComputable) }
+
     // MARK: - Keys
 
     /// The catalog keys, named once. Internal so the parity test can prove every accessor asks for
@@ -184,6 +220,19 @@ public enum TrendsStrings {
         case doseWeeksWeekRatio = "trends_dose_weeks_week_ratio"
         case doseWeeksAverage = "trends_dose_weeks_average"
         case doseWeeksChartDescription = "trends_dose_weeks_chart_description"
+
+        case summaryTitle = "trends_summary_title"
+        case summarySubtitle = "trends_summary_subtitle"
+        case summaryStats = "trends_summary_stats"
+        case summaryMinMax = "trends_summary_min_max"
+        case summaryDirectionRising = "trends_summary_direction_rising"
+        case summaryDirectionFalling = "trends_summary_direction_falling"
+        case summaryDirectionStable = "trends_summary_direction_stable"
+        case summaryChangeUp = "trends_summary_change_up"
+        case summaryChangeDown = "trends_summary_change_down"
+        case summaryChangeFlat = "trends_summary_change_flat"
+        case summaryChangeNoPrevious = "trends_summary_change_no_previous"
+        case summaryChangeNotComputable = "trends_summary_change_not_computable"
     }
 
     private static func localized(_ key: Key) -> String {
