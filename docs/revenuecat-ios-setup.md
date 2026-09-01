@@ -1,69 +1,71 @@
-# iOS RevenueCat + App Store Connect Setup Guide
+# iOS RevenueCat + App Store Connect Kurulum Rehberi
 
-The iOS app's `SalusPremium` package, `SalusApp.configureRevenueCat()`, `Secrets.xcconfig` seam, and `RevenueCatPurchasesGateway` are all shipped and tested (M9). What remains is the **external dashboard configuration** — App Store Connect products and the RevenueCat iOS app + offering — plus the one local file that carries the key. This guide is the sequence.
+iOS uygulamasının `SalusPremium` paketi, `SalusApp.configureRevenueCat()`, `Secrets.xcconfig` bağı ve `RevenueCatPurchasesGateway` adapter'ı M9'dan beri shipped ve testlerle kaplı. Geriye kalan **dış dashboard yapılandırması** — App Store Connect ürünleri ve RevenueCat iOS app + offering — plus anahtarı taşıyan tek local dosya. Bu rehber sırayı anlatır.
 
-## Prerequisites
+## Önkoşullar
 
-- An Apple Developer account with the `com.alicansekban.salus` App ID (already created for M0).
-- A RevenueCat account (the same one the Android app is on).
-- Android reference: `salus-android/local.properties` holds `salus.revenuecat.apiKey=test_gjePwySSFbNnmNJwVlinZzFFBTa`. The iOS app needs its own key on the same RevenueCat project.
+- Apple Developer hesabı + `com.alicansekban.salus` App ID (M0'dan beri mevcut).
+- RevenueCat hesabı (Android uygulamasının da üzerinde olduğu aynı proje).
+- Android referans: `salus-android/local.properties` → `salus.revenuecat.apiKey=test_gjePwySSFbNnmNJwVlinZzFFBTa`. iOS'un kendi anahtarı aynı RevenueCat projesinde ayrı bir app olarak tanımlanmalı.
 
-## Step 1 — App Store Connect: subscription group + products
+## Adım 1 — App Store Connect: abonelik grubu + ürünler
 
-1. Go to **App Store Connect → My Apps → Salus → Monetization → Subscriptions**.
-2. Create a **Subscription Group** (name: "Premium").
-3. Add three subscription products:
+1. **App Store Connect → My Apps → Salus → Monetization → Subscriptions** sayfasına git.
+2. **Subscription Group** oluştur (ad: "Premium").
+3. Üç abonelik ürünü ekle:
 
-| Reference Name | Product ID | Subscription Duration | Price (TRY) |
+| Referans Ad | Product ID | Süre | Fiyat |
 |---|---|---|---|
-| Premium Monthly | `com.alicansekban.salus.premium.monthly` | 1 Month | ₺49,99 |
-| Premium 6-Month | `com.alicansekban.salus.premium.sixmonth` | 6 Months | ₺249,99 |
-| Premium Annual | `com.alicansekban.salus.premium.annual` | 1 Year | ₺499,99 |
+| Premium Aylık | `com.alicansekban.salus.premium.monthly` | 1 Ay | ₺129,99 |
+| Premium 6 Aylık | `com.alicansekban.salus.premium.sixmonth` | 6 Ay | ₺519,99 |
+| Premium Yıllık | `com.alicansekban.salus.premium.annual` | 1 Yıl | ₺789,99 |
 
-4. For each product:
-   - Set the price tier (TRY).
-   - Add a **localized description** in Turkish and English.
-   - Upload a **subscription icon** (1024×1024).
-   - Set the **free trial** on the annual product (7 days) if the paywall's "7 gün ücretsiz dene" CTA should fire.
-5. Set the **App Store Localizations** for the subscription group (TR + EN).
-6. Save and wait for Apple to propagate (usually a few minutes in sandbox).
+> **Not — vergi (tax):** Google Play vitrinde gösterilen fiyatlar %20 KDV dahil olabilir; Apple App Store Connect'te fiyat tier olarak girilir ve Apple vergiyi kendisi yönetir. Fiyatları App Store Connect'te tier seçerek gir — Apple'ın tier tablosundaki en yakın değeri seç. Net tutar Apple tarafından hesaplanır ve storefront'a göre gösterilir.
 
-> **Product IDs must match exactly what RevenueCat expects.** The Android `Play Store` product IDs differ (`premium_monthly`, `premium_six_month`, `premium_annual`), but RevenueCat maps both platforms to the same `premium` entitlement — the iOS product IDs are what you enter in RevenueCat's iOS packages.
+4. Her ürün için:
+   - Fiyat tier'ı seç (TRY).
+   - Türkçe ve İngilizce **yerelleştirilmiş açıklama** ekle.
+   - 1024×1024 **abonelik ikonu** yükle.
+   - Yıllık ürüne **7 günlük ücretsiz deneme (free trial)** ekle — paywall'daki "7 gün ücretsiz dene" CTA'nın çalışması için.
+5. Subscription group için **App Store Localizations** (TR + EN) ayarla.
+6. Kaydet. Apple sandbox'ta birkaç dakika içinde propagasyon yapar.
 
-## Step 2 — RevenueCat: add the iOS app
+> **Product ID'ler RevenueCat'te tam olarak eşleşmeli.** Android Play Console'daki product ID'ler farklı (`premium_monthly`, `premium_six_month`, `premium_annual`), RevenueCat her iki platformu aynı `premium` entitlement'a mapler — iOS product ID'leri RevenueCat'in iOS paketlerine girilir.
 
-1. Go to **RevenueCat Dashboard → Project Settings → Apps**.
-2. Click **+ New App → iOS**.
-3. Fill in:
+## Adım 2 — RevenueCat: iOS app ekle
+
+1. **RevenueCat Dashboard → Project Settings → Apps** sayfasına git.
+2. **+ New App → iOS** tıkla.
+3. Doldur:
    - **App name:** Salus
    - **Bundle ID:** `com.alicansekban.salus`
-   - **App Store Connect API Key:** (optional, for better sandbox testing — RevenueCat can sync products automatically)
-4. Save. RevenueCat generates an **iOS App-Specific API Key** starting with `appl_`.
-5. Copy that key — it goes into `Secrets.local.xcconfig`.
+   - **App Store Connect API Key:** (opsiyonel — sandbox test için RevenueCat ürünleri otomatik senkronlar)
+4. Kaydet. RevenueCat `appl_` prefix'li **iOS App-Specific API Key** üretir.
+5. O anahtarı kopyala — `Secrets.local.xcconfig`'a gireceğiz.
 
-## Step 3 — RevenueCat: configure products and entitlement
+## Adım 3 — RevenueCat: ürünleri ve entitlement bağla
 
-1. Go to **Product Catalog → Products**.
-2. Add the three iOS product IDs from Step 1:
+1. **Product Catalog → Products** sayfasına git.
+2. Adım 1'deki üç iOS product ID'yi ekle:
    - `com.alicansekban.salus.premium.monthly` — App: iOS
    - `com.alicansekban.salus.premium.sixmonth` — App: iOS
    - `com.alicansekban.salus.premium.annual` — App: iOS
-3. Go to **Entitlements**. The `premium` entitlement already exists (Android uses it). Attach all three iOS products to it, alongside the existing Android products.
-4. Go to **Offerings → Current Offering**. Add the three iOS products as packages:
-   - `$rc_monthly` → iOS monthly product
-   - `$rc_six_month` → iOS six-month product
-   - `$rc_annual` → iOS annual product
-5. Save the offering. It should now contain both Android and iOS packages.
+3. **Entitlements** sayfasına git. `premium` entitlement zaten mevcut (Android kullanıyor). Üç iOS ürününü de mevcut Android ürünlerinin yanına ekle.
+4. **Offerings → Current Offering** sayfasına git. Üç iOS ürününü paket olarak ekle:
+   - `$rc_monthly` → iOS aylık ürün
+   - `$rc_six_month` → iOS 6 aylık ürün
+   - `$rc_annual` → iOS yıllık ürün
+5. Offering'i kaydet. Artık hem Android hem iOS paketlerini içermeli.
 
-## Step 4 — Local: set the API key
+## Adım 4 — Local: API anahtarını gir
 
 ```bash
-printf 'SALUS_REVENUECAT_API_KEY = appl_YOUR_KEY_HERE\n' > App/Secrets.local.xcconfig
+printf 'SALUS_REVENUECAT_API_KEY = appl_ANAHTARIN_BURAYA\n' > App/Secrets.local.xcconfig
 ```
 
-The file is git-ignored (`.gitignore: *.local.xcconfig`). The committed `App/Secrets.xcconfig` has `#include? "Secrets.local.xcconfig"` which tolerates its absence — so a fresh clone without the key still builds and runs (the app stays fully free, no crash).
+Dosya `.gitignore`'da (`*.local.xcconfig`). Commit'lenen `App/Secrets.xcconfig` `#include? "Secrets.local.xcconfig"` ile opsiyonel include yapıyor — anahtarsız fresh clone yine build olur ve uygulama tamamen free modda çalışır (çökmez).
 
-## Step 5 — Regenerate the Xcode project and build
+## Adım 5 — Xcode project'i yeniden üret ve build al
 
 ```bash
 cd salus-ios
@@ -71,30 +73,40 @@ xcodegen generate
 scripts/build-app.sh
 ```
 
-## Step 6 — Sandbox purchase test
+## Adım 6 — Sandbox satın alma testi
 
-1. Create a **Sandbox Tester** in App Store Connect → Users → Sandbox → Testers.
-2. On the simulator: Settings → Developer → Sandbox Account → sign in with the sandbox tester.
-3. Build and run the app (`scripts/build-app.sh` then run in Xcode).
-4. Walk the `scripts/m9-manual-qa.md` matrix:
-   - §1.3: paywall shows three plan cards (annual first, with free trial badge + "7 gün ücretsiz dene" CTA).
-   - §1.7: tapping the CTA opens the store sheet, purchase succeeds, paywall dismisses.
-   - §3.1: premium theme unlocks immediately after purchase.
-   - §3.2: cancel subscription in sandbox → grace period → theme lapses back to classic.
-   - §3.3: restore purchases finds the entitlement.
-   - §3.4: restore with no entitlement shows the restore error.
-   - §3.5: offline relaunch keeps the cached entitlement.
-5. Walk `scripts/m11-manual-qa.md` §1 (free user locked preview) and §2 (premium user four cards).
+1. **App Store Connect → Users → Sandbox → Testers**'da Sandbox Tester oluştur.
+2. Simulator'da: Settings → Developer → Sandbox Account → sandbox tester ile giriş yap.
+3. Uygulamayı build et ve çalıştır (`scripts/build-app.sh` sonra Xcode'da run).
+4. `scripts/m9-manual-qa.md` matrisini koş:
+   - §1.3: paywall üç plan kartı gösterir (yıllık first, free trial rozeti + "7 gün ücretsiz dene" CTA).
+   - §1.7: CTA'ya basınca store sheet açılır, satın alma başarılı, paywall kapanır.
+   - §3.1: premium tema satın alma sonrası anında açılır.
+   - §3.2: sandbox'ta aboneliği iptal et → grace period → tema classic'e döner.
+   - §3.3: satın almaları geri yükle entitlement'ı bulur.
+   - §3.4: entitlement olmadan restore → restore hata metni gösterir.
+   - §3.5: offline relaunch cached entitlement'ı korur.
+5. `scripts/m11-manual-qa.md` §1 (free user kilitli önizleme) ve §2 (premium user dört kart) koş.
 
-## Step 7 — Commit nothing
+## Adım 7 — Commit
 
-The key never enters git. The only committed change from this guide is this file and the QA matrices — the code is already on `main`.
+Anahtar asla git'e girmez. Bu rehber ve QA matrisleri dışında kodda değişiklik yok — kod zaten `main`'de.
 
-## Reference
+## Referans
 
-- Android `local.properties`: `salus.revenuecat.apiKey=test_gjePwySSFbNnmNJwVlinZzFFBTa` (Android key, not usable on iOS)
-- iOS seam: `App/Secrets.xcconfig` (committed, blank default) + `App/Secrets.local.xcconfig` (git-ignored, the real key)
+- Android `local.properties`: `salus.revenuecat.apiKey=test_gjePwySSFbNnmNJwVlinZzFFBTa` (Android anahtarı, iOS'de kullanılamaz)
+- iOS bağı: `App/Secrets.xcconfig` (commit'li, boş default) + `App/Secrets.local.xcconfig` (git-ignored, gerçek anahtar)
 - iOS gateway: `Packages/SalusPremium/Sources/SalusPremium/RevenueCatPurchasesGateway.swift`
-- iOS configuration: `App/SalusApp.swift:59` — `configureRevenueCat()`
-- Entitlement ID: `"premium"` (hardcoded in `RevenueCatPurchasesGateway.swift:117`)
-- QA matrix: `scripts/m9-manual-qa.md` (premium lifecycle) + `scripts/m11-manual-qa.md` (trends)
+- iOS yapılandırma: `App/SalusApp.swift:59` — `configureRevenueCat()`
+- Entitlement ID: `"premium"` (`RevenueCatPurchasesGateway.swift:117`'de hardcoded)
+- QA matrisi: `scripts/m9-manual-qa.md` (premium lifecycle) + `scripts/m11-manual-qa.md` (trends)
+
+## Abonelik fiyatları
+
+| Plan | Fiyat | Para Birimi | Not |
+|---|---|---|---|
+| Aylık | 129,99 | TRY | Google Play'de %20 KDV dahil olabilir |
+| 6 Aylık | 519,99 | TRY | Google Play'de %20 KDV dahil olabilir |
+| Yıllık | 789,99 | TRY | 7 gün ücretsiz deneme (free trial) · Google Play'de %20 KDV dahil olabilir |
+
+> Apple App Store Connect fiyat tier olarak girilir; Apple vergiyi kendisi yönetir. Storefront'a göre gösterim Apple tarafından yapılır. Google Play'deki tax-dahil fiyatlar Apple'de tier karşılığına maplenir — küsuratlı fark olabilir.
