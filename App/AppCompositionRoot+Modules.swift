@@ -6,6 +6,7 @@ import FeatureMedications
 import FeatureOnboarding
 import FeaturePaywall
 import FeatureSettings
+import FeatureTrends
 import FeatureVitals
 import SalusAI
 import SalusCommon
@@ -164,6 +165,36 @@ extension AppCompositionRoot {
         )
     }
 
+    /// `trendsModule` (`feature/trends/.../di/TrendsModule.kt`).
+    ///
+    /// A builder of its own because it is assembled out of the same singletons the other premium
+    /// features already share — the premium repository and paywall controller from
+    /// `makePremiumGraph`, and the one `SalusPreferencesDataSource` — over a `TrendsDataReader`
+    /// that reaches the two DAOs the analytics read. `TrendsRepositoryImpl` enforces the
+    /// premium gate, so a free user's `load` costs one status lookup and touches no database.
+    static func makeTrendsGraph(
+        infrastructure: Infrastructure,
+        premium: PremiumGraph
+    ) -> TrendsModule {
+        let database = infrastructure.database
+        let reader: any TrendsReader = TrendsDataReader(
+            vitalsDao: VitalsDao(database: database),
+            medicationDao: MedicationDao(database: database),
+            profileId: SalusDatabase.defaultProfileId
+        )
+        let repository: any TrendsRepository = TrendsRepositoryImpl(
+            reader: reader,
+            premiumRepository: premium.premiumRepository,
+            clock: infrastructure.clock
+        )
+        return makeTrendsModule(
+            repository: repository,
+            paywallController: premium.paywallController,
+            premiumRepository: premium.premiumRepository,
+            preferences: infrastructure.preferences
+        )
+    }
+
     /// Opens `<Application Support>/salus.db`, creating the directory first.
     ///
     /// `SalusDatabase.init` does not create parent directories, and `Application Support` — unlike
@@ -264,6 +295,7 @@ struct FeatureModules {
     let home: HomeModule
     let onboarding: OnboardingModule
     let aiHealth: AiHealthModule
+    let trends: TrendsModule
     let premiumRepository: any PremiumRepository
     let paywallController: PaywallController
     let paywallModule: PaywallModule

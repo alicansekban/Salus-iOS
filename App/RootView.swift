@@ -6,6 +6,7 @@ import FeatureMedications
 import FeatureOnboarding
 import FeaturePaywall
 import FeatureSettings
+import FeatureTrends
 import FeatureVitals
 import SalusDesignSystem
 import SalusModel
@@ -265,16 +266,18 @@ struct RootView: View {
         case .vitals:
             NavigationStack(path: backStacks.binding(for: tab)) {
                 VitalsRoute(onOpenTrends: {
-                    // TODO(M11): trends is another feature's screen, whose key this shell cannot
-                    // name yet. Cross-feature navigation is a shell callback (spec §4), so when
-                    // `FeatureTrends` lands this pushes its key through `root.navigator`.
+                    // Trends belongs to `FeatureTrends`; the shell sees every key, so it pushes
+                    // `TrendsKey` through the navigator. The destination is `trendsDestinations()`.
+                    root.navigator.navigate(TrendsKey())
                 })
                 .vitalsDestinations()
+                .trendsDestinations()
             }
             // Applied to the stack, not inside its root: a pushed `WeightEditorKey` destination is
             // rendered by the stack, so an environment value set on the root view would not reach
             // the editor.
             .environment(\.vitalsModule, root.vitalsModule)
+            .environment(\.trendsModule, root.trendsModule)
 
         case .appointments:
             NavigationStack(path: backStacks.binding(for: tab)) {
@@ -307,10 +310,9 @@ struct RootView: View {
                         root.navigator.navigate(DoctorReportKey())
                     },
                     onOpenTrends: {
-                        // TODO(M11): trends is another feature's screen, whose key this shell
-                        // cannot name yet. Cross-feature navigation is a shell callback (spec §4),
-                        // so when `FeatureTrends` lands this pushes its key through
-                        // `root.navigator`. The vitals tab carries the same TODO for the same reason.
+                        // Trends lives in `FeatureTrends` (iOS-M11); pushed through the navigator the
+                        // way `DoctorReportKey` is. The destination is `trendsDestinations()` below.
+                        root.navigator.navigate(TrendsKey())
                     },
                     appLockPrompt: makeLockPrompt()
                 )
@@ -319,6 +321,8 @@ struct RootView: View {
                 // The AI health destinations — `AiSummaryKey` is pushed from Home, `DoctorReportKey`
                 // from More (this stack), so both register here.
                 .aiHealthDestinations()
+                // The trends screen is pushed from More's row, so this stack registers it.
+                .trendsDestinations()
             }
             // On the stack, not inside its root — a pushed `ReminderHealthKey`, `AboutKey`,
             // `ProfileKey` or `CycleKey` destination is rendered by the stack, so an environment
@@ -326,6 +330,7 @@ struct RootView: View {
             .environment(\.settingsModule, root.settingsModule)
             .environment(\.cycleModule, root.cycleModule)
             .environment(\.aiHealthModule, root.aiHealthModule)
+            .environment(\.trendsModule, root.trendsModule)
 
         case .home:
             NavigationStack(path: backStacks.binding(for: tab)) {

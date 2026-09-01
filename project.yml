@@ -120,6 +120,8 @@ packages:
     path: Packages/Features/FeatureOnboarding
   FeaturePaywall:
     path: Packages/Features/FeaturePaywall
+  FeatureTrends:
+    path: Packages/Features/FeatureTrends
   SalusReminder:
     path: Packages/SalusReminder
   SalusPremium:
@@ -315,6 +317,8 @@ targets:
         product: FeatureOnboarding
       - package: FeaturePaywall
         product: FeaturePaywall
+      - package: FeatureTrends
+        product: FeatureTrends
       - package: SalusReminder
         product: SalusReminder
       # iOS-M9 Task 2 (the store seam): the app links `SalusPremium` so the shell can bind

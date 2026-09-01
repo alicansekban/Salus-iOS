@@ -6,6 +6,7 @@ import FeatureMedications
 import FeatureOnboarding
 import FeaturePaywall
 import FeatureSettings
+import FeatureTrends
 import FeatureVitals
 import Foundation
 import Observation
@@ -139,6 +140,12 @@ final class AppCompositionRoot {
     /// on the gate itself rather than on a `NavigationStack`.
     let onboardingModule: OnboardingModule
 
+    /// `trendsModule` (`feature/trends/.../di/TrendsModule.kt`), built once and injected on the
+    /// two stacks that can push `TrendsKey` — Vitals and More (spec §4). It owns the premium-gated
+    /// `TrendsRepository` built over the reader and the two DAOs, so the shell only threads the
+    /// finished module through the environment; `TrendsRoute` reaches its ViewModel from it.
+    let trendsModule: TrendsModule
+
     /// The premium singletons (`makePremiumGraph`): repo, controller, module, intro gate.
     let premiumRepository: any PremiumRepository
     let paywallController: PaywallController
@@ -216,6 +223,7 @@ final class AppCompositionRoot {
         homeModule = modules.home
         onboardingModule = modules.onboarding
         aiHealthModule = modules.aiHealth
+        trendsModule = modules.trends
         premiumRepository = modules.premiumRepository
         paywallController = modules.paywallController
         paywallModule = modules.paywallModule
@@ -401,13 +409,6 @@ final class AppCompositionRoot {
             navigator: infrastructure.navigator
         )
         let premium = makePremiumGraph(preferences: infrastructure.preferences)
-        let home = makeHomeGraph(
-            infrastructure: infrastructure,
-            medications: scheduled.medications,
-            homePremiumStatus: PremiumRepositoryHomePremiumStatus(
-                premiumRepository: premium.premiumRepository
-            )
-        )
         let settings = makeSettingsModule(
             reminderEnvironment: reminder.environment,
             reminderAuthorization: reminder.environment,
@@ -429,9 +430,16 @@ final class AppCompositionRoot {
             medications: scheduled.medications,
             cycle: scheduled.cycle,
             settings: settings,
-            home: home,
+            home: makeHomeGraph(
+                infrastructure: infrastructure,
+                medications: scheduled.medications,
+                homePremiumStatus: PremiumRepositoryHomePremiumStatus(
+                    premiumRepository: premium.premiumRepository
+                )
+            ),
             onboarding: makeOnboardingGraph(infrastructure: infrastructure, vitals: vitals),
             aiHealth: makeAiHealthGraph(infrastructure: infrastructure, premium: premium),
+            trends: makeTrendsGraph(infrastructure: infrastructure, premium: premium),
             premiumRepository: premium.premiumRepository,
             paywallController: premium.paywallController,
             paywallModule: premium.paywallModule,
