@@ -42,6 +42,44 @@ public enum TrendsStrings {
     public static var errorMessage: String { localized(.errorMessage) }
     public static var errorAction: String { localized(.errorAction) }
 
+    // MARK: - Time of day (Task 2)
+
+    public static var timeOfDayTitle: String { localized(.timeOfDayTitle) }
+
+    public static var dayPartMorning: String { localized(.dayPartMorning) }
+    public static var dayPartMidday: String { localized(.dayPartMidday) }
+    public static var dayPartEvening: String { localized(.dayPartEvening) }
+    public static var dayPartNight: String { localized(.dayPartNight) }
+
+    public static var metricBloodPressure: String { localized(.metricBloodPressure) }
+    public static var metricGlucose: String { localized(.metricGlucose) }
+    public static var metricWeight: String { localized(.metricWeight) }
+
+    /// `%1$s (%2$s)` — a metric name followed by the unit its numbers are written in.
+    public static func metricWithUnit(_ metric: String, _ unit: String) -> String {
+        String(format: localized(.metricWithUnit), metric, unit)
+    }
+
+    /// `%1$d/%2$d` — systolic over diastolic, the way a blood pressure reading is written.
+    public static func valueBloodPressure(_ systolic: Int, _ diastolic: Int) -> String {
+        String(format: localized(.valueBloodPressure), systolic, diastolic)
+    }
+
+    /// `%1$s %2$s` — one bucket inside the chart's spoken summary: label then value.
+    public static func timeOfDayPartSummary(_ label: String, _ value: String) -> String {
+        String(format: localized(.timeOfDayPartSummary), label, value)
+    }
+
+    /// `%1$s, gün içi ortalamalar: %2$s` — the chart's spoken summary.
+    public static func timeOfDayChartDescription(_ metric: String, _ parts: String) -> String {
+        String(format: localized(.timeOfDayChartDescription), metric, parts)
+    }
+
+    public static var unitBloodPressure: String { localized(.unitBloodPressure) }
+    public static var unitGlucose: String { localized(.unitGlucose) }
+    public static var unitGlucoseMmol: String { localized(.unitGlucoseMmol) }
+    public static var unitWeight: String { localized(.unitWeight) }
+
     // MARK: - Keys
 
     /// The catalog keys, named once. Internal so the parity test can prove every accessor asks for
@@ -65,6 +103,27 @@ public enum TrendsStrings {
         case errorTitle = "trends_error_title"
         case errorMessage = "trends_error_message"
         case errorAction = "trends_error_action"
+
+        case timeOfDayTitle = "trends_time_of_day_title"
+
+        case dayPartMorning = "trends_day_part_morning"
+        case dayPartMidday = "trends_day_part_midday"
+        case dayPartEvening = "trends_day_part_evening"
+        case dayPartNight = "trends_day_part_night"
+
+        case metricBloodPressure = "trends_metric_blood_pressure"
+        case metricGlucose = "trends_metric_glucose"
+        case metricWeight = "trends_metric_weight"
+
+        case metricWithUnit = "trends_metric_with_unit"
+        case valueBloodPressure = "trends_value_blood_pressure"
+        case timeOfDayPartSummary = "trends_time_of_day_part_summary"
+        case timeOfDayChartDescription = "trends_time_of_day_chart_description"
+
+        case unitBloodPressure = "trends_unit_blood_pressure"
+        case unitGlucose = "trends_unit_glucose"
+        case unitGlucoseMmol = "trends_unit_glucose_mmol"
+        case unitWeight = "trends_unit_weight"
     }
 
     private static func localized(_ key: Key) -> String {

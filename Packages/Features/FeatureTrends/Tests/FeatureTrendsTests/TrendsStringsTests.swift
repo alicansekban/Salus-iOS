@@ -71,17 +71,37 @@ struct TrendsStringsTests {
             turkish: "Kayıtlarına şu anda ulaşılamadı. Tekrar denemek sorunu genellikle çözer.",
             english: "Your records could not be read just now. Trying again usually sorts it out."
         ),
-        TrendsStringSample(key: "trends_error_action", turkish: "Tekrar dene", english: "Try again")
+        TrendsStringSample(key: "trends_error_action", turkish: "Tekrar dene", english: "Try again"),
+        TrendsStringSample(key: "trends_time_of_day_title", turkish: "Gün içi dağılım", english: "Time of day"),
+        TrendsStringSample(key: "trends_day_part_morning", turkish: "Sabah", english: "Morning"),
+        TrendsStringSample(key: "trends_day_part_midday", turkish: "Öğlen", english: "Midday"),
+        TrendsStringSample(key: "trends_day_part_evening", turkish: "Akşam", english: "Evening"),
+        TrendsStringSample(key: "trends_day_part_night", turkish: "Gece", english: "Night"),
+        TrendsStringSample(key: "trends_metric_blood_pressure", turkish: "Tansiyon", english: "Blood pressure"),
+        TrendsStringSample(key: "trends_metric_glucose", turkish: "Kan şekeri", english: "Blood glucose"),
+        TrendsStringSample(key: "trends_metric_weight", turkish: "Kilo", english: "Weight"),
+        TrendsStringSample(key: "trends_metric_with_unit", turkish: "%1$@ (%2$@)", english: "%1$@ (%2$@)"),
+        TrendsStringSample(key: "trends_value_blood_pressure", turkish: "%1$lld/%2$lld", english: "%1$lld/%2$lld"),
+        TrendsStringSample(key: "trends_time_of_day_part_summary", turkish: "%1$@ %2$@", english: "%1$@ %2$@"),
+        TrendsStringSample(
+            key: "trends_time_of_day_chart_description",
+            turkish: "%1$@, gün içi ortalamalar: %2$@",
+            english: "%1$@, averages by part of day: %2$@"
+        ),
+        TrendsStringSample(key: "trends_unit_blood_pressure", turkish: "mmHg", english: "mmHg"),
+        TrendsStringSample(key: "trends_unit_glucose", turkish: "mg/dL", english: "mg/dL"),
+        TrendsStringSample(key: "trends_unit_glucose_mmol", turkish: "mmol/L", english: "mmol/L"),
+        TrendsStringSample(key: "trends_unit_weight", turkish: "kg", english: "kg")
     ]
 
     static let expectedKeys = Set(samples.map(\.key))
 
-    @Test("the catalog holds exactly the 14 Task-1 keys :feature:trends owns")
-    func catalogHoldsExactlyTheFourteenKeys() throws {
+    @Test("the catalog holds exactly the 30 keys :feature:trends owns")
+    func catalogHoldsExactlyTheThirtyKeys() throws {
         // Pinned as a number as well as a set: a row deleted from the table together with its key
-        // from the catalog would otherwise agree with itself and pass. 14 = title + back + 4
-        // ranges + 3 locked + 2 empty + 3 error.
-        #expect(Self.samples.count == 14)
+        // from the catalog would otherwise agree with itself and pass. 30 = 14 Task-1 keys
+        // (title + back + 4 ranges + 3 locked + 2 empty + 3 error) + 16 Task-2 time-of-day keys.
+        #expect(Self.samples.count == 30)
 
         try StringCatalogParity.assertKeys(of: Self.loadCatalog(), are: Self.expectedKeys)
     }

@@ -14,6 +14,7 @@
 // tab bar, and a feature never writes `.toolbar(…, for: .tabBar)` (`CLAUDE.md`).
 
 import SalusDesignSystem
+import SalusModel
 import SalusUI
 import SwiftUI
 
@@ -145,7 +146,9 @@ struct ReadyBody: View {
     var body: some View {
         ScrollView {
             VStack(spacing: SalusSpacing.md) {
-                // Task 2 adds:   ready.timeOfDay.map { TimeOfDayCard($0, unit: …) }
+                if let timeOfDay = ready.timeOfDay {
+                    TimeOfDayCard(breakdown: timeOfDay, glucoseUnit: state.glucoseUnit)
+                }
                 // Task 3 adds:   ready.overlay.map { MetricOverlayCard($0, unit: …) }
                 // Task 4 adds:   ready.doseWeeks.map { DoseWeeksCard($0, unit: …) }
                 // Task 5 adds:   ready.summaries.map { MetricSummaryCard($0, unit: …) }
@@ -154,6 +157,136 @@ struct ReadyBody: View {
             .padding(.vertical, SalusSpacing.md)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
+/// The time-of-day card: one metric's day, one column per bucket it was measured in
+/// (`TrendsScreen.kt:264-326`).
+///
+/// `TimeOfDayBreakdown` carries plain numbers so that the analysis stays portable; resolving the
+/// labels, converting to the reader's unit and handing the pair to `barChartModelOf` is the UI's
+/// job, and this is the only place it happens.
+///
+/// The averages arrive in canonical mg/dL and the reader may have chosen mmol/L, so the bars, the
+/// axis they are measured against and the spoken summary all take their numbers from one
+/// conversion — and the unit is named once, next to the metric, rather than repeated on every
+/// bar.
+private struct TimeOfDayCard: View {
+    let breakdown: TimeOfDayBreakdown
+    let glucoseUnit: GlucoseUnit
+
+    @Environment(\.salusTheme) private var theme
+
+    var body: some View {
+        let type = breakdown.type
+        let metricName = TrendsStrings.metricWithUnit(
+            type.metricLabel,
+            type.unitLabel(glucoseUnit)
+        )
+        let decimals = MetricDisplay.decimals(type: type, glucoseUnit: glucoseUnit)
+
+        // The mapping itself lives in `barChartModelOf`, where it is unit-tested; nil means the
+        // breakdown held nothing worth drawing, which the analysis makes unreachable today but
+        // which is answered here rather than assumed away.
+        if let model = barChartModelOf(
+            breakdown: breakdown,
+            partLabel: { $0.label },
+            displayValue: { MetricDisplay.value(type: type, stored: $0, glucoseUnit: glucoseUnit) },
+            // An axis tick is a number, not a sentence: no unit on it, and only as many
+            // decimals as the metric is written with.
+            axisLabel: { MetricDisplay.write(converted: Double($0), decimals: decimals) }
+        ) {
+            // The chart itself is silent to VoiceOver, so the numbers are spoken here instead —
+            // read off the bars rather than off the breakdown, so what is described is exactly
+            // what is drawn. Buckets with no measurement produced no bar and are simply not
+            // mentioned: an unmeasured evening is not a reading of zero.
+            let spokenParts = model.bars.map { bar in
+                TrendsStrings.timeOfDayPartSummary(bar.label, bar.valueText(decimals: decimals))
+            }
+
+            SalusCard(contentPadding: SalusSpacing.lg) {
+                Text(verbatim: TrendsStrings.timeOfDayTitle)
+                    .font(SalusTypography.titleMedium.font)
+                    .tracking(SalusTypography.titleMedium.tracking)
+                    .foregroundStyle(theme.colorScheme.onSurface)
+                Spacer().frame(height: SalusSpacing.xs)
+                Text(verbatim: metricName)
+                    .font(SalusTypography.bodyMedium.font)
+                    .tracking(SalusTypography.bodyMedium.tracking)
+                    .foregroundStyle(theme.colorScheme.onSurfaceVariant)
+                Spacer().frame(height: SalusSpacing.md)
+                SalusBarChart(
+                    model: model,
+                    contentDescription: TrendsStrings.timeOfDayChartDescription(
+                        metricName,
+                        spokenParts.joined(separator: ", ")
+                    )
+                )
+                .frame(height: TimeOfDayCard.chartHeight)
+            }
+            .frame(maxWidth: .infinity)
+        }
+    }
+
+    /// `BarChartHeight` (`SalusBarChart.kt:156`) — tall enough for four labelled columns to be
+    /// readable without dominating a card.
+    private static let chartHeight: CGFloat = 200
+}
+
+/// A bar's value, written the way the metric is normally written (`TrendsScreen.kt:717-726`).
+///
+/// The bar already holds a converted number — `barChartModelOf` applied the conversion when it
+/// built the chart — so this only writes it out. Converting here as well would apply the glucose
+/// factor twice.
+extension BarEntry {
+    fileprivate func valueText(decimals: Int) -> String {
+        // A second value only ever comes from a systolic/diastolic pair, which is written as one
+        // reading rather than as two numbers — and never in a unit the reader can change.
+        guard let secondaryValue else {
+            return MetricDisplay.write(converted: Double(value), decimals: decimals)
+        }
+        return TrendsStrings.valueBloodPressure(Int(value.rounded()), Int(secondaryValue.rounded()))
+    }
+}
+
+extension DayPart {
+    /// `DayPart.labelRes()` (`TrendsScreen.kt:889-894`).
+    fileprivate var label: String {
+        switch self {
+        case .morning: TrendsStrings.dayPartMorning
+        case .midday: TrendsStrings.dayPartMidday
+        case .evening: TrendsStrings.dayPartEvening
+        case .night: TrendsStrings.dayPartNight
+        }
+    }
+}
+
+extension VitalType {
+    /// `VitalType.metricLabelRes()` (`TrendsScreen.kt:896-902`).
+    fileprivate var metricLabel: String {
+        switch self {
+        case .bloodPressure: TrendsStrings.metricBloodPressure
+        case .bloodGlucose: TrendsStrings.metricGlucose
+        // Never picked by the time-of-day analysis: when you step on the scale says nothing about
+        // your weight. Mapped anyway so the switch stays exhaustive without an else.
+        case .weight: TrendsStrings.metricWeight
+        }
+    }
+
+    /// `VitalType.unitLabelRes(glucoseUnit)` (`TrendsScreen.kt:905-912`) — glucose is the one
+    /// metric whose unit the user picks; the other two have exactly one.
+    fileprivate func unitLabel(_ glucoseUnit: GlucoseUnit) -> String {
+        switch self {
+        case .bloodPressure: TrendsStrings.unitBloodPressure
+
+        case .bloodGlucose:
+            switch glucoseUnit {
+            case .mgDl: TrendsStrings.unitGlucose
+            case .mmolL: TrendsStrings.unitGlucoseMmol
+            }
+
+        case .weight: TrendsStrings.unitWeight
+        }
     }
 }
 

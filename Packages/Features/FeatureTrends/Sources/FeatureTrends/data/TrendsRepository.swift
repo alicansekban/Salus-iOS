@@ -63,9 +63,13 @@ public struct TrendsRepositoryImpl: TrendsRepository {
                 // screen says "nothing yet".
                 return .empty
             }
-            // The analyses run in later tasks and fill `TrendsReady` field by field. Task 1 ships
-            // the empty shell; the screen draws no cards until a task lands one.
-            return .ready(TrendsReady())
+            // The analyses run in later tasks and fill `TrendsReady` field by field. Task 2 fills
+            // `timeOfDay`; the remaining cards arrive with their own tasks.
+            return .ready(
+                TrendsReady(
+                    timeOfDay: timeOfDayBreakdownOrNull(records.measurements)
+                )
+            )
         } catch is CancellationError {
             // Cancellation is the caller going away — a range switch, or a screen that was
             // closed — not a failure of ours. The ViewModel's task guard discards whatever a

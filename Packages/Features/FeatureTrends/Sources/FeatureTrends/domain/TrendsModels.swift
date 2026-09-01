@@ -125,5 +125,11 @@ public enum TrendsData: Equatable, Sendable {
 /// modules that do not exist yet. `Equatable` and `Sendable` by construction: every field that
 /// lands is a plain value type.
 public struct TrendsReady: Equatable, Sendable {
-    public init() {}
+    /// The time-of-day breakdown, when the window holds a blood pressure or glucose reading
+    /// (Task 2). `nil` is the only way the card is left out.
+    public var timeOfDay: TimeOfDayBreakdown?
+
+    public init(timeOfDay: TimeOfDayBreakdown? = nil) {
+        self.timeOfDay = timeOfDay
+    }
 }
