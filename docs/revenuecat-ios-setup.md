@@ -26,7 +26,7 @@ iOS uygulamasının `SalusPremium` paketi, `SalusApp.configureRevenueCat()`, `Se
    - Fiyat tier'ı seç (TRY).
    - Türkçe ve İngilizce **yerelleştirilmiş açıklama** ekle.
    - 1024×1024 **abonelik ikonu** yükle.
-   - Yıllık ürüne **7 günlük ücretsiz deneme (free trial)** ekle — paywall'daki "7 gün ücretsiz dene" CTA'nın çalışması için.
+   - 6 aylık ve yıllık ürüne **7 günlük ücretsiz deneme (free trial)** ekle — paywall'daki "7 gün ücretsiz dene" CTA'nın çalışması için.
 5. Subscription group için **App Store Localizations** (TR + EN) ayarla.
 6. Kaydet. Apple sandbox'ta birkaç dakika içinde propagasyon yapar.
 
@@ -106,7 +106,7 @@ Anahtar asla git'e girmez. Bu rehber ve QA matrisleri dışında kodda değişik
 | Plan | Fiyat | Para Birimi | Not |
 |---|---|---|---|
 | Aylık | 129,99 | TRY | Google Play'de %20 KDV dahil olabilir |
-| 6 Aylık | 519,99 | TRY | Google Play'de %20 KDV dahil olabilir |
+| 6 Aylık | 519,99 | TRY | 7 gün ücretsiz deneme (free trial) · Google Play'de %20 KDV dahil olabilir |
 | Yıllık | 789,99 | TRY | 7 gün ücretsiz deneme (free trial) · Google Play'de %20 KDV dahil olabilir |
 
 > Apple App Store Connect fiyat tier olarak girilir; Apple vergiyi kendisi yönetir. Storefront'a göre gösterim Apple tarafından yapılır. Google Play'deki tax-dahil fiyatlar Apple'de tier karşılığına maplenir — küsuratlı fark olabilir.
