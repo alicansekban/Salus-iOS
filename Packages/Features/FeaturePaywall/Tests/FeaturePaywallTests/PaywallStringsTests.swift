@@ -78,8 +78,8 @@ struct PaywallStringsTests {
         ),
         PaywallStringSample(
             key: "paywall_feature_trends",
-            turkish: "Gün içi dağılımı, çoklu metrik ve doz-ölçüm analizi",
-            english: "Time-of-day breakdown, multi-metric overlay, dose and measurement analysis"
+            turkish: "Sabah-akşam dağılımı, çoklu metrik ve doz-ölçüm analizi",
+            english: "Time-of-day breakdown, multi-metric overlay and dose-vs-measurement analysis"
         ),
         PaywallStringSample(
             key: "paywall_feature_backup",

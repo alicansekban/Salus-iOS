@@ -194,13 +194,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Time-of-day breakdown, multi-metric overlay, dose and measurement analysis"
+            "value" : "Time-of-day breakdown, multi-metric overlay and dose-vs-measurement analysis"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Gün içi dağılımı, çoklu metrik ve doz-ölçüm analizi"
+            "value" : "Sabah-akşam dağılımı, çoklu metrik ve doz-ölçüm analizi"
           }
         }
       }
