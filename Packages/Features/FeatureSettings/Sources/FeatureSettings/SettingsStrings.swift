@@ -4,9 +4,9 @@
 // against `:feature:settings`.
 //
 // ROW MAPPING, and it is the reason the key list is not the Android key list. The catalog carries
-// 88 keys today: the 15 `reminder_health_*` keys that shipped with iOS-M3, plus the 73 More / About
-// / Profile / settings keys the M8 settings hub adds — 72 of them Android-verbatim and one,
-// `language_relaunch_note`, iOS-only (recorded divergence (a); its accessor below says why).
+// 87 keys today: the 15 `reminder_health_*` keys that shipped with iOS-M3, plus the 72 More / About
+// / Profile / settings keys the M8 settings hub adds, all Android-verbatim. (The iOS-only
+// `language_relaunch_note` left with the live language switch — `SalusLocalization`.)
 // Android draws four health cards; iOS draws
 // three, because two of Android's questions do not exist here and one iOS question does not exist
 // there. `SystemReminderEnvironment` already records the same mapping on the reading side, member
@@ -70,6 +70,7 @@
 // end-to-end check is the simulator run.
 
 import Foundation
+import SalusCommon
 import SalusModel
 
 /// The strings `:feature:settings` owns.
@@ -166,15 +167,6 @@ public enum SettingsStrings {
     public static var languageSystem: String { localized(.languageSystem) }
     public static var languageTurkish: String { localized(.languageTurkish) }
     public static var languageEnglish: String { localized(.languageEnglish) }
-
-    /// `language_relaunch_note` — the footnote under the dialog's three options, and the ONE
-    /// iOS-only key in this catalog that has no Android twin (**recorded divergence (a)**,
-    /// ruling 6). Android's `AppCompatDelegate.setApplicationLocales` recreates the activity, so
-    /// the switch is visibly instant and needs no note; iOS reads the per-app override
-    /// (`AppleLanguages`) at process start only, so the dialog has to say when the change lands.
-    /// Saying it is the honest half of the divergence — a picker that appears to do nothing is a
-    /// bug report, not a preference.
-    public static var languageRelaunchNote: String { localized(.languageRelaunchNote) }
 
     // MARK: - Color theme dialog
 
@@ -275,7 +267,6 @@ public enum SettingsStrings {
         case colorThemeOcean = "color_theme_ocean"
         case colorThemeSunset = "color_theme_sunset"
         case languageEnglish = "language_english"
-        case languageRelaunchNote = "language_relaunch_note"
         case languageSystem = "language_system"
         case languageTitle = "language_title"
         case languageTurkish = "language_turkish"
@@ -355,7 +346,7 @@ public enum SettingsStrings {
     }
 
     private static func localized(_ key: Key) -> String {
-        String(localized: String.LocalizationValue(key.rawValue), bundle: .module)
+        SalusLocalization.string(key.rawValue, bundle: .module)
     }
 
     /// Substitutes the single argument, in the device's locale.

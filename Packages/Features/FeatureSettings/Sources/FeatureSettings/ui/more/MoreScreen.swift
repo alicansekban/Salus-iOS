@@ -4,7 +4,7 @@
 // `SalusScreenHeader(title:)` (no `TopAppBar` — divergence (d)); `SalusSectionHeader(contentPadding
 // = top(sm))` → `SalusSectionHeader(title:contentPadding: .topOnly)`, the scroll column carrying the
 // screen's horizontal inset exactly as the Kotlin column does; `Card(onClick)` → `SalusCard`;
-// `Switch` → `Toggle`; `AlertDialog`+`RadioButton` → a `.sheet` over ``MoreSelectionDialog``;
+// `Switch` → `Toggle`; `AlertDialog`+`RadioButton` → `salusDialog` over ``MoreSelectionDialog``;
 // `Icons.Outlined.*` → SF
 // Symbols (the Material→SF map is in the task brief — a recorded divergence, not byte-for-byte);
 // `stringResource(R.string.…)` → `SettingsStrings.…` in `Text(verbatim:)`; `profileName.ifBlank` →
@@ -32,20 +32,18 @@
 //      from a second `.task` that depended on the first one having already run.
 //   6. **`effectivePremiumTheme` reads the real three-state `PremiumStatus`** — the twin of
 //      `core/premium/.../EffectiveTheme.kt` (`isEntitled`: premium or grace get the pick, else Classic).
-//   7. **The selection dialogs are a `.sheet` over ``MoreSelectionDialog``**, not an alert: a
+//   7. **The selection dialogs are a `salusDialog` over ``MoreSelectionDialog``**, not an alert: a
 //      SwiftUI `alert`/`confirmationDialog` holds plain buttons only and cannot draw Kotlin's
 //      `RadioButton(selected = …)` (`MoreScreen.kt:504`), so the stored choice would be invisible.
-//      The sheet draws `SalusOptionRow`s, which carry the same radio indicator plus an icon circle
-//      Kotlin's rows have no twin for — see `MoreSelectionDialog.swift`.
+//      The popup draws Kotlin's plain radio rows itself — see `MoreSelectionDialog.swift`.
 //   8. **`SalusCard`'s content padding is uniform.** Kotlin's cards use
 //      `horizontal = lg, vertical = md` (`MoreScreen.kt:376-379`); `SalusCard` takes one value by
 //      house design, so every card here is `lg` on all four edges — the accepted limitation of the
 //      shared component, not a new one.
-//   9. **The language dialog carries a footnote Kotlin has no key for** (T12, **recorded
-//      divergence (a)**, ruling 6): `language_relaunch_note`. `setApplicationLocales` recreates
-//      the activity, so Android's pick is visibly instant; iOS reads the `AppleLanguages` override
-//      at process start, so it lands on the next launch and the dialog says so. The other two
-//      dialogs pass no footnote and stay the Kotlin shape.
+//   9. **A language pick applies live through `SalusLocalization`**, the twin of appcompat's
+//      `recreate()`: `RootView` re-identifies the tabs on the change, so this screen is rebuilt in
+//      the new language while the stack and selection survive. (Until the release QA pass the pick
+//      landed on the next launch and the dialog carried an iOS-only footnote saying so.)
 //
 // The three same-feature pushes (`ReminderHealthKey`/`AboutKey`/`ProfileKey`) the Kotlin Route makes
 // through `koinInject<Navigator>()` (`MoreScreen.kt:139-141`) go through the `navigator` the
@@ -292,7 +290,7 @@ struct MoreScreen: View {
                         onClick: { onEvent(.dialogRequested(.theme)) }
                     )
                     MoreCard(
-                        icon: "circle.hexagons.fill",
+                        icon: "swatchpalette.fill",
                         title: SettingsStrings.settingsColorTheme,
                         // `effectivePremiumTheme(status, selected)` (div. 6): the palette actually
                         // drawn, not the stored pick — a lapsed subscriber sees Classic here; the
@@ -371,11 +369,11 @@ struct MoreScreen: View {
         }
         .background(colors.background)
         // The three selection dialogs (`MoreScreen.kt:317-357`), driven by `activeDialog` rather
-        // than three `@State` flags (matching Kotlin's `when (state.activeDialog)`) — one sheet,
+        // than three `@State` flags (matching Kotlin's `when (state.activeDialog)`) — one popup,
         // so only one can be open at a time by construction. The binding's `false` edge is the
-        // twin of `onDismissRequest`: a swipe down sends `DialogDismissed`, exactly as tapping
-        // outside the `AlertDialog` does.
-        .sheet(
+        // twin of `onDismissRequest`: a tap on the scrim sends `DialogDismissed`, exactly as
+        // tapping outside the `AlertDialog` does.
+        .salusDialog(
             isPresented: Binding(
                 get: { state.activeDialog != nil },
                 set: { presented in
@@ -399,7 +397,6 @@ struct MoreScreen: View {
         case .theme:
             MoreSelectionDialog(
                 title: SettingsStrings.themeTitle,
-                systemImage: "paintpalette.fill",
                 options: ThemeMode.allCases.map { mode in
                     MoreSelectionOption(
                         id: mode.rawValue,
@@ -414,7 +411,6 @@ struct MoreScreen: View {
         case .colorTheme:
             MoreSelectionDialog(
                 title: SettingsStrings.settingsColorTheme,
-                systemImage: "circle.hexagons.fill",
                 // Free users see the full list — the entitlement check runs in the ViewModel on
                 // tap, so the palettes stay visible as something to subscribe for. The selection is
                 // the **stored** pick, not the effective one: a lapsed subscriber sees that their
@@ -433,7 +429,6 @@ struct MoreScreen: View {
         case .language:
             MoreSelectionDialog(
                 title: SettingsStrings.languageTitle,
-                systemImage: "globe",
                 options: AppLanguage.allCases.map { language in
                     MoreSelectionOption(
                         id: language.rawValue,
@@ -442,9 +437,6 @@ struct MoreScreen: View {
                         onSelect: { onEvent(.selectLanguage(language)) }
                     )
                 },
-                // The one dialog with a footnote (divergence 9): the pick is applied by the next
-                // launch, not by this one.
-                footnote: SettingsStrings.languageRelaunchNote,
                 onDismiss: { onEvent(.dialogDismissed) }
             )
         }

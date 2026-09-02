@@ -8,14 +8,13 @@ import Testing
 /// language) and `values-en/strings.xml`, and the drift detector between the two locales: all 88
 /// keys and both of their translations are pinned here.
 ///
-/// The 88 keys split four ways. Fifteen are the `reminder_health_*` block that shipped with
+/// The 87 keys split three ways. Fifteen are the `reminder_health_*` block that shipped with
 /// iOS-M3 — ten copied from the XML verbatim, five iOS-only (the Background App Refresh row and the
 /// last-pass line, which answer questions Android answers with a different mechanism or not at all).
 /// Seventy are the More / About / Profile / settings keys the M8 settings hub adds, copied verbatim
 /// from the XML. Two (`more_cycle`, `more_cycle_subtitle`) move here from the App target's catalog
-/// with M8. One — `language_relaunch_note` — is iOS-only and has no Android twin at all: the
-/// per-app language override is read at process start, so the dialog says when the pick lands
-/// (**recorded divergence (a)**, ruling 6; iOS-M8 T12).
+/// with M8. (The iOS-only `language_relaunch_note` of iOS-M8 T12 is gone: the language pick applies
+/// live through `SalusLocalization`, so there is no launch to wait for and nothing to say.)
 /// `SettingsStrings.swift`'s header carries the card-by-card mapping and the reason each
 /// Android key is kept, dropped or replaced; this table is where a drift in either direction fails.
 ///
@@ -42,11 +41,10 @@ struct SettingsStringsTests {
         // The arithmetic behind 88, re-derived at iOS-M8 T12 rather than carried from the plan:
         // Android's `feature/settings` XML holds 91 keys; nine are dropped here (the three
         // `reminder_health_exact_*`, the three `reminder_health_battery_*`, `reminder_health_back`,
-        // `settings_back`, `profile_back`) → 82 carried over. Six are iOS-only: the five
+        // `settings_back`, `profile_back`) → 82 carried over. Five are iOS-only: the
         // `reminder_health_*` ones that shipped with iOS-M3 (three `*_background_refresh_*`,
-        // `*_last_sync`, `*_never_synced`) and `language_relaunch_note`, added by T12.
-        // 91 − 9 + 6 = 88.
-        #expect(Self.samples.count == 88)
+        // `*_last_sync`, `*_never_synced`). 91 − 9 + 5 = 87.
+        #expect(Self.samples.count == 87)
 
         try StringCatalogParity.assertKeys(of: Self.loadCatalog(), are: Self.expectedKeys)
     }
@@ -157,11 +155,6 @@ private enum SettingsSamples {
         SettingsStringSample(key: "color_theme_ocean", turkish: "Okyanus", english: "Ocean"),
         SettingsStringSample(key: "color_theme_sunset", turkish: "Gün batımı", english: "Sunset"),
         SettingsStringSample(key: "language_english", turkish: "English", english: "English"),
-        SettingsStringSample(
-            key: "language_relaunch_note",
-            turkish: "Değişiklik, uygulamayı yeniden açtığınızda uygulanır.",
-            english: "The change applies the next time you open the app."
-        ),
         SettingsStringSample(key: "language_system", turkish: "Sistem dili", english: "System language"),
         SettingsStringSample(key: "language_title", turkish: "Dil", english: "Language"),
         SettingsStringSample(key: "language_turkish", turkish: "Türkçe", english: "Türkçe"),

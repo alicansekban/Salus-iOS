@@ -24,6 +24,7 @@
 // run.
 
 import Foundation
+import SalusCommon
 
 /// The strings `:feature:aihealth` owns.
 public enum AiHealthStrings {
@@ -159,6 +160,6 @@ public enum AiHealthStrings {
     }
 
     private static func localized(_ key: Key) -> String {
-        String(localized: String.LocalizationValue(key.rawValue), bundle: .module)
+        SalusLocalization.string(key.rawValue, bundle: .module)
     }
 }

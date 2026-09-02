@@ -38,6 +38,7 @@
 // is the simulator run.
 
 import Foundation
+import SalusCommon
 
 /// The strings the app shell owns.
 enum AppStrings {
@@ -79,6 +80,6 @@ enum AppStrings {
     }
 
     private static func localized(_ key: Key) -> String {
-        String(localized: String.LocalizationValue(key.rawValue), bundle: .main)
+        SalusLocalization.string(key.rawValue, bundle: .main)
     }
 }

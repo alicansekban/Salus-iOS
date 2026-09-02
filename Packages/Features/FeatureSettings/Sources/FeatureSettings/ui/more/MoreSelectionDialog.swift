@@ -2,27 +2,21 @@
 // `SelectionDialog` + `SelectionOption` (`MoreScreen.kt:480-527`), extracted into its own file
 // rather than nested in `MoreScreen.swift` so that file stays under the 500-line gate.
 //
-// Three spelling differences from the Kotlin, all recorded in `MoreScreen.swift`'s divergence list:
+// Presented through `salusDialog` — the house popup, a centred scrimmed card over the whole window,
+// which is what Kotlin's `AlertDialog` is. This view is the card's content only: `SalusDialogHost`
+// paints the surface, so the padding here is Material's dialog inset and nothing else.
 //
-//   `AlertDialog(text = { Column(     → a `.sheet` whose body is this view. A SwiftUI `alert` can
-//    selectableGroup()) { … } })`       hold only plain buttons — no selection state, no custom
-//                                       row — so an alert cannot draw the radio mark Kotlin draws,
-//                                       which is the whole point of the dialog.
-//   `RadioButton(selected = …)` +     → `SalusOptionRow`, the house radio row (`SalusOptionRow.kt`),
-//    `Text(label)`                      which draws the same indicator plus a tinted icon circle.
-//                                       Kotlin's rows carry no icon, so every option in one dialog
-//                                       repeats the icon of the More row that opened it: the
-//                                       indicator is what distinguishes the options, exactly as on
-//                                       Android.
+// The rows are Kotlin's rows, drawn plain on purpose: `RadioButton(selected) + Spacer(lg) +
+// Text(bodyLarge)` inside a `selectable` row with `md` vertical padding (`MoreScreen.kt:493-508`).
+// Not `SalusOptionRow` — that is the editors' pill row with an icon circle, and the release QA pass
+// found the two dialogs visibly different for it. `RadioButton` has no SwiftUI twin, so ``RadioMark``
+// draws Material's 20pt ring and 10pt dot from tokens.
 //
-//   (no twin)                       → an optional `footnote` line under the options, passed by the
-//                                       language dialog alone (`language_relaunch_note`): iOS
-//                                       applies a language pick on the next launch, Android
-//                                       recreates the activity inline, so only this port has
-//                                       something to say (divergence 9 / recorded divergence (a)).
+// One spelling difference from the Kotlin, recorded in `MoreScreen.swift`'s divergence list:
 //
-// `confirmButton = { TextButton(settings_cancel) }` (`MoreScreen.kt:517-521`) is a tonal
-// `SalusPillButton` — the house button, since `SalusUI` ships no text button.
+//   `confirmButton = { TextButton(   → a plain `Button` in `labelLarge` + `primary`, trailing-aligned
+//    settings_cancel) }`                as Material's action slot is. `SalusUI` ships no text button,
+//                                       and a pill here would out-weigh the rows it closes.
 
 import SalusDesignSystem
 import SalusUI
@@ -41,82 +35,116 @@ struct MoreSelectionOption: Identifiable {
 /// (`MoreScreen.kt:480-522`).
 struct MoreSelectionDialog: View {
     let title: String
-    /// The SF Symbol every row in this dialog carries — the icon of the More row that opened it.
-    let systemImage: String
     let options: [MoreSelectionOption]
-    /// An optional line under the options. Only the language dialog passes one
-    /// (`SettingsStrings.languageRelaunchNote`), because only the language pick defers its effect
-    /// to the next launch — **recorded divergence (a)**, ruling 6. Kotlin's `SelectionDialog` has
-    /// no such parameter: appcompat recreates the activity, so there is nothing to warn about.
-    /// Defaulted to `nil` so the theme and colour-theme call sites stay the Kotlin shape — which is
-    /// also why it is the one `var` here: a `let` with a default is dropped from the memberwise
-    /// initializer's parameter list entirely, so the language dialog's call site — the one that
-    /// *does* pass a footnote — could not compile. Only a `var` keeps the parameter overridable.
-    var footnote: String?
     let onDismiss: () -> Void
 
     @Environment(\.salusTheme) private var theme
 
     var body: some View {
-        VStack(spacing: SalusSpacing.lg) {
-            // `title = { Text(title) }` (`MoreScreen.kt:512`).
+        VStack(alignment: .leading, spacing: SalusSpacing.lg) {
+            // `title = { Text(title) }` (`MoreScreen.kt:489`) — `AlertDialog` sets it in
+            // `headlineSmall`.
             Text(verbatim: title)
-                .font(SalusTypography.titleLarge.font)
-                .tracking(SalusTypography.titleLarge.tracking)
+                .font(SalusTypography.headlineSmall.font)
+                .tracking(SalusTypography.headlineSmall.tracking)
                 .foregroundStyle(theme.colorScheme.onSurface)
-                .frame(maxWidth: .infinity, alignment: .leading)
 
-            // Scrolls rather than clipping: four palettes plus a title and a button do not fit the
-            // medium detent on a small screen.
-            ScrollView {
-                VStack(spacing: SalusSpacing.sm) {
-                    ForEach(options) { option in
-                        SalusOptionRow(
-                            systemImage: systemImage,
-                            label: option.label,
-                            isSelected: option.isSelected,
-                            onSelected: option.onSelect
-                        )
-                    }
+            // `Column(Modifier.selectableGroup())` (`MoreScreen.kt:491`): zero spacing, each row
+            // brings its own vertical padding.
+            VStack(spacing: 0) {
+                ForEach(options) { option in
+                    RadioRow(label: option.label, isSelected: option.isSelected, onSelect: option.onSelect)
                 }
             }
 
-            if let footnote {
-                // `Text(verbatim:)`, not `Text(_:)`: the value is already resolved, and `Text(_:)`
-                // would re-read it as a `LocalizedStringKey` against the MAIN bundle (the M7
-                // `c726e22` finding).
-                Text(verbatim: footnote)
-                    .font(SalusTypography.bodySmall.font)
-                    .tracking(SalusTypography.bodySmall.tracking)
-                    .foregroundStyle(theme.colorScheme.onSurfaceVariant)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+            // `confirmButton = { TextButton(onClick = onDismiss) { Text(settings_cancel) } }`
+            // (`MoreScreen.kt:517-521`), in Material's trailing action slot.
+            Button(action: onDismiss) {
+                Text(verbatim: SettingsStrings.settingsCancel)
+                    .font(SalusTypography.labelLarge.font)
+                    .tracking(SalusTypography.labelLarge.tracking)
+                    .foregroundStyle(theme.colorScheme.primary)
+                    .padding(.horizontal, SalusSpacing.md)
+                    .frame(minHeight: Self.textButtonHeight)
             }
-
-            SalusPillButton(
-                text: SettingsStrings.settingsCancel,
-                tonal: true,
-                fillsWidth: true,
-                action: onDismiss
-            )
+            .buttonStyle(.plain)
+            .frame(maxWidth: .infinity, alignment: .trailing)
         }
-        .padding(SalusSpacing.lg)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .background(theme.colorScheme.background)
-        .presentationDetents([.medium, .large])
+        .padding(SalusSpacing.xl)
     }
+
+    /// Material's `TextButton` minimum height.
+    private static let textButtonHeight: CGFloat = 40
+}
+
+/// `Row(Modifier.fillMaxWidth().selectable(role = RadioButton).padding(vertical = md)) {
+/// RadioButton; Spacer(lg); Text(bodyLarge) }` (`MoreScreen.kt:493-508`).
+private struct RadioRow: View {
+    let label: String
+    let isSelected: Bool
+    let onSelect: () -> Void
+
+    @Environment(\.salusTheme) private var theme
+
+    var body: some View {
+        Button(action: onSelect) {
+            HStack(spacing: SalusSpacing.lg) {
+                RadioMark(isSelected: isSelected)
+                Text(verbatim: label)
+                    .font(SalusTypography.bodyLarge.font)
+                    .tracking(SalusTypography.bodyLarge.tracking)
+                    .foregroundStyle(theme.colorScheme.onSurface)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.vertical, SalusSpacing.md)
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        // `role = Role.RadioButton` (`MoreScreen.kt:499`): the row, not a control inside it, is what
+        // a screen reader calls "selected".
+        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
+    }
+}
+
+/// Material's `RadioButton` glyph (`RadioButtonTokens`): a 20pt ring, 2pt stroke, and a 10pt dot
+/// while selected; `primary` when selected, `onSurfaceVariant` otherwise. Purely visual — the row
+/// carries the semantics.
+private struct RadioMark: View {
+    let isSelected: Bool
+
+    @Environment(\.salusTheme) private var theme
+
+    var body: some View {
+        Circle()
+            .stroke(
+                isSelected ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant,
+                lineWidth: Self.stroke
+            )
+            .frame(width: Self.size, height: Self.size)
+            .overlay {
+                if isSelected {
+                    Circle()
+                        .fill(theme.colorScheme.primary)
+                        .frame(width: Self.dot, height: Self.dot)
+                }
+            }
+            .accessibilityHidden(true)
+    }
+
+    private static let size: CGFloat = 20
+    private static let stroke: CGFloat = 2
+    private static let dot: CGFloat = 10
 }
 
 // MARK: - Previews
 
 #Preview("Selection dialog") {
     MoreSelectionDialog(
-        title: "Renk teması",
-        systemImage: "circle.hexagons.fill",
+        title: "Tema",
         options: [
-            MoreSelectionOption(id: "CLASSIC", label: "Klasik", isSelected: false, onSelect: {}),
-            MoreSelectionOption(id: "OCEAN", label: "Okyanus", isSelected: true, onSelect: {}),
-            MoreSelectionOption(id: "SUNSET", label: "Gün batımı", isSelected: false, onSelect: {}),
-            MoreSelectionOption(id: "FOREST", label: "Orman", isSelected: false, onSelect: {})
+            MoreSelectionOption(id: "SYSTEM", label: "Sistem varsayılanı", isSelected: false, onSelect: {}),
+            MoreSelectionOption(id: "LIGHT", label: "Açık", isSelected: true, onSelect: {}),
+            MoreSelectionOption(id: "DARK", label: "Koyu", isSelected: false, onSelect: {})
         ],
         onDismiss: {}
     )

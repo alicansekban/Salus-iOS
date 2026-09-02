@@ -17,6 +17,7 @@
 // the end-to-end check is the simulator run.
 
 import Foundation
+import SalusCommon
 
 /// The strings `:core:reminder` owns.
 public enum ReminderStrings {
@@ -33,6 +34,6 @@ public enum ReminderStrings {
     }
 
     private static func localized(_ key: Key) -> String {
-        String(localized: String.LocalizationValue(key.rawValue), bundle: .module)
+        SalusLocalization.string(key.rawValue, bundle: .module)
     }
 }

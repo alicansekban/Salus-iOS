@@ -129,7 +129,7 @@ struct RootView: View {
 
     var body: some View {
         ZStack {
-            tabs
+            tabs.liveLocale()
             // The gates, in Android's z-order — later is on top. Overlays over the `TabView` and
             // outside every `NavigationStack`, keeping back stacks and deep links intact.
             if gates.showsLock {

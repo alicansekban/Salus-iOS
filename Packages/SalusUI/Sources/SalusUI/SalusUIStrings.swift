@@ -18,6 +18,7 @@
 // never against a resolved string. The end-to-end check is the simulator run (iOS-M2 Task 7).
 
 import Foundation
+import SalusCommon
 
 /// The shared strings `SalusUI` owns.
 public enum SalusUIStrings {
@@ -40,6 +41,6 @@ public enum SalusUIStrings {
     }
 
     private static func localized(_ key: String) -> String {
-        String(localized: String.LocalizationValue(key), bundle: .module)
+        SalusLocalization.string(key, bundle: .module)
     }
 }

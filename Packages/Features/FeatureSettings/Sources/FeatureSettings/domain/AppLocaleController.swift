@@ -30,11 +30,8 @@ public protocol AppLocaleController: Sendable {
     /// is set.
     func current() -> AppLanguage
 
-    /// Applies the language. **The change takes effect on the next launch** (ruling 6, divergence
-    /// (a)): `UserDefaults` writes are immediate, but the locale override is read at launch time
-    /// by `UIApplication`, so the in-app strings flip when the app restarts — not the moment
-    /// `apply(_:)` returns. Android's appcompat recreates the activity inline
-    /// (`AppLocaleController.kt:18-19`); iOS does not, and the comment here is the only place that
-    /// difference is written down.
+    /// Applies the language, live — the twin of `setApplicationLocales` recreating the activity
+    /// (`AppLocaleController.kt:18-19`). The iOS implementation writes `AppleLanguages` for the
+    /// next launch *and* switches `SalusLocalization`, which the shell observes to re-render.
     func apply(_ language: AppLanguage)
 }

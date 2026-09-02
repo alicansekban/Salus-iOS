@@ -30,6 +30,7 @@
 // end-to-end check is the simulator run.
 
 import Foundation
+import SalusCommon
 
 /// The strings `:feature:vitals` owns.
 public enum VitalsStrings {
@@ -156,7 +157,7 @@ public enum VitalsStrings {
     }
 
     private static func localized(_ key: Key) -> String {
-        String(localized: String.LocalizationValue(key.rawValue), bundle: .module)
+        SalusLocalization.string(key.rawValue, bundle: .module)
     }
 
     /// Substitutes the single argument, in the device's locale.

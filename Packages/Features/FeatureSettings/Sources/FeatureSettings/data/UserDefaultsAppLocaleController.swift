@@ -4,11 +4,16 @@
 //
 // Android stores the per-app language override in appcompat's `autoStoreLocales`
 // (`AppCompatDelegate.getApplicationLocales` / `setApplicationLocales`), and applies it inline by
-// recreating the activity. iOS has no AppCompat: the per-app language override is the
-// `AppleLanguages` key in `UserDefaults`, which `UIApplication` reads **at launch time** to pick
-// the bundle's localization. Writing the key changes what the *next* launch resolves; the running
-// app's strings do not flip until it restarts. That is the divergence, and it is the only one: the
-// three cases map one-to-one onto the Kotlin's three `LocaleListCompat` branches
+// recreating the activity. iOS has no AppCompat, so `apply(_:)` does both halves itself:
+//
+//   * it writes the `AppleLanguages` key in `UserDefaults`, which `UIApplication` reads **at launch
+//     time** to pick the bundle's localization — so the next launch, and the system's own UI
+//     (alerts, share sheets), agree with the pick;
+//   * it hands the language code to `SalusLocalization`, which every `…Strings` helper resolves
+//     through, and whose main-actor mirror `RootView` observes to re-render — the iOS `recreate()`,
+//     so the running app's strings flip the moment the row is tapped, exactly as on Android.
+//
+// The three cases map one-to-one onto the Kotlin's three `LocaleListCompat` branches
 // (`AppCompatLocaleController.kt:23-27`).
 //
 // `UserDefaults` carries no `Sendable` annotation, so the one property that needs the exemption
@@ -16,6 +21,7 @@
 // `SalusPreferencesDataSource.swift:33` uses.
 
 import Foundation
+import SalusCommon
 
 /// ``AppLocaleController`` backed by the `AppleLanguages` `UserDefaults` key.
 ///
@@ -61,12 +67,23 @@ public final class UserDefaultsAppLocaleController: AppLocaleController {
         switch language {
         case .system:
             // The twin of `LocaleListCompat.getEmptyLocaleList()` — removing the key lets the
-            // device language apply on the next launch.
+            // device language apply, now and on the next launch.
             defaults.removeObject(forKey: Self.appleLanguagesKey)
         case .turkish:
             defaults.set(["tr"], forKey: Self.appleLanguagesKey)
         case .english:
             defaults.set(["en"], forKey: Self.appleLanguagesKey)
+        }
+        // The live half: the running process follows the pick without a relaunch.
+        SalusLocalization.setLanguageCode(Self.languageCode(for: language))
+    }
+
+    /// The catalog code each option resolves in; `nil` follows the device.
+    static func languageCode(for language: AppLanguage) -> String? {
+        switch language {
+        case .system: nil
+        case .turkish: "tr"
+        case .english: "en"
         }
     }
 

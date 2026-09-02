@@ -1,6 +1,9 @@
 {
   "sourceLanguage" : "tr",
   "strings" : {
+    "" : {
+
+    },
     "ai_language_code" : {
       "extractionState" : "manual",
       "localizations" : {

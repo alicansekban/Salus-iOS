@@ -8,6 +8,7 @@
 // `SettingsPreferencesImplTests.ScratchUserDefaults` uses.
 
 import Foundation
+import SalusCommon
 import Testing
 
 @testable import FeatureSettings
@@ -39,6 +40,21 @@ struct UserDefaultsAppLocaleControllerTests {
         let suiteKeys = env.defaults.persistentDomain(forName: env.suiteName) ?? [:]
         #expect(suiteKeys["AppleLanguages"] as? [String] == ["tr"])
         #expect(controller.current() == .turkish)
+    }
+
+    @Test("apply() switches the live language too: 'tr', 'en', and nil for .system")
+    func applySwitchesTheLiveLanguage() throws {
+        let (controller, _) = try makeController()
+        defer { SalusLocalization.setLanguageCode(nil) }
+
+        controller.apply(.turkish)
+        #expect(SalusLocalization.languageCode == "tr")
+
+        controller.apply(.english)
+        #expect(SalusLocalization.languageCode == "en")
+
+        controller.apply(.system)
+        #expect(SalusLocalization.languageCode == nil)
     }
 
     @Test("apply(.english) stores ['en'] and current() reports .english")

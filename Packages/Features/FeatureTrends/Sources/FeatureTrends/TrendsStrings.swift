@@ -20,6 +20,7 @@
 // run, which `scripts/build-app.sh` builds for.
 
 import Foundation
+import SalusCommon
 
 /// The strings `:feature:trends` owns.
 public enum TrendsStrings {
@@ -236,6 +237,6 @@ public enum TrendsStrings {
     }
 
     private static func localized(_ key: Key) -> String {
-        String(localized: String.LocalizationValue(key.rawValue), bundle: .module)
+        SalusLocalization.string(key.rawValue, bundle: .module)
     }
 }

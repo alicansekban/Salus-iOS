@@ -469,6 +469,11 @@ package**: `Sources/Feature<Name>/Resources/Localizable.xcstrings`, `tr` as the 
 - Access strings through a typed `enum` over `Bundle.module`
   (`VitalsStrings.swift:35` and its accessors) — never a bare `String(localized:)` at a call site,
   because the key would then resolve against the *main* bundle and silently return itself.
+- The enum's one lookup is `SalusLocalization.string(key, bundle: .module)` (`SalusCommon`), never
+  `String(localized:bundle:)` directly: the helper resolves against the `.lproj` of the language the
+  user picked in Settings, so the pick applies live — the twin of appcompat recreating the activity.
+  A direct `String(localized:)` would follow the launch-time language until the next relaunch.
+  — *enforcement: review of every `…Strings.swift`.*
 - **Placeholder mapping is the one place the port is not byte-for-byte**: `%1$s` → `%1$@` (a Swift
   `String` under `%s` reads a C pointer) and `%1$d` → `%1$lld` (Swift's `Int` is 64-bit). The
   sentence around the specifier is unchanged. Documented at `VitalsStrings.swift:6-22`.
