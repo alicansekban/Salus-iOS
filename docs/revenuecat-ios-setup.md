@@ -20,6 +20,19 @@ iOS uygulamasının `SalusPremium` paketi, `SalusApp.configureRevenueCat()`, `Se
 | Premium 6 Aylık | `com.alicansekban.salus.premium.sixmonth` | 6 Ay | ₺519,99 |
 | Premium Yıllık | `com.alicansekban.salus.premium.annual` | 1 Yıl | ₺789,99 |
 
+> **⚠️ PRODUCT ID MISMATCH — RESOLVE BEFORE THE FIRST UPLOAD.** This table and
+> `scripts/premium-sandbox-qa.md` disagree. This file says
+> `com.alicansekban.salus.premium.monthly` / `.premium.sixmonth` / `.premium.annual` in a group
+> named "Premium"; the QA checklist says `com.alicansekban.salus.monthly` /
+> `com.alicansekban.salus.six_month` / `com.alicansekban.salus.annual` in a group named
+> `Premium_Plan`. **Neither doc is authoritative: App Store Connect is.** A product ID cannot be
+> changed once created, so whatever the dashboard already holds wins. Nothing in the Swift sources
+> depends on the answer — `RevenueCatPurchasesGateway` reads `Purchases.shared.offerings()` and
+> never names a product ID — so this is a documentation fix, not a code change. Open App Store
+> Connect → Monetization → Subscriptions, read the three product IDs and the group name, then
+> correct whichever of the two files is wrong. Do not guess, and do not create a second set of
+> products to make a doc true.
+
 > **Not — vergi (tax):** Google Play vitrinde gösterilen fiyatlar %20 KDV dahil olabilir; Apple App Store Connect'te fiyat tier olarak girilir ve Apple vergiyi kendisi yönetir. Fiyatları App Store Connect'te tier seçerek gir — Apple'ın tier tablosundaki en yakın değeri seç. Net tutar Apple tarafından hesaplanır ve storefront'a göre gösterilir.
 
 4. Her ürün için:
