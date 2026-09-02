@@ -19,7 +19,12 @@ public struct StringCatalog: Decodable, Sendable {
     public let strings: [String: Entry]
 
     /// The catalog's keys as a set, which is the shape every pin compares against.
-    public var keys: Set<String> { Set(strings.keys) }
+    ///
+    /// A bare `""` entry is dropped: it is not a key anything can look up, only what Xcode's string
+    /// extraction writes when it meets an empty `LocalizedStringKey` literal (`Toggle("")`,
+    /// `Picker("")`). The sources no longer contain one, but a stray entry must fail the *parity*
+    /// checks with a clear message, not the decode with `keyNotFound: localizations`.
+    public var keys: Set<String> { Set(strings.keys).subtracting([""]) }
 
     /// The translation of `key` into `locale`, or `nil` if the catalog carries neither.
     public func value(of key: String, in locale: String) -> String? {
@@ -29,9 +34,19 @@ public struct StringCatalog: Decodable, Sendable {
     // The three nested types are siblings rather than a chain because `.swiftlint.yml` caps type
     // nesting at two levels and the schema is four deep.
 
-    /// One key's translations, keyed by locale identifier.
+    /// One key's translations, keyed by locale identifier. Empty for an entry that has none —
+    /// Xcode's stray `""` — rather than a decode failure for the whole catalog.
     public struct Entry: Decodable, Sendable {
         public let localizations: [String: Localization]
+
+        public init(from decoder: any Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            localizations = try container.decodeIfPresent([String: Localization].self, forKey: .localizations) ?? [:]
+        }
+
+        private enum CodingKeys: String, CodingKey {
+            case localizations
+        }
     }
 
     /// One key in one locale.

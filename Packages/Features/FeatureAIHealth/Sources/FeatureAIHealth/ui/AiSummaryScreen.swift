@@ -7,7 +7,7 @@
 //     and it pops the very `NavigationPath` the Navigator's `pop()` mutates, so the two ways back
 //     stay one behaviour. `onBack` therefore has no parameter here, and `ai_summary_back` stays in
 //     the catalog for parity.
-//   `SingleChoiceSegmentedButtonRow` + `SegmentedButton` → `Picker("", selection:)` with
+//   `SingleChoiceSegmentedButtonRow` + `SegmentedButton` → `Picker(selection:)` with an empty label with
 //     `.pickerStyle(.segmented)`.
 //   `CircularProgressIndicator` → `ProgressView()`.
 //   `SalusEmptyState` → the same component, with the SF Symbol twin of each Material icon.
@@ -124,12 +124,16 @@ private struct PeriodSelector: View {
     let onSelect: (SummaryPeriod) -> Void
 
     var body: some View {
-        Picker("", selection: Binding(
+        // `label: { EmptyView() }`, not `Picker("", …)`: an empty `LocalizedStringKey` is written
+        // into the catalog as a bare `""` entry by Xcode's string extraction on every build.
+        Picker(selection: Binding(
             get: { selected },
             set: { onSelect($0) }
         )) {
             Text(verbatim: AiHealthStrings.periodWeekly).tag(SummaryPeriod.weekly)
             Text(verbatim: AiHealthStrings.periodMonthly).tag(SummaryPeriod.monthly)
+        } label: {
+            EmptyView()
         }
         .pickerStyle(.segmented)
         .padding(.horizontal, SalusSpacing.lg)

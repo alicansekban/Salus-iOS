@@ -82,7 +82,10 @@ struct MoreToggleCard: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 Spacer().frame(width: SalusSpacing.sm)
-                Toggle("", isOn: Binding(
+                // The label is given and then hidden rather than omitted: `Toggle("")` is an empty
+                // `LocalizedStringKey`, which Xcode's string extraction writes into the catalog as a
+                // bare `""` entry on every build (and which broke `SettingsStringsTests`).
+                Toggle(title, isOn: Binding(
                     get: { checked },
                     set: { onCheckedChange($0) }
                 ))

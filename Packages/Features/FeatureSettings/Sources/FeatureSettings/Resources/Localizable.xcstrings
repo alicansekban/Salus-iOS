@@ -1,9 +1,6 @@
 {
   "sourceLanguage" : "tr",
   "strings" : {
-    "" : {
-
-    },
     "about_app_name" : {
       "extractionState" : "manual",
       "localizations" : {

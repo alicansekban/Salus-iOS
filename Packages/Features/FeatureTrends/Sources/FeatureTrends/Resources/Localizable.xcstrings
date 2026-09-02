@@ -1,9 +1,6 @@
 {
   "sourceLanguage" : "tr",
   "strings" : {
-    "" : {
-
-    },
     "trends_back" : {
       "extractionState" : "manual",
       "localizations" : {

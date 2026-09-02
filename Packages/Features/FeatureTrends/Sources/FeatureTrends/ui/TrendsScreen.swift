@@ -5,8 +5,7 @@
 //   `TopAppBar` + `navigationIcon` (back) → `.navigationTitle(_:)` + the stack's own back button
 //     (see `AiSummaryScreen.swift:4-9` for the settled reasoning — `onBack` has no parameter
 //     here, and `trends_back` stays in the catalog for Android parity).
-//   `FilterChip` row (ranges) → `Picker("", selection:)` with `.pickerStyle(.segmented)`. Vitals
-//     maps its `ChartRange` chips the same way, so the two range selectors stay one look.
+//   `FilterChip` row (ranges) → segmented `Picker` with an empty label; Vitals does the same.
 //   `CircularProgressIndicator` → `ProgressView()`.
 //   `SalusEmptyState` → the same component, with the SF Symbol twin of each Material icon.
 //
@@ -484,15 +483,16 @@ private struct RangeFilter: View {
     let onSelect: (TrendsRange) -> Void
 
     var body: some View {
-        Picker("", selection: Binding(
-            get: { selected },
-            set: { onSelect($0) }
-        )) {
-            Text(verbatim: TrendsStrings.rangeMonth).tag(TrendsRange.month)
-            Text(verbatim: TrendsStrings.rangeQuarter).tag(TrendsRange.quarter)
-            Text(verbatim: TrendsStrings.rangeHalfYear).tag(TrendsRange.halfYear)
-            Text(verbatim: TrendsStrings.rangeYear).tag(TrendsRange.year)
-        }
+        Picker(
+            selection: Binding(get: { selected }, set: { onSelect($0) }),
+            content: {
+                Text(verbatim: TrendsStrings.rangeMonth).tag(TrendsRange.month)
+                Text(verbatim: TrendsStrings.rangeQuarter).tag(TrendsRange.quarter)
+                Text(verbatim: TrendsStrings.rangeHalfYear).tag(TrendsRange.halfYear)
+                Text(verbatim: TrendsStrings.rangeYear).tag(TrendsRange.year)
+            },
+            label: EmptyView.init // not `Picker("", …)` — see `AiSummaryScreen.swift` for why
+        )
         .pickerStyle(.segmented)
         .padding(.horizontal, SalusSpacing.lg)
         .padding(.vertical, SalusSpacing.sm)
