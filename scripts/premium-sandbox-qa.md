@@ -10,18 +10,9 @@ Tick a box only after observing the described behaviour, not before.
 
 ## §0. Prerequisites (one-time)
 
-> **⚠️ PRODUCT ID MISMATCH — RESOLVE BEFORE RUNNING THIS.** The IDs below and the ones in
-> `docs/revenuecat-ios-setup.md` disagree. This file says `com.alicansekban.salus.monthly` /
-> `.six_month` / `.annual` in a group named `Premium_Plan`; the setup guide says
-> `com.alicansekban.salus.premium.monthly` / `.premium.sixmonth` / `.premium.annual` in a group
-> named "Premium". **Neither doc is authoritative: App Store Connect is.** A product ID cannot be
-> changed once created, so whatever the dashboard already holds wins. Nothing in the Swift sources
-> depends on the answer — `RevenueCatPurchasesGateway` reads `Purchases.shared.offerings()` and
-> never names a product ID — so this is a documentation fix, not a code change. Read the three
-> product IDs and the group name off App Store Connect → Monetization → Subscriptions, then
-> correct whichever of the two files is wrong. Do not guess, and do not create a second set of
-> products to make a doc true.
-
+> IDs and group name below were verified against App Store Connect on 2026-09-02 (group
+> `Premium_Plan`, id 22350996; all three products "Ready for Review") and against the RevenueCat
+> `default` offering (`$rc_monthly` / `$rc_six_month` / `$rc_annual` each carry the iOS product).
 
 - [ ] Paid Applications Agreement is **Active** (App Store Connect → Business)
 - [ ] All three subscriptions show **Ready to Submit**: `com.alicansekban.salus.monthly`,

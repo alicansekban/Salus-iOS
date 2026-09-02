@@ -11,27 +11,18 @@ iOS uygulamasının `SalusPremium` paketi, `SalusApp.configureRevenueCat()`, `Se
 ## Adım 1 — App Store Connect: abonelik grubu + ürünler
 
 1. **App Store Connect → My Apps → Salus → Monetization → Subscriptions** sayfasına git.
-2. **Subscription Group** oluştur (ad: "Premium").
-3. Üç abonelik ürünü ekle:
+2. **Subscription Group** oluştur (ad: `Premium_Plan`; mağazada görünen ad "Salus Premium", TR + EN).
+3. Üç abonelik ürünü ekle — hepsi grubun **Level 1**'inde (süre değişimi crossgrade sayılsın):
 
 | Referans Ad | Product ID | Süre | Fiyat |
 |---|---|---|---|
-| Premium Aylık | `com.alicansekban.salus.premium.monthly` | 1 Ay | ₺129,99 |
-| Premium 6 Aylık | `com.alicansekban.salus.premium.sixmonth` | 6 Ay | ₺519,99 |
-| Premium Yıllık | `com.alicansekban.salus.premium.annual` | 1 Yıl | ₺789,99 |
+| Salus Monthly Premium | `com.alicansekban.salus.monthly` | 1 Ay | ₺129,99 |
+| Salus 6-Month Premium | `com.alicansekban.salus.six_month` | 6 Ay | ₺519,99 |
+| Salus Annual Premium | `com.alicansekban.salus.annual` | 1 Yıl | ₺789,99 |
 
-> **⚠️ PRODUCT ID MISMATCH — RESOLVE BEFORE THE FIRST UPLOAD.** This table and
-> `scripts/premium-sandbox-qa.md` disagree. This file says
-> `com.alicansekban.salus.premium.monthly` / `.premium.sixmonth` / `.premium.annual` in a group
-> named "Premium"; the QA checklist says `com.alicansekban.salus.monthly` /
-> `com.alicansekban.salus.six_month` / `com.alicansekban.salus.annual` in a group named
-> `Premium_Plan`. **Neither doc is authoritative: App Store Connect is.** A product ID cannot be
-> changed once created, so whatever the dashboard already holds wins. Nothing in the Swift sources
-> depends on the answer — `RevenueCatPurchasesGateway` reads `Purchases.shared.offerings()` and
-> never names a product ID — so this is a documentation fix, not a code change. Open App Store
-> Connect → Monetization → Subscriptions, read the three product IDs and the group name, then
-> correct whichever of the two files is wrong. Do not guess, and do not create a second set of
-> products to make a doc true.
+> Bu tablo App Store Connect'te 2026-09-02'de doğrulandı (grup `Premium_Plan`, ID 22350996, üç ürün
+> "Ready for Review"). Kodda product ID geçmez — `RevenueCatPurchasesGateway` offering'i okur — bu
+> yüzden ID'ler yalnızca burada ve `scripts/premium-sandbox-qa.md`'de yaşar; ikisi aynı olmalı.
 
 > **Not — vergi (tax):** Google Play vitrinde gösterilen fiyatlar %20 KDV dahil olabilir; Apple App Store Connect'te fiyat tier olarak girilir ve Apple vergiyi kendisi yönetir. Fiyatları App Store Connect'te tier seçerek gir — Apple'ın tier tablosundaki en yakın değeri seç. Net tutar Apple tarafından hesaplanır ve storefront'a göre gösterilir.
 
@@ -43,7 +34,7 @@ iOS uygulamasının `SalusPremium` paketi, `SalusApp.configureRevenueCat()`, `Se
 5. Subscription group için **App Store Localizations** (TR + EN) ayarla.
 6. Kaydet. Apple sandbox'ta birkaç dakika içinde propagasyon yapar.
 
-> **Product ID'ler RevenueCat'te tam olarak eşleşmeli.** Android Play Console'daki product ID'ler farklı (`premium_monthly`, `premium_six_month`, `premium_annual`), RevenueCat her iki platformu aynı `premium` entitlement'a mapler — iOS product ID'leri RevenueCat'in iOS paketlerine girilir.
+> **Product ID'ler RevenueCat'te tam olarak eşleşmeli.** Android Play Console'daki product ID'ler farklı (tek abonelik `salus_premium`, base plan'lar `monthly` / `six-month` / `annual`; RevenueCat'te `salus_premium:monthly`, `salus_premium:six-month`, `salus_premium:annual`), RevenueCat her iki platformu aynı `premium` entitlement'a mapler — iOS product ID'leri RevenueCat'in iOS paketlerine girilir.
 
 ## Adım 2 — RevenueCat: iOS app ekle
 
@@ -60,9 +51,9 @@ iOS uygulamasının `SalusPremium` paketi, `SalusApp.configureRevenueCat()`, `Se
 
 1. **Product Catalog → Products** sayfasına git.
 2. Adım 1'deki üç iOS product ID'yi ekle:
-   - `com.alicansekban.salus.premium.monthly` — App: iOS
-   - `com.alicansekban.salus.premium.sixmonth` — App: iOS
-   - `com.alicansekban.salus.premium.annual` — App: iOS
+   - `com.alicansekban.salus.monthly` — App: iOS
+   - `com.alicansekban.salus.six_month` — App: iOS
+   - `com.alicansekban.salus.annual` — App: iOS
 3. **Entitlements** sayfasına git. `premium` entitlement zaten mevcut (Android kullanıyor). Üç iOS ürününü de mevcut Android ürünlerinin yanına ekle.
 4. **Offerings → Current Offering** sayfasına git. Üç iOS ürününü paket olarak ekle:
    - `$rc_monthly` → iOS aylık ürün

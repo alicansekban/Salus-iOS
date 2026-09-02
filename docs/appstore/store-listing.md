@@ -271,7 +271,7 @@ in `project.yml`.
 - [x] Database file `isExcludedFromBackup = true` verified (S-10) — it was **not** set; added in
       `SalusDatabase.excludeFromBackup(at:)`, called from `AppCompositionRoot.openDatabase`, with
       the report cache directory covered too and four tests pinning the resource value
-- [ ] Product IDs in App Store Connect match the RevenueCat offering; fix whichever doc is wrong (`docs/revenuecat-ios-setup.md` vs `scripts/premium-sandbox-qa.md`)
+- [x] Product IDs in App Store Connect match the RevenueCat offering — verified 2026-09-02: group `Premium_Plan`, `com.alicansekban.salus.monthly` / `.six_month` / `.annual`; `docs/revenuecat-ios-setup.md` corrected
       — needs the dashboard, so it stays open. Both docs now carry the conflict as a warning
       block; no Swift source names a product ID, so only the docs are wrong.
 - [ ] `scripts/premium-sandbox-qa.md` run on a device with a sandbox tester
