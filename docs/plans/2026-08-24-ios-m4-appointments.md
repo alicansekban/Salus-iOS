@@ -611,3 +611,4 @@ already taken.
 - **Carried from iOS-M3, still open and still owed before M5 ships the medication handler**: the M3a
   on-device checklist (`scripts/m3-manual-qa.md` §9) and the simulator taps in its sections 2-7, plus
   the designed `salus_alarm.caf` asset.
+  *2026-09-02: replaced by system sounds, see ledger O-8.*

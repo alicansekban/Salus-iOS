@@ -48,8 +48,7 @@ struct UserNotificationGatewayRoutingTests {
 
         let content = try #require(fixture.center.pending.first?.content)
         #expect(content.interruptionLevel == .timeSensitive)
-        #expect(content.sound == UNNotificationSound(named: UNNotificationSoundName(ReminderAlarmSound.fileName)))
-        #expect(content.sound != UNNotificationSound.default)
+        #expect(content.sound == ReminderAlarmSound.sound)
     }
 
     /// The fallback is not just a quieter alarm: it is the whole answerable surface on a device with
@@ -81,13 +80,6 @@ struct UserNotificationGatewayRoutingTests {
         // The swipe-away has to keep reaching the engine on this path too — it is the only way to
         // silence the notification without answering it.
         #expect(category.options.contains(.customDismissAction))
-    }
-
-    /// The custom sound has to name the file that is actually in the bundle. iOS ignores a sound it
-    /// cannot find — or one longer than 30 s — and plays the default instead, silently.
-    @Test("the alarm sound names the bundled file")
-    func alarmSoundNamesTheBundledFile() {
-        #expect(ReminderAlarmSound.fileName == "salus_alarm.caf")
     }
 
     /// Spec's AlarmKit note, case 1. A real system alarm, and it does NOT consume one of the 64
@@ -210,7 +202,7 @@ struct UserNotificationGatewayRoutingTests {
         let content = try #require(fixture.center.pending.first?.content)
         #expect(fixture.center.pending.map(\.identifier) == ["34"])
         #expect(content.interruptionLevel == .timeSensitive)
-        #expect(content.sound == UNNotificationSound(named: UNNotificationSoundName(ReminderAlarmSound.fileName)))
+        #expect(content.sound == ReminderAlarmSound.sound)
         #expect(await gateway.pendingRequestCodes() == [34])
     }
 
@@ -470,5 +462,29 @@ struct ReminderAlarmIdentityTests {
     @Test("a foreign alarm id carries no request code")
     func foreignAlarmIdsCarryNoRequestCode() {
         #expect(ReminderAlarmIdentity.requestCode(of: UUID()) == nil)
+    }
+}
+
+/// What the two `.alarm` paths ring — pinned on its own suite because ``ReminderAlarmSound`` is the
+/// single place that choice lives, and both the notification fallback above and the AlarmKit adapter
+/// read it.
+@Suite("Reminder alarm sound")
+struct ReminderAlarmSoundTests {
+    /// v1 rings the SYSTEM sound, the way Android does — `AlarmSoundPlayer` hands `MediaPlayer` the
+    /// device's own default alarm ringtone rather than a shipped asset. `.defaultRingtone` is the
+    /// long, ringtone-style system sound; plain `.default` is the short chime a dose alarm goes
+    /// unheard under, so the two must not be the same value.
+    ///
+    /// `defaultRingtone` is iOS-only (`API_UNAVAILABLE(macos)`) and `swift test` builds this package
+    /// for macOS — the same host-build concession the AlarmKit adapter lives under. The host branch
+    /// pins the documented stub; the iOS branch is compiled by `scripts/build-app.sh`.
+    @Test("the alarm sound is the system ringtone, not the short default chime")
+    func alarmSoundIsTheSystemRingtone() {
+        #if os(iOS)
+            #expect(ReminderAlarmSound.sound == UNNotificationSound.defaultRingtone)
+            #expect(ReminderAlarmSound.sound != UNNotificationSound.default)
+        #else
+            #expect(ReminderAlarmSound.sound == UNNotificationSound.default)
+        #endif
     }
 }

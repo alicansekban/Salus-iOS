@@ -39,7 +39,6 @@
 		81044E5FE47EA632618E1C7F /* SalusAI in Frameworks */ = {isa = PBXBuildFile; productRef = B0931AF9E9C5CAE0E5D9A91F /* SalusAI */; };
 		82BFDB838C5B33E74EC797EA /* AlarmActionBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C55BD8FCF59C4D3D0B3D410 /* AlarmActionBridge.swift */; };
 		8A50D3A5738D054EDC2BDB8B /* SalusReminder in Frameworks */ = {isa = PBXBuildFile; productRef = A5B22EB0FD372492463281EC /* SalusReminder */; };
-		913F6C91A354A0813950BD24 /* salus_alarm.caf in Resources */ = {isa = PBXBuildFile; fileRef = 80918512BF78D2B9D3F0B433 /* salus_alarm.caf */; };
 		9529EDDCBF549513CBD95244 /* SalusPremium in Frameworks */ = {isa = PBXBuildFile; productRef = 87DE08D54D6185E8F6ABC654 /* SalusPremium */; };
 		99186A4143B93D27A5CCE3E2 /* SalusDesignSystem in Frameworks */ = {isa = PBXBuildFile; productRef = C9C72A59E0A6B87AFB4FE4FF /* SalusDesignSystem */; };
 		A016D85074A4509AC99FF2FF /* SalusModel in Frameworks */ = {isa = PBXBuildFile; productRef = 8ECECD06AD0F99DA3A276AD5 /* SalusModel */; };
@@ -83,7 +82,6 @@
 		6F9E9049E82ED2E281E9C07E /* AiHealthLanguageProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AiHealthLanguageProvider.swift; sourceTree = "<group>"; };
 		7C55BD8FCF59C4D3D0B3D410 /* AlarmActionBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmActionBridge.swift; sourceTree = "<group>"; };
 		7E5895AE298994F9E378CD48 /* FeatureVitals */ = {isa = PBXFileReference; lastKnownFileType = folder; name = FeatureVitals; path = Packages/Features/FeatureVitals; sourceTree = SOURCE_ROOT; };
-		80918512BF78D2B9D3F0B433 /* salus_alarm.caf */ = {isa = PBXFileReference; path = salus_alarm.caf; sourceTree = "<group>"; };
 		814A06AA9BCDD69E3C76C98E /* RootTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootTab.swift; sourceTree = "<group>"; };
 		814D8ECF9C6A2402529D7DF1 /* Salus.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Salus.entitlements; sourceTree = "<group>"; };
 		837A905B9212600BCAD4F423 /* AppCompositionRoot+Reminder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppCompositionRoot+Reminder.swift"; sourceTree = "<group>"; };
@@ -184,14 +182,6 @@
 			);
 			sourceTree = "<group>";
 		};
-		6A392B2A08D6304DBF51378F /* Resources */ = {
-			isa = PBXGroup;
-			children = (
-				80918512BF78D2B9D3F0B433 /* salus_alarm.caf */,
-			);
-			path = Resources;
-			sourceTree = "<group>";
-		};
 		7B26979369DD6CD398086DDA /* Lock */ = {
 			isa = PBXGroup;
 			children = (
@@ -208,7 +198,6 @@
 				3B1306692224BD06CE0E55BF /* InfoPlist.strings */,
 				7B26979369DD6CD398086DDA /* Lock */,
 				C6796801C34DB4173CAE4458 /* Reminder */,
-				6A392B2A08D6304DBF51378F /* Resources */,
 				6F9E9049E82ED2E281E9C07E /* AiHealthLanguageProvider.swift */,
 				15AD79D550BC94771443016D /* AppCompositionRoot.swift */,
 				C46AC39F5A2F807756E92213 /* AppCompositionRoot+Modules.swift */,
@@ -366,7 +355,6 @@
 				09EF295DE4AD83F20308E424 /* InfoPlist.strings in Resources */,
 				31B1435CF5BE4BF05CC0C0C1 /* Localizable.xcstrings in Resources */,
 				58346563AB29974D2DE4CED7 /* PrivacyInfo.xcprivacy in Resources */,
-				913F6C91A354A0813950BD24 /* salus_alarm.caf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

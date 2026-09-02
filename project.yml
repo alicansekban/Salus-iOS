@@ -157,12 +157,8 @@ targets:
     platform: iOS
     deploymentTarget: "17.0"
 
-    # `App` is walked whole, so `App/Resources/salus_alarm.caf` is picked up as a bundle resource
-    # without an entry of its own: XcodeGen puts a file it has no compiler for into the Resources
-    # build phase, and Xcode copies that phase to the bundle ROOT — which is the only place
-    # `UNNotificationSound(named:)` and AlarmKit look for a custom sound. Verify after any change
-    # to this block with:
-    #     grep -c salus_alarm.caf Salus.xcodeproj/project.pbxproj    # 4: file ref, build file, both phases
+    # `App` is walked whole: every file under it is picked up without an entry of its own, sources
+    # to compile and anything else as a bundle resource.
     sources:
       - path: App
 

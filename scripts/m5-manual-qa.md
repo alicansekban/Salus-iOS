@@ -356,11 +356,13 @@ AlarmKit card is **"Tam ekran ilaç alarmları"**.
   *Expected:* it arrives as an ordinary banner with its own sound — **not** a full-screen alarm, and
   it does not take over the lock screen. Spec §6.1: only the handler decides, and only a medication
   dose is `ALARM`.
-- [ ] **5.6 The bundled sound.** *Expected:* the alarm plays `salus_alarm.caf`, not the system
-  default. `UserNotificationGatewayRoutingTests` pins that the request *names* the file; whether
-  AlarmKit's `.named` sound resolves a `.caf` extension is only answerable here. **The asset is still
-  the generated placeholder** from `scripts/generate-alarm-sound.sh` (divergence (l)) — a designed
-  ≤ 30 s sound is owed before release, so judge the routing, not the music.
+- [ ] **5.6 The alarm sound.** *Expected:* the alarm rings the **system** sound — AlarmKit's
+  `.default` alarm tone on the 26+ path, the long ringtone-style `UNNotificationSound.defaultRingtone`
+  on the time-sensitive fallback — and never the short default notification chime.
+  `UserNotificationGatewayRoutingTests` pins the choice; that the OS actually plays a ringtone-length
+  tone rather than a chime is only answerable here. (2026-09-02: v1 ships system sounds, the twin of
+  Android's `AlarmSoundPlayer` reading `RingtoneManager`'s default alarm; the bundled placeholder
+  asset and its generator script are gone, so nothing is owed before release.)
 - [ ] **5.7 AlarmKit refused degrades, never loses the dose.** Deny the AlarmKit prompt on a fresh
   install, arm a dose, lock.
   *Expected:* it still arrives, as the §4 time-sensitive notification with **İçtim** and **10 dk

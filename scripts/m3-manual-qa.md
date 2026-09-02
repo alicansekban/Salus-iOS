@@ -242,11 +242,11 @@ shipped; iOS-M5 Task 8 lowered it to 26.0 — see that plan's divergence list.)
       the lock screen rather than arriving as a banner.
 - [ ] **A real AlarmKit cancel.** Relaunch (which withdraws the previous occurrence) and confirm the
       alarm does not fire. The gateway must route the cancel to the backend that scheduled it.
-- [ ] **The `.caf` sound on the AlarmKit path.** `UserNotificationGatewayRoutingTests` pins that the
-      request names `salus_alarm.caf`, but whether AlarmKit's `.named` sound resolves a `.caf`
-      extension is not verifiable off device. Confirm the alarm plays the bundled sound, not the
-      system default. *(The asset itself is still the generated placeholder from
-      `scripts/generate-alarm-sound.sh` — a designed ≤30 s sound is owed before release.)*
+- [ ] **The sound on the AlarmKit path.** `UserNotificationGatewayRoutingTests` pins the choice,
+      but whether the OS rings a ringtone-length tone rather than a short chime is not verifiable off
+      device. Confirm the alarm plays the **system** alarm sound (AlarmKit `.default`), not the
+      default notification chime. *(2026-09-02: v1 ships system sounds, as Android does; the
+      bundled placeholder asset is gone and no designed sound is owed.)*
 - [ ] **AlarmKit refused.** Deny the AlarmKit prompt, arm a dose, and confirm it still arrives as a
       time-sensitive notification with the alarm sound. A refusal must degrade, never lose the dose.
 - [ ] **OS-driven background launch and expiration.** The two debugger commands in section 8, on a
@@ -320,6 +320,7 @@ Run by Alican on his **iPhone 14 Pro Max** (iOS 26, AlarmKit available), Debug b
       `-SalusDebugReminderLeadMinutes 10`, Xcode stopped, phone rebooted and unlocked once; the alarm
       fired on time.
 
-**Section 9 is complete (7/7).** The M3a prerequisite for iOS-M5 is closed; the designed alarm sound
-(`salus_alarm.caf` is still the generated placeholder) remains owed before release.
+**Section 9 is complete (7/7).** The M3a prerequisite for iOS-M5 is closed. *(2026-09-02: the
+designed alarm sound is no longer owed — v1 ships system sounds, the twin of Android's
+`AlarmSoundPlayer`, and the bundled placeholder asset was removed. See ledger O-8.)*
 

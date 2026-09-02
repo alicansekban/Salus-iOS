@@ -93,7 +93,6 @@ contains no command of its own:
 | `scripts/build-app.sh` | `xcodebuild build` for the `Salus` scheme on a generic iOS Simulator destination |
 | `scripts/ci.sh` | all five, in order — run this before pushing |
 | `scripts/clean.sh` | removes every package's `.build` / `.swiftpm` and this project's DerivedData |
-| `scripts/generate-alarm-sound.sh` | regenerates `App/Resources/salus_alarm.caf`, the reminder alarm sound |
 
 A clean run takes about four minutes.
 
@@ -106,13 +105,6 @@ identical file *outside* it, lints the repo, and fails unless the rule fired onc
 quiet outside — the second half being what catches an `included:` regex gone too wide. Fixtures are
 removed on every exit path, interrupts included. A new custom rule gets a `check` block in the same
 commit.
-
-`scripts/generate-alarm-sound.sh` is not a CI stage either, and runs by hand when the sound
-changes. It synthesizes a beep pattern with perl, converts it with `afconvert`, and fails unless
-the result is at most 30 seconds — iOS ignores a longer custom notification sound and plays the
-default instead, without logging anything. The `.caf` it writes is **committed**, so neither CI nor
-a fresh clone has to run it. What it produces today is a placeholder; a designed alarm sound
-replaces it before release (iOS-M3 execution record).
 
 `scripts/clean.sh` is the odd one out: it is Android's `./gradlew clean`, not a CI stage, and
 `scripts/ci.sh` does not call it. It prints every directory it removes with its size. The

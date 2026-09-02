@@ -107,6 +107,7 @@
 - Test: `Packages/SalusReminder/Tests/SalusReminderTests/UserNotificationGatewayTests.swift`
 - Modify: `project.yml` — `NSAlarmKitUsageDescription`, notification sound resource
 - Create: `App/Resources/salus_alarm.caf` (placeholder ≤30 s generated via `afconvert` in `scripts/`; replaced by a designed sound before release — note it in the execution record)
+  *2026-09-02: replaced by system sounds, see ledger O-8.*
 
 **Kotlin source:** `engine/AndroidAlarmGateway.kt` (shape + doc discipline), `engine/ReminderNotificationPresenter.kt` (`ReminderIntentExtras` twin, action wiring). Spec: the 2026-08-23 AlarmKit note.
 
@@ -114,6 +115,7 @@
 - `protocol UserNotificationCenting: Sendable` — the thin seam over `UNUserNotificationCenter` (`add`, `removePendingNotificationRequests`, `pendingNotificationRequests`, `notificationSettings`, `setNotificationCategories`, `requestAuthorization`) + `struct SystemUserNotificationCenter` and a test fake.
 - `final class UserNotificationGateway: NotificationGateway` — identifier = `String(requestCode)`; `userInfo` keys `ReminderUserInfo.type/entityId/occurrenceKey` (twin of `ReminderIntentExtras`); actions → `UNNotificationCategory` per `ReminderType` with the handler-provided action ids; calendar trigger from `triggerAt` in the current time zone, `repeats: false`.
 - **Presentation routing:** `content.presentation == .alarm` → `#available(iOS 26)`: schedule through `AlarmKitScheduling` (protocol seam over AlarmKit's manager; alarms do **not** consume the 64 budget); below 26 → `UNNotificationRequest` with `interruptionLevel = .timeSensitive` + `UNNotificationSound(named: "salus_alarm.caf")`. `.notification` → plain request, default sound. Cancellation must route to the same backend that scheduled it (ledger's request code is enough — AlarmKit ids derive from it).
+  *2026-09-02: replaced by system sounds, see ledger O-8.*
 - `pendingRequestCodes()` unions UN-pending ids and (iOS 26+) AlarmKit-scheduled ids.
 
 - [ ] TDD with the fake center: identifier/userInfo/category pins, time-sensitive + custom-sound pin for `.alarm` fallback path, plain path pin, cancel-removes-pending, budget invariant (gateway never holds > 64 pending UN requests — assert after scheduling 70; the synchronizer's cap makes this unreachable, the gateway `assertionFailure`s as a tripwire).
@@ -485,6 +487,7 @@ any of them.
   iOS-M5 ships the medication handler.
 - **The designed alarm sound.** `App/Resources/salus_alarm.caf` is still the placeholder generated
   by `scripts/generate-alarm-sound.sh`; a designed ≤ 30 s asset is owed before release.
+  *2026-09-02: replaced by system sounds, see ledger O-8.*
 - **The simulator taps** — sections 2-7 of the manual QA script.
 - **The `--ff-only` merge and the push** (ruling 6).
 

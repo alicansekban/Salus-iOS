@@ -24,9 +24,9 @@
 //  * `.alarm` on iOS 26+ → AlarmKit. A real system alarm, and NOT a pending notification, so it
 //    does not spend one of the 64 slots §6.1's window math is written against.
 //  * `.alarm` below 26 → a notification with `interruptionLevel = .timeSensitive` (an auto-approved
-//    capability) and a custom sound. Silent mode still silences it: accepted degradation. Critical
-//    Alerts are deliberately not used — the entitlement needs a case-by-case Apple application with
-//    no timeline guarantee.
+//    capability) and the system ringtone sound. Silent mode still silences it: accepted
+//    degradation. Critical Alerts are deliberately not used — the entitlement needs a case-by-case
+//    Apple application with no timeline guarantee.
 //  * `.notification` → a plain request with the default sound, whatever the OS version.
 //
 // The decision is never taken from `ReminderType`: presentation is handler-owned, and this type
@@ -36,12 +36,25 @@ import Foundation
 import SalusModel
 import UserNotifications
 
-/// The bundled alarm sound, shared by both `.alarm` paths.
+/// The alarm sound, and the single place its choice lives — read by both `.alarm` paths.
+///
+/// v1 rings a SYSTEM sound rather than a shipped asset, which is what Android does: its
+/// `AlarmSoundPlayer` hands `MediaPlayer` the device's own default alarm ringtone
+/// (`RingtoneManager`) on `USAGE_ALARM`. `.defaultRingtone` is the closest thing UserNotifications
+/// has — the long, ringtone-style system sound iOS plays for a call — where plain `.default` is a
+/// short chime that a dose alarm goes unheard under. The bundled placeholder asset was removed with
+/// this decision (2026-09-02); nothing here needs a length check or a designed asset any more.
 public enum ReminderAlarmSound {
-    /// The file as it sits in the app bundle. iOS ignores a custom sound longer than 30 s and
-    /// falls back to the default one silently, so the asset is generated — and length-checked — by
-    /// `scripts/generate-alarm-sound.sh`.
-    public static let fileName = "salus_alarm.caf"
+    /// `defaultRingtone` is iOS-only — the header says `API_UNAVAILABLE(macos)` — and `swift test`
+    /// builds this package for macOS (`CLAUDE.md`'s `.macOS(.v14)` host-build concession, the same
+    /// one the AlarmKit adapter lives under). The host branch is a stub: nothing on it rings.
+    public static var sound: UNNotificationSound {
+        #if os(iOS)
+            .defaultRingtone
+        #else
+            .default
+        #endif
+    }
 }
 
 /// The notification categories the engine registers, one per ``ReminderType``.
@@ -201,7 +214,7 @@ public final class UserNotificationGateway: NotificationGateway {
             notification.sound = .default
         case .alarm:
             // Reached only where there is no alarm backend — spec's AlarmKit note, case 2.
-            notification.sound = UNNotificationSound(named: UNNotificationSoundName(ReminderAlarmSound.fileName))
+            notification.sound = ReminderAlarmSound.sound
             notification.interruptionLevel = .timeSensitive
         }
         return notification

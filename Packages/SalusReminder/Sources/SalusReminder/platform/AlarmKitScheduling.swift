@@ -231,7 +231,9 @@ public enum ReminderAlarmIdentity {
                 attributes: attributes,
                 stopIntent: intents?.stopIntent(requestCode: requestCode),
                 secondaryIntent: secondaryIntent,
-                sound: .named(ReminderAlarmSound.fileName)
+                // The system alarm sound, the twin of Android's `RingtoneManager` default
+                // (`AlarmSoundPlayer`). v1 ships no asset of its own — see ``ReminderAlarmSound``.
+                sound: .default
             )
 
             _ = try await AlarmManager.shared.schedule(
