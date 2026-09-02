@@ -99,8 +99,15 @@ public protocol PdfReportGenerator: Sendable {
                 appropriateFor: nil,
                 create: true
             )
-            let directory = caches.appendingPathComponent(reportsDirectory, isDirectory: true)
+            var directory = caches.appendingPathComponent(reportsDirectory, isDirectory: true)
             try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
+            // Parity-ledger S-10, the derived-health-data half. `Library/Caches` is already outside
+            // every iOS backup by construction, so this is belt and braces rather than the fix —
+            // but a doctor report is the densest health file the app ever writes, and the flag says
+            // so on the directory itself instead of relying on where it happens to live.
+            var values = URLResourceValues()
+            values.isExcludedFromBackup = true
+            try? directory.setResourceValues(values)
             let file = directory.appendingPathComponent(
                 "salus-report-\(stats.startEpochDay)-\(stats.endEpochDay).pdf"
             )

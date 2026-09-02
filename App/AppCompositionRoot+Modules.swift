@@ -195,7 +195,8 @@ extension AppCompositionRoot {
         )
     }
 
-    /// Opens `<Application Support>/salus.db`, creating the directory first.
+    /// Opens `<Application Support>/salus.db`, creating the directory first and excluding it
+    /// from backup.
     ///
     /// `SalusDatabase.init` does not create parent directories, and `Application Support` — unlike
     /// `Documents` — is not created for an app by the system. Two things can fail here, and both
@@ -213,8 +214,14 @@ extension AppCompositionRoot {
                 create: false
             )
             try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
-            let path = directory.appendingPathComponent(SalusDatabase.name).path
-            return try SalusDatabase(path: path, clock: clock)
+            let file = directory.appendingPathComponent(SalusDatabase.name)
+            let database = try SalusDatabase(path: file.path, clock: clock)
+            // Parity-ledger S-10: Android's `allowBackup=false` has no iOS manifest twin, so the
+            // store is marked here, after the open that creates it. Fatal like the open itself —
+            // a health log that silently ships to iCloud is exactly what the listing and
+            // `about_privacy_body` promise it will not do.
+            try SalusDatabase.excludeFromBackup(at: file)
+            return database
         } catch {
             let reason = String(describing: error)
             AppCompositionRoot.logger.critical(
