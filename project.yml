@@ -215,6 +215,12 @@ targets:
         CFBundleDisplayName: Salus
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        # Export compliance. Salus ships no cryptography of its own: the only encryption it
+        # reaches is the system's — HTTPS for RevenueCat's receipt validation and Firebase AI
+        # Logic, and the Keychain's own storage for the app-lock flag. That is Apple's exempt
+        # case, and declaring it here is what keeps every upload from stopping on App Store
+        # Connect's export-compliance question.
+        ITSAppUsesNonExemptEncryption: false
         # iOS-M9: the RevenueCat API key, resolved from `Secrets.local.xcconfig` at build time.
         # Read by `SalusApp.init` through `Bundle.main.infoDictionary`; blank on a keyless build.
         SALUS_REVENUECAT_API_KEY: $(SALUS_REVENUECAT_API_KEY)
