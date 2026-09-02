@@ -46,6 +46,13 @@
 // declares one (`docs/ios-feature-template.md`, Navigation). Each dropped key is recorded as a
 // divergence (d) in the task report rather than carried over.
 //
+// STORE-NAME DIVERGENCE: `about_privacy_body` is platform-mapped on iOS, the same ruling that
+// already covers `paywall_renewal_note` (`FeaturePaywall/PaywallStrings.swift`, D-M9-a).
+// Android names "Google Play" as the store that validates the subscription; iOS names
+// "App Store", because that is where an iOS subscription is bought and cancelled. Only the
+// store name moves — RevenueCat stays, and every other word is Android-verbatim. This is the
+// only key in `:feature:settings` whose text differs from the Android XML.
+//
 // PLACEHOLDER MAPPING, the one place the port is not byte-for-byte. Two keys carry an argument:
 //
 //   Android      Swift        Key                          Why

@@ -41,13 +41,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Your health records are stored only on your device and never leave it. No accounts, no analytics, no data collection. Salus uses the network for two things: verifying your subscription (Google Play and our subscription provider, RevenueCat) and — if you use them — the AI features. The AI features only ever receive anonymous statistical summaries; your health records are never sent."
+            "value" : "Your health records are stored only on your device and never leave it. No accounts, no analytics, no data collection. Salus uses the network for two things: verifying your subscription (App Store and our subscription provider, RevenueCat) and — if you use them — the AI features. The AI features only ever receive anonymous statistical summaries; your health records are never sent."
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sağlık kayıtlarınız yalnızca cihazınızda saklanır ve cihazınızdan asla çıkmaz. Hesap yoktur, analitik yoktur, veri toplanmaz. Salus ağı yalnızca iki şey için kullanır: aboneliğinizi doğrulamak (Google Play ve abonelik altyapımız RevenueCat) ve — kullanırsanız — AI özellikleri. AI özelliklerine yalnızca anonim istatistik özetleri gönderilir; sağlık kayıtlarınız asla gönderilmez."
+            "value" : "Sağlık kayıtlarınız yalnızca cihazınızda saklanır ve cihazınızdan asla çıkmaz. Hesap yoktur, analitik yoktur, veri toplanmaz. Salus ağı yalnızca iki şey için kullanır: aboneliğinizi doğrulamak (App Store ve abonelik altyapımız RevenueCat) ve — kullanırsanız — AI özellikleri. AI özelliklerine yalnızca anonim istatistik özetleri gönderilir; sağlık kayıtlarınız asla gönderilmez."
           }
         }
       }

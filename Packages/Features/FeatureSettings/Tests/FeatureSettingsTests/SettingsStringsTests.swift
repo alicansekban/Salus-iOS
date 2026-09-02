@@ -22,6 +22,10 @@ import Testing
 /// `reminder_health_exact_*`, the three `reminder_health_battery_*`, `reminder_health_back`,
 /// `settings_back` and `profile_back`. Each is a recorded divergence, not a silent drop.
 ///
+/// `about_privacy_body` carries the iOS store-name divergence, the twin of
+/// `paywall_renewal_note`'s (D-M9-a): "App Store" where Android says "Google Play". Every
+/// other value is Android-verbatim.
+///
 /// The catalog is read off disk rather than through `Bundle.module`, for the two reasons
 /// `VitalsStringsTests` records: `String(localized:)` answers for ONE locale, so it can never prove
 /// both carry a key, and command-line `swift test` does not compile a `.xcstrings` at all.
@@ -138,12 +142,12 @@ private enum SettingsSamples {
             key: "about_privacy_body",
             turkish: "Sağlık kayıtlarınız yalnızca cihazınızda saklanır ve cihazınızdan asla çıkmaz. Hesap "
                 + "yoktur, analitik yoktur, veri toplanmaz. Salus ağı yalnızca iki şey için kullanır: "
-                + "aboneliğinizi doğrulamak (Google Play ve abonelik altyapımız RevenueCat) ve — "
+                + "aboneliğinizi doğrulamak (App Store ve abonelik altyapımız RevenueCat) ve — "
                 + "kullanırsanız — AI özellikleri. AI özelliklerine yalnızca anonim istatistik özetleri "
                 + "gönderilir; sağlık kayıtlarınız asla gönderilmez.",
             english: "Your health records are stored only on your device and never leave it. No accounts, "
                 + "no analytics, no data collection. Salus uses the network for two things: verifying "
-                + "your subscription (Google Play and our subscription provider, RevenueCat) and — if "
+                + "your subscription (App Store and our subscription provider, RevenueCat) and — if "
                 + "you use them — the AI features. The AI features only ever receive anonymous "
                 + "statistical summaries; your health records are never sent."
         ),
