@@ -188,23 +188,9 @@ targets:
         CURRENT_PROJECT_VERSION: "1"
         # iPhone only, matching the Android phone-first app.
         TARGETED_DEVICE_FAMILY: "1"
-        # No app icon is expected in M0: there is no asset catalog yet, and CI (Task 7) holds
-        # a zero-warning baseline that a placeholder icon set would spend.
-        #
-        # The empty value is a deliberate override, not a no-op. XcodeGen writes
-        # `ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon` into every application target by
-        # default, so leaving this unset would leave the project *expecting* an icon named
-        # `AppIcon` while this manifest claimed the opposite. That is inert only while no
-        # `.xcassets` is in `sources`, because actool never runs. Measured, the first asset
-        # catalog added to the target does not merely warn — it breaks the build:
-        #
-        #     error: None of the input catalogs contained a matching stickers icon set,
-        #     app icon set, or icon stack named "AppIcon".
-        #
-        # …and it would break in whichever commit first added an asset catalog, for a reason
-        # written here rather than there. Empty makes actool run without `--app-icon`, so it
-        # looks for no icon at all; when the real icon lands, this becomes its set name.
-        ASSETCATALOG_COMPILER_APPICON_NAME: ""
+        # The release app icon: `App/Assets.xcassets/AppIcon.appiconset`, the single 1024x1024
+        # universal iOS entry, drawn from the same artwork as the Android launcher icon.
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         GENERATE_INFOPLIST_FILE: NO
         CODE_SIGN_STYLE: Automatic
         # The Apple Developer team the app signs with — added 2026-08-25 for the first on-device
