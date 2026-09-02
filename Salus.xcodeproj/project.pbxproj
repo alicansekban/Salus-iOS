@@ -31,6 +31,7 @@
 		537EC5AA135769AF924F7DC3 /* SalusCommon in Frameworks */ = {isa = PBXBuildFile; productRef = AC3FBAE5BFB699978B2666B6 /* SalusCommon */; };
 		551793D6452E4FC23ACF2654 /* SalusNavigation in Frameworks */ = {isa = PBXBuildFile; productRef = ACCBF7E12A2FD2C767BEFFBE /* SalusNavigation */; };
 		56D46F5ED917FBAEA79E96F5 /* FeatureOnboarding in Frameworks */ = {isa = PBXBuildFile; productRef = C6307E49C6A4B39D1F40287C /* FeatureOnboarding */; };
+		58346563AB29974D2DE4CED7 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 0AC88801DE3E3AB2A681391E /* PrivacyInfo.xcprivacy */; };
 		61FCE28653A2B350591DE06E /* FeatureHome in Frameworks */ = {isa = PBXBuildFile; productRef = 2E2A6F78A5DCD99FDD5C879B /* FeatureHome */; };
 		67B28E418073168A4F8C0D99 /* FeatureAppointments in Frameworks */ = {isa = PBXBuildFile; productRef = 80827652F8B85F6508132EC2 /* FeatureAppointments */; };
 		71A7E5AF1C24B88439724AF9 /* RootTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 814A06AA9BCDD69E3C76C98E /* RootTab.swift */; };
@@ -61,6 +62,7 @@
 		060BB0FDE51AC42B923DB32F /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		061B25B94B5030AB40007508 /* SalusPremium */ = {isa = PBXFileReference; lastKnownFileType = folder; name = SalusPremium; path = Packages/SalusPremium; sourceTree = SOURCE_ROOT; };
 		095041F0094FA2361E9C69EE /* PaywallHost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallHost.swift; sourceTree = "<group>"; };
+		0AC88801DE3E3AB2A681391E /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		0C40A21C37AD104957DD4999 /* AppStrings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStrings.swift; sourceTree = "<group>"; };
 		0CB7EF65297E10E2C5CF4C2D /* SalusDatabase */ = {isa = PBXFileReference; lastKnownFileType = folder; name = SalusDatabase; path = Packages/SalusDatabase; sourceTree = SOURCE_ROOT; };
 		1032A49894F75CD828D5BA26 /* RootGates.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootGates.swift; sourceTree = "<group>"; };
@@ -218,6 +220,7 @@
 				A853DA3BEE5AEAF0DC4959BF /* Info.plist */,
 				322C707DD49C5D019E45E256 /* Localizable.xcstrings */,
 				095041F0094FA2361E9C69EE /* PaywallHost.swift */,
+				0AC88801DE3E3AB2A681391E /* PrivacyInfo.xcprivacy */,
 				1967360C450E679E57DA1D68 /* PrivacyOverlay.swift */,
 				1032A49894F75CD828D5BA26 /* RootGates.swift */,
 				814A06AA9BCDD69E3C76C98E /* RootTab.swift */,
@@ -362,6 +365,7 @@
 				2153458D02BAAAE25097CC3A /* GoogleService-Info.plist in Resources */,
 				09EF295DE4AD83F20308E424 /* InfoPlist.strings in Resources */,
 				31B1435CF5BE4BF05CC0C0C1 /* Localizable.xcstrings in Resources */,
+				58346563AB29974D2DE4CED7 /* PrivacyInfo.xcprivacy in Resources */,
 				913F6C91A354A0813950BD24 /* salus_alarm.caf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

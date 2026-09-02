@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Salus' privacy manifest. Copied into the bundle root by the `App` walk in `project.yml`
+  (XcodeGen has no compiler for a `.xcprivacy`, so it lands in the Resources phase), which is
+  the only place App Store Connect's scanner looks for it.
+
+  Every entry below was measured rather than guessed:
+
+  * `NSPrivacyAccessedAPICategoryUserDefaults` / `CA92.1` — the twelve settings keys plus the
+    app locale are `UserDefaults`-backed (`SalusPreferencesDataSource`,
+    `UserDefaultsAppLocaleController`, `UserDefaultsReminderSyncStateStore`). `CA92.1` is the
+    "read/write only this app's own defaults" reason; Salus has no app group and no extension.
+  * `NSPrivacyAccessedAPICategoryFileTimestamp` / `C617.1` — no Swift source in this repository
+    names a file-timestamp API, and GRDB's own manifest declares none, but
+    `attributesOfItemAtPath:error:` is present in the linked app binary, from `RevenueCat.o`,
+    and RevenueCat's bundled manifest declares only `UserDefaults`. The reason is declared here
+    so the aggregate is complete: the access is to files in the app's own container.
+
+  Deliberately absent, because neither our sources nor the linked binary name them: disk space
+  (`volumeAvailableCapacity*`, `statfs`), system boot time (`systemUptime`, `mach_absolute_time`,
+  `kern.boottime`) and active keyboards (`activeInputModes`).
+
+  `NSPrivacyCollectedDataTypes` mirrors the nutrition-label table in
+  `docs/appstore/store-listing.md` §"Privacy nutrition labels (S-17)". Nothing is linked to the
+  user and nothing is used for tracking: there is no account, no advertising SDK and no
+  behavioural analytics. Health & Fitness is here for the *aggregated* statistics the optional
+  AI summary and doctor report send to Firebase AI Logic — counts, averages, min/max, direction
+  of change; never a name, a birth date, a note or an individual record.
+-->
+<plist version="1.0">
+<dict>
+	<key>NSPrivacyTracking</key>
+	<false/>
+	<key>NSPrivacyTrackingDomains</key>
+	<array/>
+	<key>NSPrivacyAccessedAPITypes</key>
+	<array>
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>CA92.1</string>
+			</array>
+		</dict>
+		<dict>
+			<key>NSPrivacyAccessedAPIType</key>
+			<string>NSPrivacyAccessedAPICategoryFileTimestamp</string>
+			<key>NSPrivacyAccessedAPITypeReasons</key>
+			<array>
+				<string>C617.1</string>
+			</array>
+		</dict>
+	</array>
+	<key>NSPrivacyCollectedDataTypes</key>
+	<array>
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypeHealth</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+			</array>
+		</dict>
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypePurchaseHistory</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+			</array>
+		</dict>
+		<dict>
+			<key>NSPrivacyCollectedDataType</key>
+			<string>NSPrivacyCollectedDataTypeDeviceID</string>
+			<key>NSPrivacyCollectedDataTypeLinked</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypeTracking</key>
+			<false/>
+			<key>NSPrivacyCollectedDataTypePurposes</key>
+			<array>
+				<string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+			</array>
+		</dict>
+	</array>
+</dict>
+</plist>
