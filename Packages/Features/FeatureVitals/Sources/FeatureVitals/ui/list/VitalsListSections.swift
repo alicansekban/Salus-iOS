@@ -47,6 +47,9 @@ struct VitalsListContent: View {
     let onEditEntry: (VitalsListItem) -> Void
 
     @Environment(\.salusTheme) private var theme
+    /// The in-app language pick the shell publishes (`RootView+Locale.swift`), which is what the
+    /// numbers below are written in — `Locale.current` would be the device's.
+    @Environment(\.locale) private var locale
 
     var body: some View {
         if state.isLoading {
@@ -126,14 +129,18 @@ struct VitalsListContent: View {
     private var headerText: String {
         switch state.selectedType {
         case .weight:
-            state.latestKilograms.map { VitalsStrings.latestWeight(formatKg($0)) } ?? VitalsStrings.empty
+            state.latestKilograms
+                .map { VitalsStrings.latestWeight(formatKg($0, locale: locale)) }
+                ?? VitalsStrings.empty
 
         case .bloodPressure:
-            state.latestBloodPressure.map { VitalsStrings.latestBloodPressure(formatBloodPressure($0)) }
+            state.latestBloodPressure
+                .map { VitalsStrings.latestBloodPressure(formatBloodPressure($0, locale: locale)) }
                 ?? VitalsStrings.emptyBloodPressure
 
         case .bloodGlucose:
-            state.latestGlucose.map { VitalsStrings.latestGlucose(formatGlucose($0.value, unit: $0.unit)) }
+            state.latestGlucose
+                .map { VitalsStrings.latestGlucose(formatGlucose($0.value, unit: $0.unit, locale: locale)) }
                 ?? VitalsStrings.emptyGlucose
         }
     }
@@ -170,6 +177,9 @@ private struct VitalsRow: View {
     let onDelete: () -> Void
 
     @Environment(\.salusTheme) private var theme
+    /// The in-app language pick (`RootView+Locale.swift`) — the date and the value are both
+    /// written in it, and `Locale.current` does not follow it on iOS.
+    @Environment(\.locale) private var locale
 
     var body: some View {
         SalusCard {
@@ -202,10 +212,10 @@ private struct VitalsRow: View {
     /// `VitalsScreen.kt:296-320`.
     private var details: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text(verbatim: entry.headline)
+            Text(verbatim: entry.headline(locale: locale))
                 .font(SalusTypography.titleMedium.font)
                 .foregroundStyle(theme.colorScheme.onSurface)
-            Text(verbatim: entry.measuredAt.formatted(pattern: rowDatePattern))
+            Text(verbatim: vitalsRowDate(entry.measuredAt, locale: locale))
                 .font(SalusTypography.bodyMedium.font)
                 .foregroundStyle(theme.colorScheme.onSurfaceVariant)
             if let supporting = entry.supportingText {
@@ -226,11 +236,11 @@ private struct VitalsRow: View {
 
 /// `VitalsScreen.kt:333-338`.
 extension VitalsListItem {
-    var headline: String {
+    func headline(locale: Locale) -> String {
         switch self {
-        case let .weight(item): formatKg(item.kilograms)
-        case let .bloodPressure(item): formatBloodPressure(item)
-        case let .glucose(item): formatGlucose(item.value, unit: item.unit)
+        case let .weight(item): formatKg(item.kilograms, locale: locale)
+        case let .bloodPressure(item): formatBloodPressure(item, locale: locale)
+        case let .glucose(item): formatGlucose(item.value, unit: item.unit, locale: locale)
         }
     }
 
@@ -279,22 +289,32 @@ extension ChartRange {
     }
 }
 
-/// `VitalsScreen.kt:373-374`. `Locale.current` is Android's `Locale.getDefault()`, so a Turkish
-/// device reads "72,5 kg" on both platforms.
-func formatKg(_ kilograms: Double) -> String {
-    String(format: "%.1f kg", locale: .current, kilograms)
+/// One row's date and time (`VitalsScreen.kt:293`).
+///
+/// A free function rather than a computed property on the row, so what it writes can be asserted
+/// in a test without rendering a view.
+func vitalsRowDate(_ measuredAt: LocalDateTime, locale: Locale) -> String {
+    measuredAt.formatted(pattern: rowDatePattern, locale: locale)
+}
+
+/// `VitalsScreen.kt:373-374`. The **environment** locale is Android's `Locale.getDefault()` here:
+/// `setApplicationLocales` moves that one, while nothing moves iOS's `Locale.current`, which keeps
+/// answering with the device's language whatever the in-app setting says. So a reader who picked
+/// Turkish reads "72,5 kg" on both platforms — which is the whole point of taking it as a parameter.
+func formatKg(_ kilograms: Double, locale: Locale) -> String {
+    String(format: "%.1f kg", locale: locale, kilograms)
 }
 
 /// `VitalsScreen.kt:376-377`.
-func formatBloodPressure(_ item: VitalsListItem.BloodPressure) -> String {
-    String(format: "%lld/%lld mmHg", locale: .current, item.systolic, item.diastolic)
+func formatBloodPressure(_ item: VitalsListItem.BloodPressure, locale: Locale) -> String {
+    String(format: "%lld/%lld mmHg", locale: locale, item.systolic, item.diastolic)
 }
 
 /// `VitalsScreen.kt:379-382`.
-func formatGlucose(_ value: Double, unit: GlucoseUnit) -> String {
+func formatGlucose(_ value: Double, unit: GlucoseUnit, locale: Locale) -> String {
     switch unit {
-    case .mgDl: String(format: "%.0f mg/dL", locale: .current, value)
-    case .mmolL: String(format: "%.1f mmol/L", locale: .current, value)
+    case .mgDl: String(format: "%.0f mg/dL", locale: locale, value)
+    case .mmolL: String(format: "%.1f mmol/L", locale: locale, value)
     }
 }
 

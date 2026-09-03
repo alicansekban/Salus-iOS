@@ -22,8 +22,8 @@
 //   * wall clock → pattern text goes through `DateFormatter` with its zone pinned to GMT, fed the
 //     instant that has those components *in GMT*. The formatter renders the components it is given,
 //     so the device's region cannot move the day, and `CLAUDE.md`'s "never `Calendar` for a day"
-//     holds literally — no `Calendar` value is constructed in this package at all. The locale stays
-//     `Locale.current`, which is what Android's `Locale.getDefault()` is.
+//     holds literally — no `Calendar` value is constructed in this package at all. The locale is
+//     **required**, and what a caller must pass is the SwiftUI environment locale — see below.
 //
 // Foundation is imported here, which no other file in `SalusModel` needs. That is within the layer
 // rule — what `CLAUDE.md` bans from this package is a *UI* framework (SwiftUI/UIKit/AppKit/WatchKit),
@@ -114,7 +114,16 @@ extension LocalDateTime {
     /// (`VitalsScreen.kt:293`). The pattern is fixed rather than templated, exactly as Android's
     /// is: `setLocalizedDateFormatFromTemplate` would reorder the components per region, which
     /// Android does not do and which would make the two platforms draw different rows.
-    public func formatted(pattern: String, locale: Locale = .current) -> String {
+    ///
+    /// **`locale` has no default, and the value to pass is the SwiftUI environment locale** — the
+    /// twin of Android's `Locale.getDefault()` here. `AppCompatDelegate.setApplicationLocales`
+    /// moves `Locale.getDefault()`; nothing moves iOS's `Locale.current`, so the app's own language
+    /// setting reaches a formatter only by being carried to it. The shell publishes the pick as
+    /// `\.locale` (`App/RootView+Locale.swift`) and every screen reads it with
+    /// `@Environment(\.locale)`. A `Locale.current` default is what let Appointments, Vitals and
+    /// Trends write their dates in the device's language while Home wrote them in the picked one,
+    /// so there is deliberately nothing here to fall back to.
+    public func formatted(pattern: String, locale: Locale) -> String {
         Self.formatter(pattern: pattern, locale: locale).string(from: gmtInstant)
     }
 
@@ -220,8 +229,9 @@ extension LocalDateTime {
 
 extension LocalDate {
     /// This day rendered with `pattern` — the day-only form of the above
-    /// (`VitalsViewModel.kt:231-234`, `EditorDateField.kt:35, 42`).
-    public func formatted(pattern: String, locale: Locale = .current) -> String {
+    /// (`VitalsViewModel.kt:231-234`, `EditorDateField.kt:35, 42`), `locale` included: pass the
+    /// environment locale, not `Locale.current`.
+    public func formatted(pattern: String, locale: Locale) -> String {
         LocalDateTime(date: self, minuteOfDay: 0).formatted(pattern: pattern, locale: locale)
     }
 }

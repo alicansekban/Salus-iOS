@@ -69,6 +69,9 @@ struct AppointmentDetailScreen: View {
     let onEdit: () -> Void
 
     @Environment(\.salusTheme) private var theme
+    /// The in-app language pick (`RootView+Locale.swift`). `Locale.current` is the device's on
+    /// iOS and does not follow the in-app setting, so every date below is written through this.
+    @Environment(\.locale) private var locale
     /// Presentation state, not screen state: the sheet is a view of the same `state.appointment`,
     /// so a ViewModel event for it would be a second copy of a boolean SwiftUI already owns.
     @State private var isAddingToCalendar = false
@@ -135,12 +138,12 @@ struct AppointmentDetailScreen: View {
                 .font(SalusTypography.headlineSmall.font)
             Spacer()
                 .frame(height: SalusSpacing.sm)
-            Text(verbatim: appointment.startsAt.formatted(pattern: headerDatePattern))
+            Text(verbatim: appointment.startsAt.formatted(pattern: headerDatePattern, locale: locale))
                 .font(SalusTypography.bodyLarge.font)
                 .foregroundStyle(theme.extendedColors.appointments.accent)
             Text(
                 verbatim: AppointmentsStrings.detailTime(
-                    time: appointment.startsAt.formatted(pattern: timePattern),
+                    time: appointment.startsAt.formatted(pattern: timePattern, locale: locale),
                     durationMinutes: appointment.durationMinutes
                 )
             )

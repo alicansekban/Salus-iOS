@@ -208,6 +208,9 @@ private struct DayHeader: View {
     let todayEpochDay: Int
 
     @Environment(\.salusTheme) private var theme
+    /// The in-app language pick, which `Locale.current` does not follow on iOS — see the free
+    /// function below.
+    @Environment(\.locale) private var locale
 
     var body: some View {
         Text(verbatim: label)
@@ -221,13 +224,25 @@ private struct DayHeader: View {
             .background(theme.colorScheme.background)
     }
 
-    /// `AppointmentsScreen.kt:224-228`.
     private var label: String {
-        switch epochDay {
-        case todayEpochDay: AppointmentsStrings.dayToday
-        case todayEpochDay + 1: AppointmentsStrings.dayTomorrow
-        default: LocalDate(epochDay: epochDay).formatted(pattern: dayHeaderPattern)
-        }
+        appointmentsDayHeaderLabel(epochDay: epochDay, todayEpochDay: todayEpochDay, locale: locale)
+    }
+}
+
+/// `AppointmentsScreen.kt:224-228`.
+///
+/// `locale` is the **environment** locale — the twin of Android's `Locale.getDefault()` here, since
+/// `setApplicationLocales` moves that one and nothing moves iOS's `Locale.current`. The shell puts
+/// the in-app pick into `\.locale` (`RootView+Locale.swift`), so the default would silently write
+/// the day in the device's language while the rest of the app spoke the picked one.
+///
+/// A free function rather than a computed property on the view, so what it writes can be asserted
+/// in a test without rendering anything.
+func appointmentsDayHeaderLabel(epochDay: Int, todayEpochDay: Int, locale: Locale) -> String {
+    switch epochDay {
+    case todayEpochDay: AppointmentsStrings.dayToday
+    case todayEpochDay + 1: AppointmentsStrings.dayTomorrow
+    default: LocalDate(epochDay: epochDay).formatted(pattern: dayHeaderPattern, locale: locale)
     }
 }
 
@@ -241,6 +256,9 @@ private struct AppointmentCard: View {
     let onDelete: () -> Void
 
     @Environment(\.salusTheme) private var theme
+    /// The in-app language pick (`RootView+Locale.swift`), not `Locale.current`, which on iOS keeps
+    /// answering with the device's language whatever the in-app setting says.
+    @Environment(\.locale) private var locale
 
     var body: some View {
         SalusCard {
@@ -276,7 +294,7 @@ private struct AppointmentCard: View {
     /// (`AppointmentsScreen.kt:250-267`).
     private var details: some View {
         HStack(alignment: .top, spacing: 0) {
-            Text(verbatim: item.startsAt.formatted(pattern: timePattern))
+            Text(verbatim: item.startsAt.formatted(pattern: timePattern, locale: locale))
                 .font(SalusTypography.titleMedium.font)
                 .foregroundStyle(theme.extendedColors.appointments.accent)
                 .frame(width: timeColumnWidth, alignment: .leading)

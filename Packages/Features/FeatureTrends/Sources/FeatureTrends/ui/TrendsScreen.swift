@@ -181,8 +181,13 @@ private struct TimeOfDayCard: View {
     let glucoseUnit: GlucoseUnit
 
     @Environment(\.salusTheme) private var theme
+    /// The in-app language pick (`RootView+Locale.swift`), not `Locale.current`, which on iOS
+    /// stays on the device's language whatever the in-app setting says.
+    @Environment(\.locale) private var locale
 
     var body: some View {
+        // Bound here so the `@Sendable` axis closure captures the value and not the view.
+        let locale = locale
         let type = breakdown.type
         let metricName = TrendsStrings.metricWithUnit(
             type.metricLabel,
@@ -199,14 +204,14 @@ private struct TimeOfDayCard: View {
             displayValue: { MetricDisplay.value(type: type, stored: $0, glucoseUnit: glucoseUnit) },
             // An axis tick is a number, not a sentence: no unit on it, and only as many
             // decimals as the metric is written with.
-            axisLabel: { MetricDisplay.write(converted: Double($0), decimals: decimals) }
+            axisLabel: { MetricDisplay.write(converted: Double($0), decimals: decimals, locale: locale) }
         ) {
             // The chart itself is silent to VoiceOver, so the numbers are spoken here instead —
             // read off the bars rather than off the breakdown, so what is described is exactly
             // what is drawn. Buckets with no measurement produced no bar and are simply not
             // mentioned: an unmeasured evening is not a reading of zero.
             let spokenParts = model.bars.map { bar in
-                TrendsStrings.timeOfDayPartSummary(bar.label, bar.valueText(decimals: decimals))
+                TrendsStrings.timeOfDayPartSummary(bar.label, bar.valueText(decimals: decimals, locale: locale))
             }
 
             SalusCard(contentPadding: SalusSpacing.lg) {
@@ -254,6 +259,8 @@ private struct MetricOverlayCard: View {
     let glucoseUnit: GlucoseUnit
 
     @Environment(\.salusTheme) private var theme
+    /// The in-app language pick (`RootView+Locale.swift`); the legend's ranges are written in it.
+    @Environment(\.locale) private var locale
 
     var body: some View {
         // The mapping from series to a chart is tested on its own (`OverlayChartModelTests`);
@@ -314,20 +321,13 @@ private struct MetricOverlayCard: View {
     /// its unit. The min and max are written in the reader's unit (`MetricDisplay`), the way
     /// every other number on this screen is.
     private func legendLine(for item: OverlayLegendItem) -> String {
-        let minText = MetricDisplay.format(
-            type: item.type,
-            stored: item.min,
-            glucoseUnit: glucoseUnit
-        )
-        let maxText = MetricDisplay.format(
-            type: item.type,
-            stored: item.max,
-            glucoseUnit: glucoseUnit
-        )
+        func written(_ stored: Double) -> String {
+            MetricDisplay.format(type: item.type, stored: stored, glucoseUnit: glucoseUnit, locale: locale)
+        }
         return TrendsStrings.overlayLegendEntry(
             item.type.metricLabel,
-            minText,
-            maxText,
+            written(item.min),
+            written(item.max),
             item.type.unitLabel(glucoseUnit)
         )
     }
@@ -365,11 +365,11 @@ extension SeriesRole {
 /// built the chart — so this only writes it out. Converting here as well would apply the glucose
 /// factor twice.
 extension BarEntry {
-    fileprivate func valueText(decimals: Int) -> String {
+    fileprivate func valueText(decimals: Int, locale: Locale) -> String {
         // A second value only ever comes from a systolic/diastolic pair, which is written as one
         // reading rather than as two numbers — and never in a unit the reader can change.
         guard let secondaryValue else {
-            return MetricDisplay.write(converted: Double(value), decimals: decimals)
+            return MetricDisplay.write(converted: Double(value), decimals: decimals, locale: locale)
         }
         return TrendsStrings.valueBloodPressure(Int(value.rounded()), Int(secondaryValue.rounded()))
     }

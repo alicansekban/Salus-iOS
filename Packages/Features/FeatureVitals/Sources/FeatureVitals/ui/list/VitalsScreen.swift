@@ -29,6 +29,10 @@ public struct VitalsRoute: View {
     private let onOpenTrends: () -> Void
 
     @Environment(\.vitalsModule) private var module
+    /// The in-app language pick the shell publishes (`RootView+Locale.swift`). The chart's axis
+    /// labels are built in the ViewModel, which has no environment of its own, so the route is
+    /// where the two meet — `Locale.current` there would be the device's language, not the pick.
+    @Environment(\.locale) private var locale
     @State private var viewModel: VitalsViewModel?
 
     public init(onOpenTrends: @escaping () -> Void) {
@@ -55,9 +59,12 @@ public struct VitalsRoute: View {
             guard let viewModel else {
                 // First appearance: `init` opens the first history window. The ViewModel is owned
                 // for the lifetime of the route and is never recreated below.
-                viewModel = module.makeVitalsViewModel()
+                let created = module.makeVitalsViewModel()
+                created.setLocale(locale)
+                viewModel = created
                 return
             }
+            viewModel.setLocale(locale)
             // Every later appearance — the pop-back from one of the three editors above all —
             // reopens the window with a fresh `until`. This is Android's `WhileSubscribed(5_000)`
             // re-subscribe (`VitalsViewModel.kt:87-90`) restarting `flatMapLatest`
@@ -65,6 +72,12 @@ public struct VitalsRoute: View {
             // window's fixed `until` and never shows up. See
             // `VitalsViewModel.restartHistoryObservation()`.
             viewModel.restartHistoryObservation()
+        }
+        // A language switch re-identifies the tabs, so this route is normally rebuilt with it; the
+        // observer is what keeps the chart honest if it ever is not (the pick can also change while
+        // the route is alive, from the settings screen inside the same tab).
+        .onChange(of: locale) { _, picked in
+            viewModel?.setLocale(picked)
         }
     }
 

@@ -22,8 +22,17 @@ struct DoseWeeksCard: View {
     let glucoseUnit: GlucoseUnit
 
     @Environment(\.salusTheme) private var theme
+    /// The in-app language pick the shell publishes (`RootView+Locale.swift`), which is Android's
+    /// `Locale.getDefault()` here — `setApplicationLocales` moves that one and nothing moves iOS's
+    /// `Locale.current`, so the caption under a bar would otherwise be written in the device's
+    /// language while the card's title was written in the picked one.
+    @Environment(\.locale) private var locale
 
     var body: some View {
+        // Bound here rather than read through `self` inside the closures: the axis one is
+        // `@Sendable` and must capture the value, not the view. `Locale` is `Sendable`.
+        let locale = locale
+
         // The mapping itself lives in `doseWeeksChartModelOf`, where it is unit-tested; nil means
         // no week logged a dose, which the analysis makes unreachable today but which is answered
         // here rather than assumed away.
@@ -31,11 +40,13 @@ struct DoseWeeksCard: View {
             weeks: weeks,
             weekLabel: { epochDay in
                 LocalDateTime(date: LocalDate(epochDay: epochDay), minuteOfDay: 0)
-                    .formatted(pattern: Self.axisDatePattern)
+                    .formatted(pattern: Self.axisDatePattern, locale: locale)
             },
             // A tick is a whole percentage, and the caption above the chart already says what it
             // is a share of, so the axis carries the number alone.
-            axisLabel: { MetricDisplay.write(converted: Double($0), decimals: doseWeeksPercentDecimals) }
+            axisLabel: {
+                MetricDisplay.write(converted: Double($0), decimals: doseWeeksPercentDecimals, locale: locale)
+            }
         ) {
             // The chart is announced as one line: what it plots and the span it covers. The weeks
             // themselves are the rows below, which are already the accessible presentation of the
@@ -93,6 +104,8 @@ private struct DoseWeekRow: View {
     let glucoseUnit: GlucoseUnit
 
     @Environment(\.salusTheme) private var theme
+    /// The in-app language pick — the decimal separator in an average is the reader's.
+    @Environment(\.locale) private var locale
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -134,7 +147,7 @@ private struct DoseWeekRow: View {
     private func averageLabel(type: VitalType, stored: Double) -> String {
         TrendsStrings.doseWeeksAverage(
             type.metricLabel,
-            MetricDisplay.format(type: type, stored: stored, glucoseUnit: glucoseUnit),
+            MetricDisplay.format(type: type, stored: stored, glucoseUnit: glucoseUnit, locale: locale),
             type.unitLabel(glucoseUnit)
         )
     }

@@ -62,6 +62,9 @@ private struct MetricSummaryRowBody: View {
     let glucoseUnit: GlucoseUnit
 
     @Environment(\.salusTheme) private var theme
+    /// The in-app language pick (`RootView+Locale.swift`). Android reads the same pick off
+    /// `Locale.getDefault()`; iOS's `Locale.current` never moves, so it is carried here instead.
+    @Environment(\.locale) private var locale
 
     var body: some View {
         let unit = row.type.unitLabel(glucoseUnit)
@@ -86,21 +89,21 @@ private struct MetricSummaryRowBody: View {
             Spacer().frame(height: SalusSpacing.xs)
             Text(verbatim: TrendsStrings.summaryStats(
                 row.count,
-                MetricDisplay.format(type: row.type, stored: row.average, glucoseUnit: glucoseUnit),
+                MetricDisplay.format(type: row.type, stored: row.average, glucoseUnit: glucoseUnit, locale: locale),
                 unit
             ))
             .font(SalusTypography.bodyMedium.font)
             .tracking(SalusTypography.bodyMedium.tracking)
             .foregroundStyle(theme.colorScheme.onSurface)
             Text(verbatim: TrendsStrings.summaryMinMax(
-                MetricDisplay.format(type: row.type, stored: row.min, glucoseUnit: glucoseUnit),
-                MetricDisplay.format(type: row.type, stored: row.max, glucoseUnit: glucoseUnit),
+                MetricDisplay.format(type: row.type, stored: row.min, glucoseUnit: glucoseUnit, locale: locale),
+                MetricDisplay.format(type: row.type, stored: row.max, glucoseUnit: glucoseUnit, locale: locale),
                 unit
             ))
             .font(SalusTypography.bodyMedium.font)
             .tracking(SalusTypography.bodyMedium.tracking)
             .foregroundStyle(theme.colorScheme.onSurface)
-            Text(verbatim: row.change.sentence)
+            Text(verbatim: row.change.sentence(locale: locale))
                 .font(SalusTypography.bodySmall.font)
                 .tracking(SalusTypography.bodySmall.tracking)
                 .foregroundStyle(theme.colorScheme.onSurfaceVariant)
@@ -116,7 +119,7 @@ private struct MetricSummaryRowBody: View {
 /// twice. It is a percentage rather than a measurement, so it goes through `MetricDisplay.write`
 /// and never through the metric conversion.
 extension SummaryChange {
-    fileprivate var sentence: String {
+    fileprivate func sentence(locale: Locale) -> String {
         switch self {
         case .noPreviousRecords:
             return TrendsStrings.summaryChangeNoPrevious
@@ -125,7 +128,11 @@ extension SummaryChange {
             return TrendsStrings.summaryChangeNotComputable
 
         case let .moved(direction, magnitudePercent):
-            let percent = MetricDisplay.write(converted: magnitudePercent, decimals: changeDecimals)
+            let percent = MetricDisplay.write(
+                converted: magnitudePercent,
+                decimals: changeDecimals,
+                locale: locale
+            )
             switch direction {
             case .up: return TrendsStrings.summaryChangeUp(percent)
             case .down: return TrendsStrings.summaryChangeDown(percent)

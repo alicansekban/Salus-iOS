@@ -220,8 +220,9 @@ public final class GlucoseEditorViewModel {
     /// `Locale.US`, not the device locale — and deliberately so (research §10 row 10): this text is
     /// parsed straight back by `value(of:)`, which only understands the point, so formatting it
     /// with a Turkish decimal comma would make the round trip lossy in exactly the case the toggle
-    /// creates. The *list* screen formats the same numbers with `Locale.current`; the asymmetry is
-    /// Android's and is ported as-is.
+    /// creates. The *list* screen formats the same numbers in the reader's language (the app's
+    /// locale, which the shell publishes as `\.locale`); the asymmetry is Android's and is ported
+    /// as-is.
     ///
     /// **iOS divergence:** Kotlin's `value.toInt()` saturates at `Int.MAX_VALUE`, Swift's `Int(_:)`
     /// traps, so the whole-number branch is taken only when the value is exactly representable —

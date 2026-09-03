@@ -60,6 +60,18 @@ public final class VitalsViewModel {
     /// `VitalsStateBuilders.swift`; `private` would reach an extension in this file only.
     let clock: any SalusClock
 
+    /// The language the chart's axis labels and the row values are written in.
+    ///
+    /// Android has no twin: `Locale.getDefault()` already follows `setApplicationLocales`, so its
+    /// builders read the pick straight off the platform. Nothing moves iOS's `Locale.current`, so
+    /// the pick travels from the shell's `\.locale` (`RootView+Locale.swift`) through
+    /// `VitalsRoute` into ``setLocale(_:)``. Internal, because the builders in
+    /// `VitalsStateBuilders.swift` read it.
+    ///
+    /// `@ObservationIgnored` because it is an input, not a rendered output: it is written *by* the
+    /// view, and ``setLocale(_:)`` republishes the state — which is the observable change.
+    @ObservationIgnored private(set) var locale: Locale = .current
+
     /// `VitalsViewModel.kt:47-49`.
     private var selectedType: VitalType = .weight
     private var selectedRange: ChartRange = .month
@@ -130,6 +142,14 @@ public final class VitalsViewModel {
         case .deleteConfirmed:
             confirmDelete()
         }
+    }
+
+    /// Adopts the environment locale and rewrites the state in it. A no-op when nothing changed,
+    /// so the `onChange`/`task` pair in `VitalsRoute` can call it on every appearance.
+    public func setLocale(_ locale: Locale) {
+        guard locale != self.locale else { return }
+        self.locale = locale
+        republish()
     }
 
     private func start() {

@@ -57,7 +57,7 @@ extension VitalsViewModel {
             isLoading: false,
             selectedType: .weight,
             entries: items,
-            chart: Self.chartOrNull(points, yLabel: Self.decimalYLabel),
+            chart: Self.chartOrNull(points, locale: locale, yLabel: Self.decimalYLabel(locale: locale)),
             selectedRange: range,
             latestKilograms: sortedAscending.last?.kilograms
         )
@@ -106,7 +106,7 @@ extension VitalsViewModel {
         // (`VitalsViewModel.kt:167`): the `MIN_CHART_POINTS` gate is the systolic series' alone,
         // and the diastolic series is attached to whatever survived it. A Swift struct has no
         // `copy`, so the model is rebuilt from its own parts.
-        let chart = Self.chartOrNull(systolicPoints, yLabel: Self.wholeYLabel).map {
+        let chart = Self.chartOrNull(systolicPoints, locale: locale, yLabel: Self.wholeYLabel).map {
             ChartUiModel(
                 points: $0.points,
                 xLabel: $0.xLabel,
@@ -158,13 +158,13 @@ extension VitalsViewModel {
         )
         // `VitalsViewModel.kt:204` — mg/dL readings are whole numbers to a reader, mmol/L ones are
         // not, so the axis follows the unit rather than the series.
-        let yLabel = unit == .mgDl ? Self.wholeYLabel : Self.decimalYLabel
+        let yLabel = unit == .mgDl ? Self.wholeYLabel : Self.decimalYLabel(locale: locale)
 
         return VitalsUiState(
             isLoading: false,
             selectedType: .bloodGlucose,
             entries: rows.map(VitalsListItem.glucose),
-            chart: Self.chartOrNull(points, yLabel: yLabel),
+            chart: Self.chartOrNull(points, locale: locale, yLabel: yLabel),
             selectedRange: range,
             latestGlucose: rows.first,
             glucoseUnit: unit
@@ -195,26 +195,35 @@ extension VitalsViewModel {
     /// `VitalsViewModel.kt:229-237`.
     ///
     /// The `"d MMM"` axis label is produced from the epoch day through a `DateFormatter` pinned to
-    /// GMT and `Locale.current` — the twin of `LocalDate.ofEpochDay(…).format(ofPattern("d MMM",
+    /// GMT and `locale` — the twin of `LocalDate.ofEpochDay(…).format(ofPattern("d MMM",
     /// Locale.getDefault()))`. Never a `Calendar`: see `LocalDateTime.swift`.
     ///
+    /// **`locale` is the environment locale, not `Locale.current`.** Android's `Locale.getDefault()`
+    /// follows `setApplicationLocales`; nothing on iOS moves `Locale.current`, so the in-app pick
+    /// only reaches a formatter if it is carried there — the shell publishes it as `\.locale`
+    /// (`RootView+Locale.swift`) and `VitalsRoute` hands it to the ViewModel.
+    ///
     /// The formatter is built inside the closure rather than captured, because `xLabel` is
-    /// `@Sendable` and `DateFormatter` is not.
+    /// `@Sendable` and `DateFormatter` is not. `Locale` *is* `Sendable`, so it is captured.
     static func chartOrNull(
         _ points: [ChartPoint],
+        locale: Locale,
         yLabel: @escaping @Sendable (Float) -> String
     ) -> ChartUiModel? {
         guard points.count >= minChartPoints else { return nil }
         return ChartUiModel(
             points: points,
-            xLabel: { epochDay in LocalDate(epochDay: epochDay).formatted(pattern: "d MMM") },
+            xLabel: { LocalDate(epochDay: $0).formatted(pattern: "d MMM", locale: locale) },
             yLabel: yLabel
         )
     }
 
     /// `VitalsViewModel.kt:239-240` — `String.format(Locale.getDefault(), "%.1f", value)`.
-    static let decimalYLabel: @Sendable (Float) -> String = { value in
-        String(format: "%.1f", locale: .current, Double(value))
+    ///
+    /// A function of the locale rather than a stored closure, for the same reason as above: the
+    /// separator between "72" and "5" is the reader's, and on iOS the reader's is the in-app pick.
+    static func decimalYLabel(locale: Locale) -> @Sendable (Float) -> String {
+        { String(format: "%.1f", locale: locale, Double($0)) }
     }
 
     /// `VitalsViewModel.kt:242-243` — `value.roundToInt().toString()`.
