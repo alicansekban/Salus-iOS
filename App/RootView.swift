@@ -155,8 +155,6 @@ struct RootView: View {
         .task { await observePremiumStatus() }
         .task { await observeNavigationCommands() }
         .task { await root.logSeededProfile() }
-        // The one-time premium intro, after onboarding resolves (`IntroPaywallGate.kt:39`).
-        .task { await root.introPaywallGate.run() }
         // The §6.2 secure screen, applied over the `TabView` and outside every `NavigationStack`:
         // the always-on app-switcher blur, plus the screenshot mask and the capture hide that
         // `secure_screen_enabled` adds. Both gates and the splash-hold are BELOW this line, so the

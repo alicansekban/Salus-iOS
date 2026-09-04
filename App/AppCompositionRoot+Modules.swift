@@ -88,10 +88,10 @@ extension AppCompositionRoot {
     }
 
     /// The premium singletons, built once here. `premiumModule` (`PremiumModule.kt:13-19`) is
-    /// `single<PremiumRepository>` over `single<PurchasesGateway>`; the `paywallModule` and the
-    /// intro gate ride on the same two. `Purchases.isConfigured` is already final here — `SalusApp`
-    /// configures RevenueCat before composing the root.
-    static func makePremiumGraph(preferences: SalusPreferencesDataSource) -> PremiumGraph {
+    /// `single<PremiumRepository>` over `single<PurchasesGateway>`; the `paywallModule` rides on
+    /// the same two. `Purchases.isConfigured` is already final here — `SalusApp` configures
+    /// RevenueCat before composing the root.
+    static func makePremiumGraph() -> PremiumGraph {
         let purchasesGateway = RevenueCatPurchasesGateway()
         let premiumRepository: any PremiumRepository = PremiumRepositoryImpl(gateway: purchasesGateway)
         let paywallController = PaywallController()
@@ -112,12 +112,7 @@ extension AppCompositionRoot {
         return PremiumGraph(
             premiumRepository: premiumRepository,
             paywallController: paywallController,
-            paywallModule: paywallModule,
-            introPaywallGate: IntroPaywallGate(
-                preferences: preferences,
-                paywallController: paywallController,
-                isBillingConfigured: { purchasesGateway.isConfigured }
-            )
+            paywallModule: paywallModule
         )
     }
 
@@ -306,14 +301,12 @@ struct FeatureModules {
     let premiumRepository: any PremiumRepository
     let paywallController: PaywallController
     let paywallModule: PaywallModule
-    let introPaywallGate: IntroPaywallGate
 }
 
-/// The premium sub-graph `makePremiumGraph` hands back — the repository, paywall controller and
-/// module, and the intro gate every premium-gated caller shares.
+/// The premium sub-graph `makePremiumGraph` hands back — the repository, and the paywall
+/// controller and module every premium-gated caller shares.
 struct PremiumGraph {
     let premiumRepository: any PremiumRepository
     let paywallController: PaywallController
     let paywallModule: PaywallModule
-    let introPaywallGate: IntroPaywallGate
 }

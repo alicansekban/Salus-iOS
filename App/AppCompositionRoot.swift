@@ -146,11 +146,10 @@ final class AppCompositionRoot {
     /// finished module through the environment; `TrendsRoute` reaches its ViewModel from it.
     let trendsModule: TrendsModule
 
-    /// The premium singletons (`makePremiumGraph`): repo, controller, module, intro gate.
+    /// The premium singletons (`makePremiumGraph`): repo, controller, module.
     let premiumRepository: any PremiumRepository
     let paywallController: PaywallController
     let paywallModule: PaywallModule
-    let introPaywallGate: IntroPaywallGate
     /// `reminderModule`'s `single<ReminderEnvironment>` (`ReminderModule.kt:20`) — the honest
     /// read of what the OS will and will not let the reminder pipeline do. Reminder Health
     /// (iOS-M3 Task 8) is what shows it to the user.
@@ -227,7 +226,6 @@ final class AppCompositionRoot {
         premiumRepository = modules.premiumRepository
         paywallController = modules.paywallController
         paywallModule = modules.paywallModule
-        introPaywallGate = modules.introPaywallGate
 
         // `reminderModule` (`ReminderModule.kt:18-28`), assembled in one place — see
         // `makeReminderGraph`. The properties below are eight views of that one sub-graph.
@@ -408,7 +406,7 @@ final class AppCompositionRoot {
             snackbar: infrastructure.snackbar,
             navigator: infrastructure.navigator
         )
-        let premium = makePremiumGraph(preferences: infrastructure.preferences)
+        let premium = makePremiumGraph()
         let settings = makeSettingsModule(
             reminderEnvironment: reminder.environment,
             reminderAuthorization: reminder.environment,
@@ -442,8 +440,7 @@ final class AppCompositionRoot {
             trends: makeTrendsGraph(infrastructure: infrastructure, premium: premium),
             premiumRepository: premium.premiumRepository,
             paywallController: premium.paywallController,
-            paywallModule: premium.paywallModule,
-            introPaywallGate: premium.introPaywallGate
+            paywallModule: premium.paywallModule
         )
     }
 
