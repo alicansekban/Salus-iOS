@@ -51,8 +51,6 @@ public struct SalusPillButton: View {
     private let fillsWidth: Bool
     private let action: () -> Void
 
-    @Environment(\.salusTheme) private var theme
-
     /// - Parameters:
     ///   - systemImage: SF Symbol name for the leading icon, which labels the action and leads the
     ///     text (`SalusPillButton.kt:34-35`). Kotlin takes an `ImageVector` from `Icons`; the iOS
@@ -88,44 +86,97 @@ public struct SalusPillButton: View {
 
     public var body: some View {
         Button(action: action) {
-            HStack(spacing: SalusSpacing.sm) {
-                if let systemImage {
-                    Image(systemName: systemImage)
-                        .font(.system(size: Self.iconSize))
-                }
-                // `Text(verbatim:)` because `text` is already resolved — the plain initializer
-                // would look it up as a `LocalizedStringKey` against the main bundle (the M7
-                // `c726e22` finding).
-                Text(verbatim: text)
-                    .font(SalusTypography.labelLarge.font)
-                    .tracking(SalusTypography.labelLarge.tracking)
-                // `trailingIcon` (`SalusPillButton.kt:58-65`), the same `ButtonIconSize` and the
-                // same `SalusSpacing.sm` gap the leading icon gets.
-                if let trailingSystemImage {
-                    Image(systemName: trailingSystemImage)
-                        .font(.system(size: Self.iconSize))
-                }
-            }
-            // `ButtonDefaults.ContentPadding`'s 24 dp horizontal, which Kotlin inherits without
-            // naming it — the same `SalusSpacing.xl` the empty state's pill already uses.
-            .padding(.horizontal, SalusSpacing.xl)
-            // `heightIn(min = SalusTouchTarget.min)` (`SalusPillButton.kt:67`), on the container as
-            // Kotlin has it: the pill *draws* 48 pt and is hittable across exactly that, rather
-            // than drawing short and reserving dead space around itself. The same frame carries
-            // the caller's `fillMaxWidth()`, and it has to be this one: it is the last view before
-            // the capsule background, so a greedy width here is a wide *drawn* pill, where the
-            // same frame on the `HStack` would push the padding past the row's edges.
-            .frame(maxWidth: fillsWidth ? .infinity : nil, minHeight: SalusTouchTarget.min)
-            .foregroundStyle(contentColor)
-            // `shape = CircleShape` (`:73`, `:88`) filled with `containerColor` (`:76`, `:91`).
-            .background(SalusShapes.pill.fill(containerColor))
-            .contentShape(.rect)
+            SalusPillLabel(
+                text: text,
+                enabled: enabled,
+                tonal: tonal,
+                accent: accent,
+                systemImage: systemImage,
+                trailingSystemImage: trailingSystemImage,
+                fillsWidth: fillsWidth
+            )
         }
         .buttonStyle(.plain)
         // Kotlin passes `enabled` to the button, which swaps in `ButtonDefaults`' disabled colors;
-        // this draws those colors itself (below) and keeps the flag for everything else it governs
+        // the label draws those colors itself and keeps the flag for everything else it governs
         // — the tap, VoiceOver's disabled trait, focus.
         .disabled(!enabled)
+    }
+}
+
+/// The drawn pill on its own — everything `SalusPillButton` shows, minus the `Button`.
+///
+/// Split out so a *system* control can wear the same capsule: `ShareLink` is the one SwiftUI
+/// button the app cannot replace with its own `Button` + action (there is no public API that
+/// presents the share sheet from a closure the way `Intent.createChooser` does on Android), and
+/// it takes a label view. Wrapping it in this label keeps the doctor report's Share pill
+/// byte-for-byte the pill next to it instead of a second hand-drawn capsule (`DoctorReportScreen.swift`).
+/// Every other call site keeps using `SalusPillButton`; this is not a second button component.
+///
+/// The caller is responsible for `.buttonStyle(.plain)` on whatever control wraps it, exactly as
+/// `SalusPillButton` does, so the system style does not pad a second background around the pill.
+public struct SalusPillLabel: View {
+    private let text: String
+    private let enabled: Bool
+    private let tonal: Bool
+    private let accent: FeatureAccent?
+    private let systemImage: String?
+    private let trailingSystemImage: String?
+    private let fillsWidth: Bool
+
+    @Environment(\.salusTheme) private var theme
+
+    public init(
+        text: String,
+        enabled: Bool = true,
+        tonal: Bool = false,
+        accent: FeatureAccent? = nil,
+        systemImage: String? = nil,
+        trailingSystemImage: String? = nil,
+        fillsWidth: Bool = false
+    ) {
+        self.text = text
+        self.enabled = enabled
+        self.tonal = tonal
+        self.accent = accent
+        self.systemImage = systemImage
+        self.trailingSystemImage = trailingSystemImage
+        self.fillsWidth = fillsWidth
+    }
+
+    public var body: some View {
+        HStack(spacing: SalusSpacing.sm) {
+            if let systemImage {
+                Image(systemName: systemImage)
+                    .font(.system(size: Self.iconSize))
+            }
+            // `Text(verbatim:)` because `text` is already resolved — the plain initializer
+            // would look it up as a `LocalizedStringKey` against the main bundle (the M7
+            // `c726e22` finding).
+            Text(verbatim: text)
+                .font(SalusTypography.labelLarge.font)
+                .tracking(SalusTypography.labelLarge.tracking)
+            // `trailingIcon` (`SalusPillButton.kt:58-65`), the same `ButtonIconSize` and the
+            // same `SalusSpacing.sm` gap the leading icon gets.
+            if let trailingSystemImage {
+                Image(systemName: trailingSystemImage)
+                    .font(.system(size: Self.iconSize))
+            }
+        }
+        // `ButtonDefaults.ContentPadding`'s 24 dp horizontal, which Kotlin inherits without
+        // naming it — the same `SalusSpacing.xl` the empty state's pill already uses.
+        .padding(.horizontal, SalusSpacing.xl)
+        // `heightIn(min = SalusTouchTarget.min)` (`SalusPillButton.kt:67`), on the container as
+        // Kotlin has it: the pill *draws* 48 pt and is hittable across exactly that, rather
+        // than drawing short and reserving dead space around itself. The same frame carries
+        // the caller's `fillMaxWidth()`, and it has to be this one: it is the last view before
+        // the capsule background, so a greedy width here is a wide *drawn* pill, where the
+        // same frame on the `HStack` would push the padding past the row's edges.
+        .frame(maxWidth: fillsWidth ? .infinity : nil, minHeight: SalusTouchTarget.min)
+        .foregroundStyle(contentColor)
+        // `shape = CircleShape` (`:73`, `:88`) filled with `containerColor` (`:76`, `:91`).
+        .background(SalusShapes.pill.fill(containerColor))
+        .contentShape(.rect)
     }
 
     private var colors: SalusColorScheme { theme.colorScheme }

@@ -69,10 +69,10 @@ struct DoctorReportScreen: View {
             case .generating:
                 LoadingBody(message: AiHealthStrings.doctorReportGenerating)
 
-            case let .ready(_, narrativeIncluded):
+            case let .ready(pdfFile, narrativeIncluded):
                 ReadyBody(
+                    pdfFile: pdfFile,
                     narrativeIncluded: narrativeIncluded,
-                    onShare: { onEvent(.generateClicked) },
                     onPreview: { onEvent(.previewClicked) },
                     onRegenerate: { onEvent(.generateClicked) }
                 )
@@ -188,9 +188,15 @@ private struct LoadingBody: View {
 /// app, previewing keeps it inside, and regenerating replaces it. Preview sits between the other
 /// two rather than ahead of Share so that the action the user came for stays the primary one,
 /// while the way to read the report first is the next thing their eye lands on.
+///
+/// Share is a `ShareLink` over the file rather than an event: Kotlin shares from the screen too
+/// (`Context.shareReport`, `DoctorReportScreen.kt:520-540`, an `ACTION_SEND` chooser with no
+/// ViewModel round trip), and `ShareLink` is the system share sheet the preview's toolbar already
+/// hands the same file to. Until 2026-09-05 this pill was wired to `.generateClicked` by mistake,
+/// so tapping Share silently regenerated the report instead of opening the sheet.
 private struct ReadyBody: View {
+    let pdfFile: URL
     let narrativeIncluded: Bool
-    let onShare: () -> Void
     let onPreview: () -> Void
     let onRegenerate: () -> Void
 
@@ -214,12 +220,14 @@ private struct ReadyBody: View {
                 }
                 .frame(maxWidth: .infinity)
 
-                SalusPillButton(
-                    text: AiHealthStrings.doctorReportShare,
-                    systemImage: "square.and.arrow.up",
-                    fillsWidth: true,
-                    action: onShare
-                )
+                ShareLink(item: pdfFile) {
+                    SalusPillLabel(
+                        text: AiHealthStrings.doctorReportShare,
+                        systemImage: "square.and.arrow.up",
+                        fillsWidth: true
+                    )
+                }
+                .buttonStyle(.plain)
                 SalusPillButton(
                     text: AiHealthStrings.doctorReportPreview,
                     tonal: true,
