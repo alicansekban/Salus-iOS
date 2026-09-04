@@ -98,14 +98,14 @@ Yapay zekâ özellikleri nasıl çalışır: özet ve rapor hazırlanırken mode
 Salus bilgilendirme amaçlıdır; tıbbi tavsiye, teşhis veya tedavi yerine geçmez. Yapay zekâ özetleri ve doktor raporu da yalnızca bilgilendirme amaçlıdır. Sağlığınızla ilgili kararlar için her zaman bir sağlık profesyoneline danışın.
 
 Gizlilik politikası: https://sites.google.com/view/salus-privacy-policy-tr/home
-Kullanım koşulları: (terms URL — publish `salus-android/docs/legal/terms.html`)
+Kullanım koşulları: https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
 İletişim: alicansekban@hotmail.com
 ```
 
 **What's New (1.0.0)**
 
 ```
-Salus'un ilk sürümü: tansiyon, kan şekeri, kilo, ilaç, randevu ve döngü takibi — tüm kayıtlar cihazınızda.
+İlk sürüm. Tansiyon, kan şekeri ve kilo takibi; doz saatinde tam ekran ilaç alarmı; randevu hatırlatıcıları; döngü takibi; Face ID / Touch ID veya PIN kilit. Tüm kayıtlar cihazınızda kalır. İsteğe bağlı Salus Premium: yapay zekâ sağlık özeti, PDF doktor raporu, gelişmiş trendler, premium temalar.
 ```
 
 ---
@@ -121,7 +121,7 @@ Salus: Health Tracker
 **Subtitle**
 
 ```
-BP, glucose, meds, appointments
+Blood pressure, glucose & meds
 ```
 
 **Promotional text**
@@ -133,7 +133,7 @@ Track blood pressure, glucose, weight, medications and appointments in one place
 **Keywords**
 
 ```
-blood pressure,glucose,medication reminder,health journal,appointments,weight,period,doctor report,privacy
+blood pressure,glucose,medication reminder,health journal,appointments,weight,period,doctor report
 ```
 
 **Description**
@@ -183,14 +183,14 @@ IMPORTANT
 Salus is for informational purposes only and is not a substitute for medical advice, diagnosis or treatment. The AI summaries and the doctor report are for information only as well. Always consult a healthcare professional for decisions about your health.
 
 Privacy policy: https://sites.google.com/view/salus-privacy-policy-en/home
-Terms of use: (terms URL — publish `salus-android/docs/legal/terms.html`)
+Terms of use: https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
 Contact: alicansekban@hotmail.com
 ```
 
 **What's New (1.0.0)**
 
 ```
-First release of Salus: blood pressure, glucose, weight, medication, appointment and cycle tracking — every record stays on your device.
+First release. Blood pressure, glucose and weight tracking; a full-screen alarm at dose time; appointment reminders; cycle tracking; Face ID / Touch ID or PIN lock. Every record stays on your device. Optional Salus Premium: AI health summary, PDF doctor report, advanced trends, premium themes.
 ```
 
 ---
@@ -201,14 +201,15 @@ First release of Salus: blood pressure, glucose, weight, medication, appointment
 |---|---|
 | Primary category | Health & Fitness |
 | Secondary category | Medical |
-| Age rating | 4+ (no medical/treatment information questionnaire items apply; answer "No" to unrestricted web access, gambling, contests) |
+| Age rating | 4+. In the questionnaire: "Medical or Treatment Information" → **None** (Salus logs the user's own readings and gives no treatment advice; every AI output carries the disclaimer); unrestricted web access, gambling, contests, mature themes → No. If App Store Connect's current questionnaire forces "Infrequent/Mild" for health topics, accept the 12+ it computes rather than misanswer. |
 | Support URL | https://sites.google.com/view/salus-privacy-policy-tr/home (until a support page exists) |
 | Privacy policy URL | tr: https://sites.google.com/view/salus-privacy-policy-tr/home · en: https://sites.google.com/view/salus-privacy-policy-en/home |
+| License agreement (EULA) | Apple's standard EULA — leave the custom EULA field empty; the description links https://www.apple.com/legal/internet-services/itunes/dev/stdeula/ (a Terms of Use link is mandatory for auto-renewable subscriptions, guideline 3.1.2). Replace with our own page if `salus-android/docs/legal/terms.html` is ever published. |
 | Copyright | © 2026 Alican Şekban |
 | Content rights | does not contain third-party content |
 | Sign-in required for review | No — no accounts |
 | App uses IDFA | No |
-| Export compliance | `ITSAppUsesNonExemptEncryption = false` in Info.plist (HTTPS only, exempt) |
+| Encryption export declaration | `ITSAppUsesNonExemptEncryption = false` in Info.plist (HTTPS only, exempt) |
 
 ### Privacy nutrition labels (S-17)
 
@@ -244,11 +245,13 @@ Required: **6.9" display** (iPhone 16 Pro Max / 17 Pro Max, 1320×2868 portrait)
 Optional but recommended: 6.5" (1284×2778) for older devices; iPad not needed
 (`TARGETED_DEVICE_FAMILY = 1`).
 
-Same six screens as Play, same order, Turkish captions for the tr localization and English for
-en-US: Home dashboard · medication alarm · vitals chart · appointments · AI summary ·
-doctor-report preview. Capture on a simulator with sample data, frame in Figma with a short
-caption above each device (the Play set can be re-exported from the same Figma frames at
-1080×1920).
+Final set (2026-09-04): `~/Desktop/salus-store-görseller/ios/01-home.png … 08-more.png`,
+1320×2868 PNG, no alpha, in-app language Turkish, same order as the Play set: 01 home ·
+02 dose alarm · 03 medications · 04 vitals · 05 appointments · 06 AI summary · 07 doctor report ·
+08 more. Upload all eight to the 6.9" slot of the **tr** localization; en-US can reuse the same
+files (App Store Connect offers "use the primary localization's screenshots"). 02, 06 and 07 were
+upscaled from 738×1600 device JPEGs and are slightly soft; re-export from the iPhone at native
+1290×2796 and re-run the framing script if a crisper set is wanted.
 
 ### App icon
 
@@ -274,7 +277,35 @@ in `project.yml`.
 - [x] Product IDs in App Store Connect match the RevenueCat offering — verified 2026-09-02: group `Premium_Plan`, `com.alicansekban.salus.monthly` / `.six_month` / `.annual`; `docs/revenuecat-ios-setup.md` corrected
       — needs the dashboard, so it stays open. Both docs now carry the conflict as a warning
       block; no Swift source names a product ID, so only the docs are wrong.
-- [ ] `scripts/premium-sandbox-qa.md` run on a device with a sandbox tester
+- [x] Production RevenueCat key (`appl_…`) in `Secrets.local.xcconfig`; Release build verified
+      2026-09-04 (key lands in the built Info.plist)
+- [x] Firebase App Check: DeviceCheck registered for the iOS app (2026-09-04)
+- [x] Post-onboarding intro paywall removed (`a19d5a0`, ledger S-25) — the paywall opens only from
+      Settings and gated premium features
+- [x] Screenshots framed (eight, 6.9", see above)
+
+## App Store Connect order (2026-09-04)
+
+1. **Xcode → Product → Archive** on `main` (Release, 1.0.0 build 1) → Distribute → App Store
+   Connect → Upload. Bump `CURRENT_PROJECT_VERSION` in `project.yml` before every later upload.
+2. **App Store Connect → App Information**: name, subtitle (tr, then en-US), primary category,
+   secondary category, Apple's standard EULA, privacy policy URLs, content rights.
+3. **App Privacy** (nutrition labels): the three rows in the table above, "not linked", "not used
+   for tracking", App Functionality. Everything else "not collected".
+4. **Age rating** questionnaire as in the table.
+5. **Subscriptions → Premium_Plan**: the three products must be "Ready to Submit" and attached to
+   the first version, with localized display names and the 7-day introductory offer on
+   `.six_month` and `.annual`; App Review can only see them if they are attached.
+6. **Version 1.0.0**: description, keywords, promotional text, What's New, support URL, the eight
+   screenshots, review notes + a sandbox tester's credentials, "Sign-in required: No", export
+   compliance answered by the plist.
+7. **TestFlight** first: install the build on the iPhone, run `scripts/premium-sandbox-qa.md`
+   with a sandbox tester (simulator cannot: "No active account"), check the AI summary from the
+   TestFlight build (App Check DeviceCheck path), check alarms and notifications.
+8. Submit for review; select "Release manually" so the two stores can go live together.
+
+- [ ] `scripts/premium-sandbox-qa.md` run on a device with a sandbox tester (TestFlight build)
 - [ ] Copy this file's fields into App Store Connect (tr primary, en-US)
 - [ ] Nutrition labels + age rating + review notes filled in
 - [ ] Screenshots uploaded (6.9")
+- [ ] Subscriptions attached to version 1.0.0
