@@ -298,7 +298,7 @@ in `project.yml`.
    `.six_month` and `.annual`; App Review can only see them if they are attached.
 6. **Version 1.0.0**: description, keywords, promotional text, What's New, support URL, the eight
    screenshots, review notes + a sandbox tester's credentials, "Sign-in required: No", export
-   compliance answered by the plist.
+   encryption export question answered by the plist.
 7. **TestFlight** first: install the build on the iPhone, run `scripts/premium-sandbox-qa.md`
    with a sandbox tester (simulator cannot: "No active account"), check the AI summary from the
    TestFlight build (App Check DeviceCheck path), check alarms and notifications.
