@@ -328,17 +328,36 @@ private final class SecureScreenMask {
         // The content layer exists only once the field has been laid out inside a window.
         window.layoutIfNeeded()
 
-        // Exactly one sublayer, or nothing at all. Picking by position (`.first`, `.last`) is a
-        // guess, and a wrong guess is the worst outcome available here: the app's layer would hang
-        // under a *non-secure* layer, the mask would do nothing, and `isApplied` would still report
-        // success. A count that is not 1 means UIKit's private view tree changed shape, so this
-        // fails safely — no mask, and QA §2.4 is the detector — rather than half-applying.
-        guard let sublayers = field.layer.sublayers, sublayers.count == 1, let canvas = sublayers.first
+        // The secure content container, by structure rather than by index. The field's own layer
+        // has taken two shapes across the iOS versions this port targets (measured on the 17.5,
+        // 18.2 and 26.4 simulators, 2026-09-04):
+        //
+        //   - transient, right after `layoutIfNeeded`: **one** sublayer, which is the container;
+        //   - settled, after the first commit: **two** — `_UITouchPassthroughView`'s layer first
+        //     (no sublayers of its own), the content container second, holding the secure text
+        //     canvas.
+        //
+        // The old guard (`count == 1`, take `.first`) matched only the transient shape, so every
+        // `apply()` that ran a runloop or more after launch — which is all of them, the
+        // `.onChange` handlers fire after the first render pass — read the settled shape, failed
+        // its count check, and silently left the mask off: on a device, screenshots came out
+        // unmasked with the toggle on (the finding this fix closes). Picking by position
+        // (`.first`, `.last`) is still a guess, and a wrong guess is the worst outcome available
+        // here: the app's layer would hang under a *non-secure* layer, the mask would do nothing,
+        // and `isApplied` would still report success. What survives both shapes — and is the
+        // only thing that does — is *"the last sublayer that has children of its own"*: in the
+        // transient shape that is the one-and-only container, in the settled shape it skips the
+        // passthrough layer and lands on the container again. A structure where no sublayer has
+        // children means UIKit's private view tree changed shape again, so this fails safely —
+        // no mask, and QA §2.4 is the detector — rather than half-applying.
+        guard let sublayers = field.layer.sublayers,
+              let canvas = sublayers.last(where: { $0.sublayers != nil })
         else {
-            // Silent-and-safe in every build: a UIKit shape change (e.g. a simulator iOS version
-            // whose secure field layers differently) is a thing to discover via QA §2.4, not a
-            // reason to trap the app. The `assertionFailure` that was here crashed Debug builds
-            // on launch when the simulator's `UITextField` did not produce exactly one sublayer.
+            // Silent-and-safe in every build: a UIKit shape change is a thing to discover via
+            // QA §2.4, not a reason to trap the app. The `assertionFailure` that was here
+            // crashed Debug builds on launch — the guard was reading the settled shape, where
+            // the field has two sublayers, and the crash was the guard's own bug rather than a
+            // UIKit change.
             field.removeFromSuperview()
             return false
         }
