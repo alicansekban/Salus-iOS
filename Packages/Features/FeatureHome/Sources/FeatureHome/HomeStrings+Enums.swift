@@ -9,7 +9,7 @@
 //
 // **The plain accessors in `HomeStrings.swift` stay.** These add a typed door to keys that already
 // have one; `HomeStringsTests` asserts against `HomeStrings.Key`, which is untouched, and the string
-// pin stays at 27.
+// pin stays at 32.
 //
 // This lives in a separate file rather than in `HomeStrings.swift` for one reason: the accessors
 // there are a flat transcription of the Android XML, and mixing switches over feature enums into it
@@ -19,13 +19,25 @@
 import SalusModel
 
 extension HomeStrings {
-    /// The header's greeting (`HomeScreen.kt`'s `when (state.greeting)`).
+    /// The header's greeting without a name (`HomeScreen.kt`'s `when (state.greeting)`), the
+    /// `*_plain` variant — what the header draws before the profile is seeded.
     public static func greeting(_ greeting: HomeGreeting) -> String {
         switch greeting {
-        case .morning: greetingMorning
-        case .afternoon: greetingAfternoon
-        case .evening: greetingEvening
-        case .night: greetingNight
+        case .morning: greetingMorningPlain
+        case .afternoon: greetingAfternoonPlain
+        case .evening: greetingEveningPlain
+        case .night: greetingNightPlain
+        }
+    }
+
+    /// The header's personalised greeting (`HomeScreen.kt`'s `greetingText(greeting, profileName)`
+    /// formatted arm) — the `%1$@` variant with the profile name substituted.
+    public static func greeting(_ greeting: HomeGreeting, name: String) -> String {
+        switch greeting {
+        case .morning: greetingMorning(name)
+        case .afternoon: greetingAfternoon(name)
+        case .evening: greetingEvening(name)
+        case .night: greetingNight(name)
         }
     }
 

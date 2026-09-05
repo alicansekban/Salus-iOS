@@ -177,6 +177,120 @@ struct HomeViewModelTests {
         #expect(viewModel.state.isPremium)
     }
 
+    // MARK: - The four M12 cases
+
+    /// `HomeViewModelTest.kt:166-183` — taken-plus-snoozed over total, `(3, 5)`.
+    @Test("dose progress is taken-plus-snoozed over total when doses exist")
+    func doseProgressIsTakenPlusSnoozedOverTotalWhenDosesExist() async {
+        repository.set(
+            TodayOverview(
+                doses: [
+                    TodayDose(
+                        scheduleId: "sch-1",
+                        medicationId: "med-1",
+                        medicationName: "Aspirin",
+                        minuteOfDay: 480,
+                        doseAmount: 1.0,
+                        status: .taken
+                    ),
+                    TodayDose(
+                        scheduleId: "sch-2",
+                        medicationId: "med-1",
+                        medicationName: "Aspirin",
+                        minuteOfDay: 600,
+                        doseAmount: 1.0,
+                        status: .taken
+                    ),
+                    TodayDose(
+                        scheduleId: "sch-3",
+                        medicationId: "med-2",
+                        medicationName: "Vitamin D",
+                        minuteOfDay: 720,
+                        doseAmount: 1.0,
+                        status: .snoozed
+                    ),
+                    TodayDose(
+                        scheduleId: "sch-4",
+                        medicationId: "med-2",
+                        medicationName: "Vitamin D",
+                        minuteOfDay: 840,
+                        doseAmount: 1.0,
+                        status: .pending
+                    ),
+                    TodayDose(
+                        scheduleId: "sch-5",
+                        medicationId: "med-3",
+                        medicationName: "Metformin",
+                        minuteOfDay: 960,
+                        doseAmount: 1.0,
+                        status: .pending
+                    )
+                ],
+                appointments: repository.current.appointments,
+                cycle: repository.current.cycle,
+                vitals: repository.current.vitals
+            )
+        )
+        let viewModel = viewModel()
+
+        let state = await loadedState(viewModel)
+        #expect(state.doseProgress?.taken == 3)
+        #expect(state.doseProgress?.total == 5)
+    }
+
+    /// `HomeViewModelTest.kt:186-195` — no doses, no progress.
+    @Test("dose progress is null when there are no doses")
+    func doseProgressIsNullWhenThereAreNoDoses() async {
+        repository.set(
+            TodayOverview(
+                doses: [],
+                appointments: repository.current.appointments,
+                cycle: repository.current.cycle,
+                vitals: repository.current.vitals
+            )
+        )
+        let viewModel = viewModel()
+
+        let state = await loadedState(viewModel)
+        #expect(state.doseProgress == nil)
+    }
+
+    /// `HomeViewModelTest.kt:198-207`.
+    @Test("profile name flows into state")
+    func profileNameFlowsIntoState() async {
+        repository.set(
+            TodayOverview(
+                doses: repository.current.doses,
+                appointments: repository.current.appointments,
+                cycle: repository.current.cycle,
+                vitals: repository.current.vitals,
+                profileName: "Alican"
+            )
+        )
+        let viewModel = viewModel()
+
+        let state = await loadedState(viewModel)
+        #expect(state.profileName == "Alican")
+    }
+
+    /// `HomeViewModelTest.kt:210-219`.
+    @Test("null profile name flows as null")
+    func nullProfileNameFlowsAsNull() async {
+        repository.set(
+            TodayOverview(
+                doses: repository.current.doses,
+                appointments: repository.current.appointments,
+                cycle: repository.current.cycle,
+                vitals: repository.current.vitals,
+                profileName: nil
+            )
+        )
+        let viewModel = viewModel()
+
+        let state = await loadedState(viewModel)
+        #expect(state.profileName == nil)
+    }
+
     // MARK: - iOS-only
 
     /// iOS-only (plan ruling 3). No Kotlin twin: Android's

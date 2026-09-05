@@ -1,5 +1,5 @@
 // The twin of `feature/home/src/main/res/values/strings.xml` (Turkish, the source language) and
-// `feature/home/src/main/res/values-en/strings.xml` — 27 of the 29 keys `:feature:home` declares,
+// `feature/home/src/main/res/values-en/strings.xml` — 32 of the 34 keys `:feature:home` declares,
 // name and text verbatim, resolved against this package's own bundle exactly as `R.string`
 // resolves against `:feature:home`.
 //
@@ -7,20 +7,24 @@
 // `home_settings` are declared in both locales and read by nothing — `HomeScreen.kt` names neither.
 // They are leftovers of Android's M9, which removed the settings gear and moved the title to the
 // shell. Porting them would put two keys in the catalog and in the key-set pin that no accessor
-// ever asks for, so the pin here is 27 where Android's XML is 29. If Android ever deletes them,
+// ever asks for, so the pin here is 32 where Android's XML is 34. If Android ever deletes them,
 // nothing on this side changes.
 //
 // PLACEHOLDER MAPPING, the one place the port is not byte-for-byte. Android's specifiers are
-// Java's; five keys carry them, and each is rewritten to the Swift spelling of the same argument:
+// Java's; nine keys carry them, and each is rewritten to the Swift spelling of the same argument:
 //
 //   Android      Swift        Keys                        Why
 //   -------------------------------------------------------------------------------------------
-//   %1$d         %1$lld       today_cycle_day             Swift's `Int` is 64-bit and `%d` reads
-//                                                         32, so a `%d` here is a truncation
+//   %1$d         %1$lld       today_cycle_day,            Swift's `Int` is 64-bit and `%d` reads
+//                             home_dose_progress          32, so a `%d` here is a truncation
 //                                                         waiting for a bigger number.
 //   %1$s         %1$@         today_vitals_weight,        `%s` under `String(format:)` reads a C
 //                             today_vitals_glucose_mgdl,  string pointer, not a Swift `String`.
-//                             today_vitals_glucose_mmol
+//                             today_vitals_glucose_mmol,
+//                             home_greeting_morning,
+//                             home_greeting_afternoon,
+//                             home_greeting_evening,
+//                             home_greeting_night
 //   %1$s/%2$s    %1$@/%2$@    today_vitals_bp             Same, twice: systolic and diastolic.
 //
 // The sentence around every specifier is unchanged, and `HomeStringsTests` pins the rendered text
@@ -45,13 +49,42 @@ import SalusCommon
 
 /// The strings `:feature:home` owns.
 public enum HomeStrings {
-    // MARK: - The header: greeting and the card action (5)
+    // MARK: - The header: greeting and the card action (9)
 
-    public static var greetingMorning: String { localized(.greetingMorning) }
-    public static var greetingAfternoon: String { localized(.greetingAfternoon) }
-    public static var greetingEvening: String { localized(.greetingEvening) }
-    public static var greetingNight: String { localized(.greetingNight) }
+    /// `home_greeting_morning` — "Günaydın, %1$@" / "Good morning, %1$@".
+    public static func greetingMorning(_ name: String) -> String {
+        formatted(.greetingMorning, name)
+    }
+
+    /// `home_greeting_afternoon` — "İyi günler, %1$@" / "Good afternoon, %1$@".
+    public static func greetingAfternoon(_ name: String) -> String {
+        formatted(.greetingAfternoon, name)
+    }
+
+    /// `home_greeting_evening` — "İyi akşamlar, %1$@" / "Good evening, %1$@".
+    public static func greetingEvening(_ name: String) -> String {
+        formatted(.greetingEvening, name)
+    }
+
+    /// `home_greeting_night` — "İyi geceler, %1$@" / "Good night, %1$@".
+    public static func greetingNight(_ name: String) -> String {
+        formatted(.greetingNight, name)
+    }
+
+    /// `home_greeting_morning_plain` — "Günaydın" / "Good morning".
+    public static var greetingMorningPlain: String { localized(.greetingMorningPlain) }
+    /// `home_greeting_afternoon_plain` — "İyi günler" / "Good afternoon".
+    public static var greetingAfternoonPlain: String { localized(.greetingAfternoonPlain) }
+    /// `home_greeting_evening_plain` — "İyi akşamlar" / "Good evening".
+    public static var greetingEveningPlain: String { localized(.greetingEveningPlain) }
+    /// `home_greeting_night_plain` — "İyi geceler" / "Good night".
+    public static var greetingNightPlain: String { localized(.greetingNightPlain) }
     public static var viewDetails: String { localized(.viewDetails) }
+
+    /// `home_dose_progress` — "Bugünün ilerlemesi %1$lld/%2$lld" / "Today's progress %1$lld/%2$lld".
+    public static func doseProgress(_ taken: Int, _ total: Int) -> String {
+        formatted(.doseProgress, taken, total)
+    }
 
     // MARK: - The AI summary card (3)
 
@@ -120,14 +153,19 @@ public enum HomeStrings {
     /// a key the catalog really carries — a typo here would otherwise ship the key as the label.
     ///
     /// Android's `home_title` and `home_settings` are absent on purpose: both are dead there (no
-    /// `R.string` reads either since Android's M9), so this enum has 27 cases where the XML has 29.
+    /// `R.string` reads either since Android's M9), so this enum has 32 cases where the XML has 34.
     enum Key: String, CaseIterable {
-        // The header: greeting and the card action (5).
+        // The header: greeting and the card action (9).
         case greetingMorning = "home_greeting_morning"
         case greetingAfternoon = "home_greeting_afternoon"
         case greetingEvening = "home_greeting_evening"
         case greetingNight = "home_greeting_night"
+        case greetingMorningPlain = "home_greeting_morning_plain"
+        case greetingAfternoonPlain = "home_greeting_afternoon_plain"
+        case greetingEveningPlain = "home_greeting_evening_plain"
+        case greetingNightPlain = "home_greeting_night_plain"
         case viewDetails = "home_view_details"
+        case doseProgress = "home_dose_progress"
 
         // The AI summary card (3).
         case aiSummaryTitle = "home_ai_summary_title"

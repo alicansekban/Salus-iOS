@@ -57,7 +57,8 @@ extension AppCompositionRoot {
             homePremiumStatus: homePremiumStatus,
             clock: infrastructure.clock,
             doseActions: medications.makeMarkDoseTakenUseCase(),
-            profileId: SalusDatabase.defaultProfileId
+            profileId: SalusDatabase.defaultProfileId,
+            profileRepository: infrastructure.profileRepository
         )
     }
 

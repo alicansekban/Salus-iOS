@@ -25,6 +25,7 @@ let package = Package(
         .package(path: "../../SalusSettings"),
         .package(path: "../../SalusAI"),
         .package(path: "../../SalusPremium"),
+        .package(path: "../../SalusProfile"),
         .package(path: "../../SalusTesting")
     ],
     targets: [
@@ -39,7 +40,8 @@ let package = Package(
                 .product(name: "SalusDatabase", package: "SalusDatabase"),
                 .product(name: "SalusSettings", package: "SalusSettings"),
                 .product(name: "SalusAI", package: "SalusAI"),
-                .product(name: "SalusPremium", package: "SalusPremium")
+                .product(name: "SalusPremium", package: "SalusPremium"),
+                .product(name: "SalusProfile", package: "SalusProfile")
             ],
             resources: [
                 .process("Resources")

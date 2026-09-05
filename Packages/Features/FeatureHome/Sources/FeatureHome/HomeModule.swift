@@ -24,6 +24,7 @@
 import SalusCommon
 import SalusDatabase
 import SalusModel
+import SalusProfile
 import SalusSettings
 import SwiftUI
 
@@ -37,7 +38,7 @@ public struct HomeModule {
     public let makeHomeViewModel: @MainActor () -> HomeViewModel
 }
 
-// The nine parameters are the eight things Koin resolves inside `homeModule` (`HomeModule.kt:12-21`,
+// The ten parameters are the nine things Koin resolves inside `homeModule` (`HomeModule.kt:12-21`,
 // where `get()` reads the six `TodayRepositoryImpl` takes plus the `DoseActions` and the clock
 // `viewModelOf(::HomeViewModel)` resolves) plus the profile id, which Koin passes as a literal.
 // Bundling them into a "dependencies" struct would be a second shape for the composition root's own
@@ -60,7 +61,8 @@ public func makeHomeModule(
     homePremiumStatus: any HomePremiumStatus,
     clock: any SalusClock,
     doseActions: any DoseActions,
-    profileId: String = SalusDatabase.defaultProfileId
+    profileId: String = SalusDatabase.defaultProfileId,
+    profileRepository: any ProfileRepository
 ) -> HomeModule {
     // `HomeModule.kt:12-21` — the profile id Koin passes, spelled out rather than left to the
     // repository's default so the one construction site says which profile it opened.
@@ -71,7 +73,8 @@ public func makeHomeModule(
         vitalsDao: vitalsDao,
         preferences: preferences,
         clock: clock,
-        profileId: profileId
+        profileId: profileId,
+        profileRepository: profileRepository
     )
     let aiSummaryAvailability = AiUsageSummaryAvailability(aiUsage: aiUsage)
 

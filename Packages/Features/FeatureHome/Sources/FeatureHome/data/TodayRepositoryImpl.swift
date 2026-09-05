@@ -21,6 +21,7 @@
 import SalusCommon
 import SalusDatabase
 import SalusModel
+import SalusProfile
 import SalusSettings
 
 /// The only implementation of ``TodayRepository`` (`TodayRepositoryImpl.kt:30-131`).
@@ -32,6 +33,7 @@ struct TodayRepositoryImpl: TodayRepository {
     private let preferences: SalusPreferencesDataSource
     private let clock: any SalusClock
     private let profileId: String
+    private let profileRepository: any ProfileRepository
 
     /// The `profileId` default is the value Koin passes at the single construction site
     /// (`HomeModule.kt`, `SalusDatabase.DEFAULT_PROFILE_ID`). It stays a parameter so a test can
@@ -43,7 +45,8 @@ struct TodayRepositoryImpl: TodayRepository {
         vitalsDao: VitalsDao,
         preferences: SalusPreferencesDataSource,
         clock: any SalusClock,
-        profileId: String = SalusDatabase.defaultProfileId
+        profileId: String = SalusDatabase.defaultProfileId,
+        profileRepository: any ProfileRepository
     ) {
         self.medicationDao = medicationDao
         self.appointmentDao = appointmentDao
@@ -52,6 +55,7 @@ struct TodayRepositoryImpl: TodayRepository {
         self.preferences = preferences
         self.clock = clock
         self.profileId = profileId
+        self.profileRepository = profileRepository
     }
 
     /// `TodayRepositoryImpl.kt:42-55`.
@@ -67,14 +71,21 @@ struct TodayRepositoryImpl: TodayRepository {
         let nowMs = clock.nowEpochMilliseconds()
 
         return mapped(
-            latestOfFour(
+            latestOfFive(
                 dosesStream(today: today, nowMinute: nowMinute),
                 appointmentsStream(nowMs: nowMs),
                 cycleStream(today: today),
-                vitalsStream(nowMs: nowMs)
+                vitalsStream(nowMs: nowMs),
+                profileRepository.observeProfile()
             )
         ) { latest in
-            TodayOverview(doses: latest.0, appointments: latest.1, cycle: latest.2, vitals: latest.3)
+            TodayOverview(
+                doses: latest.0,
+                appointments: latest.1,
+                cycle: cycleForProfile(cycle: latest.2, profile: latest.4),
+                vitals: latest.3,
+                profileName: latest.4?.displayName
+            )
         }
     }
 

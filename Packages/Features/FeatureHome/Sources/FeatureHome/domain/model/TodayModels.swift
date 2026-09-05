@@ -14,6 +14,17 @@
 
 import SalusModel
 
+// Cycle tracking is a female-profile feature; More hides its entry for male profiles
+// and the dashboard hides its card by the same rule. A profile record always exists
+// (DEFAULT_PROFILE_ID is seeded), but the null branch keeps the rule total.
+// (`TodayModels.kt:7-11`).
+func cycleForProfile(cycle: CycleSnapshot?, profile: Profile?) -> CycleSnapshot? {
+    if profile == nil || profile?.sex == .male {
+        return nil
+    }
+    return cycle
+}
+
 /// What happened to one of today's dose slots (`TodayModels.kt:5-11`).
 public enum DoseStatus: Sendable {
     case taken
@@ -114,23 +125,29 @@ public struct VitalsSnapshot: Equatable, Hashable, Sendable {
 
 /// One emission of the dashboard (`TodayModels.kt:51-56`).
 ///
-/// `cycle` and `vitals` are **non-optional**: an empty database still produces a snapshot with
-/// `nil` fields, so the screen draws its empty lines rather than branching on a missing card.
+/// `vitals` is **non-optional**: an empty database still produces a snapshot with `nil` fields, so
+/// the screen draws its empty lines rather than branching on a missing card. `cycle` is **optional**
+/// because the repository gates it on the profile's sex — a male profile has no cycle card at all
+/// (`TodayModels.kt:59-63`).
 public struct TodayOverview: Equatable, Hashable, Sendable {
     public let doses: [TodayDose]
     public let appointments: [UpcomingAppointment]
-    public let cycle: CycleSnapshot
+    public let cycle: CycleSnapshot?
     public let vitals: VitalsSnapshot
+    /// The default profile's display name, for the personalised greeting; nil before seeding.
+    public let profileName: String?
 
     public init(
         doses: [TodayDose],
         appointments: [UpcomingAppointment],
-        cycle: CycleSnapshot,
-        vitals: VitalsSnapshot
+        cycle: CycleSnapshot?,
+        vitals: VitalsSnapshot,
+        profileName: String? = nil
     ) {
         self.doses = doses
         self.appointments = appointments
         self.cycle = cycle
         self.vitals = vitals
+        self.profileName = profileName
     }
 }

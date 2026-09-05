@@ -126,6 +126,23 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "Good afternoon, %1$@"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "İyi günler, %1$@"
+          }
+        }
+      }
+    },
+    "home_greeting_afternoon_plain" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
             "value" : "Good afternoon"
           }
         },
@@ -138,6 +155,23 @@
       }
     },
     "home_greeting_evening" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Good evening, %1$@"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "İyi akşamlar, %1$@"
+          }
+        }
+      }
+    },
+    "home_greeting_evening_plain" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -160,6 +194,23 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "Good morning, %1$@"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Günaydın, %1$@"
+          }
+        }
+      }
+    },
+    "home_greeting_morning_plain" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
             "value" : "Good morning"
           }
         },
@@ -177,6 +228,23 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
+            "value" : "Good night, %1$@"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "İyi geceler, %1$@"
+          }
+        }
+      }
+    },
+    "home_greeting_night_plain" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
             "value" : "Good night"
           }
         },
@@ -184,6 +252,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "İyi geceler"
+          }
+        }
+      }
+    },
+    "home_dose_progress" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today's progress %1$lld/%2$lld"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bugünün ilerlemesi %1$lld/%2$lld"
           }
         }
       }

@@ -21,6 +21,7 @@ import Foundation
 import SalusCommon
 import SalusDatabase
 import SalusModel
+import SalusProfile
 import SalusSettings
 import SalusTesting
 import Testing
@@ -121,8 +122,8 @@ struct TodayRepositoryImplTests {
 
         let overview = try await fixture.firstOverview()
 
-        #expect(overview.cycle.cycleDay == 12)
-        #expect(overview.cycle.isPeriodOpen == false)
+        #expect(overview.cycle?.cycleDay == 12)
+        #expect(overview.cycle?.isPeriodOpen == false)
     }
 
     /// `MAX_MEANINGFUL_CYCLE_DAY = 60`, and the bound is inclusive: day 60 still reads, day 61 is
@@ -131,11 +132,11 @@ struct TodayRepositoryImplTests {
     func aCycleDayPastSixtyStopsBeingReported() async throws {
         let onTheBound = try Fixture()
         try await onTheBound.cycleDao.upsertPeriod(periodRecord(id: "p", start: onTheBound.today - 59))
-        #expect(try await onTheBound.firstOverview().cycle.cycleDay == 60)
+        #expect(try await onTheBound.firstOverview().cycle?.cycleDay == 60)
 
         let pastTheBound = try Fixture()
         try await pastTheBound.cycleDao.upsertPeriod(periodRecord(id: "p", start: pastTheBound.today - 60))
-        #expect(try await pastTheBound.firstOverview().cycle.cycleDay == nil)
+        #expect(try await pastTheBound.firstOverview().cycle?.cycleDay == nil)
     }
 
     /// `isPeriodOpen` is a fact about the *latest* period only — an earlier one left without an end
@@ -145,11 +146,11 @@ struct TodayRepositoryImplTests {
         let fixture = try Fixture()
         try await fixture.cycleDao.upsertPeriod(periodRecord(id: "open", start: fixture.today - 2))
 
-        #expect(try await fixture.firstOverview().cycle.isPeriodOpen == true)
+        #expect(try await fixture.firstOverview().cycle?.isPeriodOpen == true)
 
         try await fixture.cycleDao.upsertPeriod(periodRecord(id: "open", start: fixture.today - 2, end: fixture.today))
 
-        #expect(try await fixture.firstOverview().cycle.isPeriodOpen == false)
+        #expect(try await fixture.firstOverview().cycle?.isPeriodOpen == false)
     }
 
     /// Gaps of 28 and 30 days average to 29. The mean is integer and **truncating**, matching
@@ -162,7 +163,7 @@ struct TodayRepositoryImplTests {
         try await fixture.cycleDao.upsertPeriod(periodRecord(id: "p2", start: first + 28))
         try await fixture.cycleDao.upsertPeriod(periodRecord(id: "p3", start: first + 58))
 
-        #expect(try await fixture.firstOverview().cycle.averageCycleLengthDays == 29)
+        #expect(try await fixture.firstOverview().cycle?.averageCycleLengthDays == 29)
     }
 
     /// A gap outside `21...45` is data noise, and a run with no usable gap has no average at all —
@@ -174,7 +175,7 @@ struct TodayRepositoryImplTests {
         try await fixture.cycleDao.upsertPeriod(periodRecord(id: "p1", start: first))
         try await fixture.cycleDao.upsertPeriod(periodRecord(id: "p2", start: first + 60))
 
-        #expect(try await fixture.firstOverview().cycle.averageCycleLengthDays == nil)
+        #expect(try await fixture.firstOverview().cycle?.averageCycleLengthDays == nil)
     }
 
     /// `MAX_APPOINTMENTS = 3`, applied to the DAO's `starts_at_epoch_ms ASC`, so the three that
@@ -322,7 +323,8 @@ struct TodayRepositoryImplTests {
                 vitalsDao: vitalsDao,
                 preferences: preferences,
                 clock: clock,
-                profileId: SalusDatabase.defaultProfileId
+                profileId: SalusDatabase.defaultProfileId,
+                profileRepository: makeProfileRepository(database: database, clock: clock)
             )
         }
 

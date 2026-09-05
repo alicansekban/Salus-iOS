@@ -5,10 +5,10 @@ import Testing
 @testable import FeatureHome
 
 /// The twin of Android's `feature/home/src/main/res/values/strings.xml` (`tr`, the source
-/// language) and `values-en/strings.xml`, and the drift detector between them: the 27 ported keys
+/// language) and `values-en/strings.xml`, and the drift detector between them: the 32 ported keys
 /// and both of their translations are pinned here, copied from the XML.
 ///
-/// 27, not the XML's 29: `home_title` and `home_settings` are declared on Android and read by
+/// 32, not the XML's 34: `home_title` and `home_settings` are declared on Android and read by
 /// nothing there, so neither is ported — see the header of `HomeStrings.swift`. The gap is
 /// asserted below rather than only commented, so a later "let's port the missing two" arrives as a
 /// failing test with the reason attached.
@@ -29,12 +29,21 @@ struct HomeStringsTests {
     /// A new key there means a new row here, in the same commit — that is the whole job of this
     /// table. The rows follow the XML's order, grouped by the card that reads them.
     static let samples: [HomeStringSample] = [
-        // The header: greeting and the card action (5).
-        HomeStringSample(key: "home_greeting_morning", turkish: "Günaydın", english: "Good morning"),
-        HomeStringSample(key: "home_greeting_afternoon", turkish: "İyi günler", english: "Good afternoon"),
-        HomeStringSample(key: "home_greeting_evening", turkish: "İyi akşamlar", english: "Good evening"),
-        HomeStringSample(key: "home_greeting_night", turkish: "İyi geceler", english: "Good night"),
+        // The header: greeting and the card action (9).
+        HomeStringSample(key: "home_greeting_morning", turkish: "Günaydın, %1$@", english: "Good morning, %1$@"),
+        HomeStringSample(key: "home_greeting_afternoon", turkish: "İyi günler, %1$@", english: "Good afternoon, %1$@"),
+        HomeStringSample(key: "home_greeting_evening", turkish: "İyi akşamlar, %1$@", english: "Good evening, %1$@"),
+        HomeStringSample(key: "home_greeting_night", turkish: "İyi geceler, %1$@", english: "Good night, %1$@"),
+        HomeStringSample(key: "home_greeting_morning_plain", turkish: "Günaydın", english: "Good morning"),
+        HomeStringSample(key: "home_greeting_afternoon_plain", turkish: "İyi günler", english: "Good afternoon"),
+        HomeStringSample(key: "home_greeting_evening_plain", turkish: "İyi akşamlar", english: "Good evening"),
+        HomeStringSample(key: "home_greeting_night_plain", turkish: "İyi geceler", english: "Good night"),
         HomeStringSample(key: "home_view_details", turkish: "Detayları gör", english: "View details"),
+        HomeStringSample(
+            key: "home_dose_progress",
+            turkish: "Bugünün ilerlemesi %1$lld/%2$lld",
+            english: "Today's progress %1$lld/%2$lld"
+        ),
         // The AI summary card (3).
         HomeStringSample(key: "home_ai_summary_title", turkish: "Yapay zekâ özeti", english: "AI summary"),
         HomeStringSample(
@@ -102,11 +111,11 @@ struct HomeStringsTests {
     /// decision rather than something that looks like a forgotten row.
     static let deadAndroidKeys: Set = ["home_title", "home_settings"]
 
-    @Test("the catalog holds exactly the 27 keys ported from :feature:home")
-    func catalogHoldsExactlyTheTwentySevenKeys() throws {
+    @Test("the catalog holds exactly the 32 keys ported from :feature:home")
+    func catalogHoldsExactlyTheThirtyTwoKeys() throws {
         // Pinned as a number as well as a set: a row deleted from the table together with its key
         // from the catalog would otherwise agree with itself and pass.
-        #expect(Self.samples.count == 27)
+        #expect(Self.samples.count == 32)
 
         try StringCatalogParity.assertKeys(of: Self.loadCatalog(), are: Self.expectedKeys)
     }
@@ -116,12 +125,12 @@ struct HomeStringsTests {
         // `home_title` (the shell owns the title) and `home_settings` (the settings gear Android's
         // M9 removed) are declared in both `values/` and `values-en/` and referenced by no
         // `R.string.*` in `HomeScreen.kt`. Porting them would add two keys the pin above carries
-        // and no accessor asks for, so the catalog is 27 where the XML is 29 — on purpose.
+        // and no accessor asks for, so the catalog is 32 where the XML is 34 — on purpose.
         let catalog = try Self.loadCatalog()
 
         #expect(catalog.keys.isDisjoint(with: Self.deadAndroidKeys))
         #expect(Self.expectedKeys.isDisjoint(with: Self.deadAndroidKeys))
-        #expect(Self.expectedKeys.count + Self.deadAndroidKeys.count == 29)
+        #expect(Self.expectedKeys.count + Self.deadAndroidKeys.count == 34)
     }
 
     @Test("Turkish is the source language and every key has both tr and en (spec 6.4)")
@@ -149,7 +158,7 @@ struct HomeStringsTests {
         #expect(Set(HomeStrings.Key.allCases.map(\.rawValue)) == catalog.keys)
     }
 
-    @Test("the five format keys carry Swift specifiers and render the Android sentence")
+    @Test("the nine format keys carry Swift specifiers and render the Android sentence")
     func formatKeysRenderTheAndroidSentence() throws {
         // Android's `%1$s`/`%1$d` are Java specifiers. `%s` reads a C string pointer under
         // `String(format:)` and `%d` reads 32 bits of a 64-bit Swift `Int`, so the catalog carries
@@ -157,6 +166,16 @@ struct HomeStringsTests {
         // around them is unchanged, and these are the assertions that say so.
         try #expect(Self.render("today_cycle_day", "tr", 14) == "Döngünün 14. günü")
         try #expect(Self.render("today_cycle_day", "en", 14) == "Cycle day 14")
+        try #expect(Self.render("home_dose_progress", "tr", 3, 5) == "Bugünün ilerlemesi 3/5")
+        try #expect(Self.render("home_dose_progress", "en", 3, 5) == "Today's progress 3/5")
+        try #expect(Self.render("home_greeting_morning", "tr", "Alican") == "Günaydın, Alican")
+        try #expect(Self.render("home_greeting_morning", "en", "Alican") == "Good morning, Alican")
+        try #expect(Self.render("home_greeting_afternoon", "tr", "Alican") == "İyi günler, Alican")
+        try #expect(Self.render("home_greeting_afternoon", "en", "Alican") == "Good afternoon, Alican")
+        try #expect(Self.render("home_greeting_evening", "tr", "Alican") == "İyi akşamlar, Alican")
+        try #expect(Self.render("home_greeting_evening", "en", "Alican") == "Good evening, Alican")
+        try #expect(Self.render("home_greeting_night", "tr", "Alican") == "İyi geceler, Alican")
+        try #expect(Self.render("home_greeting_night", "en", "Alican") == "Good night, Alican")
         try #expect(Self.render("today_vitals_weight", "tr", "72,5") == "Kilo: 72,5 kg")
         try #expect(Self.render("today_vitals_weight", "en", "72.5") == "Weight: 72.5 kg")
         try #expect(Self.render("today_vitals_glucose_mgdl", "tr", "110") == "Kan şekeri: 110 mg/dL")
@@ -189,18 +208,24 @@ struct HomeStringsTests {
             "today_vitals_weight",
             "today_vitals_bp",
             "today_vitals_glucose_mgdl",
-            "today_vitals_glucose_mmol"
+            "today_vitals_glucose_mmol",
+            "home_greeting_morning",
+            "home_greeting_afternoon",
+            "home_greeting_evening",
+            "home_greeting_night"
         ]
 
         for locale in ["tr", "en"] {
-            // The one `%1$d` on the Android side, and so the one `%1$lld` here.
+            // The two `%1$d` on the Android side, and so the two `%1$lld` here.
             try #expect(#require(catalog.value(of: "today_cycle_day", in: locale)).contains("%1$lld"))
+            try #expect(#require(catalog.value(of: "home_dose_progress", in: locale)).contains("%1$lld"))
+            try #expect(#require(catalog.value(of: "home_dose_progress", in: locale)).contains("%2$lld"))
 
             for key in stringKeys {
                 try #expect(#require(catalog.value(of: key, in: locale)).contains("%1$@"))
             }
 
-            // Blood pressure is the only key with a second argument.
+            // Blood pressure is the only key with a second `%1$@`-style argument.
             try #expect(#require(catalog.value(of: "today_vitals_bp", in: locale)).contains("%2$@"))
         }
     }

@@ -144,6 +144,8 @@ public final class HomeViewModel {
             // Read per emission, exactly where Kotlin reads it (`HomeViewModel.kt:32-33`).
             todayEpochDay: clock.todayEpochDay(),
             greeting: Self.greeting(forHour: clock.minuteOfDayNow() / 60),
+            profileName: overview.profileName,
+            doseProgress: Self.doseProgress(for: overview.doses),
             doses: overview.doses,
             appointments: overview.appointments,
             cycle: overview.cycle,
@@ -166,5 +168,12 @@ public final class HomeViewModel {
         // 23 and 0...4.
         default: .night
         }
+    }
+
+    /// `HomeViewModel.kt:73-79` — taken-plus-snoozed over total, nil when there are no doses.
+    private static func doseProgress(for doses: [TodayDose]) -> (taken: Int, total: Int)? {
+        guard doses.isEmpty == false else { return nil }
+        let taken = doses.count { $0.status == .taken || $0.status == .snoozed }
+        return (taken: taken, total: doses.count)
     }
 }
