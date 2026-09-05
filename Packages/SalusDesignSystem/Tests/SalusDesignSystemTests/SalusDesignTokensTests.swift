@@ -9,7 +9,7 @@ import Testing
 // Every literal below is copied out of that document by hand; the token sources are
 // transcribed from the same document independently. A typo on either side fails here.
 //
-// The count assertions are the drift detector: the doc declares 213 tokens and
+// The count assertions are the drift detector: the doc declares 217 tokens and
 // 5 `FeatureAccent` sets. If a token is added, removed or renamed in the doc without the
 // Swift side following, the totals stop matching.
 
@@ -31,12 +31,17 @@ typealias TypeSample = (
     dynamicTypeStyle: Font.TextStyle
 )
 
+/// Failures internal to the pixel-sampling harness for `vertical` (§3.5).
+private enum TestError: Error {
+    case pixelContextFailed
+}
+
 @Suite("Design token counts (drift detector)")
 struct DesignTokenCountTests {
-    /// `design-tokens.md` declares 213 tokens across all groups.
-    @Test("the package exposes exactly 213 tokens")
-    func totalTokenCountIs213() {
-        #expect(SalusTokens.allTokenCount == 213)
+    /// `design-tokens.md` declares 217 tokens across all groups.
+    @Test("the package exposes exactly 217 tokens")
+    func totalTokenCountIs217() {
+        #expect(SalusTokens.allTokenCount == 217)
     }
 
     /// §3 declares five feature accent sets: medications, cycle, vitals, appointments, trends.
@@ -64,6 +69,8 @@ struct DesignTokenCountTests {
         #expect(counts["featureAccents.dark"] == 20)
         // §3.3 success + warning, light and dark
         #expect(counts["statusColors"] == 4)
+        // §3.5 hero gradient stops (top + bottom), light and dark
+        #expect(counts["heroGradients"] == 4)
         // §4 four palettes x 8 roles x light+dark
         #expect(counts["premiumAccents"] == 64)
         // §5 spacing
@@ -78,7 +85,7 @@ struct DesignTokenCountTests {
         #expect(counts["typography"] == 12)
         // §10 motion
         #expect(counts["motion"] == 7)
-        #expect(counts.count == 12)
+        #expect(counts.count == 13)
     }
 }
 
@@ -191,6 +198,107 @@ struct FeatureAccentTests {
     }
 }
 
+@Suite("Hero gradient (§3.5)")
+struct HeroGradientTests {
+    @Test(
+        "hero gradient stops match design-tokens.md §3.5",
+        arguments: [
+            (
+                "light.hero.top", SalusExtendedColors.light.hero.top, UInt32(0x2C6B4F)
+            ),
+            (
+                "light.hero.bottom", SalusExtendedColors.light.hero.bottom, UInt32(0x3E7D5F)
+            ),
+            (
+                "dark.hero.top", SalusExtendedColors.dark.hero.top, UInt32(0x1E4A36)
+            ),
+            (
+                "dark.hero.bottom", SalusExtendedColors.dark.hero.bottom, UInt32(0x275B43)
+            )
+        ] as [ColorSample]
+    )
+    func heroStop(_ sample: ColorSample) {
+        #expect(sample.actual == Color(hex: sample.expected), "\(sample.name)")
+    }
+
+    /// §3.5 callout — gradients are the only raw two-color pairs; `hero` must stay a single
+    /// gradient, never two independent roles.
+    @Test("hero is not exposed as two independent color roles")
+    func heroIsAGradient() {
+        let all = Set(SalusTokens.groupCounts.map(\.group))
+        #expect(all.contains("heroGradients"))
+        #expect(SalusExtendedColors.light.hero == SalusGradient(
+            top: Color(hex: 0x2C6B4F),
+            bottom: Color(hex: 0x3E7D5F)
+        ))
+        #expect(SalusExtendedColors.dark.hero == SalusGradient(
+            top: Color(hex: 0x1E4A36),
+            bottom: Color(hex: 0x275B43)
+        ))
+    }
+
+    /// §3.5 — `top` is the lighter, upper stop. Renders the gradient and samples the top-most
+    /// and bottom-most pixels. The exact hex values are pinned in `heroStop`; rendering converts
+    /// to the display color space, so this test reads the *order* — each sampled end must land
+    /// nearer its own stop than the other one. `LinearGradient` exposes no public `stops`
+    /// (`startPoint`/`endPoint` are SwiftUICore-`package`), so sampling the rendered output is
+    /// the only honest read of the order.
+    @MainActor
+    @Test("vertical draws the top stop first, then the bottom stop")
+    func verticalTopIsUpperStop() throws {
+        let renderer = ImageRenderer(
+            content: SalusExtendedColors.light.hero.vertical.frame(width: 64, height: 64)
+        )
+        let image = try #require(renderer.cgImage)
+        let topSample = try pixel(of: image, x: 32, y: 0)
+        let bottomSample = try pixel(of: image, x: 32, y: 63)
+        // The two stops' bytes as the renderer's sRGB space reads them (hex-pinned in `heroStop`).
+        let topBytes: (UInt8, UInt8, UInt8) = (0x2C, 0x6B, 0x4F)
+        let bottomBytes: (UInt8, UInt8, UInt8) = (0x3E, 0x7D, 0x5F)
+        // The top-most pixel must be the top stop, the bottom-most the bottom stop. A two-stop
+        // vertical gradient with the stops in the wrong order would flip both comparisons.
+        #expect(distance(topSample, to: topBytes) < distance(topSample, to: bottomBytes))
+        #expect(distance(bottomSample, to: bottomBytes) < distance(bottomSample, to: topBytes))
+        // Two distinct stops drawn — the order is observable, not a 1:1 gradient.
+        #expect(topSample != bottomSample)
+    }
+}
+
+/// Manhattan distance between three 8-bit channels, in the renderer's sRGB space.
+private func distance(
+    _ sample: (r: UInt8, g: UInt8, b: UInt8),
+    to target: (r: UInt8, g: UInt8, b: UInt8)
+) -> Int {
+    func diff(_ first: UInt8, _ second: UInt8) -> Int {
+        Int(first) - Int(second)
+    }
+    return abs(diff(sample.r, target.r))
+        + abs(diff(sample.g, target.g))
+        + abs(diff(sample.b, target.b))
+}
+
+/// Renders `image`'s pixel at `(x, y)` back to the sRGB color space it was drawn in. Samples the
+/// center column so no anti-aliased edge bleeds into the read.
+private func pixel(of image: CGImage, x: Int, y: Int) throws -> (r: UInt8, g: UInt8, b: UInt8) {
+    let width = image.width
+    let height = image.height
+    var buffer = [UInt8](repeating: 0, count: width * height * 4)
+    guard let context = CGContext(
+        data: &buffer,
+        width: width,
+        height: height,
+        bitsPerComponent: 8,
+        bytesPerRow: width * 4,
+        space: CGColorSpace(name: CGColorSpace.sRGB),
+        bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedLast.rawValue)
+    ) else {
+        throw TestError.pixelContextFailed
+    }
+    context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+    let index = (y * width + x) * 4
+    return (buffer[index], buffer[index + 1], buffer[index + 2])
+}
+
 @Suite("Premium accent palettes (§4)")
 struct PremiumAccentPaletteTests {
     @Test(
@@ -275,7 +383,7 @@ struct DimensionTokenTests {
 
     /// §6 — `pill` is Compose's `CircleShape` (`Shape.kt:8`). It is a shape rather than a radius,
     /// so it carries no dimension token and the §6 count stays 5. That also makes it the one
-    /// token the drift detector cannot see: nothing about the 213 total changes if it is
+    /// token the drift detector cannot see: nothing about the token total changes if it is
     /// deleted or turned into a fixed radius. Hence this pin.
     @Test("the pill is a Capsule and stays outside the radius tokens")
     func pill() {
@@ -288,7 +396,7 @@ struct DimensionTokenTests {
         for radius in SalusShapes.allTokens.values {
             #expect(SalusShapes.pill.path(in: rect) != SalusShapes.rounded(radius).path(in: rect))
         }
-        // …and it stays uncounted, which is why the 213 total cannot see it.
+        // …and it stays uncounted, which is why the token total cannot see it.
         #expect(SalusShapes.allTokens["pill"] == nil)
     }
 

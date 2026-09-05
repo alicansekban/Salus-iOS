@@ -47,7 +47,29 @@ public struct SalusFeatureAccentEntry: Equatable, Sendable {
     public let accent: FeatureAccent
 }
 
-/// The Salus colors that sit outside the Material roles, for one theme.
+/// A two-stop vertical gradient used for hero surfaces (the avatar, the Home hero band, the
+/// Profile band). `top` is the lighter end, `bottom` the deeper end. Mirrors `data class
+/// SalusGradient` (`ExtendedColors.kt:28-31`).
+public struct SalusGradient: Equatable, Sendable {
+    /// The lighter, upper stop.
+    public let top: Color
+    /// The deeper, lower stop.
+    public let bottom: Color
+
+    public init(top: Color, bottom: Color) {
+        self.top = top
+        self.bottom = bottom
+    }
+
+    /// A vertical gradient running `top` → `bottom`. The one place the port turns the two stops
+    /// into a `LinearGradient`; nothing outside this package recombines them.
+    public var vertical: LinearGradient {
+        LinearGradient(colors: [top, bottom], startPoint: .top, endPoint: .bottom)
+    }
+}
+
+/// The Salus colors that sit outside the Material roles, for one theme: one accent set per
+/// feature area, two shared status colors, and the hero gradient.
 ///
 /// The premium theme (§4) recolors Material accent roles only — these are unaffected by it.
 public struct SalusExtendedColors: Equatable, Sendable {
@@ -64,6 +86,8 @@ public struct SalusExtendedColors: Equatable, Sendable {
     public var success: Color
     /// §3.3 status color.
     public var warning: Color
+    /// §3.5 the hero gradient — the avatar, the Home hero band and the Profile band.
+    public var hero: SalusGradient
 
     /// The five feature accents in document order.
     public var featureAccents: [SalusFeatureAccentEntry] {
@@ -91,9 +115,14 @@ public struct SalusExtendedColors: Equatable, Sendable {
     package var statusTokens: [String: Color] {
         ["success": success, "warning": warning]
     }
+
+    /// The two hero gradient stops of this theme, keyed `<colorRole>.<stop>`.
+    package var gradientTokens: [String: Color] {
+        ["hero.top": hero.top, "hero.bottom": hero.bottom]
+    }
 }
 
-/// §3.1 / §3.3 — the light accent values. Source: `ExtendedColors.kt:39-74`.
+/// §3.1 / §3.3 / §3.5 — the light accent and gradient values. Source: `ExtendedColors.kt:49-90`.
 private enum LightAccentPalette {
     // medications — ExtendedColors.kt:39-44
     static let medicationsAccent = Color(hex: 0x17876D)
@@ -128,8 +157,13 @@ private enum LightAccentPalette {
     static let trendsOnContainer = Color(hex: 0x00105C)
 
     // §3.3 status colors
-    static let success = Color(hex: 0x2E7D4F) // ExtendedColors.kt:73
-    static let warning = Color(hex: 0xA66B00) // ExtendedColors.kt:74
+    static let success = Color(hex: 0x2E7D4F) // ExtendedColors.kt:84
+    static let warning = Color(hex: 0xA66B00) // ExtendedColors.kt:85
+
+    // §3.5 hero gradient — ExtendedColors.kt:86-89
+    static let heroTop = Color(hex: 0x2C6B4F)
+    static let heroBottom = Color(hex: 0x3E7D5F)
+    static let hero = SalusGradient(top: heroTop, bottom: heroBottom)
 
     static let medications = FeatureAccent(
         accent: medicationsAccent,
@@ -163,7 +197,7 @@ private enum LightAccentPalette {
     )
 }
 
-/// §3.2 / §3.3 — the dark accent values. Source: `ExtendedColors.kt:78-110`.
+/// §3.2 / §3.3 / §3.5 — the dark accent and gradient values. Source: `ExtendedColors.kt:92-130`.
 private enum DarkAccentPalette {
     // medications — ExtendedColors.kt:78-83
     static let medicationsAccent = Color(hex: 0x66D6B8)
@@ -196,8 +230,13 @@ private enum DarkAccentPalette {
     static let trendsOnContainer = Color(hex: 0xDEE0FF)
 
     // §3.3 status colors
-    static let success = Color(hex: 0x7ED29A) // ExtendedColors.kt:109
-    static let warning = Color(hex: 0xE5B85C) // ExtendedColors.kt:110
+    static let success = Color(hex: 0x7ED29A) // ExtendedColors.kt:124
+    static let warning = Color(hex: 0xE5B85C) // ExtendedColors.kt:125
+
+    // §3.5 hero gradient — ExtendedColors.kt:126-129
+    static let heroTop = Color(hex: 0x1E4A36)
+    static let heroBottom = Color(hex: 0x275B43)
+    static let hero = SalusGradient(top: heroTop, bottom: heroBottom)
 
     static let medications = FeatureAccent(
         accent: medicationsAccent,
@@ -232,7 +271,7 @@ private enum DarkAccentPalette {
 }
 
 extension SalusExtendedColors {
-    /// §3.1 / §3.3 — light.
+    /// §3.1 / §3.3 / §3.5 — light.
     public static let light = SalusExtendedColors(
         medications: LightAccentPalette.medications,
         cycle: LightAccentPalette.cycle,
@@ -240,10 +279,11 @@ extension SalusExtendedColors {
         appointments: LightAccentPalette.appointments,
         trends: LightAccentPalette.trends,
         success: LightAccentPalette.success,
-        warning: LightAccentPalette.warning
+        warning: LightAccentPalette.warning,
+        hero: LightAccentPalette.hero
     )
 
-    /// §3.2 / §3.3 — dark.
+    /// §3.2 / §3.3 / §3.5 — dark.
     public static let dark = SalusExtendedColors(
         medications: DarkAccentPalette.medications,
         cycle: DarkAccentPalette.cycle,
@@ -251,6 +291,7 @@ extension SalusExtendedColors {
         appointments: DarkAccentPalette.appointments,
         trends: DarkAccentPalette.trends,
         success: DarkAccentPalette.success,
-        warning: DarkAccentPalette.warning
+        warning: DarkAccentPalette.warning,
+        hero: DarkAccentPalette.hero
     )
 }
