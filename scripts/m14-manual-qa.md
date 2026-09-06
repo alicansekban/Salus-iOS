@@ -213,6 +213,39 @@ you what to check on the Medications tab afterwards.
   (`MedicationDetailSections.swift:163`); a regression on the card or the detail screen would drop
   the recurrence wording from one of the two.
 
+## §5. Cycle calendar push + cycle-card gating (Task 8)
+
+Written by Task 8 (verification-only, divergence (f)): the cycle calendar is a pushed destination
+inside a `NavigationStack`, so it gets the system back button and the tab bar hides (`RootView.swift`
+`tabStack(for:)` — the `isAtRoot` toolbar rule, the twin of Android's `showBottomBar`,
+`SalusApp.kt:133-136`). Android's M12 cycle-screen back-button fix has no iOS code twin; these rows
+verify the equivalent behaviour already exists. The cycle card is gated by `cycleForProfile`
+(`TodayModels.kt:10-11`), which returns nil for a male or missing profile.
+
+**Setup.** A female profile (More › Profil › the sex selector) for rows 5.1–5.2 and 5.4; a male
+profile for row 5.3.
+
+- [ ] **5.1 Cycle calendar from More: system back button + hidden tab bar.** Open More › Tracking +
+  Cycle. The calendar renders with the **system back button** in the top-left; tapping it returns to
+  More. While the calendar is on screen the **tab bar is hidden** (the `isAtRoot` rule — a pushed
+  destination gets the full height). *Why this step exists:* the M12 Android fix added a back button
+  to the cycle screen; iOS gets it from `NavigationStack` for free, and `CycleScreen.swift` writes no
+  `navigationBarBackButtonHidden` or custom toolbar that would suppress it.
+- [ ] **5.2 Cycle calendar from Home's cycle card: same two checks.** On Home, tap the cycle card
+  (female profile). The calendar shows the **system back button** and the **tab bar is hidden**;
+  tapping back returns to Home. *Why this step exists:* Home's card pushes `CycleKey` onto Home's own
+  stack (`RootView.swift` `onOpenCycle`), so the same pushed-destination behaviour must hold from
+  this entry point too.
+- [ ] **5.3 Male profile: no cycle card on Home, no cycle row on More.** With a male profile, Home
+  draws **no** cycle card and More draws **no** "Tracking + Cycle" row. *Why this step exists:* both
+  gates are the same rule — `cycleForProfile` returns nil for `sex == .male`
+  (`TodayModels.kt:10-11`), and More's `showCycle` is `profile != nil && profile?.sex != .male`
+  (`MoreViewModel.kt:64-65`).
+- [ ] **5.4 Female profile: cycle card visible on Home with correct data.** With a female profile,
+  Home draws the cycle card showing the current cycle day, the progress bar and the period status.
+  *Why this step exists:* `cycleForProfile` passes the snapshot through for a female profile, so the
+  card must appear with real data, not the empty state.
+
 ---
 
 ## What was executed when this section was written (iOS-M14 Task 6)

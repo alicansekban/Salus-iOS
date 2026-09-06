@@ -149,8 +149,10 @@ struct HomeScreen: View {
             SalusSectionHeader(title: HomeStrings.appointmentsTitle)
             HomeAppointmentsCard(appointments: state.appointments, onTap: onOpenAppointments)
 
-            // Always drawn once loaded, and for every user: Android gates the cycle card on nothing
-            // (plan ruling 9). The optional is the default state's, not a per-user condition.
+            // Drawn only for a female profile: `cycleForProfile` returns nil for a male or missing
+            // profile (`TodayModels.kt:10-11`), so `state.cycle` is nil and the card is skipped —
+            // the same rule that hides the More row (`MoreViewModel.kt:64-65`). The optional is the
+            // gate's, not the default state's.
             if let cycle = state.cycle {
                 SalusSectionHeader(title: HomeStrings.cycleTitle)
                 HomeCycleCard(cycle: cycle, onTap: onOpenCycle)
