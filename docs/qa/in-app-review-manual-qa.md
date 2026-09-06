@@ -6,8 +6,9 @@ Plan: `docs/superpowers/plans/2026-09-06-in-app-review-ios.md`. Branch `feature/
 What the automated gate already proves (`scripts/ci.sh`): the policy table (3 opens, 14-day
 cooldown, boundary cases), the two preference keys round-trip, the Home ViewModel emits exactly one
 `requestReview` on the third arrival and stamps the clock first, a foreground return counts only
-while Home is showing, and the More row emits the App Store write-review URL. What follows is the
-UIKit/StoreKit side no host test can reach.
+while Home is showing, the cold start counts once rather than twice (the launch's `.active` is not
+a return), a return onto the app-lock gate counts only once the gate lifts, and the More row emits
+the App Store write-review URL. What follows is the UIKit/StoreKit side no host test can reach.
 
 ## 1. The rating sheet on the third open (simulator)
 
@@ -41,11 +42,22 @@ To re-test the cooldown without waiting 14 days, delete the app (the counters li
 ## 3. Lock screen + foreground
 
 1. Enable app lock. Background and return so the lock gate shows.
-2. **Expected:** unlocking does not double-count the open (the signal fires once per `.active`;
-   the count moves by one per return).
+2. **Expected:** no rating sheet appears over the lock gate — not even when this return is the
+   third open. The count does not move while the gate is up.
+3. Unlock (Face ID / passcode). **Expected:** the count moves by exactly one, and if that open is
+   the third the sheet appears now, over Home, with the gate already gone.
+4. Background and return a second time, unlock again. **Expected:** the count moves by exactly one
+   more — a locked return is deferred, never dropped and never doubled.
+
+## 4. Cold start counts once
+
+1. Delete the app and reinstall (`home_open_count` back to 0). Finish onboarding.
+2. Reach Home, then background and return **twice**. **Expected:** the sheet appears on the second
+   return — that is opens 1 (launch), 2 and 3. If it appeared on the *first* return the launch was
+   counted twice, which is the bug the signal's arming guard exists for.
 
 ## Parity-ledger entry (proposed, for `salus-android/docs/parity-ledger.md`)
 
 ```
-| In-app review (2026-09-06) | keys `home_open_count` / `review_last_requested_ms` on both; `ReviewPromptPolicy` (3 opens, 14 d) in :core:common / SalusCommon | iOS-only `AppForegroundSignal` (SalusCommon): Android's `LifecycleResumeEffect` re-fires on foreground, SwiftUI's `.task` does not, so the shell's `.active` arm fans out to `HomeViewModel.sceneDidBecomeActive()`, which counts only while Home is visible | More row: Android `market://` + web fallback, iOS `apps.apple.com/app/id6807102436?action=write-review` via `MoreEffect.openUrl` | `ReviewState` lives in SalusSettings (one consumer) rather than SalusModel |
+| In-app review (2026-09-06) | keys `home_open_count` / `review_last_requested_ms` on both; `ReviewPromptPolicy` (3 opens, 14 d) in :core:common / SalusCommon | iOS-only `AppForegroundSignal` (SalusCommon): Android's `LifecycleResumeEffect` re-fires on foreground, SwiftUI's `.task` does not, so the shell's `.active` arm fans out to `HomeViewModel.sceneDidBecomeActive()`, which counts only while Home is visible. Two iOS-only guards on that fan-out, both from the platform and neither with an Android twin: it is armed by `.background` (a cold start's own `.active` would otherwise double-count the launch `.task` already counted), and a return onto the app-lock gate is held until `AppLockManager.didUnlock` — the gate is a `ZStack` overlay, so Home never disappears behind it, where Android's gate replaces the screen | More row: Android `market://` + web fallback, iOS `apps.apple.com/app/id6807102436?action=write-review` via `MoreEffect.openUrl` | `ReviewState` lives in **iOS `SalusSettings`** where Android keeps it in **`:core:model`** — the one place the module mirror does not hold for this feature (single consumer; keeps `SalusModel` free of a settings-only type). A second consumer on iOS would move it. |
 ```

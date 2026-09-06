@@ -89,6 +89,12 @@ public final class HomeViewModel {
         observation.cancel()
         // `deinit` is nonisolated; the signal is main-actor bound, and a ViewModel is only ever
         // released on the main actor (it is a view's `@State`), so the hop is a formality.
+        //
+        // It is not free, though: between this `deinit` and the `Task` running, the signal still
+        // holds a handler whose `self` is gone. Harmless by construction — the capture is `[weak
+        // self]`, so a fan-out in that window calls nothing — but it does mean the handler count
+        // is not an assertion anything may rely on, and it is why the closure below captures the
+        // signal and the subscription rather than reaching through `self`.
         if let foregroundSubscription {
             let foreground = foreground
             Task { @MainActor in foreground.unsubscribe(foregroundSubscription) }

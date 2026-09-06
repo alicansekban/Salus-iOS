@@ -129,7 +129,14 @@ public final class SalusPreferencesDataSource: Sendable {
         return next
     }
 
+    /// Stamps the instant a request went out. Under the same lock as the counter: the two are one
+    /// decision (`ReviewPromptPolicy.shouldRequest` reads the count and the stamp together), and a
+    /// stamp written between another caller's read and increment would let the second caller judge
+    /// itself against a state that no longer holds.
     public func setReviewLastRequested(epochMs: Int64) {
+        reviewCounterLock.lock()
+        defer { reviewCounterLock.unlock() }
+
         defaults.set(epochMs, forKey: SettingsKeys.reviewLastRequestedMs)
     }
 
