@@ -171,6 +171,12 @@ struct HomeScreen: View {
             HomeDashboardCard(onTap: onOpenAiSummary) {
                 // `Row(verticalAlignment = Top) { SalusIconBadge(AutoAwesome, trends); … Column(weight(1f)) }`
                 // (`HomeScreen.kt:251-271`). `AutoAwesome` → `sparkles` (SF Symbol twin).
+                //
+                // The greedy frame is the twin of Kotlin's `Column(modifier = Modifier.weight(1f))`
+                // (`HomeScreen.kt:258`): `HomeDashboardCard` routes through `SalusCard(onTap:)`'s
+                // Button branch, and SwiftUI centers a Button's label when it does not fill the
+                // width — without the greedy frame the text column would sit centered instead of
+                // flush left with the other cards' padding rhythm.
                 HStack(alignment: .top, spacing: 0) {
                     SalusIconBadge(systemImage: "sparkles", accent: theme.extendedColors.trends)
                     Spacer().frame(width: SalusSpacing.md)
@@ -185,6 +191,7 @@ struct HomeScreen: View {
                                 .foregroundStyle(theme.colorScheme.onSurfaceVariant)
                         }
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
 

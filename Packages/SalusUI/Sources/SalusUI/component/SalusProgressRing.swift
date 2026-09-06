@@ -11,6 +11,14 @@
 // Divergence (c), recorded in the M14 plan: Android defers clamping `progress` to 0...1; iOS takes
 // the cheap fix now. `CircularProgressIndicator` clamps its own value, but the port clamps at the
 // boundary so the stored value is always in range and the clamp is testable.
+//
+// Divergence (j), the determinate ring (M14 QA row 1.4, user-verified bug): the M3 mapping note
+// `CircularProgressIndicator → ProgressView` no longer applies. `ProgressView(value:total:)` with
+// `.progressViewStyle(.circular)` renders as an INDETERMINATE spinner on iOS 17 — `.circular`
+// ignores the value, so the user saw a spinning wheel instead of a static "3/5" ring. The ring is
+// therefore drawn by hand: a `Circle().trim(from: 0, to: progress)` stroke, rotated `-90°` so the
+// arc starts at 12 o'clock (Compose's `CircularProgressIndicator` starts at top; SwiftUI's `trim`
+// starts at 3 o'clock). The track stays a full-circle stroke behind it.
 
 import SalusDesignSystem
 import SwiftUI
@@ -49,9 +57,12 @@ public struct SalusProgressRing: View {
                 .stroke(.white.opacity(0.24), lineWidth: strokeWidth)
             // The progress: `CircularProgressIndicator(progress = { progress }, …)` with
             // `color = Color.White` and `strokeCap = StrokeCap.Round` (`SalusProgressRing.kt:40-47`).
-            ProgressView(value: Double(progress), total: 1)
-                .progressViewStyle(.circular)
-                .tint(.white)
+            // Drawn with `trim` because `.progressViewStyle(.circular)` ignores determinate values
+            // on iOS 17 and renders an indeterminate spinner (divergence (j), M14 QA row 1.4).
+            Circle()
+                .trim(from: 0, to: CGFloat(progress))
+                .stroke(.white, style: StrokeStyle(lineWidth: strokeWidth, lineCap: .round))
+                .rotationEffect(.degrees(-90))
             Text(verbatim: label)
                 .font(SalusTypography.labelLarge.font)
                 .tracking(SalusTypography.labelLarge.tracking)

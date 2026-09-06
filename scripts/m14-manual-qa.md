@@ -90,7 +90,12 @@ at least one dose scheduled today (`HomeViewModel` feeds `doseProgress` from the
   "Today's progress 3/5").
   *Why this step exists:* the ring is drawn only when `doseProgress != nil` (`HomeScreen.kt:203-217`);
   a day with no doses must show no ring at all, and both the empty and partial arcs come from the same
-  clamped `progress`.
+  clamped `progress`. **Bug found and fixed (M14 QA row 1.4):** the ring was originally a
+  `ProgressView(value:total:)` with `.progressViewStyle(.circular)`, which renders as an
+  **indeterminate spinner** on iOS 17 — `.circular` ignores the value, so the user saw a spinning
+  wheel instead of a static "3/5" ring. The ring is now drawn with `Circle().trim(from: 0, to: progress)`
+  + `.stroke(.white, style: StrokeStyle(lineWidth: strokeWidth, lineCap: .round))`, rotated `-90°`
+  (divergence (j)). The ring must render as a **STATIC partial arc** — never a spinning indicator.
 
 ### The five card badges
 
@@ -103,6 +108,15 @@ at least one dose scheduled today (`HomeViewModel` feeds `doseProgress` from the
 - [ ] **1.6 An empty doses/summary badge is still aligned.** A card with no rows (the "Bugün için
   planlı doz yok." empty line, the AI summary with no free credit) still draws its badge at the same
   inset as its populated siblings — the badge does not collapse when the content is a single line.
+- [ ] **1.6a The AI summary card content is leading-aligned.** The AI summary card's text column
+  (the description, and the free-credit line when shown) sits **flush left** with the same padding
+  rhythm as the other four cards — the badge at the leading edge, then the `md` gap, then the text
+  starting at the same inset as the doses/appointments/cycle/vitals text. It is **not** centered.
+  *Why this step exists:* `HomeDashboardCard` routes through `SalusCard(onTap:)`'s Button branch,
+  and SwiftUI centers a Button's label when it does not fill the width. The fix adds
+  `.frame(maxWidth: .infinity, alignment: .leading)` to the text column — the twin of Kotlin's
+  `Column(modifier = Modifier.weight(1f))` (`HomeScreen.kt:258`). A regression would put the text
+  back in the center of the card.
 
 ### The vitals stat tiles
 
