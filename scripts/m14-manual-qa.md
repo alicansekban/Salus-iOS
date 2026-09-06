@@ -96,11 +96,46 @@ at least one dose scheduled today (`HomeViewModel` feeds `doseProgress` from the
 
 ---
 
-## What was executed when this section was written (iOS-M14 Task 4)
+## §2. Appointments date tiles (Task 5)
 
-**Nothing.** Task 4 ran `scripts/test-packages.sh FeatureHome` (1/1 package passed, 47 tests in 7
-suites), `scripts/build-app.sh` (**BUILD SUCCEEDED**) and `scripts/lint.sh` (0 violations in 639
-files). Every §1 row above is **NOT RUN**; the hero band, the badges and the vitals tiles have never
-been drawn on any hardware. The `#Preview`s in `HomeScreen.swift` (Home, Home — loading, Home —
-nothing recorded) ship with `profileName`/`doseProgress` fed through for the user's own inspection;
-no agent has rendered them either.
+Written by Task 5 (`Packages/Features/FeatureAppointments/Sources/FeatureAppointments/ui/list/
+AppointmentsScreen.swift`). Android's card change is `AppointmentsScreen.kt:241-286` (the
+`SalusDateTile` leading column, the time moved into the content column as `labelLarge` in the
+accent's accent, and the `Spacer(SalusSpacing.md)` between tile and content — the final-review gap
+fix `0ea0d35`).
+
+**Setup.** Seed at least one upcoming appointment (the agenda's "upcoming" window) so a card draws
+with a date tile. The rows below tell you what to check on the Appointments tab afterwards.
+
+- [ ] **2.1 The card leads with a calendar date tile.** Each appointment card opens with a 56×60
+  rounded tile filled with the appointments accent's `container`, showing the **day of month** in
+  `headlineMedium` above the **short month** in `labelMedium`, both in the accent's `accent` colour.
+  The month reads as the Turkish abbreviation (e.g. **Ağu** for August, **Eyl** for September) in
+  Turkish, and the English abbreviation in English — the tile follows the in-app language pick, not
+  the device's.
+  *Why this step exists:* the tile is `SalusDateTile(dayOfMonth:monthShort:accent:)` fed from
+  `item.startsAt.date.day` and the `"MMM"` formatter (`AppointmentsScreen.kt:260-264`); the month
+  must track the picked locale like every other date on the screen.
+- [ ] **2.2 The time sits above the title, in the accent.** The appointment time (e.g. **10:00**)
+  is drawn in `labelLarge` in the appointments accent's `accent` colour, directly above the title in
+  `titleMedium` — no longer in a fixed-width leading column.
+  *Why this step exists:* the time moved from the old `timeColumnWidth` column into the content
+  column (`AppointmentsScreen.kt:267-271`); a regression would put it back on the left or lose the
+  accent colour.
+- [ ] **2.3 A `md` gap separates the tile from the text.** Between the date tile and the time/title
+  column there is a `SalusSpacing.md` (12 pt) gap — the Android final-review fix mirrored
+  (`AppointmentsScreen.kt:265`). The doctor and location rows and the trash button are unchanged.
+- [ ] **2.4 The tile renders in light and dark.** Switch the app to **Koyu** (More › Görünüm › Tema)
+  and the tile's `container` fill and `accent` text follow the dark palette; the day and month stay
+  legible on the tinted fill in both modes.
+
+---
+
+## What was executed when this section was written (iOS-M14 Task 5)
+
+**Nothing.** Task 5 ran `scripts/test-packages.sh FeatureAppointments` (1/1 package passed, 65 tests
+in 12 suites), `scripts/build-app.sh` (**BUILD SUCCEEDED**) and `scripts/lint.sh` (0 violations in
+639 files). Every §1 and §2 row above is **NOT RUN**; the hero band, the badges, the vitals tiles
+and the appointment date tiles have never been drawn on any hardware. The `#Preview`s in
+`HomeScreen.swift` and `AppointmentsScreen.swift` ship for the user's own inspection; no agent has
+rendered them either.

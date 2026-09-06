@@ -246,8 +246,8 @@ func appointmentsDayHeaderLabel(epochDay: Int, todayEpochDay: Int, locale: Local
     }
 }
 
-/// Time on the left, what and where on the right, the trash on the far right
-/// (`AppointmentsScreen.kt:241-278`).
+/// Date tile on the left, time and what/where on the right, the trash on the far right
+/// (`AppointmentsScreen.kt:241-286`).
 ///
 /// See the file header for why the card is not `SalusCard(onTap:)` with the button inside it.
 private struct AppointmentCard: View {
@@ -276,7 +276,7 @@ private struct AppointmentCard: View {
                     .accessibilityAddTraits(.isButton)
                     .accessibilityAction(.default, onTap)
 
-                // `Spacer(width = sm)` + `IconButton` (`AppointmentsScreen.kt:268-275`). A sibling
+                // `Spacer(width = sm)` + `IconButton` (`AppointmentsScreen.kt:276-283`). A sibling
                 // of the column, not a descendant of any Button.
                 Button(action: onDelete) {
                     Label(AppointmentsStrings.delete, systemImage: "trash")
@@ -290,16 +290,27 @@ private struct AppointmentCard: View {
         .padding(.horizontal, SalusSpacing.lg)
     }
 
-    /// The time column and the text column — everything a tap on the row opens
-    /// (`AppointmentsScreen.kt:250-267`).
+    /// The date tile and the text column — everything a tap on the row opens
+    /// (`AppointmentsScreen.kt:259-275`).
     private var details: some View {
         HStack(alignment: .top, spacing: 0) {
-            Text(verbatim: item.startsAt.formatted(pattern: timePattern, locale: locale))
-                .font(SalusTypography.titleMedium.font)
-                .foregroundStyle(theme.extendedColors.appointments.accent)
-                .frame(width: timeColumnWidth, alignment: .leading)
+            SalusDateTile(
+                dayOfMonth: item.startsAt.date.day,
+                monthShort: item.startsAt.formatted(pattern: monthPattern, locale: locale),
+                accent: theme.extendedColors.appointments
+            )
+
+            // `Spacer(width = md)` between the tile and the content column
+            // (`AppointmentsScreen.kt:265`).
+            Spacer().frame(width: SalusSpacing.md)
 
             VStack(alignment: .leading, spacing: 0) {
+                // The time sits directly above the title, in the accent's accent colour
+                // (`AppointmentsScreen.kt:267-271`).
+                Text(verbatim: item.startsAt.formatted(pattern: timePattern, locale: locale))
+                    .font(SalusTypography.labelLarge.font)
+                    .tracking(SalusTypography.labelLarge.tracking)
+                    .foregroundStyle(theme.extendedColors.appointments.accent)
                 Text(verbatim: item.title)
                     .font(SalusTypography.titleMedium.font)
                     .foregroundStyle(theme.colorScheme.onSurface)
@@ -339,12 +350,12 @@ private struct DetailRow: View {
 
 /// `AppointmentsScreen.kt:223`.
 private let dayHeaderPattern = "EEEE, d MMMM"
-/// `AppointmentsScreen.kt:248`.
+/// `AppointmentsScreen.kt:249`.
 private let timePattern = "HH:mm"
+/// `AppointmentsScreen.kt:250`.
+private let monthPattern = "MMM"
 /// `AppointmentsScreen.kt:301`.
 private let detailIconSize: CGFloat = 16
-/// `AppointmentsScreen.kt:302`.
-private let timeColumnWidth: CGFloat = 64
 /// `AppointmentsScreen.kt:304`.
 private let fabClearance: CGFloat = 88
 
