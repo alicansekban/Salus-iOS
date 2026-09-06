@@ -1,9 +1,17 @@
 // Ported 1:1 from Android
 // `core/reminder/src/main/kotlin/com/alicansekban/salus/core/reminder/api/ReminderReadiness.kt`,
-// with the problem list re-read for iOS: Android's exact-alarm, background-restriction,
-// battery-optimization and full-screen-intent questions have no iOS twin, and what replaces
-// them is AlarmKit's authorization and the background refresh switch (see
-// ``ReminderEnvironment``).
+// with the problem list re-read for iOS: Android's exact-alarm, background-restriction and
+// battery-optimization questions have no iOS twin, and what replaces them is AlarmKit's
+// authorization and the background refresh switch (see ``ReminderEnvironment``).
+//
+// **On iOS exactly one problem is hard, and it is ``ReminderProblem/notificationsOff``.**
+// Everything else weakens a reminder without stopping it, because the notification is the
+// fallback for all of them: an unauthorized AlarmKit still leaves the dose posting
+// time-sensitive with the alarm sound (`ReminderContracts.swift`, `alarmKitAuthorized()`), and
+// a disabled background refresh still refills the window whenever the app is opened. That
+// makes ``ReminderProblem/alarmKitDenied`` the twin of Android's soft `FULL_SCREEN_DENIED`,
+// not of its hard `EXACT_ALARMS_DENIED`. Only a denied notification silences the pipeline
+// outright, so only it can make a report ``ReminderReadiness/broken``.
 //
 // PURE SWIFT, like the contracts it sits beside: the classification is a fold over three
 // booleans, so nothing here imports UserNotifications, AlarmKit, SwiftUI or UIKit.
@@ -27,7 +35,9 @@ public enum ReminderProblem: Sendable, Equatable, CaseIterable {
     case notificationsOff
 
     /// AlarmKit is not authorized on a system that has it, so a medication dose cannot take
-    /// over the screen. Never reported below iOS 26, where AlarmKit does not exist.
+    /// over the screen — it still posts, time-sensitive and with the alarm sound. Soft for
+    /// exactly that reason, the twin of Android's `FULL_SCREEN_DENIED`. Never reported below
+    /// iOS 26, where AlarmKit does not exist.
     case alarmKitDenied
 
     /// Background refresh is off: the alarm window is only refilled while the app is open.
@@ -35,10 +45,13 @@ public enum ReminderProblem: Sendable, Equatable, CaseIterable {
 
     /// Whether this problem stops a reminder outright, as opposed to weakening it. A hard
     /// problem makes the whole report ``ReminderReadiness/broken``.
+    ///
+    /// True for ``notificationsOff`` alone: every other problem degrades to the plain
+    /// notification, which a denied notification authorization is precisely the absence of.
     public var isHard: Bool {
         switch self {
-        case .alarmKitDenied, .notificationsOff: true
-        case .backgroundRefreshOff: false
+        case .notificationsOff: true
+        case .alarmKitDenied, .backgroundRefreshOff: false
         }
     }
 }

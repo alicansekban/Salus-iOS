@@ -2,7 +2,8 @@
 // `core/reminder/src/test/kotlin/com/alicansekban/salus/core/reminder/api/ReminderReadinessTest.kt`,
 // minus the three Android-only problems (exact alarms, background restriction, battery
 // optimization) and plus the two the iOS environment answers instead: AlarmKit's authorization
-// and background refresh.
+// and background refresh. Both of the new ones are SOFT — on iOS the plain notification is the
+// fallback for everything, so only its own denial is hard.
 
 import Testing
 
@@ -12,10 +13,14 @@ import Testing
 struct ReminderReadinessTests {
     // MARK: - Problem classification
 
-    @Test("only the two permission problems are hard")
-    func onlyPermissionProblemsAreHard() {
+    /// Everything but a denied notification degrades to the plain notification, so on iOS the
+    /// notification authorization is the only problem that can stop a reminder outright —
+    /// `ReminderContracts.swift`'s `alarmKitAuthorized()` says a dose still posts without
+    /// AlarmKit, which makes `alarmKitDenied` the twin of Android's soft `FULL_SCREEN_DENIED`.
+    @Test("only a denied notification is hard")
+    func onlyDeniedNotificationIsHard() {
         #expect(ReminderProblem.notificationsOff.isHard)
-        #expect(ReminderProblem.alarmKitDenied.isHard)
+        #expect(!ReminderProblem.alarmKitDenied.isHard)
         #expect(!ReminderProblem.backgroundRefreshOff.isHard)
     }
 
@@ -39,7 +44,7 @@ struct ReminderReadinessTests {
             problems: [.notificationsOff, .alarmKitDenied, .backgroundRefreshOff]
         )
 
-        #expect(report.hardProblems == [.notificationsOff, .alarmKitDenied])
+        #expect(report.hardProblems == [.notificationsOff])
     }
 
     // MARK: - Classification
@@ -62,14 +67,15 @@ struct ReminderReadinessTests {
         #expect(report.hardProblems == [.notificationsOff])
     }
 
-    @Test("denied AlarmKit breaks the pipeline where AlarmKit exists")
-    func deniedAlarmKitBreaksThePipelineWhereSupported() async {
+    @Test("denied AlarmKit only degrades — the dose still posts as a notification")
+    func deniedAlarmKitOnlyDegrades() async {
         let environment = FakeReminderEnvironment(isAlarmKitAuthorized: false)
 
         let report = await environment.readiness(alarmKitSupported: true)
 
-        #expect(report.readiness == .broken)
+        #expect(report.readiness == .degraded)
         #expect(report.problems == [.alarmKitDenied])
+        #expect(report.hardProblems.isEmpty)
     }
 
     @Test("denied AlarmKit is not a problem below iOS 26")
@@ -77,6 +83,17 @@ struct ReminderReadinessTests {
         let environment = FakeReminderEnvironment(isAlarmKitAuthorized: false)
 
         #expect(await environment.readiness(alarmKitSupported: false) == .ok)
+    }
+
+    @Test("AlarmKit is not even asked below iOS 26")
+    func alarmKitIsNotAskedWhereUnsupported() async {
+        let environment = FakeReminderEnvironment(isAlarmKitAuthorized: false)
+
+        _ = await environment.readiness(alarmKitSupported: false)
+        #expect(environment.alarmKitAuthorizationReads == 0)
+
+        _ = await environment.readiness(alarmKitSupported: true)
+        #expect(environment.alarmKitAuthorizationReads == 1)
     }
 
     @Test("background refresh off only degrades")
@@ -116,5 +133,6 @@ struct ReminderReadinessTests {
 
         #expect(report.readiness == .broken)
         #expect(report.problems == ReminderProblem.allCases)
+        #expect(report.hardProblems == [.notificationsOff])
     }
 }

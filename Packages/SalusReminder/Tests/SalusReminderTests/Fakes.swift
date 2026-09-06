@@ -132,6 +132,7 @@ final class FakeReminderEnvironment: ReminderEnvironment, @unchecked Sendable {
     private var authorized: Bool
     private var alarmKit: Bool
     private var backgroundRefresh: Bool
+    private var alarmKitReads = 0
 
     init(
         isNotificationsAuthorized: Bool = true,
@@ -152,8 +153,17 @@ final class FakeReminderEnvironment: ReminderEnvironment, @unchecked Sendable {
         isNotificationsAuthorized
     }
 
+    /// How many times ``alarmKitAuthorized()`` was asked, so a caller that must not ask below
+    /// iOS 26 can be pinned on not asking rather than on the answer it would have discarded.
+    var alarmKitAuthorizationReads: Int {
+        lock.withLock { alarmKitReads }
+    }
+
     func alarmKitAuthorized() async -> Bool {
-        lock.withLock { alarmKit }
+        lock.withLock {
+            alarmKitReads += 1
+            return alarmKit
+        }
     }
 
     func backgroundRefreshAvailable() -> Bool {
