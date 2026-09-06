@@ -380,9 +380,47 @@ the **largest** (AX5) as each row asks.
 
 ---
 
+## §7. Vitals list row badges (Task 10)
+
+Written by Task 10 to close the list/card parity gap Task 9 flagged: Android's `a9f8e23` added a
+per-type `SalusIconBadge` leading each `VitalsScreen.kt` list row (`:300-304`), and the iOS mirror
+now draws it too. Android's `VitalsListItem.icon()` (`VitalsScreen.kt:362-366`) maps Weight →
+`MonitorWeight`, BloodPressure → `MonitorHeart`, Glucose → `WaterDrop`; iOS uses the SF Symbol
+family T4 chose for the Home vitals card — Weight → `scalemass.fill`, BloodPressure →
+`waveform.path.ecg`, Glucose → `drop.fill`.
+
+**Setup.** Seed health data (§0's `scripts/dev/seed-health-data.sh`) so weight, blood pressure and
+glucose each have at least one entry; if only one type's rows show, add the others through the
+`+` FAB and the editors.
+
+- [ ] **7.1 Each type's row leads with its own badge.** Walk the Vitals tab with the type selector on
+  **Kilo**, then **Tansiyon**, then **Kan şekeri**. *Expected:* every row opens with a 40 pt circular
+  badge in the vitals colour — a **scales glyph** on weight rows, an **ECG heart-wave glyph** on blood
+  pressure rows, a **water-drop glyph** on glucose rows — then a 16 pt gap, then the value/date/supporting
+  line as before. The trash button is still at the row's trailing edge.
+  *Why this step exists:* Android drew one `SalusIconBadge` per list row (`:300-304`) and the M12 mirror
+  had not until this task — this is the visual half of that fix.
+
+- [ ] **7.2 The badge is vitals-accented, and reads again at Koyu.** With a row on screen, switch
+  **Görünüm › Tema** to **Açık** and confirm the badge's `container` fill and glyph track the vitals
+  accent, then switch to **Koyu** and confirm the same pair resolves to the dark palette.
+  *Why this step exists:* every badge takes `accent = theme.extendedColors.vitals`; a token that only
+  differs in dark shows up here and nowhere else.
+
+- [ ] **7.3 The badge is decoration.** With a row on screen, rotate VoiceOver's rotor to *Elements* and
+  swipe through the row. *Expected:* the badge is **silent** — only the value/date/supporting lines and
+  the "Sil" (delete) button announce; the row's tap-and-open works exactly as before, on the text column.
+  *Why this step exists:* Android's badge has `contentDescription = null`, so neither platform announces
+  it to VoiceOver; SwiftUI's `SalusIconBadge` is `.accessibilityHidden(true)`.
+
+---
+
 ## What was executed when this section was written (iOS-M14 Task 9)
 
+
 **Nothing.** Task 9 ran `scripts/ci.sh` (all five: toolchain, lint, custom rules, all 24 packages,
-and the iOS build — all green) and wrote this §6 and the §0 preamble. Every row in this file — §0
-through §6 — is **NOT RUN**: no simulator was booted, no screen was rendered, and no store screenshot
+and the iOS build — all green) and wrote this §6 and the §0 preamble. Task 10 later added the §7
+row-badge rows (`FeatureVitals`, `VitalsListSections.swift`) and verified `scripts/test-packages.sh
+FeatureVitals` + `scripts/build-app.sh` + `scripts/lint.sh`. Every row in this file — §0 through §7
+— is **NOT RUN**: no simulator was booted, no screen was rendered, and no store screenshot
 has been taken. The user runs the manual QA and takes the App Store screenshots.

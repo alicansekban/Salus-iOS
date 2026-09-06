@@ -1,6 +1,8 @@
 // Ported from `feature/vitals/src/main/kotlin/com/alicansekban/salus/feature/vitals/
 // ui/list/VitalsScreen.kt:102-115`, `:124-141`, `:184-246`, `:286-382` — the screen header, the
-// loading/empty/list content, one row, and the value formatters they share.
+// loading/empty/list content, one row, and the value formatters they share. The row's per-type
+// `SalusIconBadge` and its `icon()` helper (`:300-304`, `:362-366`) arrived with the M12 mirror
+// (Android `a9f8e23`), closing the list/card badge parity gap iOS-M14 Task 9 flagged.
 //
 // Split out of `VitalsScreen.swift` in iOS-M7, the way `MedicationDetailSections.swift` was split
 // out of `MedicationDetailScreen.swift` and for the same reason: the screen file stays the
@@ -183,7 +185,14 @@ private struct VitalsRow: View {
 
     var body: some View {
         SalusCard {
-            HStack(alignment: .center, spacing: SalusSpacing.sm) {
+            HStack(alignment: .center, spacing: 0) {
+                // `SalusIconBadge(icon = entry.icon(), accent = vitals)` then `Spacer(lg)`
+                // (`VitalsScreen.kt:300-304`). The badge repeats what the row's first line already
+                // says, so the component carries `contentDescription = null` on Android too and
+                // both platforms hide it from the accessibility tree.
+                SalusIconBadge(systemImage: entry.icon, accent: theme.extendedColors.vitals)
+                Spacer().frame(width: SalusSpacing.lg)
+
                 details
                     // The column already fills every point the trash button does not, and
                     // `contentShape` makes the empty space beside a short value tappable too.
@@ -199,6 +208,9 @@ private struct VitalsRow: View {
                     .accessibilityAction(.default, onTap)
 
                 // A sibling of the column, not a descendant of any Button: this is the whole fix.
+                // `Spacer(sm)` between the column and the button, as Kotlin's `Spacer(sm)` has it
+                // (`VitalsScreen.kt:330`).
+                Spacer().frame(width: SalusSpacing.sm)
                 Button(action: onDelete) {
                     Label(VitalsStrings.delete, systemImage: "trash")
                         .labelStyle(.iconOnly)
@@ -250,6 +262,19 @@ extension VitalsListItem {
         case .weight: nil
         case let .bloodPressure(item): item.pulse.map(VitalsStrings.pulseValue)
         case let .glucose(item): item.measurementContext?.vitalsLabel
+        }
+    }
+
+    /// `VitalsScreen.kt:362-366` — the per-type row badge, SF Symbol twins of Material's filled
+    /// icons. `MonitorWeight` → `scalemass.fill`, `MonitorHeart` → `waveform.path.ecg`, `WaterDrop`
+    /// → `drop.fill`; the same family mapping T4 applied to the Home vitals card tiles
+    /// (`HomeVitalsCard.swift:19-22`, where `MonitorHeart` → `waveform.path.ecg`). All four
+    /// symbols are iOS 17 SF Symbols.
+    var icon: String {
+        switch self {
+        case .weight: "scalemass.fill"
+        case .bloodPressure: "waveform.path.ecg"
+        case .glucose: "drop.fill"
         }
     }
 }
