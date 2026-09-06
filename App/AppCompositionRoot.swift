@@ -347,6 +347,10 @@ final class AppCompositionRoot {
         // A local, because two of the fields below are built over it: `AppLockManager` reads the
         // same one store the settings hub writes, or the toggle would move a flag nothing watches.
         let preferences = SalusPreferencesDataSource(defaults: .standard, appLockFlagStore: appLockFlagStore)
+        // Locals: wired together, so a foreground arrival onto a locked app waits for the gate.
+        let appLockManager = AppLockManager(appLockEnabled: appLockEnabledStream(of: preferences), clock: clock)
+        let foreground = AppForegroundSignal()
+        appLockManager.didUnlock = { [foreground] in foreground.lockGateDidLift() }
         return Infrastructure(
             clock: clock,
             idGenerator: UUIDIdGenerator(),
@@ -357,13 +361,10 @@ final class AppCompositionRoot {
             aiUsage: AiUsageDataSource(defaults: .standard),
             profileRepository: makeProfileRepository(profileDao: profileDao, clock: clock),
             pendingDelete: PendingDeleteController(),
-            appLockManager: AppLockManager(
-                appLockEnabled: appLockEnabledStream(of: preferences),
-                clock: clock
-            ),
+            appLockManager: appLockManager,
             navigator: Navigator(),
             snackbar: SalusSnackbarController(),
-            foreground: AppForegroundSignal()
+            foreground: foreground
         )
     }
 

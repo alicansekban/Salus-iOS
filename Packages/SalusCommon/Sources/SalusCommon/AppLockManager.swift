@@ -104,6 +104,16 @@ public final class AppLockManager {
     /// (divergence 5) — a cold start is already locked by `unlockedThisSession == false`.
     private var backgroundedAtMs: Int64?
 
+    /// Called whenever the gate comes down — the `true → false` edge of ``isLocked``, whether it
+    /// was authentication or the setting being turned off that lifted it.
+    ///
+    /// Kotlin needs no such hook: a Compose screen that cares reads `isLocked` as state. Here it
+    /// exists for the one caller that is not a view — `AppForegroundSignal`, which holds a
+    /// foreground arrival that landed on a locked app and needs to know when the user was actually
+    /// let in. A callback rather than a second reader of `isLocked` so there is exactly one place
+    /// that decides the gate is down, and nothing polls for it. Set by the composition root.
+    @ObservationIgnored public var didUnlock: (@MainActor () -> Void)?
+
     /// The latest value of the setting stream, folded in by the observation (divergence 2).
     private var appLockEnabled = false
 
@@ -178,6 +188,10 @@ public final class AppLockManager {
     /// `combine(appLockEnabled, unlockedThisSession) { enabled, unlocked -> enabled && !unlocked }`
     /// (`AppLockManager.kt:27-29`), evaluated wherever Kotlin's combine would have re-emitted.
     private func publish() {
+        let wasLocked = isLocked
         isLocked = appLockEnabled && !unlockedThisSession
+        if wasLocked, isLocked == false {
+            didUnlock?()
+        }
     }
 }

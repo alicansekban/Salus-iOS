@@ -111,12 +111,25 @@ struct HomeReviewPromptTests {
         #expect(preferences.reviewState().lastRequestedEpochMs == clock.nowEpochMilliseconds())
     }
 
+    @Test("the cold start counts once, though both the appearance and `.active` reach the graph")
+    func coldStartCountsOnce() {
+        let viewModel = viewModel()
+
+        // The launch, in the order SwiftUI does not promise: `HomeScreen`'s `.task` and the
+        // shell's first `.active` arm, with no background between them.
+        viewModel.onEvent(.appeared)
+        foreground.sceneDidBecomeActive(isLocked: false)
+
+        #expect(preferences.reviewState().homeOpenCount == 1)
+    }
+
     @Test("a foreground return while the dashboard is showing counts as an open")
     func foregroundWhileVisibleCounts() {
         let viewModel = viewModel()
         viewModel.onEvent(.appeared)
 
-        foreground.signal()
+        foreground.sceneDidEnterBackground()
+        foreground.sceneDidBecomeActive(isLocked: false)
 
         #expect(preferences.reviewState().homeOpenCount == 2)
     }
@@ -127,8 +140,40 @@ struct HomeReviewPromptTests {
         viewModel.onEvent(.appeared)
         viewModel.didDisappear()
 
-        foreground.signal()
+        foreground.sceneDidEnterBackground()
+        foreground.sceneDidBecomeActive(isLocked: false)
 
         #expect(preferences.reviewState().homeOpenCount == 1)
+    }
+
+    @Test("a return onto the app-lock gate counts only once the gate lifts")
+    func lockedForegroundReturnCountsOnUnlock() {
+        let viewModel = viewModel()
+        viewModel.onEvent(.appeared)
+
+        // The gate is a `ZStack` overlay, so Home never disappeared and the ViewModel still
+        // believes it is visible — the signal, not the ViewModel, is what holds this back.
+        foreground.sceneDidEnterBackground()
+        foreground.sceneDidBecomeActive(isLocked: true)
+        #expect(preferences.reviewState().homeOpenCount == 1)
+
+        foreground.lockGateDidLift()
+
+        #expect(preferences.reviewState().homeOpenCount == 2)
+    }
+
+    @Test("a locked return that would have been the third open asks only after the unlock")
+    func lockedReturnDefersTheRequest() {
+        let viewModel = viewModel()
+        viewModel.onEvent(.appeared)
+        viewModel.onEvent(.appeared)
+
+        foreground.sceneDidEnterBackground()
+        foreground.sceneDidBecomeActive(isLocked: true)
+        #expect(viewModel.pendingEffects.isEmpty)
+
+        foreground.lockGateDidLift()
+
+        #expect(viewModel.consumeEffects() == [.requestReview])
     }
 }

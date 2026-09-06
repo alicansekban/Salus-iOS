@@ -101,9 +101,17 @@ struct SalusApp: App {
                         // refresh the system chose not to run.
                         compositionRoot.reminderDidBecomeActive()
                         // Last: the ViewModels that count foreground arrivals (Home's review
-                        // prompt). After the lock, so a locked return is still an arrival the
-                        // counter sees only once the gate lifts — the ViewModel checks visibility.
-                        compositionRoot.foreground.signal()
+                        // prompt). After the lock, and told what the lock decided, because the gate
+                        // is a `ZStack` overlay (`RootView.swift`) rather than a screen swap —
+                        // Home is still "on screen" behind it and its `onDisappear` never fires, so
+                        // the ViewModel's own visibility check cannot see the difference. A locked
+                        // arrival is therefore held by the signal and released by
+                        // `AppLockManager.didUnlock`; otherwise a return the user has not been let
+                        // into yet would count as an open, and could put the StoreKit review sheet
+                        // on top of the lock screen.
+                        compositionRoot.foreground.sceneDidBecomeActive(
+                            isLocked: compositionRoot.appLockManager.isLocked
+                        )
 
                     case .background:
                         // Stamps the instant the 30 s grace is measured from
@@ -111,6 +119,11 @@ struct SalusApp: App {
                         // `Task`: the timestamp must be the moment the app left, not the moment an
                         // unrelated await finished.
                         compositionRoot.appLockManager.sceneDidEnterBackground()
+                        // Arms the foreground signal: only a scene that really left may count the
+                        // next `.active` as a return. A cold start turns `.active` too, and
+                        // `HomeScreen`'s `.task` already counts that launch — un-armed, the two
+                        // race and the launch counts twice (`AppForegroundSignal.swift`, guard 1).
+                        compositionRoot.foreground.sceneDidEnterBackground()
                         commitPendingDeletes()
 
                     default: break

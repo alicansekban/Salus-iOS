@@ -242,4 +242,37 @@ struct AppLockManagerTests {
 
         #expect(fixture.manager.isLocked == false)
     }
+
+    // MARK: - `didUnlock` (iOS-only; `AppForegroundSignal` is its one caller)
+
+    @Test("`didUnlock` fires on the gate coming down, and only on the edge")
+    func didUnlockFiresOnTheGateComingDown() async {
+        let fixture = await makeManager()
+        var lifts = 0
+        fixture.manager.didUnlock = { lifts += 1 }
+
+        fixture.manager.sceneDidBecomeActive()
+        #expect(lifts == 0)
+
+        fixture.manager.unlock()
+        #expect(lifts == 1)
+
+        // Already unlocked: a second `unlock()` (a second prompt, a re-render) is not an edge.
+        fixture.manager.unlock()
+
+        #expect(lifts == 1)
+    }
+
+    @Test("`didUnlock` also fires when the setting turning off lifts the gate")
+    func didUnlockFiresWhenTheSettingLiftsTheGate() async {
+        let fixture = await makeManager()
+        var lifts = 0
+        fixture.manager.didUnlock = { lifts += 1 }
+
+        fixture.manager.sceneDidBecomeActive()
+        fixture.enabled.send(false)
+        await waitUntil("the disabled setting to reach the gate") { fixture.manager.isLocked == false }
+
+        #expect(lifts == 1)
+    }
 }
