@@ -128,7 +128,12 @@ struct HomeScreen: View {
     private var content: some View {
         ScrollView {
             VStack(spacing: 0) {
-                HomeHeader(todayEpochDay: state.todayEpochDay, greeting: state.greeting)
+                HomeHeader(
+                    todayEpochDay: state.todayEpochDay,
+                    greeting: state.greeting,
+                    profileName: state.profileName,
+                    doseProgress: state.doseProgress
+                )
                 sections
             }
         }
@@ -162,15 +167,21 @@ struct HomeScreen: View {
             // unspent and the user is not entitled.
             SalusSectionHeader(title: HomeStrings.aiSummaryTitle)
             HomeDashboardCard(onTap: onOpenAiSummary) {
-                VStack(alignment: .leading, spacing: SalusSpacing.xs) {
-                    Text(verbatim: HomeStrings.aiSummaryDescription)
-                        .font(SalusTypography.bodyMedium.font)
-                        .tracking(SalusTypography.bodyMedium.tracking)
-                    if state.freeAiSummaryAvailable, !state.isPremium {
-                        Text(verbatim: HomeStrings.aiSummaryFreeCredit)
-                            .font(SalusTypography.bodySmall.font)
-                            .tracking(SalusTypography.bodySmall.tracking)
-                            .foregroundStyle(theme.colorScheme.onSurfaceVariant)
+                // `Row(verticalAlignment = Top) { SalusIconBadge(AutoAwesome, trends); … Column(weight(1f)) }`
+                // (`HomeScreen.kt:251-271`). `AutoAwesome` → `sparkles` (SF Symbol twin).
+                HStack(alignment: .top, spacing: 0) {
+                    SalusIconBadge(systemImage: "sparkles", accent: theme.extendedColors.trends)
+                    Spacer().frame(width: SalusSpacing.md)
+                    VStack(alignment: .leading, spacing: SalusSpacing.xs) {
+                        Text(verbatim: HomeStrings.aiSummaryDescription)
+                            .font(SalusTypography.bodyMedium.font)
+                            .tracking(SalusTypography.bodyMedium.tracking)
+                        if state.freeAiSummaryAvailable, !state.isPremium {
+                            Text(verbatim: HomeStrings.aiSummaryFreeCredit)
+                                .font(SalusTypography.bodySmall.font)
+                                .tracking(SalusTypography.bodySmall.tracking)
+                                .foregroundStyle(theme.colorScheme.onSurfaceVariant)
+                        }
                     }
                 }
             }
@@ -256,11 +267,14 @@ struct HomeEmptyLine: View {
 ///
 /// A `private enum` so everything preview-only is one block a reader can skip.
 private enum PreviewData {
-    /// `todayEpochDay = 20_680` (`HomeScreen.kt:446`).
+    /// `todayEpochDay = 20_680` (`HomeScreen.kt:446`), `profileName = "Alican"`, `doseProgress = 2 to 4`
+    /// (`HomeScreen.kt:457-458`).
     static let loaded = HomeUiState(
         isLoading: false,
         todayEpochDay: 20680,
         greeting: .morning,
+        profileName: "Alican",
+        doseProgress: (taken: 2, total: 4),
         doses: [
             TodayDose(
                 scheduleId: "s1",
@@ -301,7 +315,7 @@ private enum PreviewData {
     )
 
     /// A loaded dashboard with nothing recorded yet — the four empty lines, which is what a first
-    /// run draws.
+    /// run draws. No profile name, no doses: the `*_plain` greeting and no dose ring.
     static let allEmpty = HomeUiState(
         isLoading: false,
         todayEpochDay: 20680,

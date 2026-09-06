@@ -28,6 +28,8 @@ struct HomeDosesCard: View {
     let onEvent: (HomeEvent) -> Void
     let onTap: () -> Void
 
+    @Environment(\.salusTheme) private var theme
+
     var body: some View {
         HomeDashboardCard {
             if doses.isEmpty {
@@ -35,11 +37,22 @@ struct HomeDosesCard: View {
                 HomeEmptyLine(text: HomeStrings.dosesEmpty)
                     .homeOpensCard(onTap)
             } else {
-                // `id: \.self` — the whole dose. One schedule has several slots a day, so the
-                // schedule id alone is not unique within this list; `TodayDose` is `Hashable`
-                // precisely so the row can be identified by everything it draws.
-                ForEach(doses, id: \.self) { dose in
-                    HomeDoseRow(dose: dose, onEvent: onEvent, onTap: onTap)
+                // `Row(verticalAlignment = Top) { SalusIconBadge(Medication, …); … }`
+                // (`HomeScreen.kt:286-326`). `Medication` → `pills.fill` (SF Symbol twin).
+                //
+                // The badge and the gap beside it are decorative, not a tap target: each dose row's
+                // `slot` already carries the "open medications" tap through `homeOpensCard`, with
+                // the take pill as its sibling — the documented divergence recorded in this file's
+                // header — and making the outer HStack tappable too would nest that gesture above
+                // the pill. Kotlin's whole-card `onClick` is, here, the column of slots.
+                HStack(alignment: .top, spacing: 0) {
+                    SalusIconBadge(systemImage: "pills.fill", accent: theme.extendedColors.medications)
+                    Spacer().frame(width: SalusSpacing.md)
+                    VStack(alignment: .leading, spacing: 0) {
+                        ForEach(doses, id: \.self) { dose in
+                            HomeDoseRow(dose: dose, onEvent: onEvent, onTap: onTap)
+                        }
+                    }
                 }
             }
         }

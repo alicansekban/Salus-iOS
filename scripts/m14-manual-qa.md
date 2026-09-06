@@ -1,0 +1,106 @@
+# iOS-M14 manual QA — the M12 UI refresh mirror
+
+**Agents do not run this script.** From 2026-08-30 the simulator and device passes are the user's
+(the coordinator's decision, recorded in the ledger); implementers run tests, lint and the build,
+and write this file from the code. Every row below says **NOT RUN** until someone runs it.
+
+Each section is written by the task that shipped the behaviour it checks, so the file grows a
+section at a time and the numbering follows the plan rather than the reading order.
+
+**Language.** The steps quote the Turkish strings, which is what a default simulator shows
+(spec §6.4 — Turkish is the default *and* the fallback).
+
+This milestone mirrors Android's M12 UI refresh (`56ccb9b`): a gradient hero header with a
+personalised greeting, an avatar and a dose-progress ring on Home; feature-accented card badges;
+vitals stat tiles. The automated half is `FeatureHomeTests` (47 tests) plus
+`SalusDesignSystemTests`/`SalusUITests` for the tokens and shared components. What no test reaches
+is the visual layout — hero gradient direction, ring placement, badge alignment at large type.
+
+---
+
+## §1. Home hero header + card badges + vitals tiles (Task 4)
+
+Written by Task 4 (`Packages/Features/FeatureHome/Sources/FeatureHome/ui/HomeHeader.swift`,
+`HomeScreen.swift`, `HomeDosesCard.swift`, `HomeAppointmentsCard.swift`, `HomeCycleCard.swift`,
+`HomeVitalsCard.swift`). Android's hero band with the personalised greeting is `HomeScreen.kt:159-235`;
+the accented badges and vitals rows are the same file's cards (`:251-509`).
+
+**Setup.** A fresh install seeds a profile name and today's doses through onboarding (§0 of
+`m8-manual-qa.md`); the rows below tell you what to check on Home afterwards. The dose ring needs
+at least one dose scheduled today (`HomeViewModel` feeds `doseProgress` from the today overview).
+
+### The hero band
+
+- [ ] **1.1 Hero renders in light and dark.** Open Home. In light mode the band under the date is
+  the hero gradient `#2C6B4F` (top) → `#3E7D5F` (bottom); switch the app to **Koyu** (More › Görünüm ›
+  Tema) and it is `#1E4A36` → `#275B43`. The band reaches edge to edge horizontally — the padding is
+  *inside* the gradient, no background strip shows around it.
+  *Why this step exists:* the gradient is `theme.extendedColors.hero.vertical` and the band's padding
+  order is what keeps the tint full-width; a reordered padding would leave the theme's surface
+  visible around the edges.
+- [ ] **1.2 The greeting personalises once a name exists, and falls back to the plain word.** With a
+  seeded profile name (e.g. **Ayşe**), Home reads **"İyi günler, Ayşe"** (or the matching word for
+  the time of day) in `headlineMedium`, white, above the full date in `bodyLarge` white-90%. A
+  profile with no name yet draws the plain **"İyi günler"** with no comma and no name. English shows
+  the same split ("Good afternoon, Ayşe" vs "Good afternoon").
+  *Why this step exists:* the port's `greetingText` picks the `%1$@` arm when `profileName != nil`
+  and the `*_plain` arm otherwise (`HomeScreen.kt:221-235`).
+- [ ] **1.3 The avatar sits at the trailing edge of the hero, top-aligned.** A 72 pt circle filled
+  with the hero gradient shows the user's initials in white; on a profile with no name it shows the
+  person glyph instead. It is aligned to the top of the row, beside the greeting/date column, and is
+  not read by VoiceOver.
+- [ ] **1.4 The dose ring and caption appear when today's doses exist.** With at least one dose
+  scheduled, a 64 pt progress ring sits leading-aligned below the greeting/date area with the
+  fraction `taken/total` inside it in white, and the caption in `bodySmall` white-90% to its right,
+  on the same baseline. Exercise the two edges: a day where **none** of today's doses is taken yet
+  draws the ring **empty** (no filled arc, "0/…" label, caption like "Bugünün ilerlemesi 0/3"); a day
+  with three of five taken draws the arc ~60% full with "3/5" and "Bugünün ilerlemesi 3/5" (English:
+  "Today's progress 3/5").
+  *Why this step exists:* the ring is drawn only when `doseProgress != nil` (`HomeScreen.kt:203-217`);
+  a day with no doses must show no ring at all, and both the empty and partial arcs come from the same
+  clamped `progress`.
+
+### The five card badges
+
+- [ ] **1.5 Every card leads with its accent badge.** Down the Home column, each card opens with a
+  tinted circle at its leading edge: **doses** — pills glyph in the medications colour; **appointments**
+  — calendar glyph in the appointments colour; **cycle** — heart glyph in the cycle colour; **vitals**
+  — ECG heart-wave glyph in the vitals colour; **AI summary** — sparkles glyph in the trends colour.
+  The icons read at a glance and the container fill is the feature's `container`, the glyph its
+  `accent`.
+- [ ] **1.6 An empty doses/summary badge is still aligned.** A card with no rows (the "Bugün için
+  planlı doz yok." empty line, the AI summary with no free credit) still draws its badge at the same
+  inset as its populated siblings — the badge does not collapse when the content is a single line.
+
+### The vitals stat tiles
+
+- [ ] **1.7 Each reading is a badge + value row, and the sparkline survives.** With weight, blood
+  pressure and glucose recorded, Home's vitals card shows three rows, each a vitals-colour badge then
+  a `titleMedium` value — **"Kilo: 72.5 kg"** with the weight sparkline at its trailing edge,
+  **"Tansiyon: 120/80 mmHg"**, and **"Kan şekeri: 95 mg/dL"** — separated by `xs` gaps. The weight
+  value and sparkline share one baseline.
+- [ ] **1.8 Partial and missing vitals behave.** With weight only, only the weight row draws (and its
+  sparkline only draws once the trend has ≥2 points). Delete all vitals and the card collapses to the
+  one **"Bugün için kayıt yok"** empty line with no badge. The glucose line converts **mg/dL** to
+  **mmol/L** when the user's unit is mmol/L — the conversion logic is untouched from before this
+  milestone.
+
+### Type and accessibility
+
+- [ ] **1.9 The hero survives %200 Dynamic Type.** Settings › Accessibility › Display & Text Size ›
+  Larger Text to the largest (AX5), Home in Turkish.
+  *Expected:* the greeting and date **wrap** rather than truncate with an ellipsis; the avatar stays
+  a fixed 72 pt roundel (it is decorative, sized by the component, not by text scale) and does not
+  overlap the wrapped greeting; the ring label and caption wrap without clipping; the name-then-caption
+  spacing reads cleanly at the largest size.
+
+---
+
+## What was executed when this section was written (iOS-M14 Task 4)
+
+**Nothing.** Task 4 ran `scripts/test-packages.sh FeatureHome` (1/1 package passed, 47 tests in 7
+suites), `scripts/build-app.sh` (**BUILD SUCCEEDED**) and `scripts/lint.sh` (0 violations in 639
+files). Every §1 row above is **NOT RUN**; the hero band, the badges and the vitals tiles have never
+been drawn on any hardware. The `#Preview`s in `HomeScreen.swift` (Home, Home — loading, Home —
+nothing recorded) ship with `profileName`/`doseProgress` fed through for the user's own inspection;
+no agent has rendered them either.

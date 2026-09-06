@@ -25,20 +25,30 @@ struct HomeAppointmentsCard: View {
     let appointments: [UpcomingAppointment]
     let onTap: () -> Void
 
+    @Environment(\.salusTheme) private var theme
+
     var body: some View {
         HomeDashboardCard {
             if appointments.isEmpty {
                 HomeEmptyLine(text: HomeStrings.appointmentsEmpty)
                     .homeOpensCard(onTap)
             } else {
-                ForEach(appointments, id: \.id) { appointment in
-                    HomeAppointmentRow(appointment: appointment)
-                        .homeOpensCard(onTap)
+                // `Row(verticalAlignment = Top) { SalusIconBadge(CalendarMonth, …); Column(weight(1f)) }`
+                // (`HomeScreen.kt:355-389`). `CalendarMonth` → `calendar` (SF Symbol twin).
+                HStack(alignment: .top, spacing: 0) {
+                    SalusIconBadge(systemImage: "calendar", accent: theme.extendedColors.appointments)
+                    Spacer().frame(width: SalusSpacing.md)
+                    VStack(alignment: .leading, spacing: 0) {
+                        ForEach(appointments, id: \.id) { appointment in
+                            HomeAppointmentRow(appointment: appointment)
+                                .homeOpensCard(onTap)
+                        }
+                        // `Spacer(height = sm)` then the trailing pill (`HomeScreen.kt:381-387`).
+                        Spacer().frame(height: SalusSpacing.sm)
+                        SalusPillButton(text: HomeStrings.viewDetails, tonal: true, action: onTap)
+                            .frame(maxWidth: .infinity, alignment: .trailing)
+                    }
                 }
-                // `Spacer(height = sm)` then the trailing pill (`HomeScreen.kt:305-311`).
-                Spacer().frame(height: SalusSpacing.sm)
-                SalusPillButton(text: HomeStrings.viewDetails, tonal: true, action: onTap)
-                    .frame(maxWidth: .infinity, alignment: .trailing)
             }
         }
     }

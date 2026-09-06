@@ -13,6 +13,7 @@
 // animation and accessibility, for a 4 pt strip; the bar's *value* is what the card is saying.
 
 import SalusDesignSystem
+import SalusUI
 import SwiftUI
 
 /// The cycle snapshot (`HomeScreen.kt:317-347`).
@@ -24,12 +25,20 @@ struct HomeCycleCard: View {
 
     var body: some View {
         HomeDashboardCard(onTap: onTap) {
-            if let cycleDay = cycle.cycleDay {
-                day(cycleDay)
-                progress(for: cycleDay)
-                periodOngoing
-            } else {
-                HomeEmptyLine(text: HomeStrings.cycleEmpty)
+            // `Row(verticalAlignment = Top) { SalusIconBadge(Favorite, …); Column(weight(1f)) }`
+            // (`HomeScreen.kt:400-431`). `Favorite` → `heart.fill` (SF Symbol twin).
+            HStack(alignment: .top, spacing: 0) {
+                SalusIconBadge(systemImage: "heart.fill", accent: theme.extendedColors.cycle)
+                Spacer().frame(width: SalusSpacing.md)
+                VStack(alignment: .leading, spacing: 0) {
+                    if let cycleDay = cycle.cycleDay {
+                        day(cycleDay)
+                        progress(for: cycleDay)
+                        periodOngoing
+                    } else {
+                        HomeEmptyLine(text: HomeStrings.cycleEmpty)
+                    }
+                }
             }
         }
     }
