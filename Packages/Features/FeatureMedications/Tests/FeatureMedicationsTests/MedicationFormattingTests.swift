@@ -99,4 +99,50 @@ struct MedicationFormattingTests {
                 == "every-1-days · 08:00"
         )
     }
+
+    /// `MedicationFormatting.kt:63-74` — the recurrence label alone, no times.
+    @Test("recurrenceLabel reads the first schedule's label and nothing else")
+    func recurrenceLabelReadsTheFirstSchedulesLabelAndNothingElse() {
+        #expect(
+            label([]) == "no-schedule"
+        )
+        #expect(
+            label([testSchedule(recurrence: .daily)]) == "daily"
+        )
+        #expect(
+            label([testSchedule(recurrence: .daysOfWeek, daysOfWeekMask: 0b101)]) == "days-of-week"
+        )
+        #expect(
+            label([testSchedule(recurrence: .intervalDays, intervalDays: 3)]) == "every-3-days"
+        )
+        #expect(
+            label([testSchedule(recurrence: .intervalDays, intervalDays: nil)]) == "every-1-days"
+        )
+        #expect(
+            label([testSchedule(recurrence: .asNeeded, timeOfDayMinutes: 480)]) == "as-needed"
+        )
+    }
+
+    /// `MedicationFormatting.kt:76-81` — chronological, distinct minute values; empty for
+    /// AS_NEEDED or no schedules.
+    @Test("doseTimes is distinct, sorted, and empty for as-needed or no schedules")
+    func doseTimesIsDistinctSortedAndEmptyForAsNeededOrNoSchedules() {
+        #expect(doseTimes(schedules: []).isEmpty)
+        #expect(
+            doseTimes(schedules: [
+                testSchedule(recurrence: .asNeeded, timeOfDayMinutes: 480)
+            ]).isEmpty
+        )
+        #expect(
+            doseTimes(schedules: [
+                testSchedule(id: "evening", timeOfDayMinutes: 20 * 60),
+                testSchedule(id: "morning", timeOfDayMinutes: 8 * 60),
+                testSchedule(id: "duplicate", timeOfDayMinutes: 8 * 60)
+            ]) == [8 * 60, 20 * 60]
+        )
+    }
+
+    private func label(_ schedules: [MedicationSchedule]) -> String {
+        recurrenceLabel(schedules: schedules, strings: Self.strings)
+    }
 }

@@ -90,10 +90,30 @@ struct MedicationCard: View {
                 }
             }
 
-            // `MedicationsScreen.kt:226-231`.
-            Text(verbatim: scheduleSummary(schedules: item.schedules, strings: .localized, locale: locale))
+            // `MedicationsScreen.kt:226-231`: the recurrence label (`recurrenceLabel`), then the
+            // dose-time pills (`doseTimes` + `FlowRow`) — `MedicationFormatting.kt:63-81`.
+            Text(verbatim: recurrenceLabel(schedules: item.schedules, strings: .localized))
                 .font(SalusTypography.bodyMedium.font)
                 .foregroundStyle(theme.colorScheme.onSurface)
+
+            // `MedicationsScreen.kt:252-269` — the `val times = doseTimes(item.schedules)` guard
+            // is Kotlin's `times.isNotEmpty()`, which is empty for AS_NEEDED and for empty
+            // schedules, so no pills in either. The pill is `formatTime` in `labelLarge`,
+            // medications accent on the medications container, `CircleShape` (`Shape.kt:6`),
+            // `md`/`xs` padding, in a `FlowRow` (`xs` spacing).
+            if !times.isEmpty {
+                ChipFlowLayout(spacing: SalusSpacing.xs) {
+                    ForEach(times, id: \.self) { minute in
+                        Text(verbatim: formatTime(minuteOfDay: minute, locale: locale))
+                            .font(SalusTypography.labelLarge.font)
+                            .tracking(SalusTypography.labelLarge.tracking)
+                            .foregroundStyle(theme.extendedColors.medications.accent)
+                            .padding(.horizontal, SalusSpacing.md)
+                            .padding(.vertical, SalusSpacing.xs)
+                            .background(theme.extendedColors.medications.container, in: SalusShapes.pill)
+                    }
+                }
+            }
 
             // `MedicationsScreen.kt:233-252`. Both chips can be up at once, and they stack rather
             // than flow: two lines is what Kotlin's `Spacer` + chip pair draws.
@@ -136,6 +156,12 @@ struct MedicationCard: View {
         }
         // The bar repeats the label beside it; one element, one announcement.
         .accessibilityElement(children: .combine)
+    }
+
+    /// `MedicationsScreen.kt:252` — `val times = doseTimes(item.schedules)`, read once and shared
+    /// by the guard and the pill loop, exactly as Kotlin's single `val`.
+    private var times: [Int] {
+        doseTimes(schedules: item.schedules)
     }
 }
 

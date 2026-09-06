@@ -1174,6 +1174,40 @@
         }
       }
     },
+    "medications_count" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld medications"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld ilaç"
+          }
+        }
+      }
+    },
+    "medications_count_one" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld medication"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld ilaç"
+          }
+        }
+      }
+    },
     "medications_delete" : {
       "extractionState" : "manual",
       "localizations" : {

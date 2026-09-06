@@ -5,7 +5,7 @@ import Testing
 @testable import FeatureMedications
 
 /// The twin of Android's `feature/medications/src/main/res/values/strings.xml` (`tr`, the source
-/// language) and `values-en/strings.xml`, and the drift detector between them: all 86 keys and
+/// language) and `values-en/strings.xml`, and the drift detector between them: all 88 keys and
 /// both of their translations are pinned here, copied from the XML — apart from the one recorded
 /// divergence, `medications_recorded_doses`, whose row below carries the reason it differs.
 ///
@@ -26,9 +26,15 @@ struct MedicationsStringsTests {
     /// key there means a new row here, in the same commit — that is the whole job of this table.
     /// The rows follow the XML's order, grouped by the screen that reads them.
     static let samples: [MedicationStringSample] = [
-        // The list screen (7).
+        // The list screen (9).
         MedicationStringSample(key: "medications_title", turkish: "İlaçlar", english: "Medications"),
         MedicationStringSample(key: "medications_add", turkish: "İlaç ekle", english: "Add medication"),
+        // The list count chip. Android ships this as one `<plurals>` key with two quantities
+        // (`medications_count`, "one"/"other"); the `.xcstrings` catalog has no plural groups, so
+        // the two quantities become two keys here (divergence (e)). Turkish, whose sentence is the
+        // same for every quantity, carries the identical row twice. EN distinguishes the one.
+        MedicationStringSample(key: "medications_count", turkish: "%1$lld ilaç", english: "%1$lld medications"),
+        MedicationStringSample(key: "medications_count_one", turkish: "%1$lld ilaç", english: "%1$lld medication"),
         MedicationStringSample(
             key: "medications_empty_title",
             turkish: "Henüz ilaç yok",
@@ -214,11 +220,11 @@ struct MedicationsStringsTests {
 
     static let expectedKeys = Set(samples.map(\.key))
 
-    @Test("the catalog holds exactly the 86 keys :feature:medications owns")
-    func catalogHoldsExactlyTheEightySixKeys() throws {
+    @Test("the catalog holds exactly the 88 keys :feature:medications owns")
+    func catalogHoldsExactlyTheEightyEightKeys() throws {
         // Pinned as a number as well as a set: a row deleted from the table together with its key
         // from the catalog would otherwise agree with itself and pass.
-        #expect(Self.samples.count == 86)
+        #expect(Self.samples.count == 88)
 
         try StringCatalogParity.assertKeys(of: Self.loadCatalog(), are: Self.expectedKeys)
     }
@@ -268,6 +274,10 @@ struct MedicationsStringsTests {
         try #expect(Self.render("editor_end_date", "en", "1 September") == "Until 1 September")
         try #expect(Self.render("recurrence_every_n_days", "tr", 3) == "3 günde bir")
         try #expect(Self.render("recurrence_every_n_days", "en", 3) == "Every 3 days")
+        try #expect(Self.render("medications_count", "tr", 3) == "3 ilaç")
+        try #expect(Self.render("medications_count", "en", 3) == "3 medications")
+        try #expect(Self.render("medications_count_one", "tr", 1) == "1 ilaç")
+        try #expect(Self.render("medications_count_one", "en", 1) == "1 medication")
         try #expect(Self.render("notification_dose_title", "tr", "Aspirin") == "Aspirin zamanı")
         try #expect(Self.render("notification_dose_title", "en", "Aspirin") == "Time for Aspirin")
         try #expect(Self.render("notification_dose_text_plain", "tr", "2") == "2 doz al")
@@ -306,7 +316,12 @@ struct MedicationsStringsTests {
             "medication_detail_dose_value",
             "medication_delete_title"
         ]
-        let integerKeys = ["medications_recorded_doses", "recurrence_every_n_days"]
+        let integerKeys = [
+            "medications_recorded_doses",
+            "medications_count",
+            "medications_count_one",
+            "recurrence_every_n_days"
+        ]
 
         for locale in ["tr", "en"] {
             for key in objectKeys {

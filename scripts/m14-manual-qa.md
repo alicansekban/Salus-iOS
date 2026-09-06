@@ -168,6 +168,53 @@ ProfileScreen.swift`). Android's change is `ProfileScreen.kt:109-185` (the ident
 
 ---
 
+---
+
+## §4. Medications header count chip + dose time chips (Task 7)
+
+Written by Task 7 (`Packages/Features/FeatureMedications/Sources/FeatureMedications/ui/list/
+MedicationsScreen.swift`, `MedicationCard.swift`, `MedicationFormatting.swift`). Android's change is
+`MedicationsScreen.kt:99-113` (the header's `trailing` `medications_count` chip) and `:226-269`
+(the card's recurrence label + dose-time pills in a `FlowRow`), from `52498f2` + `a9f8e23` +
+`0ea0d35`.
+
+**Setup.** Seed two or three active medications (More › İlaçlar › the `+` FAB). The rows below tell
+you what to check on the Medications tab afterwards.
+
+- [ ] **4.1 The header chip counts the medications, localised incl. count=1.** With three
+  medications, the header's trailing slot shows a neutral pill reading **"3 ilaç"** (Turkish) /
+  **"3 medications"** (English). Delete to exactly one medication and it reads **"1 ilaç"** /
+  **"1 medication"** — the singular grammar, not the plural key. With zero medications the chip is
+  gone entirely (the empty state owns the screen).
+  *Why this step exists:* iOS carries the count as two keys (`medications_count` /
+  `medications_count_one`, divergence (e)) because `.xcstrings` has no plural groups; the accessor
+  picks by `count == 1`. A regression would show the key, or read "1 medications".
+- [ ] **4.2 The card draws the recurrence label, then the dose times as pills.** A daily medication
+  with two dose times draws **"Her gün"** in `bodyMedium`, then two pill chips **"09:00"** and
+  **"21:00"** — `labelLarge`, medications accent text on the medications `container` fill, fully
+  rounded (`CircleShape`). The times are distinct and sorted: two schedules on the same clock time
+  draw **one** pill.
+  *Why this step exists:* `doseTimes` does `.distinct().sorted()` (`MedicationFormatting.kt:76-81`);
+  a regression would draw a duplicate pill or an unsorted row.
+- [ ] **4.3 The pills wrap with ChipFlowLayout.** Add enough dose times (a days-of-week medication
+  with many slots) that the pills can't fit one row on a small phone; they **wrap** to a second line
+  with `xs` (4 pt) spacing between them and between rows — never clip or overflow the card. This is
+  the behaviour `FlowRow` exists for and `ChipFlowLayout` is its twin.
+- [ ] **4.4 An as-needed medication draws the label only.** A medication whose plan is "Gerektiğinde"
+  ("As needed") draws **"Gerektiğinde"** and **no** pills — `doseTimes` is empty for AS_NEEDED. A
+  medication with empty schedules draws **"Plan yok"** and no pills.
+  *Why this step exists:* `doseTimes` returns `[]` for both (`MedicationFormatting.kt:76-81`), so the
+  chip `FlowRow` is skipped; a regression would draw a stray "08:00" pill on an as-needed card.
+- [ ] **4.5 The recurrence label is kept (not the old flat summary).** The card no longer renders the
+  combined "Her gün · 08:00, 21:00" sentence — the label and the pills are separate rows. The detail
+  screen **still** renders the combined `scheduleSummary` sentence for "Ne zaman"; nothing there
+  changed.
+  *Why this step exists:* `scheduleSummary` is kept for the detail screen's caller
+  (`MedicationDetailSections.swift:163`); a regression on the card or the detail screen would drop
+  the recurrence wording from one of the two.
+
+---
+
 ## What was executed when this section was written (iOS-M14 Task 6)
 
 **Nothing.** Task 6 ran `scripts/test-packages.sh FeatureSettings` (1/1 package passed, 67 tests in
@@ -176,3 +223,12 @@ ProfileScreen.swift`). Android's change is `ProfileScreen.kt:109-185` (the ident
 tiles, the appointment date tiles and the profile band/segmented selector have never been drawn on
 any hardware. The `#Preview`s in `HomeScreen.swift`, `AppointmentsScreen.swift` and
 `ProfileScreen.swift` ship for the user's own inspection; no agent has rendered them either.
+
+## What was executed when this section was written (iOS-M14 Task 7)
+
+**Nothing.** Task 7 ran `scripts/test-packages.sh FeatureMedications` (1/1 package passed, 89 tests
+in 13 suites), `scripts/build-app.sh` (**BUILD SUCCEEDED**) and `scripts/lint.sh` (0 violations in
+639 files). Every §4 row above is **NOT RUN**; the header chip, the dose-time pills and the
+`ChipFlowLayout` wrapping have never been drawn on any hardware. The `#Preview`s in
+`MedicationsScreen.swift` and `MedicationCard.swift` ship for the user's own inspection; no agent
+has rendered them either.

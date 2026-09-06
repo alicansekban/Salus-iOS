@@ -1,5 +1,5 @@
 // The twin of `feature/medications/src/main/res/values/strings.xml` (Turkish, the source
-// language) and `feature/medications/src/main/res/values-en/strings.xml` — all 86 keys
+// language) and `feature/medications/src/main/res/values-en/strings.xml` — all 88 keys
 // `:feature:medications` owns, name and text verbatim apart from the single divergence recorded
 // below, resolved against this package's own bundle exactly as `R.string` resolves against
 // `:feature:medications`.
@@ -57,12 +57,21 @@ import SalusCommon
 
 /// The strings `:feature:medications` owns.
 public enum MedicationsStrings {
-    // MARK: - The list screen (7)
+    // MARK: - The list screen (9)
 
     public static var title: String { localized(.title) }
     public static var add: String { localized(.add) }
     public static var emptyTitle: String { localized(.emptyTitle) }
     public static var emptyBody: String { localized(.emptyBody) }
+
+    /// `medications_count` / `medications_count_one` — the header count chip. Android spells this
+    /// key as a `<plurals>` group; Swift's `.xcstrings` has no plural groups, so the two quantities
+    /// Android writes become two keys (divergence (e)), selected here by the count. Both Turkish
+    /// rows are the same sentence; English distinguishes the one.
+    public static func medicationCount(_ count: Int) -> String {
+        let key: Key = count == 1 ? .medicationCountOne : .medicationCount
+        return formatted(key, count)
+    }
 
     /// `medications_recorded_doses` — "Son 7 gün kaydedilen doz %%%1$lld" / "Recorded doses, last 7 days: %1$lld%%".
     public static func recordedDoses(percent: Int) -> String {
@@ -222,11 +231,13 @@ public enum MedicationsStrings {
     /// The catalog keys, named once. Internal so the parity test can prove every accessor asks for
     /// a key the catalog really carries — a typo here would otherwise ship the key as the label.
     enum Key: String, CaseIterable {
-        // The list screen (7).
+        // The list screen (9).
         case title = "medications_title"
         case add = "medications_add"
         case emptyTitle = "medications_empty_title"
         case emptyBody = "medications_empty_body"
+        case medicationCount = "medications_count"
+        case medicationCountOne = "medications_count_one"
         case recordedDoses = "medications_recorded_doses"
         case lowStock = "medications_low_stock"
         case noSchedule = "medications_no_schedule"

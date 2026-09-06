@@ -80,11 +80,32 @@ func scheduleSummary(
     let times = schedules.map(\.timeOfDayMinutes).sorted()
         .map { formatTime(minuteOfDay: $0, locale: locale) }
         .joined(separator: ", ")
-    let recurrenceLabel = switch first.recurrence {
+    let recurrenceLabel = recurrenceLabel(of: first, strings: strings)
+    return "\(recurrenceLabel) · \(times)"
+}
+
+/// "Every day", "As needed", "Her 3 günde bir" — the recurrence label only, without the times
+/// (`MedicationFormatting.kt:63-74`). Empty schedules read as the no-schedule fallback.
+func recurrenceLabel(schedules: [MedicationSchedule], strings: ScheduleSummaryStrings) -> String {
+    guard let first = schedules.first else { return strings.noSchedule }
+    return recurrenceLabel(of: first, strings: strings)
+}
+
+/// `MedicationFormatting.kt:64-74` — the per-recurrence label switch, shared by
+/// ``scheduleSummary(schedules:strings:locale:)`` and ``recurrenceLabel(schedules:strings:)``.
+private func recurrenceLabel(of first: MedicationSchedule, strings: ScheduleSummaryStrings) -> String {
+    switch first.recurrence {
     case .daily: strings.daily
     case .daysOfWeek: strings.daysOfWeek
     case .intervalDays: strings.everyNDays(first.intervalDays ?? 1)
     case .asNeeded: strings.asNeeded
     }
-    return "\(recurrenceLabel) · \(times)"
+}
+
+/// Chronological dose times of day in minutes; empty for as-needed or no schedules
+/// (`MedicationFormatting.kt:76-81`). `distinct()` before `sorted()`, exactly as Kotlin — two
+/// schedules on the same clock time draw one pill.
+func doseTimes(schedules: [MedicationSchedule]) -> [Int] {
+    guard let first = schedules.first, first.recurrence != .asNeeded else { return [] }
+    return Array(Set(schedules.map(\.timeOfDayMinutes))).sorted()
 }

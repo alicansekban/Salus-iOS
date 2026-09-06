@@ -69,7 +69,14 @@ struct MedicationsScreen: View {
         // No `Scaffold` twin here: the app shell owns the one navigation stack and its insets.
         ZStack(alignment: .bottomTrailing) {
             VStack(spacing: 0) {
-                SalusScreenHeader(title: MedicationsStrings.title)
+                // `MedicationsScreen.kt:99-113` — the header's `trailing` slot. The count chip is
+                // hidden while the list is empty (an empty state owns the screen), and it reuses
+                // `SalusStatusChip`'s neutral status, exactly as Kotlin's `SalusStatusChip`.
+                SalusScreenHeader(title: MedicationsStrings.title) {
+                    if !state.medications.isEmpty {
+                        SalusStatusChip(label: MedicationsStrings.medicationCount(state.medications.count))
+                    }
+                }
                 content
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
