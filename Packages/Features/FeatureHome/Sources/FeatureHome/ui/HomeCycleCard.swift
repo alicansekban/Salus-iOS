@@ -25,20 +25,22 @@ struct HomeCycleCard: View {
 
     var body: some View {
         HomeDashboardCard(onTap: onTap) {
-            // `Row(verticalAlignment = Top) { SalusIconBadge(Favorite, …); Column(weight(1f)) }`
-            // (`HomeScreen.kt:400-431`). `Favorite` → `heart.fill` (SF Symbol twin).
-            HStack(alignment: .top, spacing: 0) {
-                SalusIconBadge(systemImage: "heart.fill", accent: theme.extendedColors.cycle)
-                Spacer().frame(width: SalusSpacing.md)
-                VStack(alignment: .leading, spacing: 0) {
-                    if let cycleDay = cycle.cycleDay {
+            // `when { cycle.cycleDay == null -> EmptyLine(…); else -> Row { SalusIconBadge(Favorite, …);
+            // Column(weight(1f)) } }` (`HomeScreen.kt:397-433`). The badge lives only in the non-empty
+            // arm — a null `cycleDay` draws the bare empty line, exactly as Kotlin's `when` does.
+            // `Favorite` → `heart.fill` (SF Symbol twin).
+            if let cycleDay = cycle.cycleDay {
+                HStack(alignment: .top, spacing: 0) {
+                    SalusIconBadge(systemImage: "heart.fill", accent: theme.extendedColors.cycle)
+                    Spacer().frame(width: SalusSpacing.md)
+                    VStack(alignment: .leading, spacing: 0) {
                         day(cycleDay)
                         progress(for: cycleDay)
                         periodOngoing
-                    } else {
-                        HomeEmptyLine(text: HomeStrings.cycleEmpty)
                     }
                 }
+            } else {
+                HomeEmptyLine(text: HomeStrings.cycleEmpty)
             }
         }
     }

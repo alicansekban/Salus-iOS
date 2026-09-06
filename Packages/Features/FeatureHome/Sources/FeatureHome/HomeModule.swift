@@ -38,9 +38,11 @@ public struct HomeModule {
     public let makeHomeViewModel: @MainActor () -> HomeViewModel
 }
 
-// The ten parameters are the nine things Koin resolves inside `homeModule` (`HomeModule.kt:12-21`,
-// where `get()` reads the six `TodayRepositoryImpl` takes plus the `DoseActions` and the clock
-// `viewModelOf(::HomeViewModel)` resolves) plus the profile id, which Koin passes as a literal.
+// The eleven parameters are the eleven things Koin resolves inside `homeModule` (`HomeModule.kt:12-21`):
+// the seven `get()` values `TodayRepositoryImpl` takes (medicationDao, appointmentDao, cycleDao,
+// vitalsDao, preferences, clock, profileRepository) plus the profile id, which Koin passes as a
+// literal, plus the three `viewModelOf(::HomeViewModel)` resolves that the factory passes on
+// (aiUsage, homePremiumStatus, doseActions) — clock is shared between the two.
 // Bundling them into a "dependencies" struct would be a second shape for the composition root's own
 // properties. The rule is waived here rather than the signature bent, exactly as
 // `makeVitalsModule` and `makeAppointmentsModule` waive it.

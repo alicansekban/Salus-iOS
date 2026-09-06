@@ -84,7 +84,7 @@ struct HomeVitalsCard: View {
                     HomeFormatting.number(diastolic)
                 ))
             }
-            .padding(.top, SalusSpacing.xs)
+            .padding(.top, SalusSpacing.sm)
         }
     }
 
@@ -97,7 +97,7 @@ struct HomeVitalsCard: View {
                 Spacer().frame(width: SalusSpacing.md)
                 value(HomeStrings.vitalsGlucose(HomeFormatting.number(glucose), unit: vitals.glucoseUnit))
             }
-            .padding(.top, SalusSpacing.xs)
+            .padding(.top, SalusSpacing.sm)
         }
     }
 

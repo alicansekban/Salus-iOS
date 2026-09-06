@@ -64,8 +64,10 @@ public struct SalusAvatar: View {
                         .foregroundStyle(.white)
                 } else {
                     // `Icons.Filled.Person` (`SalusAvatar.kt:53`), tinted white and drawn at
-                    // half the avatar's diameter (`SalusAvatar.kt:56`).
-                    Image(systemName: "person.crop.circle.fill")
+                    // half the avatar's diameter (`SalusAvatar.kt:56`). `person.fill` is the plain
+                    // bust — the closer twin to Material's `Person` than `person.crop.circle.fill`,
+                    // which would draw a person-in-a-circle inside the gradient circle.
+                    Image(systemName: "person.fill")
                         .font(.system(size: size / 2))
                         .foregroundStyle(.white)
                 }

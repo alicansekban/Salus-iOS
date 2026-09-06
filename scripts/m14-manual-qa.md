@@ -328,8 +328,9 @@ the **largest** (AX5) as each row asks.
 - [ ] **6.2 Appointments list at light/dark and AX5.** Walk the date tiles (§2.1) with the time
   above the title (§2.2) in both themes, then at the largest size. *Expected:* the tile's
   `container` fill and the `accent` day/month follow the mode; at AX5 the day-of-month and month
-  stay inside the fixed 56×60 tile **unchanged in size** (they are scaled by the component, not
-  the text size), while the time and title rows wrap on their own line without clipping.
+  **scale with Dynamic Type** (they are `headlineMedium`/`labelMedium`, which grow with the text
+  size) — confirm they remain legible inside the fixed 56×60 tile and do not overflow it, while
+  the time and title rows wrap on their own line without clipping.
   *Why this step exists:* the tile is a fixed-size `RoundedRectangle` — unlike the ring it is a
   hard box, so AX5 must be watched for the day/month overflowing or the tile colliding with a
   wrapped title.
