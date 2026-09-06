@@ -131,11 +131,48 @@ with a date tile. The rows below tell you what to check on the Appointments tab 
 
 ---
 
-## What was executed when this section was written (iOS-M14 Task 5)
+## §3. Profile gradient band + segmented sex selector (Task 6)
 
-**Nothing.** Task 5 ran `scripts/test-packages.sh FeatureAppointments` (1/1 package passed, 65 tests
-in 12 suites), `scripts/build-app.sh` (**BUILD SUCCEEDED**) and `scripts/lint.sh` (0 violations in
-639 files). Every §1 and §2 row above is **NOT RUN**; the hero band, the badges, the vitals tiles
-and the appointment date tiles have never been drawn on any hardware. The `#Preview`s in
-`HomeScreen.swift` and `AppointmentsScreen.swift` ship for the user's own inspection; no agent has
-rendered them either.
+Written by Task 6 (`Packages/Features/FeatureSettings/Sources/FeatureSettings/ui/profile/
+ProfileScreen.swift`). Android's change is `ProfileScreen.kt:109-185` (the identity band and the
+`SingleChoiceSegmentedButtonRow` replacing the three `SalusOptionRow`s).
+
+**Setup.** Open the Profile editor (More › Profil). The rows below tell you what to check.
+
+- [ ] **3.1 The band renders in light and dark.** A hero-gradient band (green, `hero.top` → `hero.bottom`)
+  sits directly under the nav bar, above the scrollable form, and stays put while the form scrolls.
+  Switch the app to **Koyu** (More › Görünüm › Tema) and the band follows the dark hero stops; the
+  white name and sex label stay legible on both.
+  *Why this step exists:* the band is `theme.extendedColors.hero.vertical` (`ProfileScreen.kt:110-115`);
+  a regression would drop the gradient or let the band scroll away.
+- [ ] **3.2 A blank name shows the placeholder.** With the name field empty (or whitespace-only), the
+  band shows the **profile name placeholder** string in `titleLarge` white and the avatar draws the
+  person icon — no initials.
+  *Why this step exists:* `state.name.takeIf { it.isNotBlank() } ?: placeholder` (`ProfileScreen.kt:118-123`);
+  a regression would show a stray empty line or initials for a blank name.
+- [ ] **3.3 The name live-updates while typing.** Type in the name field and the band's `titleLarge`
+  text and the avatar's initials update on every keystroke, without leaving the field.
+  *Why this step exists:* the band reads `state.name` directly (`ProfileScreen.kt:118-123`); a
+  regression would freeze the band until save.
+- [ ] **3.4 The segmented picker fires the same event.** The three sex options render as a single
+  segmented control (text labels only, no icons). Tapping **Erkek** (male) from a female/other
+  profile opens the same sex-change confirm dialog the old rows did; confirming writes the new sex,
+  cancelling restores the stored one. Tapping the already-selected segment does nothing.
+  *Why this step exists:* the picker fires `.sexSelected(option)` exactly as the `SalusOptionRow`s
+  did (`ProfileScreen.kt:161-177`); a regression would bypass the confirm flow or write the wrong sex.
+- [ ] **3.5 The band and picker hold up at 200% Dynamic Type.** Set the device text size to the
+  largest setting; the band's name/sex text and the segmented control remain legible and the band
+  grows to fit without clipping.
+  *Why this step exists:* the band uses `titleLarge`/`bodyMedium` and the picker uses the system
+  segmented control; a regression would clip the name or crowd the segments.
+
+---
+
+## What was executed when this section was written (iOS-M14 Task 6)
+
+**Nothing.** Task 6 ran `scripts/test-packages.sh FeatureSettings` (1/1 package passed, 67 tests in
+8 suites), `scripts/build-app.sh` (**BUILD SUCCEEDED**) and `scripts/lint.sh` (0 violations in
+639 files). Every §1, §2 and §3 row above is **NOT RUN**; the hero band, the badges, the vitals
+tiles, the appointment date tiles and the profile band/segmented selector have never been drawn on
+any hardware. The `#Preview`s in `HomeScreen.swift`, `AppointmentsScreen.swift` and
+`ProfileScreen.swift` ship for the user's own inspection; no agent has rendered them either.

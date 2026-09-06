@@ -19,8 +19,11 @@
 //                                      rather than chased.
 //   `SalusConfirmDialog`             → `.salusConfirmDialog(isPresented:…)`, the modifier the
 //                                      component became on iOS.
-//   `Icons.Outlined.Female/Male/     → SF Symbols. `Transgender` has no SF Symbol; `person.2` is
-//    Transgender`                      the neutral stand-in, the same "third option" reading.
+//   `SingleChoiceSegmentedButtonRow` → `Picker(…).pickerStyle(.segmented)`, the house mapping
+//                                      (`VitalsScreen.swift`). Divergence (b): the segments carry
+//                                      text labels only — Kotlin's `SegmentedButton` also draws an
+//                                      `icon = { Icon(…, size = 18.dp) }` (`ProfileScreen.kt:167-173`),
+//                                      and the iOS segmented control has no per-segment icon slot.
 //   `ContentType.PersonFullName`     → `.textContentType(.name)`, AutoFill's twin of Compose's
 //                                      autofill content type.
 //   `imeAction = ImeAction.Next`     → DROPPED, a recorded divergence. `SalusPillTextField.swift`'s
@@ -70,15 +73,20 @@ struct ProfileScreen: View {
 
     var body: some View {
         // No `Scaffold` twin: the app shell owns the one navigation stack and its insets.
-        ScrollView {
-            // `if (state.isLoading) return` (`ProfileScreen.kt:95`) — the bar is drawn, the form
+        VStack(spacing: 0) {
+            // `if (state.isLoading) return` (`ProfileScreen.kt:95`) — the band is drawn, the form
             // is not.
             if !state.isLoading {
-                form
+                identityBand
             }
+            ScrollView {
+                if !state.isLoading {
+                    form
+                }
+            }
+            .salusDismissesKeyboardOnTap()
+            .scrollDismissesKeyboard(.interactively)
         }
-        .salusDismissesKeyboardOnTap()
-        .scrollDismissesKeyboard(.interactively)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(theme.colorScheme.background)
         .navigationTitle(SettingsStrings.profileTitle)
@@ -112,6 +120,29 @@ struct ProfileScreen: View {
                 onEvent(.sexChangeDismissed)
             }
         )
+    }
+
+    /// `ProfileScreen.kt:109-136` — the identity band: fixed below the app bar, outside the scroll
+    /// chain so it stays put. The avatar and the name live-update as the user types.
+    private var identityBand: some View {
+        let resolvedName = state.name.isBlank ? nil : state.name
+        return HStack(spacing: SalusSpacing.lg) {
+            SalusAvatar(name: resolvedName)
+            VStack(alignment: .leading, spacing: 0) {
+                Text(verbatim: resolvedName ?? SettingsStrings.profileNamePlaceholder)
+                    .font(SalusTypography.titleLarge.font)
+                    .foregroundStyle(.white)
+                if let sex = state.sex {
+                    Text(verbatim: sex.profileLabel)
+                        .font(SalusTypography.bodyMedium.font)
+                        .foregroundStyle(.white.opacity(0.9))
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, SalusSpacing.lg)
+        .padding(.vertical, SalusSpacing.md)
+        .background(theme.extendedColors.hero.vertical)
     }
 
     /// `ProfileScreen.kt:98-174` — the five fields, in onboarding's order.
@@ -171,20 +202,28 @@ struct ProfileScreen: View {
         .padding(.bottom, SalusSpacing.xl)
     }
 
-    /// `ProfileScreen.kt:119-136` — the three options, then the inline warning that says what the
-    /// pending pick does to the Cycle row.
+    /// `ProfileScreen.kt:160-185` — the three options as a segmented control, then the inline
+    /// warning that says what the pending pick does to the Cycle row.
     private var sexOptions: some View {
         VStack(alignment: .leading, spacing: SalusSpacing.md) {
-            ForEach(Sex.allCases, id: \.self) { option in
-                SalusOptionRow(
-                    systemImage: option.profileSystemImage,
-                    label: option.profileLabel,
-                    isSelected: state.sex == option,
-                    accent: option.profileAccent(theme)
-                ) {
-                    onEvent(.sexSelected(option))
+            Picker(
+                selection: Binding(
+                    get: { state.sex },
+                    set: { newValue in
+                        if let sex = newValue {
+                            onEvent(.sexSelected(sex))
+                        }
+                    }
+                )
+            ) {
+                ForEach(Sex.allCases, id: \.self) { option in
+                    Text(verbatim: option.profileLabel).tag(option as Sex?)
                 }
+            } label: {
+                EmptyView()
             }
+            .pickerStyle(.segmented)
+            .labelsHidden()
             if let change = state.cycleVisibilityChange {
                 Text(verbatim: change.inlineMessage)
                     .font(SalusTypography.bodySmall.font)
@@ -215,25 +254,13 @@ extension Sex {
         case .other: SettingsStrings.profileSexOther
         }
     }
+}
 
-    /// `ProfileScreen.kt:211-215` — `Icons.Outlined.Female` / `Male` / `Transgender`. SF Symbols
-    /// has no transgender glyph, so the third option gets the neutral `person.2`.
-    fileprivate var profileSystemImage: String {
-        switch self {
-        case .female: "figure.stand.dress"
-        case .male: "figure.stand"
-        case .other: "person.2"
-        }
-    }
-
-    /// Same mapping as onboarding: female borrows the cycle accent, male the vitals one
-    /// (`ProfileScreen.kt:217-223`).
-    fileprivate func profileAccent(_ theme: SalusResolvedTheme) -> FeatureAccent? {
-        switch self {
-        case .female: theme.extendedColors.cycle
-        case .male: theme.extendedColors.vitals
-        case .other: nil
-        }
+extension String {
+    /// Kotlin's `String.isNotBlank()`, negated — whitespace-only counts as absent
+    /// (`ProfileScreen.kt:118`).
+    fileprivate var isBlank: Bool {
+        trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 }
 
