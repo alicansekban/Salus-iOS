@@ -38,11 +38,12 @@ public struct HomeModule {
     public let makeHomeViewModel: @MainActor () -> HomeViewModel
 }
 
-// The eleven parameters are the eleven things Koin resolves inside `homeModule` (`HomeModule.kt:12-21`):
+// The twelve parameters are the eleven things Koin resolves inside `homeModule` (`HomeModule.kt:12-21`):
 // the seven `get()` values `TodayRepositoryImpl` takes (medicationDao, appointmentDao, cycleDao,
 // vitalsDao, preferences, clock, profileRepository) plus the profile id, which Koin passes as a
 // literal, plus the three `viewModelOf(::HomeViewModel)` resolves that the factory passes on
-// (aiUsage, homePremiumStatus, doseActions) — clock is shared between the two.
+// (aiUsage, homePremiumStatus, doseActions) — clock is shared between the two — plus the iOS-only
+// `AppForegroundSignal` the review prompt listens to (`HomeViewModel.swift`).
 // Bundling them into a "dependencies" struct would be a second shape for the composition root's own
 // properties. The rule is waived here rather than the signature bent, exactly as
 // `makeVitalsModule` and `makeAppointmentsModule` waive it.
@@ -64,7 +65,8 @@ public func makeHomeModule(
     clock: any SalusClock,
     doseActions: any DoseActions,
     profileId: String = SalusDatabase.defaultProfileId,
-    profileRepository: any ProfileRepository
+    profileRepository: any ProfileRepository,
+    foreground: AppForegroundSignal
 ) -> HomeModule {
     // `HomeModule.kt:12-21` — the profile id Koin passes, spelled out rather than left to the
     // repository's default so the one construction site says which profile it opened.
@@ -87,7 +89,9 @@ public func makeHomeModule(
                 aiSummaryAvailability: aiSummaryAvailability,
                 premiumStatus: homePremiumStatus,
                 clock: clock,
-                doseActions: doseActions
+                doseActions: doseActions,
+                preferences: preferences,
+                foreground: foreground
             )
         }
     )

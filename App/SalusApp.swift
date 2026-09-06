@@ -100,6 +100,10 @@ struct SalusApp: App {
                         // withholds, so it is also the engine's safety net for every background
                         // refresh the system chose not to run.
                         compositionRoot.reminderDidBecomeActive()
+                        // Last: the ViewModels that count foreground arrivals (Home's review
+                        // prompt). After the lock, so a locked return is still an arrival the
+                        // counter sees only once the gate lifts — the ViewModel checks visibility.
+                        compositionRoot.foreground.signal()
 
                     case .background:
                         // Stamps the instant the 30 s grace is measured from

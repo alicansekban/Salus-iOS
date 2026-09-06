@@ -75,6 +75,10 @@ struct HomeViewModelTests {
     /// `HomeViewModelTest.kt:86` — `PremiumStatus.FREE`.
     private let premiumStatus = FakeHomePremiumStatus(isPremium: false)
     private let doseActions = RecordingDoseActions()
+    /// A throwaway defaults suite for the review counters; the review cases live in
+    /// `HomeReviewPromptTests`, this one only has to exist.
+    private let preferences = ReviewPromptFixture.makePreferences()
+    private let foreground = AppForegroundSignal()
 
     /// `HomeViewModelTest.kt:94-100`.
     private func viewModel(clock: FixedSalusClock? = nil) -> HomeViewModel {
@@ -83,7 +87,9 @@ struct HomeViewModelTests {
             aiSummaryAvailability: freeAiCredit,
             premiumStatus: premiumStatus,
             clock: clock ?? self.clock,
-            doseActions: doseActions
+            doseActions: doseActions,
+            preferences: preferences,
+            foreground: foreground
         )
     }
 

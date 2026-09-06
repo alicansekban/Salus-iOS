@@ -30,6 +30,7 @@
 import Observation
 import SalusCommon
 import SalusModel
+import SalusSettings
 
 /// Drives the dashboard (`HomeViewModel.kt:18-69`).
 @MainActor
@@ -38,39 +39,88 @@ public final class HomeViewModel {
     /// `HomeViewModel.kt:25` — what the screen draws.
     public private(set) var state = HomeUiState()
 
+    /// One-shot work for the Route, in order (in-app review spec §3). The `MoreViewModel` shape:
+    /// Kotlin's buffered `Channel<HomeEffect>` becomes an array the Route drains with
+    /// ``consumeEffects()``; nothing is dropped.
+    public private(set) var pendingEffects: [HomeEffect] = []
+
     private let repository: any TodayRepository
     private let aiSummaryAvailability: any HomeAiSummaryAvailability
     private let premiumStatus: any HomePremiumStatus
     private let clock: any SalusClock
     private let doseActions: any DoseActions
+    private let preferences: SalusPreferencesDataSource
+    private let foreground: AppForegroundSignal
 
     /// The collection. Boxed so `deinit` can cancel it — see `CancellationBox`.
     private let observation = CancellationBox()
+    /// The foreground subscription, released in `deinit`.
+    @ObservationIgnored private var foregroundSubscription: AppForegroundSignal.Subscription?
+    /// Whether the dashboard is on screen. A foreground return counts as an "open" only while it
+    /// is — Android's `LifecycleResumeEffect` only fires for the composed tab, and this is its twin.
+    @ObservationIgnored private var isVisible = false
 
-    /// Five parameters, which are the five Koin resolves for `viewModelOf(::HomeViewModel)`
-    /// (`HomeModule.kt:22`), in the Kotlin order.
+    /// Seven parameters: the five Koin resolves for `viewModelOf(::HomeViewModel)`
+    /// (`HomeModule.kt:22`), in the Kotlin order, plus the review prompt's two — the preferences
+    /// that hold its counters and the shell's foreground signal (`AppForegroundSignal`, iOS-only).
     public init(
         repository: any TodayRepository,
         aiSummaryAvailability: any HomeAiSummaryAvailability,
         premiumStatus: any HomePremiumStatus,
         clock: any SalusClock,
-        doseActions: any DoseActions
+        doseActions: any DoseActions,
+        preferences: SalusPreferencesDataSource,
+        foreground: AppForegroundSignal
     ) {
         self.repository = repository
         self.aiSummaryAvailability = aiSummaryAvailability
         self.premiumStatus = premiumStatus
         self.clock = clock
         self.doseActions = doseActions
+        self.preferences = preferences
+        self.foreground = foreground
         restartObservation()
+        foregroundSubscription = foreground.subscribe { [weak self] in
+            self?.sceneDidBecomeActive()
+        }
     }
 
     deinit {
         observation.cancel()
+        // `deinit` is nonisolated; the signal is main-actor bound, and a ViewModel is only ever
+        // released on the main actor (it is a view's `@State`), so the hop is a formality.
+        if let foregroundSubscription {
+            let foreground = foreground
+            Task { @MainActor in foreground.unsubscribe(foregroundSubscription) }
+        }
     }
 
-    /// `HomeViewModel.kt:47-58`.
+    /// The shell's `.active` arm reached this ViewModel (through `AppForegroundSignal`). Counts as
+    /// an open only while the dashboard is showing.
+    public func sceneDidBecomeActive() {
+        guard isVisible else { return }
+        onEvent(.appeared)
+    }
+
+    /// The Route left the screen; a foreground return until the next `.appeared` does not count.
+    public func didDisappear() {
+        isVisible = false
+    }
+
+    /// Drains the queue (`MoreViewModel.consumeEffects()`).
+    public func consumeEffects() -> [HomeEffect] {
+        let drained = pendingEffects
+        pendingEffects.removeAll()
+        return drained
+    }
+
+    /// `HomeViewModel.kt:47-58`, plus `.appeared` for the review prompt.
     public func onEvent(_ event: HomeEvent) {
         switch event {
+        case .appeared:
+            isVisible = true
+            requestReviewIfDue()
+
         case let .takeDose(scheduleId, minuteOfDay):
             // Read here rather than inside the task: Kotlin reads the clock inside the coroutine,
             // but the day a tap belongs to is the day the tap happened on, and a `Task` that is
@@ -135,6 +185,21 @@ public final class HomeViewModel {
                 // which is what Android's `stateIn` initial value does too.
             }
         })
+    }
+
+    /// The review prompt (in-app review spec §3): every arrival counts, and the request goes out
+    /// when `ReviewPromptPolicy` says so. The stamp is written **before** the effect is queued, so
+    /// a request the platform swallows — or a crash between the two — still consumes the 14-day
+    /// slot; that is the conservative reading of both stores' quota guidance.
+    private func requestReviewIfDue() {
+        let count = preferences.incrementHomeOpenCount()
+        let last = preferences.reviewState().lastRequestedEpochMs
+        let now = clock.nowEpochMilliseconds()
+        guard ReviewPromptPolicy.shouldRequest(openCount: count, lastRequestedEpochMs: last, nowEpochMs: now) else {
+            return
+        }
+        preferences.setReviewLastRequested(epochMs: now)
+        pendingEffects.append(.requestReview)
     }
 
     /// `combine`'s lambda (`HomeViewModel.kt:30-40`).

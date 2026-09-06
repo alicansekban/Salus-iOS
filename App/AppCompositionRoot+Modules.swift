@@ -58,7 +58,8 @@ extension AppCompositionRoot {
             clock: infrastructure.clock,
             doseActions: medications.makeMarkDoseTakenUseCase(),
             profileId: SalusDatabase.defaultProfileId,
-            profileRepository: infrastructure.profileRepository
+            profileRepository: infrastructure.profileRepository,
+            foreground: infrastructure.foreground
         )
     }
 
@@ -276,6 +277,8 @@ struct Infrastructure {
     let appLockManager: AppLockManager
     let navigator: Navigator
     let snackbar: SalusSnackbarController
+    /// The shell's foreground fan-out for ViewModels the root does not hold (`AppForegroundSignal`).
+    let foreground: AppForegroundSignal
 }
 
 /// The modules that own a reminder handler, handed back from `makeScheduledModules` in one piece.

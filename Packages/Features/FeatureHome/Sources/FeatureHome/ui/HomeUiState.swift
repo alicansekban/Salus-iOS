@@ -14,9 +14,12 @@
 //   `onEvent(.takeDose("sch-1", 480))` would leave two `Int`-ish arguments in a row unnamed at the
 //   call site.
 //
-// **There is no `HomeEffect`, on either platform.** Home publishes nothing one-shot: every
-// navigation it can start is a shell callback the screen invokes directly (research §8), so there
-// is no channel to drain and no effect type to port.
+// **`HomeEffect` arrived with the in-app review prompt** (spec
+// `salus-android/docs/superpowers/specs/2026-09-06-in-app-review-design.md` §3). Before that Home
+// published nothing one-shot — every navigation it starts is a shell callback the screen invokes
+// directly (research §8). The one effect now is the StoreKit review request, which only a view can
+// perform (`@Environment(\.requestReview)`), drained through the `pendingEffects` /
+// `consumeEffects()` shape `MoreViewModel` set.
 //
 // `cycle` and `vitals` are optional **here** while `TodayOverview`'s `vitals` is not, and that is
 // Android's own asymmetry (`HomeUiState.kt:25-26` vs `TodayModels.kt:54-55`): the default state —
@@ -36,6 +39,15 @@ public enum HomeGreeting: Sendable {
 public enum HomeEvent: Equatable, Sendable {
     /// The "Al" button on a pending dose row (`HomeUiState.kt:15`).
     case takeDose(scheduleId: String, minuteOfDay: Int)
+    /// The dashboard became visible — an appearance or a foreground return while it was showing.
+    /// Android sends it from `LifecycleResumeEffect`; the Route and the foreground signal send it here.
+    case appeared
+}
+
+/// One-shot work only a view can perform (in-app review spec §3).
+public enum HomeEffect: Equatable, Sendable {
+    /// Ask StoreKit to show the rating sheet; whether it does is the platform's decision.
+    case requestReview
 }
 
 /// What the dashboard draws (`HomeUiState.kt:18-30`).

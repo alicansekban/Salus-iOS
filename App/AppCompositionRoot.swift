@@ -84,6 +84,10 @@ final class AppCompositionRoot {
     /// background/active transitions to it and `RootView` draws the gate it publishes.
     let appLockManager: AppLockManager
 
+    /// The `.active` arm's fan-out to ViewModels the root does not hold — today only Home's
+    /// review prompt (`HomeViewModel.sceneDidBecomeActive()`).
+    let foreground: AppForegroundSignal
+
     /// `navigationModule`: publishes what ViewModels ask for; the shell applies it.
     let navigator: Navigator
 
@@ -210,6 +214,7 @@ final class AppCompositionRoot {
         appLockManager = infrastructure.appLockManager
         navigator = infrastructure.navigator
         snackbar = infrastructure.snackbar
+        foreground = infrastructure.foreground
 
         // One line per module, which is the point of the split: a feature added in a later
         // milestone costs a `let` above and an assignment here, not a paragraph of wiring.
@@ -357,7 +362,8 @@ final class AppCompositionRoot {
                 clock: clock
             ),
             navigator: Navigator(),
-            snackbar: SalusSnackbarController()
+            snackbar: SalusSnackbarController(),
+            foreground: AppForegroundSignal()
         )
     }
 

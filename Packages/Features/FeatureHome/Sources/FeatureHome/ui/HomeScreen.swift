@@ -21,6 +21,7 @@
 
 import SalusDesignSystem
 import SalusUI
+import StoreKit
 import SwiftUI
 
 /// The Home tab's root (`HomeScreen.kt:64-83`).
@@ -36,6 +37,9 @@ public struct HomeRoute: View {
     private let onOpenAiSummary: () -> Void
 
     @Environment(\.homeModule) private var module
+    /// StoreKit's rating sheet, the twin of Play's `launchReviewFlow` (in-app review spec §3).
+    /// Only a view can ask, which is why the ViewModel emits an effect rather than calling it.
+    @Environment(\.requestReview) private var requestReview
     @State private var viewModel: HomeViewModel?
 
     /// - Parameters:
@@ -95,6 +99,32 @@ public struct HomeRoute: View {
             // wrong answer there is a stale dashboard, where a wrong answer here is one redundant
             // query on a screen that is already showing its spinner.
             viewModel?.restartObservation()
+            // Android's `LifecycleResumeEffect` (`HomeScreen.kt`): every appearance is an "open"
+            // for the review prompt. A foreground return reaches the ViewModel through
+            // `AppForegroundSignal` instead, because `.task` does not re-run for it.
+            viewModel?.onEvent(.appeared)
+        }
+        .onDisappear {
+            viewModel?.didDisappear()
+        }
+        // `LaunchedEffect { viewModel.effects.collect { … } }` — fires on every append for as long
+        // as this view lives; the drain's own write is the empty edge dropped below.
+        .onChange(of: viewModel?.pendingEffects ?? []) { _, pending in
+            guard !pending.isEmpty, let viewModel else { return }
+            deliver(viewModel.consumeEffects())
+        }
+    }
+
+    /// Performs the drained effects in order.
+    @MainActor
+    private func deliver(_ effects: [HomeEffect]) {
+        for effect in effects {
+            switch effect {
+            case .requestReview:
+                // Whether a sheet appears is StoreKit's call (Apple caps it at three a year);
+                // the ViewModel has already stamped the request, so nothing is read back here.
+                requestReview()
+            }
         }
     }
 }
