@@ -5,10 +5,11 @@ import Testing
 @testable import FeatureSettings
 
 /// The twin of Android's `feature/settings/src/main/res/values/strings.xml` (`tr`, the source
-/// language) and `values-en/strings.xml`, and the drift detector between the two locales: all 88
+/// language) and `values-en/strings.xml`, and the drift detector between the two locales: all 89
 /// keys and both of their translations are pinned here.
 ///
-/// The 87 keys split three ways. Fifteen are the `reminder_health_*` block that shipped with
+/// The 89 keys split four ways; two (`settings_rate_us*`) are the in-app review row, copied from
+/// the XML. Of the rest, fifteen are the `reminder_health_*` block that shipped with
 /// iOS-M3 — ten copied from the XML verbatim, five iOS-only (the Background App Refresh row and the
 /// last-pass line, which answer questions Android answers with a different mechanism or not at all).
 /// Seventy are the More / About / Profile / settings keys the M8 settings hub adds, copied verbatim
@@ -37,18 +38,19 @@ struct SettingsStringsTests {
     static let samples = SettingsSamples.all
     static let expectedKeys = Set(samples.map(\.key))
 
-    @Test("the catalog holds exactly the 88 keys :feature:settings owns")
+    @Test("the catalog holds exactly the 89 keys :feature:settings owns")
     func catalogHoldsExactlyTheKeys() throws {
         // Pinned as a number as well as a set: a row deleted from the table together with its key
         // from the catalog would otherwise agree with itself and pass.
         //
-        // The arithmetic behind 88, re-derived at iOS-M8 T12 rather than carried from the plan:
+        // The arithmetic behind 89, re-derived at iOS-M8 T12 rather than carried from the plan:
         // Android's `feature/settings` XML holds 91 keys; nine are dropped here (the three
         // `reminder_health_exact_*`, the three `reminder_health_battery_*`, `reminder_health_back`,
         // `settings_back`, `profile_back`) → 82 carried over. Five are iOS-only: the
         // `reminder_health_*` ones that shipped with iOS-M3 (three `*_background_refresh_*`,
-        // `*_last_sync`, `*_never_synced`). 91 − 9 + 5 = 87.
-        #expect(Self.samples.count == 87)
+        // `*_last_sync`, `*_never_synced`). 91 − 9 + 5 = 87. The in-app review row adds two
+        // (`settings_rate_us`, `settings_rate_us_desc`), copied from the Android XML → 89.
+        #expect(Self.samples.count == 89)
 
         try StringCatalogParity.assertKeys(of: Self.loadCatalog(), are: Self.expectedKeys)
     }
@@ -369,6 +371,12 @@ private enum SettingsSamples {
             key: "settings_premium_promo",
             turkish: "AI özetleri, gelişmiş trendler ve daha fazlası",
             english: "AI summaries, advanced trends and more"
+        ),
+        SettingsStringSample(key: "settings_rate_us", turkish: "Bizi değerlendirin", english: "Rate Salus"),
+        SettingsStringSample(
+            key: "settings_rate_us_desc",
+            turkish: "Görüşünüz Salus'un gelişmesine yardımcı olur",
+            english: "Your feedback helps Salus improve"
         ),
         SettingsStringSample(key: "settings_reminders", turkish: "Hatırlatıcılar", english: "Reminders"),
         SettingsStringSample(

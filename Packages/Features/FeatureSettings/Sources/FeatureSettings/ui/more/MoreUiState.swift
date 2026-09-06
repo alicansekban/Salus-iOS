@@ -86,6 +86,10 @@ public enum MoreEvent: Sendable, Equatable {
     /// shows its own lock, so a free user is taken there and can see what a subscription buys
     /// instead of being bounced straight into the paywall.
     case trendsClicked
+    /// The "Rate Salus" row (in-app review spec §4). Always the store's write-review page, never
+    /// the StoreKit sheet: Apple rejects `requestReview` behind a button, and the sheet is the
+    /// Home trigger's alone.
+    case rateUsClicked
 }
 
 /// The one-shot outcomes the screen has to carry out, because only it can reach the system

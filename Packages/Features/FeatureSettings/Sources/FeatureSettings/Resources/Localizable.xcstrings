@@ -1259,6 +1259,40 @@
         }
       }
     },
+    "settings_rate_us" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rate Salus"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bizi değerlendirin"
+          }
+        }
+      }
+    },
+    "settings_rate_us_desc" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your feedback helps Salus improve"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Görüşünüz Salus'un gelişmesine yardımcı olur"
+          }
+        }
+      }
+    },
     "settings_reminders" : {
       "extractionState" : "manual",
       "localizations" : {

@@ -351,6 +351,13 @@ struct MoreScreen: View {
                         subtitle: SettingsStrings.settingsAboutDesc,
                         onClick: onOpenAbout
                     )
+                    // 13b. Rate Salus — the store's write-review page (in-app review spec §4).
+                    MoreCard(
+                        icon: "star.fill",
+                        title: SettingsStrings.settingsRateUs,
+                        subtitle: SettingsStrings.settingsRateUsDesc,
+                        onClick: { onEvent(.rateUsClicked) }
+                    )
 
                     // 14. Version footer (`MoreScreen.kt:303-313`).
                     if !versionName.isEmpty {

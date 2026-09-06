@@ -180,6 +180,9 @@ public final class MoreViewModel {
             // for it — the opposite trade-off from the doctor report above, which has nothing to
             // show until it is generated.
             pendingEffects.append(.openTrends)
+
+        case .rateUsClicked:
+            pendingEffects.append(.openUrl(Self.appStoreWriteReviewUrl))
         }
     }
 
@@ -289,6 +292,11 @@ public final class MoreViewModel {
     /// The App Store's account-level subscription page — the platform-mapped twin of Kotlin's
     /// `PLAY_SUBSCRIPTIONS_URL` (divergence 1).
     private static let appStoreSubscriptionsUrl = "https://apps.apple.com/account/subscriptions"
+
+    /// The App Store's write-review page for Salus (App Store Connect id 6807102436) — the
+    /// platform-mapped twin of Kotlin's `PLAY_LISTING_MARKET` (in-app review spec §4). The URL is
+    /// stable before the listing is approved; it 404s until then.
+    static let appStoreWriteReviewUrl = "https://apps.apple.com/app/id6807102436?action=write-review"
 }
 
 /// The values the top-level combine has no argument slots left for, joined into one

@@ -143,6 +143,8 @@ public enum SettingsStrings {
     public static var settingsRemindersDesc: String { localized(.settingsRemindersDesc) }
     public static var settingsAbout: String { localized(.settingsAbout) }
     public static var settingsAboutDesc: String { localized(.settingsAboutDesc) }
+    public static var settingsRateUs: String { localized(.settingsRateUs) }
+    public static var settingsRateUsDesc: String { localized(.settingsRateUsDesc) }
     public static var settingsCancel: String { localized(.settingsCancel) }
     public static var settingsPremium: String { localized(.settingsPremium) }
     public static var settingsPremiumActive: String { localized(.settingsPremiumActive) }
@@ -337,6 +339,8 @@ public enum SettingsStrings {
         case settingsPremium = "settings_premium"
         case settingsPremiumActive = "settings_premium_active"
         case settingsPremiumPromo = "settings_premium_promo"
+        case settingsRateUs = "settings_rate_us"
+        case settingsRateUsDesc = "settings_rate_us_desc"
         case settingsReminders = "settings_reminders"
         case settingsRemindersDesc = "settings_reminders_desc"
         case settingsSectionApp = "settings_section_app"

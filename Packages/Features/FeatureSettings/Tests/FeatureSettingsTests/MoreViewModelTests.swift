@@ -271,6 +271,18 @@ struct MoreViewModelTests {
         #expect(fixture.paywall.request == nil)
     }
 
+    /// In-app review spec §4 — the row is a store link, never the StoreKit sheet.
+    @Test("tapping rate us opens the App Store write-review page")
+    func tappingRateUsOpensTheWriteReviewPage() {
+        let fixture = makeViewModel(premiumStatus: .free)
+
+        fixture.vm.onEvent(.rateUsClicked)
+
+        #expect(fixture.vm.consumeEffects() == [.openUrl(MoreViewModel.appStoreWriteReviewUrl)])
+        #expect(MoreViewModel.appStoreWriteReviewUrl == "https://apps.apple.com/app/id6807102436?action=write-review")
+        #expect(fixture.paywall.request == nil)
+    }
+
     /// `MoreViewModelTest.kt:306-320`.
     @Test("a grace period user tapping premium is sent to subscription management")
     func aGracePeriodUserTappingPremiumIsSentToSubscriptionManagement() async {
