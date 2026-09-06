@@ -17,6 +17,91 @@
           }
         }
       }
+    },
+    "reminder_fix" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fix"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Düzelt"
+          }
+        }
+      }
+    },
+    "reminder_not_now" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not now"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Şimdi değil"
+          }
+        }
+      }
+    },
+    "reminder_problem_background_refresh_off" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Background App Refresh is off — the reminder list is only refreshed while the app is open."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Arka plan yenilemesi kapalı — hatırlatıcı listesi yalnızca uygulamayı açtığınızda tazelenir."
+          }
+        }
+      }
+    },
+    "reminder_problem_full_screen_denied" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Medication alarms cannot take over the screen — a dose still arrives as a notification with sound, but no alarm opens on the lock screen."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "İlaç alarmları ekranı kaplayamıyor — doz saati geldiğinde sesli bildirim gelir, ama kilit ekranında alarm açılmaz."
+          }
+        }
+      }
+    },
+    "reminder_problem_notifications_off" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notifications are off — reminders cannot be shown."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bildirimler kapalı — hatırlatıcılar gösterilemez."
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

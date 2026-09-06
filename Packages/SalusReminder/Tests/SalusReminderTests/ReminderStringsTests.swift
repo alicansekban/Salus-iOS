@@ -1,10 +1,11 @@
 // The twin of `core/reminder/src/main/res/values/strings.xml` (`tr`, the source language) and
 // `values-en/strings.xml`, and the drift detector between them.
 //
-// `:core:reminder` owns exactly one user-facing string — the label Android's alarm surface puts on
-// the button that silences a dose without resolving it (`AlarmService.kt:87`, `AlarmScreen.kt:153`)
-// — so this table has one row. It is still a table: a second key added on either platform without
-// the other is exactly the difference the key-set pin fails on.
+// `:core:reminder` owns the copy every steering surface shares: the label Android's alarm surface
+// puts on the button that silences a dose without resolving it (`AlarmService.kt:87`,
+// `AlarmScreen.kt:153`), the one-line reason behind each ``ReminderProblem``, and the two answers
+// a "reminders will not work" dialog offers. Six rows, and the key-set pin is what fails when a
+// seventh is added on one platform and not the other.
 //
 // The catalog is read off disk rather than through `Bundle.module`, for the two reasons
 // `AppointmentsStringsTests` gives: `String(localized:)` answers for one locale only, so it can
@@ -25,16 +26,45 @@ struct ReminderStringsTests {
             key: "alarm_dismiss",
             turkish: "Kapat",
             english: "Dismiss"
+        ),
+        ReminderStringSample(
+            key: "reminder_problem_notifications_off",
+            turkish: "Bildirimler kapalı — hatırlatıcılar gösterilemez.",
+            english: "Notifications are off — reminders cannot be shown."
+        ),
+        ReminderStringSample(
+            key: "reminder_problem_full_screen_denied",
+            turkish: "İlaç alarmları ekranı kaplayamıyor — doz saati geldiğinde sesli bildirim "
+                + "gelir, ama kilit ekranında alarm açılmaz.",
+            english: "Medication alarms cannot take over the screen — a dose still arrives as a "
+                + "notification with sound, but no alarm opens on the lock screen."
+        ),
+        ReminderStringSample(
+            key: "reminder_problem_background_refresh_off",
+            turkish: "Arka plan yenilemesi kapalı — hatırlatıcı listesi yalnızca uygulamayı "
+                + "açtığınızda tazelenir.",
+            english: "Background App Refresh is off — the reminder list is only refreshed while "
+                + "the app is open."
+        ),
+        ReminderStringSample(
+            key: "reminder_fix",
+            turkish: "Düzelt",
+            english: "Fix"
+        ),
+        ReminderStringSample(
+            key: "reminder_not_now",
+            turkish: "Şimdi değil",
+            english: "Not now"
         )
     ]
 
     static let expectedKeys = Set(samples.map(\.key))
 
-    @Test("the catalog holds exactly the one key :core:reminder owns")
-    func catalogHoldsExactlyTheOneKey() throws {
+    @Test("the catalog holds exactly the keys :core:reminder owns")
+    func catalogHoldsExactlyTheKeysTheModuleOwns() throws {
         // Pinned as a number as well as a set: a row deleted from the table together with its key
         // from the catalog would otherwise agree with itself and pass.
-        #expect(Self.samples.count == 1)
+        #expect(Self.samples.count == 6)
 
         try StringCatalogParity.assertKeys(of: Self.loadCatalog(), are: Self.expectedKeys)
     }
