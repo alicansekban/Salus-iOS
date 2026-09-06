@@ -203,11 +203,12 @@ Milestone plans live in `docs/plans/`. Toolchain and CI usage: `README.md`.
     `CFBundleDevelopmentRegion`). Both lines are needed — the XcodeGen option does not feed the
     build setting, whose Xcode default is `en`. Changing the fallback to English would have to
     happen on both platforms together.
-- **Every persisted key and value string is Android-verbatim** (spec §9): the 13 settings keys
+- **Every persisted key and value string is Android-verbatim** (spec §9): the 15 settings keys
   (`onboarding_completed`, `app_lock_enabled`, `secure_screen_enabled`, `theme_mode`,
   `premium_theme`, `glucose_unit`, `cycle_reminder_enabled`, `cycle_reminder_lead_days`,
   `cycle_reminder_minute_of_day`, `paywall_intro_shown`, `ai_free_summary_used`,
-  `ai_calls_count`, `ai_calls_epoch_day`) and every enum raw value stored under them
+  `ai_calls_count`, `ai_calls_epoch_day`, `home_open_count`, `review_last_requested_ms`) and
+  every enum raw value stored under them
   (`SYSTEM`/`LIGHT`/`DARK`, `CLASSIC`/`OCEAN`/`SUNSET`/`FOREST`). Never "improve" a key or a
   case spelling — the backup format's `settings` block and cross-platform support depend on them.
   — *enforcement: a pinning test per key, the pattern set by
