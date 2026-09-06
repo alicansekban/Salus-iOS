@@ -183,7 +183,7 @@ targets:
         # The first App Store release. `CURRENT_PROJECT_VERSION` is the build number and rises
         # once per upload; `MARKETING_VERSION` is the version users see.
         MARKETING_VERSION: "1.0.0"
-        CURRENT_PROJECT_VERSION: "1"
+        CURRENT_PROJECT_VERSION: "2"
         # iPhone only, matching the Android phone-first app.
         TARGETED_DEVICE_FAMILY: "1"
         # The release app icon: `App/Assets.xcassets/AppIcon.appiconset`, the single 1024x1024

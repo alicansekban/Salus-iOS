@@ -2,7 +2,8 @@
 
 **Agents do not run this script.** From 2026-08-30 the simulator and device passes are the user's
 (the coordinator's decision, recorded in the ledger); implementers run tests, lint and the build,
-and write this file from the code. Every row below says **NOT RUN** until someone runs it.
+and write this file from the code — the file is written by the agents, run by the user. Every row
+below says **NOT RUN** until someone runs it.
 
 Each section is written by the task that shipped the behaviour it checks, so the file grows a
 section at a time and the numbering follows the plan rather than the reading order.
@@ -15,6 +16,37 @@ personalised greeting, an avatar and a dose-progress ring on Home; feature-accen
 vitals stat tiles. The automated half is `FeatureHomeTests` (47 tests) plus
 `SalusDesignSystemTests`/`SalusUITests` for the tokens and shared components. What no test reaches
 is the visual layout — hero gradient direction, ring placement, badge alignment at large type.
+
+---
+
+## §0. Setup (preamble)
+
+Read this before §1 or §6, or any row that asks for a "fresh install" or seeded data. It is the
+setup the other sections assume and is written once here so they do not each repeat it.
+
+**A fresh install seeds a profile name and today's doses through onboarding.** Deleting the app
+clears `onboarding_completed` (the gate) and the database (§0 of `m8-manual-qa.md` is the full
+reset procedure); on the next launch, walking onboarding sets a profile name and sex. The dose-today
+rows need at least one dose scheduled for today; enter one through the Medications tab (`+` FAB).
+
+**The health-data seeder.** Several vitals rows in this milestone need a richer history than a
+fresh install gives (a weight trend with ≥2 points for the sparkline, blood pressure and glucose
+readings). That data comes from the existing seed script instead of hand-entry:
+
+```sh
+scripts/dev/seed-health-data.sh [days]        # booted simulator, default 30 days
+```
+
+It is the iOS wrapper over the shared Android seeder
+(`../salus-android/scripts/dev/seed_health_data.py` — `SEED_SCRIPT=<path>` to override) and fills
+the Salus database directly on the booted simulator or a paired iPhone. Development builds only:
+it reads the app container and rewrites `Library/Application Support/salus.db`, keeping a
+timestamped `.bak`. If a row below says "seed health data", run this first, then re-open the
+screen.
+
+**Every row below was written by the task that shipped the behaviour; none of them has been run.**
+Per the banner, the simulator and device passes are the user's. Nothing here has ever been drawn
+on any hardware.
 
 ---
 
@@ -168,8 +200,6 @@ ProfileScreen.swift`). Android's change is `ProfileScreen.kt:109-185` (the ident
 
 ---
 
----
-
 ## §4. Medications header count chip + dose time chips (Task 7)
 
 Written by Task 7 (`Packages/Features/FeatureMedications/Sources/FeatureMedications/ui/list/
@@ -265,3 +295,94 @@ in 13 suites), `scripts/build-app.sh` (**BUILD SUCCEEDED**) and `scripts/lint.sh
 `ChipFlowLayout` wrapping have never been drawn on any hardware. The `#Preview`s in
 `MedicationsScreen.swift` and `MedicationCard.swift` ship for the user's own inspection; no agent
 has rendered them either.
+
+---
+
+## §6. Sweep — light/dark + 200% Dynamic Type across the five touched screens (Task 9)
+
+Written by Task 9 to close the milestone: §1–§5 each checked *one* screen in isolation (and §1.9,
+§3.5 already took a first pass at one screen at AX5); this section walks the **five** screens the
+M12 mirror touched — Home, Appointments, Profile, Medications, Cycle — as a pair with the new
+tokens applied everywhere, so a token or a shared component (the avatar, the progress ring, the
+date tile, `ChipFlowLayout`, the segmented picker) that reads fine alone is read again where the
+others sit beside it.
+
+**Before you start.** Do this after §1–§5 (they exercise the mechanics; this is the polish pass).
+You need a profile name and sex and today's doses (§0), upcoming appointments (§2's setup),
+two or three active medications (§4's setup), and a female profile for the Cycle rows (§5's
+setup). Switch **Görünüm › Tema** between **Açık** and **Koyu** and the device's Larger Text to
+the **largest** (AX5) as each row asks.
+
+### The five screens as a whole
+
+- [ ] **6.1 Home at light/dark and AX5.** Walk Home's hero, the five card badges (§1.1, §1.5) and
+  the vitals stat tiles (§1.7) in **Açık**, then **Koyu**, then at the largest Dynamic Type size.
+  *Expected:* the hero gradient's two stops resolve to the palette the mode asks for; the badge
+  `container` fills and `accent` glyphs track their feature colour in both modes; at AX5 the
+  greeting, date, ring caption and every card row **wrap** — no fixed-height card clips a wrapped
+  line, and the avatar (72 pt) keeps from overlapping the wrapped greeting.
+  *Why this step exists:* the gradient and the five `SalusIconBadge`s come from the same extended
+  colours; a token that only differs in dark (`hero.bottom`, a container fill) shows up here and
+  nowhere in the per-screen rows.
+
+- [ ] **6.2 Appointments list at light/dark and AX5.** Walk the date tiles (§2.1) with the time
+  above the title (§2.2) in both themes, then at the largest size. *Expected:* the tile's
+  `container` fill and the `accent` day/month follow the mode; at AX5 the day-of-month and month
+  stay inside the fixed 56×60 tile **unchanged in size** (they are scaled by the component, not
+  the text size), while the time and title rows wrap on their own line without clipping.
+  *Why this step exists:* the tile is a fixed-size `RoundedRectangle` — unlike the ring it is a
+  hard box, so AX5 must be watched for the day/month overflowing or the tile colliding with a
+  wrapped title.
+
+- [ ] **6.3 Profile band and segmented picker at light/dark and AX5.** Walk the profile band (§3.1)
+  and the segmented sex selector (§3.4) in both themes, then at the largest size. *Expected:* the
+  band follows the hero stops in each mode; at AX5 the band's `titleLarge` name and the segmented
+  labels stay legible and the band grows to fit (§3.5 re-states the single-screen half — this is
+  the read with a surrounding screen).
+  *Why this step exists:* the band is the same `hero.vertical` the Home hero uses, so a stop that
+  reads fine at 72 pt under the nav bar is re-checked here in the profile context where the
+  scrolling `Form` sits directly beneath it.
+
+- [ ] **6.4 Medications header chip and dose-time pills at light/dark and AX5.** Walk the count
+  chip (§4.1) and the wrapping pills (§4.3) in both themes, then at the largest size. *Expected:*
+  the neutral chip and the medications-accent pills resolve per theme; at AX5 the pills still wrap
+  with `ChipFlowLayout` (an extra wrapped line is fine) and never clip, and the count chip's
+  `labelLarge` text fits.
+  *Why this step exists:* the pills are `labelLarge` text on a `container` fill — at AX5 the text
+  grows and the pill is expected to grow with it, which is exactly the case where a hand-set height
+  would clip first.
+
+- [ ] **6.5 Cycle calendar at light/dark and AX5.** Walk the cycle calendar (a female profile, §5.4)
+  and its day cells in both themes, then at the largest size. *Expected:* the calendar and the day
+  grid resolve per theme; at AX5 the day cells and the legend stay readable and nothing truncates.
+  *Why this step exists:* the M12 cycle work was two *code* fixes (male gating, system back button)
+  with no layout change, so this is the AX5/theme read the cycle screen otherwise never gets in this
+  milestone — the M8 a11y pass (§6.2.6) covered it at M8 scale, not after a theme refresh.
+
+- [ ] **6.6 The five screens together still navigate.** From Home in **Koyu** at AX5, push the cycle
+  calendar from the cycle card (§5.2) and confirm the system back button and hidden tab bar still
+  hold at the large text size; return and switch to **Açık**, push Appointments → an appointment and
+  Profile from More, confirming each pushed screen draws its new element and pops back.
+  *Why this step exists:* the M12 change touched five screens plus the shared components; a theme or
+  text-size pass that works screen-by-screen can still break at the seams (a band that stops
+  scrolling, a tile that overlaps a pushed header).
+
+### Store screenshots
+
+- [ ] **6.7 Take fresh App Store screenshot set.** After the light/dark pass above (they are the
+  new look), capture the App Store screenshot set for the touched screens — Home (hero + cards), the
+  Appointments list, the Profile editor, the Medications list, and the Cycle calendar — in **Açık**
+  at the default text size. Replace the store listing's old captures, and re-capture the dark-mode
+  set the listing carries if it is a paired Açık/Koyu pair.
+  *Why this step exists:* the visual change since the last store capture is this milestone; the
+  store listing must match what a reviewer installs. This row is a **reminder** — the actual capture
+  and upload is the user's, exactly as the banner says.
+
+---
+
+## What was executed when this section was written (iOS-M14 Task 9)
+
+**Nothing.** Task 9 ran `scripts/ci.sh` (all five: toolchain, lint, custom rules, all 24 packages,
+and the iOS build — all green) and wrote this §6 and the §0 preamble. Every row in this file — §0
+through §6 — is **NOT RUN**: no simulator was booted, no screen was rendered, and no store screenshot
+has been taken. The user runs the manual QA and takes the App Store screenshots.

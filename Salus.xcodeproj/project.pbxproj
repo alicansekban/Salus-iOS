@@ -60,6 +60,7 @@
 /* Begin PBXFileReference section */
 		060BB0FDE51AC42B923DB32F /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		061B25B94B5030AB40007508 /* SalusPremium */ = {isa = PBXFileReference; lastKnownFileType = folder; name = SalusPremium; path = Packages/SalusPremium; sourceTree = SOURCE_ROOT; };
+		069ADE1695ADB2AA5AA05801 /* Secrets.local.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.local.xcconfig; sourceTree = "<group>"; };
 		095041F0094FA2361E9C69EE /* PaywallHost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallHost.swift; sourceTree = "<group>"; };
 		0AC88801DE3E3AB2A681391E /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		0C40A21C37AD104957DD4999 /* AppStrings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStrings.swift; sourceTree = "<group>"; };
@@ -218,6 +219,7 @@
 				A5F9D30994E04E2DA784C2A9 /* RootView+Previews.swift */,
 				814D8ECF9C6A2402529D7DF1 /* Salus.entitlements */,
 				F703871BE6F4C3CF92AA8959 /* SalusApp.swift */,
+				069ADE1695ADB2AA5AA05801 /* Secrets.local.xcconfig */,
 				6A163935FC35E7AA1B312E8E /* Secrets.xcconfig */,
 				B2E78EA7B704B8A1333B32A6 /* WindowPurchaseHost.swift */,
 			);
@@ -412,7 +414,7 @@
 				CODE_SIGN_ENTITLEMENTS = App/Salus.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = MSK744V99M;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = App/Info.plist;
@@ -565,7 +567,7 @@
 				CODE_SIGN_ENTITLEMENTS = App/Salus.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = MSK744V99M;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = App/Info.plist;
