@@ -160,4 +160,10 @@ extension UserDefaults {
     func storedInt(forKey key: String, default fallback: Int) -> Int {
         object(forKey: key) == nil ? fallback : integer(forKey: key)
     }
+
+    /// An optional 64-bit integer: `nil` when the key was never written. `UserDefaults` stores an
+    /// `Int64` as an `NSNumber`, so reading back through `NSNumber.int64Value` keeps the full range.
+    func storedInt64(forKey key: String) -> Int64? {
+        (object(forKey: key) as? NSNumber)?.int64Value
+    }
 }

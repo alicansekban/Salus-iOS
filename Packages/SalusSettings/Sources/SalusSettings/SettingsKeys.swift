@@ -1,9 +1,10 @@
 import SalusModel
 
-/// The 13 persisted preference keys, spelled exactly as Android spells them.
+/// The 15 persisted preference keys, spelled exactly as Android spells them.
 ///
-/// Ported from `core/datastore/.../SalusPreferencesDataSource.kt:78-87` (the ten settings) and
-/// `core/datastore/.../AiUsageDataSource.kt:118-120` (the three AI counters). Android reaches
+/// Ported from `core/datastore/.../SalusPreferencesDataSource.kt:78-87` (the ten settings),
+/// `core/datastore/.../AiUsageDataSource.kt:118-120` (the three AI counters) and the two review
+/// prompt counters (`docs/superpowers/specs/2026-09-06-in-app-review-design.md` §1). Android reaches
 /// them through typed `Preferences.Key` objects; on iOS the same strings are `UserDefaults` keys
 /// — except `appLockEnabled`, which names a Keychain account instead (spec §5, see
 /// `AppLockFlagStore`).
@@ -29,4 +30,8 @@ public enum SettingsKeys {
     public static let aiFreeSummaryUsed = "ai_free_summary_used"
     public static let aiCallsCount = "ai_calls_count"
     public static let aiCallsEpochDay = "ai_calls_epoch_day"
+    /// Foreground arrivals on Home; the review prompt policy reads it.
+    public static let homeOpenCount = "home_open_count"
+    /// Epoch milliseconds of the last native review request; absent = never asked.
+    public static let reviewLastRequestedMs = "review_last_requested_ms"
 }

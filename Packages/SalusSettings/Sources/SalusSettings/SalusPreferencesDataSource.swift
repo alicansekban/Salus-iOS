@@ -102,6 +102,39 @@ public final class SalusPreferencesDataSource: Sendable {
         write(theme.rawValue, forKey: SettingsKeys.premiumTheme)
     }
 
+    // MARK: - Review prompt
+
+    // Twins of `SalusPreferencesDataSource.kt`'s `reviewState` / `incrementHomeOpenCount` /
+    // `setReviewLastRequested` (in-app review spec §1). Not part of `UserSettings`: nothing
+    // observes them and Home reads them once per arrival, so they are plain reads and writes
+    // rather than a stream, and they bypass `write(_:forKey:)` so as not to re-emit the settings
+    // stream for a counter no subscriber cares about. The counter increments under a lock, the
+    // `AiUsageDataSource.recordCall` shape, so two arrivals cannot lose a count.
+
+    public func reviewState() -> ReviewState {
+        ReviewState(
+            homeOpenCount: defaults.storedInt(forKey: SettingsKeys.homeOpenCount, default: 0),
+            lastRequestedEpochMs: defaults.storedInt64(forKey: SettingsKeys.reviewLastRequestedMs)
+        )
+    }
+
+    /// Adds one to `home_open_count` and returns the new value.
+    @discardableResult
+    public func incrementHomeOpenCount() -> Int {
+        reviewCounterLock.lock()
+        defer { reviewCounterLock.unlock() }
+
+        let next = defaults.storedInt(forKey: SettingsKeys.homeOpenCount, default: 0) + 1
+        defaults.set(next, forKey: SettingsKeys.homeOpenCount)
+        return next
+    }
+
+    public func setReviewLastRequested(epochMs: Int64) {
+        defaults.set(epochMs, forKey: SettingsKeys.reviewLastRequestedMs)
+    }
+
+    private let reviewCounterLock = NSLock()
+
     // MARK: - Private
 
     /// One write plus the re-emit every setter owes the stream.
