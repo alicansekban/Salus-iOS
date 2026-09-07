@@ -79,7 +79,7 @@ public struct MedicationsModule {
     public let makeMedicationEditorViewModel: @MainActor (String?) -> MedicationEditorViewModel
 }
 
-// The seven parameters are the seven things Koin resolves inside `medicationsModule`
+// The nine parameters are the nine things Koin resolves inside `medicationsModule`
 // (`MedicationsModule.kt:23-62`) — `get()` reads exactly this list. Bundling them into a
 // "dependencies" struct would be a second shape for the composition root's own properties, and
 // dropping the ones only the detail and editor factories will need would mean changing this
@@ -99,7 +99,9 @@ public func makeMedicationsModule(
     idGenerator: any IdGenerator,
     pendingDeletes: PendingDeleteController,
     snackbar: SalusSnackbarController,
-    navigator: Navigator
+    navigator: Navigator,
+    reminderEnvironment: any ReminderEnvironment,
+    alarmKitSupported: Bool
 ) -> MedicationsModule {
     // `MedicationsModule.kt:23-25` — the profile id is `MedicationsRepositoryImpl`'s documented
     // default, which is the `SalusDatabase.DEFAULT_PROFILE_ID` Koin passes there.
@@ -163,7 +165,9 @@ public func makeMedicationsModule(
             clock: clock,
             idGenerator: idGenerator,
             navigator: navigator,
-            undoableDelete: undoableDelete
+            undoableDelete: undoableDelete,
+            reminderEnvironment: reminderEnvironment,
+            alarmKitSupported: alarmKitSupported
         )
     )
 }
@@ -212,7 +216,9 @@ private func editorViewModelFactory(
     clock: any SalusClock,
     idGenerator: any IdGenerator,
     navigator: Navigator,
-    undoableDelete: UndoableDelete
+    undoableDelete: UndoableDelete,
+    reminderEnvironment: any ReminderEnvironment,
+    alarmKitSupported: Bool
 ) -> @MainActor (String?) -> MedicationEditorViewModel {
     { medicationId in
         MedicationEditorViewModel(
@@ -226,7 +232,11 @@ private func editorViewModelFactory(
             clock: clock,
             idGenerator: idGenerator,
             navigator: navigator,
-            undoableDelete: undoableDelete
+            undoableDelete: undoableDelete,
+            // The editor asks the device, after a save, whether the dose alarm it just scheduled
+            // can reach the user at all — `Koin`'s `environment = get()`.
+            environment: reminderEnvironment,
+            alarmKitSupported: alarmKitSupported
         )
     }
 }
@@ -242,7 +252,7 @@ extension EnvironmentValues {
     /// ```swift
     /// NavigationStack(path: backStacks.binding(for: .medications)) {
     ///     MedicationsRoute()
-    ///         .medicationsDestinations()
+    ///         .medicationsDestinations(onOpenReminderHealth: { … })
     /// }
     /// .environment(\.medicationsModule, root.medicationsModule)
     /// ```

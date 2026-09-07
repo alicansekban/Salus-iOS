@@ -384,8 +384,18 @@ final class AppCompositionRoot {
         // a relay, and the relay is pointed at the real scheduler once there is one. See
         // `ReminderSchedulerRelay`.
         let reminderRelay = ReminderSchedulerRelay()
-        let scheduled = makeScheduledModules(infrastructure: infrastructure, reminderScheduler: reminderRelay)
+        // Built before the modules, and it is the half of the reminder graph that can be: the
+        // medication editor takes the environment (after a save it asks whether the dose alarm it
+        // just scheduled can reach the user), while the graph's other half needs the handlers the
+        // modules own. See `makeReminderEnvironment`.
+        let reminderBase = makeReminderEnvironment()
+        let scheduled = makeScheduledModules(
+            infrastructure: infrastructure,
+            reminderScheduler: reminderRelay,
+            reminderBase: reminderBase
+        )
         let reminder = makeReminderGraph(
+            base: reminderBase,
             database: database,
             clock: clock,
             idGenerator: infrastructure.idGenerator,
@@ -414,19 +424,10 @@ final class AppCompositionRoot {
             navigator: infrastructure.navigator
         )
         let premium = makePremiumGraph()
-        let settings = makeSettingsModule(
-            reminderEnvironment: reminder.environment,
-            reminderAuthorization: reminder.environment,
-            reminderSyncState: reminder.syncState,
-            clock: clock,
-            alarmKitSupported: reminder.alarmKitSupported,
-            profileRepository: infrastructure.profileRepository,
-            navigator: infrastructure.navigator,
-            // The four More-specific deps (T6), M8 stand-ins deleted.
-            preferencesDataSource: infrastructure.preferences,
-            localeController: UserDefaultsAppLocaleController(defaults: .standard),
-            premiumRepository: premium.premiumRepository,
-            paywallController: premium.paywallController
+        let settings = makeSettingsGraph(
+            infrastructure: infrastructure,
+            reminder: reminder,
+            premium: premium
         )
         return FeatureModules(
             reminder: reminder,
@@ -449,52 +450,5 @@ final class AppCompositionRoot {
             paywallController: premium.paywallController,
             paywallModule: premium.paywallModule
         )
-    }
-
-    /// The three modules that own a reminder handler, and are therefore built before there is a
-    /// scheduler to hand them — see the relay in ``makeFeatureModules(infrastructure:)``.
-    ///
-    /// Split out for the same reason `init` was split in M5: a milestone that adds a fourth
-    /// scheduled feature should cost one call here and one field on the result, not another ten
-    /// lines in a function already at the 60-line limit.
-    private static func makeScheduledModules(
-        infrastructure: Infrastructure,
-        reminderScheduler: ReminderSchedulerRelay
-    ) -> ScheduledModules {
-        let database = infrastructure.database
-        let clock = infrastructure.clock
-        let idGenerator = infrastructure.idGenerator
-        let appointments = makeAppointmentsModule(
-            appointmentDao: AppointmentDao(database: database),
-            profileRepository: infrastructure.profileRepository,
-            reminderScheduler: reminderScheduler,
-            clock: clock,
-            idGenerator: idGenerator,
-            pendingDeletes: infrastructure.pendingDelete,
-            snackbar: infrastructure.snackbar,
-            navigator: infrastructure.navigator
-        )
-        // The dose handler needs the repository, and the repository needs a scheduler.
-        let medications = makeMedicationsModule(
-            medicationDao: MedicationDao(database: database),
-            reminderScheduler: reminderScheduler,
-            clock: clock,
-            idGenerator: idGenerator,
-            pendingDeletes: infrastructure.pendingDelete,
-            snackbar: infrastructure.snackbar,
-            navigator: infrastructure.navigator
-        )
-        // A third variant of the same reason: the cycle handler reads the periods the calendar
-        // writes, and the calendar asks the scheduler to refill the window whenever a period
-        // starts, ends, or the reminder setting changes.
-        let cycle = makeCycleModule(
-            cycleDao: CycleDao(database: database),
-            preferences: infrastructure.preferences,
-            reminderScheduler: reminderScheduler,
-            clock: clock,
-            idGenerator: idGenerator,
-            navigator: infrastructure.navigator
-        )
-        return ScheduledModules(appointments: appointments, medications: medications, cycle: cycle)
     }
 }

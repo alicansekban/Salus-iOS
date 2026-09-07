@@ -51,6 +51,7 @@
 		CDED585704408706415DDCC0 /* RootView+Previews.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5F9D30994E04E2DA784C2A9 /* RootView+Previews.swift */; };
 		D9E03062854D4C95BAF2AB90 /* FeatureSettings in Frameworks */ = {isa = PBXBuildFile; productRef = E9250C08C6EC71E8E58894A2 /* FeatureSettings */; };
 		DA4B13A08A43ECDAE0D2FB35 /* FeatureCycle in Frameworks */ = {isa = PBXBuildFile; productRef = 5DF81EBE222F89283ED6ED69 /* FeatureCycle */; };
+		E663D1CB93024B5AC0BA8CF2 /* RootNavigationStack.swift in Sources */ = {isa = PBXBuildFile; fileRef = 365EDF624F76CE1522F13846 /* RootNavigationStack.swift */; };
 		E6D8F62A94D311D909FEF6B3 /* AppAlarmIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBB3D1F6577F9A1686EEF47C /* AppAlarmIntents.swift */; };
 		E96240D6854215CCE9B0EB25 /* SalusProfile in Frameworks */ = {isa = PBXBuildFile; productRef = C00759E3F5DE77C5688CF407 /* SalusProfile */; };
 		F23FBE658A3DFEC37FE4A564 /* FeaturePaywall in Frameworks */ = {isa = PBXBuildFile; productRef = 33D00ED7DEAC33B24C7D560B /* FeaturePaywall */; };
@@ -73,6 +74,7 @@
 		2A068E62066834CBBAD1DFE8 /* FeatureAppointments */ = {isa = PBXFileReference; lastKnownFileType = folder; name = FeatureAppointments; path = Packages/Features/FeatureAppointments; sourceTree = SOURCE_ROOT; };
 		32081AE7A86A99CF65AC0A3A /* SalusSettings */ = {isa = PBXFileReference; lastKnownFileType = folder; name = SalusSettings; path = Packages/SalusSettings; sourceTree = SOURCE_ROOT; };
 		322C707DD49C5D019E45E256 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
+		365EDF624F76CE1522F13846 /* RootNavigationStack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootNavigationStack.swift; sourceTree = "<group>"; };
 		3682A16DBF8B254394C1B404 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		384B5192E6595A6C79156881 /* DoseAlarmIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DoseAlarmIntents.swift; sourceTree = "<group>"; };
 		4C21605CC5C2E2D933AFE62F /* DebugReminderHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugReminderHandler.swift; sourceTree = "<group>"; };
@@ -213,6 +215,7 @@
 				0AC88801DE3E3AB2A681391E /* PrivacyInfo.xcprivacy */,
 				1967360C450E679E57DA1D68 /* PrivacyOverlay.swift */,
 				1032A49894F75CD828D5BA26 /* RootGates.swift */,
+				365EDF624F76CE1522F13846 /* RootNavigationStack.swift */,
 				814A06AA9BCDD69E3C76C98E /* RootTab.swift */,
 				3682A16DBF8B254394C1B404 /* RootView.swift */,
 				5750E2711750521385F3A9B7 /* RootView+Locale.swift */,
@@ -382,6 +385,7 @@
 				347CC17203F154F13B32CE21 /* PaywallHost.swift in Sources */,
 				FCAEC19BE57D93E9ECEF0569 /* PrivacyOverlay.swift in Sources */,
 				01626160451B48B804DCFB04 /* RootGates.swift in Sources */,
+				E663D1CB93024B5AC0BA8CF2 /* RootNavigationStack.swift in Sources */,
 				71A7E5AF1C24B88439724AF9 /* RootTab.swift in Sources */,
 				0F454AB891C4069E7AF36581 /* RootView+Locale.swift in Sources */,
 				CDED585704408706415DDCC0 /* RootView+Previews.swift in Sources */,

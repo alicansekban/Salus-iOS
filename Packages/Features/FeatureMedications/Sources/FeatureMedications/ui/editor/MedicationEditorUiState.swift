@@ -11,6 +11,7 @@
 // `existingScheduleId` stays `let`: a row's identity is fixed the moment it is built.
 
 import SalusModel
+import SalusReminder
 
 /// One dose time row in the builder; "3× a day" = three rows = three schedule entities
 /// (`MedicationEditorUiState.kt:8-14`).
@@ -62,6 +63,11 @@ public struct MedicationEditorUiState: Equatable, Sendable {
     public var doseTimes: [DoseTimeUi]
     public var error: EditorError?
     public var showDeleteConfirm: Bool
+    /// The hard problems behind a save that succeeded on a device where the dose alarm cannot reach
+    /// the user — nil until such a save, and empty never
+    /// (`ReminderReadinessReport.hardProblems` is non-empty exactly when the report is `broken`).
+    /// The editor stays open behind the dialog it drives; both answers close it.
+    public var reminderWarning: [ReminderProblem]?
 
     public init(
         isLoading: Bool = true,
@@ -80,7 +86,8 @@ public struct MedicationEditorUiState: Equatable, Sendable {
         intervalDaysInput: String = "2",
         doseTimes: [DoseTimeUi] = [],
         error: EditorError? = nil,
-        showDeleteConfirm: Bool = false
+        showDeleteConfirm: Bool = false,
+        reminderWarning: [ReminderProblem]? = nil
     ) {
         self.isLoading = isLoading
         self.isNew = isNew
@@ -99,6 +106,7 @@ public struct MedicationEditorUiState: Equatable, Sendable {
         self.doseTimes = doseTimes
         self.error = error
         self.showDeleteConfirm = showDeleteConfirm
+        self.reminderWarning = reminderWarning
     }
 }
 
@@ -126,4 +134,24 @@ public enum MedicationEditorEvent: Equatable, Sendable {
     case deleteClicked
     case deleteDismissed
     case deleteConfirmed
+    /// "Fix" on the post-save warning: asks the shell for Reminder health, and leaves closing the
+    /// editor to the shell too — see ``MedicationEditorEffect/openReminderHealth``.
+    case reminderWarningFixClicked
+    /// "Not now" on the post-save warning, and the alert's own system-driven dismissal: closes the
+    /// editor and changes nothing else.
+    case reminderWarningDismissed
+}
+
+/// What the editor asks the shell to do — a hop it cannot make itself, because the destination
+/// belongs to another feature (`MedicationEditorUiState.kt`'s `MedicationEditorEffect`).
+///
+/// Kotlin's `Channel.BUFFERED`; here the queue is
+/// ``MedicationEditorViewModel/pendingEffects``, drained by ``MedicationEditorViewModel/
+/// consumeEffects()`` — the `MoreViewModel` shape, which records why an `@Observable` needs one.
+public enum MedicationEditorEffect: Equatable, Sendable {
+    /// Reminder health lives in `:feature:settings`, and features never depend on each other: the
+    /// shell pops the editor and pushes `ReminderHealthKey` on the Route's behalf, in that order,
+    /// so Back from Reminder health lands on the medication list. Both halves are the shell's
+    /// because the ViewModel's own pop would tear down the Route draining this effect.
+    case openReminderHealth
 }

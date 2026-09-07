@@ -14,6 +14,28 @@ import UIKit
 /// Nothing here is `public`, so the reminder engine's assembly is still invisible outside the app
 /// target — `makeAlarmKitBackend` stays `private`, because only this file calls it.
 extension AppCompositionRoot {
+    /// The half of the engine that depends on nothing else in the app: the AlarmKit backend, the
+    /// notification center, and the ``SystemReminderEnvironment`` over both.
+    ///
+    /// Split out of ``makeReminderGraph(base:database:clock:idGenerator:handlers:)`` because the
+    /// medication editor now takes the environment — it asks, after a save, whether the dose alarm
+    /// it just scheduled can reach the user at all — and the feature modules are built BEFORE the
+    /// reminder graph, since they are what its handlers come from. Nothing here reads a handler, so
+    /// this is not a second cycle: it is the half of the one cycle that never had one.
+    static func makeReminderEnvironment() -> ReminderEnvironmentGraph {
+        let alarmKit = makeAlarmKitBackend()
+        let notificationCenter = SystemUserNotificationCenter()
+        return ReminderEnvironmentGraph(
+            alarmKit: alarmKit,
+            notificationCenter: notificationCenter,
+            environment: SystemReminderEnvironment(
+                center: notificationCenter,
+                alarmKit: alarmKit.authorizing,
+                backgroundRefreshAvailable: isBackgroundRefreshAvailable()
+            )
+        )
+    }
+
     /// `reminderModule` (`ReminderModule.kt:18-28`), built in its own dependency order: the AlarmKit
     /// backend first — its presence is the "iOS 26.0+" answer every layer below routes on — then the
     /// environment and gateway over it, then the synchronizer, and last the two types that funnel
@@ -23,18 +45,15 @@ extension AppCompositionRoot {
     /// is reachable from the rest of the app except through the properties `init` assigns from
     /// the ``ReminderGraph`` it hands back.
     static func makeReminderGraph(
+        base: ReminderEnvironmentGraph,
         database: SalusDatabase,
         clock: any SalusClock,
         idGenerator: any IdGenerator,
         handlers: [any ReminderHandler]
     ) -> ReminderGraph {
-        let alarmKit = makeAlarmKitBackend()
-        let notificationCenter = SystemUserNotificationCenter()
-        let environment = SystemReminderEnvironment(
-            center: notificationCenter,
-            alarmKit: alarmKit.authorizing,
-            backgroundRefreshAvailable: isBackgroundRefreshAvailable()
-        )
+        let alarmKit = base.alarmKit
+        let notificationCenter = base.notificationCenter
+        let environment = base.environment
         let syncState = UserDefaultsReminderSyncStateStore()
         // `getAll()`: the appointment, medication and cycle handlers, landed with M4, M5 and M6 —
         // the three the app owns, so the registry is now complete. A Debug build may add one fake
@@ -65,11 +84,7 @@ extension AppCompositionRoot {
 
         return ReminderGraph(
             environment: environment,
-            // The authorizing seam's presence IS the "iOS 26.0+" answer, and this is the one place
-            // in the app that knows it. Reminder Health needs the same fact to decide whether to
-            // draw the AlarmKit row, so it is carried out of here rather than re-derived from a
-            // second `#available`.
-            alarmKitSupported: alarmKit.authorizing != nil,
+            alarmKitSupported: base.alarmKitSupported,
             syncState: syncState,
             scheduler: scheduler,
             openRouter: openRouter,
@@ -185,6 +200,20 @@ final class ReminderOpenRouter {
         defer { pending = nil }
         return pending
     }
+}
+
+/// The handler-free half of the engine, handed back from `makeReminderEnvironment` and consumed
+/// twice: by the feature modules that need the environment, and by `makeReminderGraph`.
+struct ReminderEnvironmentGraph {
+    let alarmKit: (scheduling: (any AlarmKitScheduling)?, authorizing: (any AlarmKitAuthorizing)?)
+    let notificationCenter: SystemUserNotificationCenter
+    let environment: SystemReminderEnvironment
+
+    /// Whether this OS has AlarmKit at all. The authorizing seam's presence IS the "iOS 26.0+"
+    /// answer, and this is the one place in the app that knows it — Reminder Health and the
+    /// medication editor both need the same fact, so it is carried from here rather than
+    /// re-derived from a second `#available`.
+    var alarmKitSupported: Bool { alarmKit.authorizing != nil }
 }
 
 /// The reminder engine's sub-graph, handed back from `makeReminderGraph` in one piece.

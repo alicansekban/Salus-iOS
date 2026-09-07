@@ -1157,6 +1157,23 @@
         }
       }
     },
+    "medication_saved_reminders_blocked_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saved, but alarms may not fire"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kaydedildi, ama alarmlar çalışmayabilir"
+          }
+        }
+      }
+    },
     "medications_add" : {
       "extractionState" : "manual",
       "localizations" : {

@@ -28,16 +28,22 @@ public struct SalusDialogAction {
 }
 
 extension View {
-    /// The one confirmation shown before every destructive action.
+    /// The one confirmation dialog — before a destructive action, and before any other answer
+    /// worth stopping for.
     ///
     /// - Parameters:
     ///   - isPresented: the twin of the Kotlin `if`. The system clears it for either button, which
     ///     is what `onDismissRequest` means there.
-    ///   - confirm: the destructive button (`SalusConfirmDialog.kt:29-34`).
+    ///   - confirm: the button that goes through with it (`SalusConfirmDialog.kt:29-34`).
     ///   - dismiss: the way out (`SalusConfirmDialog.kt:35-37`).
+    ///   - confirmIsDestructive: whether the confirm button is drawn as destructive. Defaults to
+    ///     `true`, because nearly every site here confirms a deletion; a site whose confirm button
+    ///     *does* something — steering the user onwards rather than removing data — passes `false`
+    ///     and gets the plain button (`SalusConfirmDialog.kt:22-27`, the same default and the same
+    ///     reason).
     ///
-    /// The confirm button carries the `.destructive` role, the platform twin of Kotlin tinting it
-    /// `colorScheme.error` — "destructive actions are tinted, never the default primary"
+    /// A destructive confirm carries the `.destructive` role, the platform twin of Kotlin tinting
+    /// it `colorScheme.error` — "destructive actions are tinted, never the default primary"
     /// (`SalusConfirmDialog.kt:31`). Alerts are drawn by the system on both platforms, so this is
     /// the one component whose chrome is not painted from Salus tokens.
     public func salusConfirmDialog(
@@ -45,10 +51,13 @@ extension View {
         title: String,
         message: String,
         confirm: SalusDialogAction,
-        dismiss: SalusDialogAction
+        dismiss: SalusDialogAction,
+        confirmIsDestructive: Bool = true
     ) -> some View {
         alert(title, isPresented: isPresented) {
-            Button(confirm.label, role: .destructive, action: confirm.action)
+            // `role:` takes an optional, so the non-destructive case is the absent role rather than
+            // a second `Button` line — one button, one place its action is wired.
+            Button(confirm.label, role: confirmIsDestructive ? .destructive : nil, action: confirm.action)
             Button(dismiss.label, role: .cancel, action: dismiss.action)
         } message: {
             // `Text(verbatim:)`: `message` is already a resolved `String` from the call site's
@@ -62,6 +71,12 @@ extension View {
 private struct SalusConfirmDialogPreview: View {
     @State private var isPresented = true
 
+    let title: String
+    let message: String
+    let confirmLabel: String
+    let dismissLabel: String
+    let confirmIsDestructive: Bool
+
     var body: some View {
         // `verbatim:` on purpose: the other `Text(_:)` overload takes a `LocalizedStringKey`, and
         // Xcode's string extraction writes every one it finds in this package into
@@ -71,14 +86,31 @@ private struct SalusConfirmDialogPreview: View {
         Text(verbatim: "Host")
             .salusConfirmDialog(
                 isPresented: $isPresented,
-                title: "Kilo kaydı silinsin mi?",
-                message: "Bu kayıt kalıcı olarak silinir.",
-                confirm: SalusDialogAction(label: SalusUIStrings.delete, action: {}),
-                dismiss: SalusDialogAction(label: SalusUIStrings.cancel, action: {})
+                title: title,
+                message: message,
+                confirm: SalusDialogAction(label: confirmLabel, action: {}),
+                dismiss: SalusDialogAction(label: dismissLabel, action: {}),
+                confirmIsDestructive: confirmIsDestructive
             )
     }
 }
 
 #Preview("Confirm dialog") {
-    SalusConfirmDialogPreview()
+    SalusConfirmDialogPreview(
+        title: "Kilo kaydı silinsin mi?",
+        message: "Bu kayıt kalıcı olarak silinir.",
+        confirmLabel: SalusUIStrings.delete,
+        dismissLabel: SalusUIStrings.cancel,
+        confirmIsDestructive: true
+    )
+}
+
+#Preview("Confirm dialog — not destructive") {
+    SalusConfirmDialogPreview(
+        title: "Kaydedildi, ama alarmlar çalışmayabilir",
+        message: "Salus için bildirimler kapalı, bu yüzden doz saati sessiz kalır.",
+        confirmLabel: "Düzelt",
+        dismissLabel: "Şimdi değil",
+        confirmIsDestructive: false
+    )
 }

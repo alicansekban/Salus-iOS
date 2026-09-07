@@ -12,11 +12,19 @@
 // `newId()` is non-mutating — so the counter lives in the small class at the bottom of this file.
 // `TestData.swift`'s `FixedIdGenerator` would answer the medication and its schedule the same id,
 // which is the one thing this fixture exists to avoid.
+//
+// The last five cases are the post-save reminder warning's, and one of them reads differently from
+// its Android twin on purpose: Android's "DEGRADED → pop, no warning" can be spelled with a denied
+// full-screen intent, which on iOS is `alarmKitDenied` — a *soft* problem there and here, but iOS
+// has only ONE hard problem (`ReminderReadiness.swift`: a denied notification silences the
+// pipeline, everything else falls back to it). So the degraded case is a denied AlarmKit on a
+// system that has one, and the broken case is always notifications-off.
 
 import Foundation
 import SalusCommon
 import SalusModel
 import SalusNavigation
+import SalusReminder
 import SalusTesting
 import Testing
 
@@ -38,7 +46,14 @@ struct MedicationEditorViewModelTests {
     private let idGenerator = SequentialIdGenerator()
 
     /// `MedicationEditorViewModelTest.kt:49-58`.
-    private func viewModel(medicationId: String? = nil) -> MedicationEditorViewModel {
+    ///
+    /// The environment defaults to a healthy device, so every case that predates the post-save
+    /// warning still saves and pops.
+    private func viewModel(
+        medicationId: String? = nil,
+        environment: FakeReminderEnvironment = FakeReminderEnvironment(),
+        alarmKitSupported: Bool = false
+    ) -> MedicationEditorViewModel {
         MedicationEditorViewModel(
             medicationId: medicationId,
             repository: repository,
@@ -47,7 +62,9 @@ struct MedicationEditorViewModelTests {
             clock: clock,
             idGenerator: idGenerator,
             navigator: navigator.navigator,
-            undoableDelete: deletes.undoableDelete
+            undoableDelete: deletes.undoableDelete,
+            environment: environment,
+            alarmKitSupported: alarmKitSupported
         )
     }
 
@@ -159,6 +176,106 @@ struct MedicationEditorViewModelTests {
         // `MedicationEditorViewModelTest.kt:151` — the delete use case asks the engine to re-sync,
         // so the deleted medication's pending alarms go with it.
         #expect(scheduler.syncRequests == 1)
+        navigator.stop()
+    }
+
+    // MARK: - The post-save reminder warning
+
+    /// A device where nothing the engine schedules is ever seen keeps the editor open and names
+    /// why, rather than closing on a reminder that will never fire. The medication is still saved:
+    /// the warning is about the alarm, not about the row.
+    @Test("reminders on and a broken device warns instead of closing")
+    func remindersOnAndABrokenDeviceWarnsInsteadOfClosing() async {
+        let viewModel = viewModel(environment: FakeReminderEnvironment(notifications: false))
+        viewModel.onEvent(.nameChanged("Vitamin D"))
+
+        viewModel.onEvent(.saveClicked)
+        await waitUntil("the warning") { viewModel.state.reminderWarning != nil }
+        // Drains the cooperative pool, so a pop that was already queued is recorded before the
+        // negative assertion below reads the log.
+        await Task.yield()
+
+        #expect(viewModel.state.reminderWarning == [.notificationsOff])
+        #expect(repository.medications.count == 1)
+        #expect(navigator.commandLog.isEmpty)
+        #expect(viewModel.pendingEffects.isEmpty)
+        navigator.stop()
+    }
+
+    /// The soft half. A denied AlarmKit on a system that has one is `DEGRADED` — the dose still
+    /// posts, time-sensitive and with the alarm sound — so there is nothing to stop the user on.
+    @Test("a degraded device closes without a warning")
+    func aDegradedDeviceClosesWithoutAWarning() async {
+        let viewModel = viewModel(
+            environment: FakeReminderEnvironment(alarmKit: false),
+            alarmKitSupported: true
+        )
+        viewModel.onEvent(.nameChanged("Vitamin D"))
+
+        viewModel.onEvent(.saveClicked)
+        await waitUntil("the editor to pop") { navigator.commandLog == [.pop] }
+
+        #expect(viewModel.state.reminderWarning == nil)
+        navigator.stop()
+    }
+
+    /// The "reminders off" half, and the rule behind it: `remindersEnabled` is not an editor field
+    /// on either platform, so an as-needed medication — which schedules no clock time and therefore
+    /// no dose alarm — is what "reminders off" means here. The device is never even asked.
+    @Test("an as-needed medication closes even on a broken device")
+    func anAsNeededMedicationClosesEvenOnABrokenDevice() async {
+        let environment = FakeReminderEnvironment(notifications: false)
+        let viewModel = viewModel(environment: environment)
+        viewModel.onEvent(.nameChanged("Painkiller"))
+        viewModel.onEvent(.recurrenceSelected(.asNeeded))
+
+        viewModel.onEvent(.saveClicked)
+        await waitUntil("the editor to pop") { navigator.commandLog == [.pop] }
+
+        #expect(viewModel.state.reminderWarning == nil)
+        #expect(environment.readCount == 0)
+        navigator.stop()
+    }
+
+    /// Fix asks the shell for Reminder health and pops nothing: the shell does the pop and the push
+    /// together, because a pop from here would tear down the Route that delivers the effect. Once
+    /// each, however many times the answer is delivered.
+    @Test("Fix asks for Reminder health once and leaves the pop to the shell")
+    func fixAsksForReminderHealthOnceAndLeavesThePopToTheShell() async {
+        let viewModel = viewModel(environment: FakeReminderEnvironment(notifications: false))
+        viewModel.onEvent(.nameChanged("Vitamin D"))
+        viewModel.onEvent(.saveClicked)
+        await waitUntil("the warning") { viewModel.state.reminderWarning != nil }
+
+        viewModel.onEvent(.reminderWarningFixClicked)
+        // The alert's binding reports the system-driven dismissal that follows *either* button, so
+        // this second event is what the screen really sends. A warning is answered exactly once,
+        // which is what keeps it from popping the screen the shell is already popping.
+        viewModel.onEvent(.reminderWarningDismissed)
+        // Drains the cooperative pool, so a pop queued by either event is recorded before the
+        // negative assertion below reads the log.
+        await Task.yield()
+
+        #expect(navigator.commandLog.isEmpty)
+        #expect(viewModel.state.reminderWarning == nil)
+        #expect(viewModel.consumeEffects() == [.openReminderHealth])
+        #expect(viewModel.pendingEffects.isEmpty)
+        navigator.stop()
+    }
+
+    /// Not now closes the editor and changes nothing else.
+    @Test("Not now pops and asks for nothing")
+    func notNowPopsAndAsksForNothing() async {
+        let viewModel = viewModel(environment: FakeReminderEnvironment(notifications: false))
+        viewModel.onEvent(.nameChanged("Vitamin D"))
+        viewModel.onEvent(.saveClicked)
+        await waitUntil("the warning") { viewModel.state.reminderWarning != nil }
+
+        viewModel.onEvent(.reminderWarningDismissed)
+        await waitUntil("the editor to pop") { navigator.commandLog == [.pop] }
+
+        #expect(viewModel.state.reminderWarning == nil)
+        #expect(viewModel.pendingEffects.isEmpty)
         navigator.stop()
     }
 }

@@ -60,12 +60,17 @@ extension View {
     /// The two `entry<…>` blocks Kotlin registers become two chained modifiers: SwiftUI matches on
     /// the concrete key type, so each destination is its own line rather than a `when` over a
     /// sealed key.
-    public func medicationsDestinations() -> some View {
+    ///
+    /// - Parameter onOpenReminderHealth: the editor's post-save warning answer, handed down exactly
+    ///   as Kotlin's `medicationsEntries(onOpenReminderHealth:)` hands it to its editor entry.
+    ///   Reminder health belongs to `:feature:settings` and features never depend on each other, so
+    ///   the shell is what pushes its key.
+    public func medicationsDestinations(onOpenReminderHealth: @escaping () -> Void) -> some View {
         navigationDestination(for: MedicationDetailKey.self) { key in
             MedicationDetailRoute(medicationId: key.id)
         }
         .navigationDestination(for: MedicationEditorKey.self) { key in
-            MedicationEditorRoute(medicationId: key.id)
+            MedicationEditorRoute(medicationId: key.id, onOpenReminderHealth: onOpenReminderHealth)
         }
     }
 }

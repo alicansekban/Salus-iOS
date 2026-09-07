@@ -5,7 +5,7 @@ import Testing
 @testable import FeatureMedications
 
 /// The twin of Android's `feature/medications/src/main/res/values/strings.xml` (`tr`, the source
-/// language) and `values-en/strings.xml`, and the drift detector between them: all 88 keys and
+/// language) and `values-en/strings.xml`, and the drift detector between them: all 89 keys and
 /// both of their translations are pinned here, copied from the XML — apart from the one recorded
 /// divergence, `medications_recorded_doses`, whose row below carries the reason it differs.
 ///
@@ -215,16 +215,22 @@ struct MedicationsStringsTests {
             key: "medication_reminders_off",
             turkish: "Hatırlatıcılar kapalı",
             english: "Reminders off"
+        ),
+        // The post-save reminder warning (1).
+        MedicationStringSample(
+            key: "medication_saved_reminders_blocked_title",
+            turkish: "Kaydedildi, ama alarmlar çalışmayabilir",
+            english: "Saved, but alarms may not fire"
         )
     ]
 
     static let expectedKeys = Set(samples.map(\.key))
 
-    @Test("the catalog holds exactly the 88 keys :feature:medications owns")
-    func catalogHoldsExactlyTheEightyEightKeys() throws {
+    @Test("the catalog holds exactly the 89 keys :feature:medications owns")
+    func catalogHoldsExactlyTheEightyNineKeys() throws {
         // Pinned as a number as well as a set: a row deleted from the table together with its key
         // from the catalog would otherwise agree with itself and pass.
-        #expect(Self.samples.count == 88)
+        #expect(Self.samples.count == 89)
 
         try StringCatalogParity.assertKeys(of: Self.loadCatalog(), are: Self.expectedKeys)
     }

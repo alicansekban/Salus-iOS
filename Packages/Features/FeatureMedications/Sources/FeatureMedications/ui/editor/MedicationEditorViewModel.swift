@@ -15,12 +15,20 @@
 // this editor with nothing to edit. It is therefore treated as the medication not being there —
 // `navigator.pop()`, the same exit Kotlin takes for a missing id — rather than as a blank form the
 // user could save over a row they never saw.
+//
+// The post-save reminder warning is the Kotlin's too (`MedicationEditorViewModel.kt`'s
+// `ReminderEnvironment` arm), with one platform difference it inherits rather than makes: on iOS
+// the only HARD problem is a denied notification, so this dialog opens on that alone. A denied
+// AlarmKit is `DEGRADED` — the dose still posts, time-sensitive and with the alarm sound — and
+// stopping the user for it would be a warning they cannot act on. `ReminderReadiness.swift` owns
+// that ruling; this file only reads `readiness == .broken`.
 
 import Foundation
 import Observation
 import SalusCommon
 import SalusModel
 import SalusNavigation
+import SalusReminder
 import SalusUI
 
 /// Drives the medication editor, new or existing (`MedicationEditorViewModel.kt:24-231`).
@@ -30,6 +38,10 @@ public final class MedicationEditorViewModel {
     /// `MedicationEditorViewModel.kt:34-35` — what the screen draws.
     public private(set) var state = MedicationEditorUiState()
 
+    /// `Channel.BUFFERED`'s twin, the `MoreViewModel` shape: the hops the Route has not performed
+    /// yet, in order, drained by ``consumeEffects()``. Nothing is dropped.
+    public private(set) var pendingEffects: [MedicationEditorEffect] = []
+
     private let medicationId: String?
     private let repository: any MedicationRepository
     private let saveMedication: SaveMedicationUseCase
@@ -37,6 +49,10 @@ public final class MedicationEditorViewModel {
     private let idGenerator: any IdGenerator
     private let navigator: Navigator
     private let undoableDelete: UndoableDelete
+    private let environment: any ReminderEnvironment
+    /// Whether the running system has AlarmKit at all — the composition root's one decision, passed
+    /// down rather than re-derived from a second `#available` (`ReminderReadiness.readiness`).
+    private let alarmKitSupported: Bool
 
     /// `MedicationEditorViewModel.kt:229` — where a new medication's one dose row starts.
     private static let defaultDoseMinutes = 8 * 60
@@ -52,7 +68,9 @@ public final class MedicationEditorViewModel {
         clock: any SalusClock,
         idGenerator: any IdGenerator,
         navigator: Navigator,
-        undoableDelete: UndoableDelete
+        undoableDelete: UndoableDelete,
+        environment: any ReminderEnvironment,
+        alarmKitSupported: Bool
     ) {
         self.medicationId = medicationId
         self.repository = repository
@@ -61,6 +79,8 @@ public final class MedicationEditorViewModel {
         self.idGenerator = idGenerator
         self.navigator = navigator
         self.undoableDelete = undoableDelete
+        self.environment = environment
+        self.alarmKitSupported = alarmKitSupported
 
         // `MedicationEditorViewModel.kt:37-51`.
         guard let medicationId else {
@@ -213,7 +233,39 @@ public final class MedicationEditorViewModel {
 
         case .deleteConfirmed:
             delete()
+
+        case .reminderWarningFixClicked:
+            answerReminderWarning(withFix: true)
+
+        case .reminderWarningDismissed:
+            answerReminderWarning(withFix: false)
         }
+    }
+
+    /// Answers the post-save warning, and answers it exactly once however many times the screen
+    /// reports it: SwiftUI's alert sends the system-driven dismissal that follows EITHER button
+    /// back through its binding, so `reminderWarningDismissed` always arrives after
+    /// `reminderWarningFixClicked`. The guard is what keeps that second event from acting.
+    ///
+    /// - Parameter withFix: "Fix" asks the shell for Reminder health and pops nothing — a pop from
+    ///   here would tear down the Route that drains the effect, so the shell does the pop and the
+    ///   push together, in that order, which is also what puts the medication list under Reminder
+    ///   health's Back. "Not now" is the pop and nothing else.
+    private func answerReminderWarning(withFix: Bool) {
+        guard state.reminderWarning != nil else { return }
+        state.reminderWarning = nil
+        if withFix {
+            pendingEffects.append(.openReminderHealth)
+        } else {
+            navigator.pop()
+        }
+    }
+
+    /// Drains the queued effects in order, exactly as `MoreViewModel.consumeEffects()` does.
+    public func consumeEffects() -> [MedicationEditorEffect] {
+        let drained = pendingEffects
+        pendingEffects.removeAll()
+        return drained
     }
 
     // swiftlint:enable cyclomatic_complexity
@@ -248,7 +300,7 @@ public final class MedicationEditorViewModel {
             do {
                 switch try await saveMedication(medication, schedules: schedules) {
                 case .success:
-                    navigator.pop()
+                    await finishSave(current)
 
                 case .emptyName:
                     state.error = .emptyName
@@ -273,6 +325,28 @@ public final class MedicationEditorViewModel {
                 // either platform.
             }
         }
+    }
+
+    /// What a saved medication does next: close, or stop and say the alarm will not reach you.
+    ///
+    /// **Reminders are on for this medication exactly when its recurrence is not `asNeeded`.**
+    /// `remindersEnabled` is not an editor field on either platform — the detail screen's toggle is
+    /// its one write path (see `save()`) — and an as-needed medication schedules no clock time, so
+    /// it has no dose alarm for a broken device to silence. Asking the environment for one would
+    /// stop the user over something they could not have been affected by.
+    private func finishSave(_ saved: MedicationEditorUiState) async {
+        guard saved.recurrence != .asNeeded else {
+            navigator.pop()
+            return
+        }
+        let report = await environment.readiness(alarmKitSupported: alarmKitSupported)
+        guard report.readiness == .broken else {
+            navigator.pop()
+            return
+        }
+        // No pop: the editor stays open behind the dialog, and the answer is what closes it. The
+        // medication is already saved either way — the warning is about the alarm, not the row.
+        state.reminderWarning = report.hardProblems
     }
 
     /// `MedicationEditorViewModel.kt:195-217`.

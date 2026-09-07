@@ -14,6 +14,7 @@ import SalusDatabase
 import SalusNavigation
 import SalusPremium
 import SalusProfile
+import SalusReminder
 import SalusSettings
 import SalusUI
 import UIKit
@@ -255,6 +256,87 @@ extension AppCompositionRoot {
             }
             continuation.onTermination = { _ in task.cancel() }
         }
+    }
+
+    /// `settingsModule` (`SettingsModule.kt`), built after the reminder graph because Reminder
+    /// Health reads three of its parts, and after the premium graph because the More hub reads two
+    /// of its.
+    ///
+    /// Its own builder for the reason ``makeScheduledModules(infrastructure:reminderScheduler:reminderBase:)``
+    /// is: twelve arguments were a fifth of the function that used to hold them, and the one thing
+    /// this call actually decides — that Reminder Health and the medication editor are handed the
+    /// SAME environment and the same AlarmKit answer — is easier to see on its own.
+    static func makeSettingsGraph(
+        infrastructure: Infrastructure,
+        reminder: ReminderGraph,
+        premium: PremiumGraph
+    ) -> SettingsModule {
+        makeSettingsModule(
+            reminderEnvironment: reminder.environment,
+            reminderAuthorization: reminder.environment,
+            reminderSyncState: reminder.syncState,
+            clock: infrastructure.clock,
+            alarmKitSupported: reminder.alarmKitSupported,
+            profileRepository: infrastructure.profileRepository,
+            navigator: infrastructure.navigator,
+            // The four More-specific deps (T6), M8 stand-ins deleted.
+            preferencesDataSource: infrastructure.preferences,
+            localeController: UserDefaultsAppLocaleController(defaults: .standard),
+            premiumRepository: premium.premiumRepository,
+            paywallController: premium.paywallController
+        )
+    }
+
+    /// The three modules that own a reminder handler, and are therefore built before there is a
+    /// scheduler to hand them — see the relay in ``makeFeatureModules(infrastructure:)``.
+    ///
+    /// Split out for the same reason `init` was split in M5: a milestone that adds a fourth
+    /// scheduled feature should cost one call here and one field on the result, not another ten
+    /// lines in a function already at the 60-line limit.
+    static func makeScheduledModules(
+        infrastructure: Infrastructure,
+        reminderScheduler: ReminderSchedulerRelay,
+        reminderBase: ReminderEnvironmentGraph
+    ) -> ScheduledModules {
+        let database = infrastructure.database
+        let clock = infrastructure.clock
+        let idGenerator = infrastructure.idGenerator
+        let appointments = makeAppointmentsModule(
+            appointmentDao: AppointmentDao(database: database),
+            profileRepository: infrastructure.profileRepository,
+            reminderScheduler: reminderScheduler,
+            clock: clock,
+            idGenerator: idGenerator,
+            pendingDeletes: infrastructure.pendingDelete,
+            snackbar: infrastructure.snackbar,
+            navigator: infrastructure.navigator
+        )
+        // The dose handler needs the repository, and the repository needs a scheduler.
+        let medications = makeMedicationsModule(
+            medicationDao: MedicationDao(database: database),
+            reminderScheduler: reminderScheduler,
+            clock: clock,
+            idGenerator: idGenerator,
+            pendingDeletes: infrastructure.pendingDelete,
+            snackbar: infrastructure.snackbar,
+            navigator: infrastructure.navigator,
+            // The editor's post-save warning. The same environment and the same AlarmKit decision
+            // Reminder Health is handed, so the two surfaces can never disagree about the device.
+            reminderEnvironment: reminderBase.environment,
+            alarmKitSupported: reminderBase.alarmKitSupported
+        )
+        // A third variant of the same reason: the cycle handler reads the periods the calendar
+        // writes, and the calendar asks the scheduler to refill the window whenever a period
+        // starts, ends, or the reminder setting changes.
+        let cycle = makeCycleModule(
+            cycleDao: CycleDao(database: database),
+            preferences: infrastructure.preferences,
+            reminderScheduler: reminderScheduler,
+            clock: clock,
+            idGenerator: idGenerator,
+            navigator: infrastructure.navigator
+        )
+        return ScheduledModules(appointments: appointments, medications: medications, cycle: cycle)
     }
 }
 

@@ -226,6 +226,14 @@ public enum MedicationsStrings {
     public static var remindersOffDescription: String { localized(.remindersOffDescription) }
     public static var remindersOff: String { localized(.remindersOff) }
 
+    // MARK: - The post-save reminder warning (1)
+
+    /// `medication_saved_reminders_blocked_title` — the title of the dialog the editor shows after
+    /// a save that succeeded on a device where the dose alarm cannot reach the user. The message
+    /// under it is the problem's own `ReminderProblem.reason`, and the two answers are
+    /// `ReminderStrings.reminderFix` / `.reminderNotNow`, so this is the one line the warning owns.
+    public static var savedRemindersBlockedTitle: String { localized(.savedRemindersBlockedTitle) }
+
     // MARK: - Keys
 
     /// The catalog keys, named once. Internal so the parity test can prove every accessor asks for
@@ -338,6 +346,9 @@ public enum MedicationsStrings {
         case remindersOnDescription = "medication_reminders_on_desc"
         case remindersOffDescription = "medication_reminders_off_desc"
         case remindersOff = "medication_reminders_off"
+
+        /// The post-save reminder warning (1).
+        case savedRemindersBlockedTitle = "medication_saved_reminders_blocked_title"
     }
 
     private static func localized(_ key: Key) -> String {

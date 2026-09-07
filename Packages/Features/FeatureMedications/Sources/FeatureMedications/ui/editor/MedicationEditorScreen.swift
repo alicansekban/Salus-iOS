@@ -28,27 +28,33 @@
 // `MedicationEditorSections.swift` and `DoseTimesSection.swift`, split out under the 500-line rule.
 
 import SalusDesignSystem
+import SalusReminder
 import SalusUI
 import SwiftUI
 
 /// Owns the ViewModel and wires it to the shell (`MedicationEditorScreen.kt:66-79`).
 ///
-/// No callback parameters: the only way out of this screen is a pop, and `Navigator` already
-/// carries that.
+/// One callback, and it is the one hop a pop cannot make: the post-save warning's "Fix" opens
+/// Reminder health, which belongs to `:feature:settings`, and features never depend on each other
+/// (spec §4). Everything else out of this screen is a pop, which `Navigator` already carries.
 public struct MedicationEditorRoute: View {
     private let medicationId: String?
+    private let onOpenReminderHealth: () -> Void
 
     @Environment(\.medicationsModule) private var module
     @State private var viewModel: MedicationEditorViewModel?
 
-    public init(medicationId: String?) {
+    public init(medicationId: String?, onOpenReminderHealth: @escaping () -> Void) {
         self.medicationId = medicationId
+        self.onOpenReminderHealth = onOpenReminderHealth
     }
 
     public var body: some View {
         Group {
             if let viewModel {
-                MedicationEditorScreen(state: viewModel.state, onEvent: viewModel.onEvent)
+                MedicationEditorScreen(state: viewModel.state) { event in
+                    deliverEffects(of: viewModel, after: event)
+                }
             } else {
                 // Only until `.task` has run, or if the shell forgot to inject the module.
                 ProgressView()
@@ -58,6 +64,25 @@ public struct MedicationEditorRoute: View {
         .task {
             guard viewModel == nil, let module else { return }
             viewModel = module.makeMedicationEditorViewModel(medicationId)
+        }
+    }
+
+    /// The collector for Kotlin's `Channel<MedicationEditorEffect>`, drained right after the event
+    /// that could have filled it rather than from an `.onChange(of:)` (the `MoreRoute` shape).
+    ///
+    /// The reason is this screen's own: the hop out of here is a pop *and* a push, and the ViewModel
+    /// deliberately does neither for "Fix" — a pop of its own would tear this Route down mid-flight
+    /// and the push would be lost with it. So the shell does both halves, in that order, and this
+    /// drain is what reaches it. Every effect is appended from `onEvent`, so draining immediately
+    /// after the event is both complete and ordered.
+    @MainActor
+    private func deliverEffects(of viewModel: MedicationEditorViewModel, after event: MedicationEditorEvent) {
+        viewModel.onEvent(event)
+        for effect in viewModel.consumeEffects() {
+            switch effect {
+            case .openReminderHealth:
+                onOpenReminderHealth()
+            }
         }
     }
 }
@@ -104,6 +129,38 @@ struct MedicationEditorScreen: View {
                 confirm: SalusDialogAction(label: SalusUIStrings.delete) { onEvent(.deleteConfirmed) },
                 dismiss: SalusDialogAction(label: SalusUIStrings.cancel) { onEvent(.deleteDismissed) }
             )
+            // The post-save warning. The message is the first hard problem's own reason — on iOS
+            // there is exactly one hard problem, so `first` is the whole list
+            // (`ReminderReadiness.swift`), and `nil` is unreachable while the dialog is presented.
+            //
+            // `confirmIsDestructive: false`, the same argument Kotlin passes here: "Fix" steers the
+            // user to Reminder health, it does not remove anything, so it keeps the plain button
+            // rather than the delete tint the dialog's usual caller wants.
+            .salusConfirmDialog(
+                isPresented: isReminderWarningPresented,
+                title: MedicationsStrings.savedRemindersBlockedTitle,
+                message: state.reminderWarning?.first?.reason ?? "",
+                confirm: SalusDialogAction(label: ReminderStrings.reminderFix) {
+                    onEvent(.reminderWarningFixClicked)
+                },
+                dismiss: SalusDialogAction(label: ReminderStrings.reminderNotNow) {
+                    onEvent(.reminderWarningDismissed)
+                },
+                confirmIsDestructive: false
+            )
+    }
+
+    /// The warning's binding, the same shape `isDeleteConfirmPresented` has: the setter reports the
+    /// system-driven dismissal that follows either button back as `reminderWarningDismissed`, and
+    /// the ViewModel answers a warning exactly once, so that second event changes nothing.
+    private var isReminderWarningPresented: Binding<Bool> {
+        Binding(
+            get: { state.reminderWarning?.isEmpty == false },
+            set: { isPresented in
+                guard !isPresented else { return }
+                onEvent(.reminderWarningDismissed)
+            }
+        )
     }
 
     /// SwiftUI's alert takes a `Binding<Bool>` where Kotlin writes `if (state.showDeleteConfirm)`,
@@ -221,6 +278,21 @@ struct MedicationEditorScreen: View {
                     DoseTimeUi(existingScheduleId: "s1", minuteOfDay: 9 * 60, amountInput: "1"),
                     DoseTimeUi(existingScheduleId: "s2", minuteOfDay: 20 * 60, amountInput: "2")
                 ]
+            ),
+            onEvent: { _ in }
+        )
+    }
+}
+
+#Preview("Medication editor — saved, alarms blocked") {
+    NavigationStack {
+        MedicationEditorScreen(
+            state: MedicationEditorUiState(
+                isLoading: false,
+                name: "Iron",
+                startDateEpochDay: 20680,
+                doseTimes: [DoseTimeUi(existingScheduleId: nil, minuteOfDay: 8 * 60, amountInput: "1")],
+                reminderWarning: [.notificationsOff]
             ),
             onEvent: { _ in }
         )
