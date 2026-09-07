@@ -72,6 +72,18 @@ public final class HomeViewModel {
     /// the same by making it the fourth `combine` source (`HomeViewModel.kt:47`).
     private var reminderReadiness: ReminderReadinessReport?
 
+    /// Which readiness read is the current one. Bumped by every
+    /// ``refreshReminderReadiness()`` before it suspends, and compared against after — so an
+    /// earlier read that finishes late is dropped instead of overwriting a newer answer.
+    ///
+    /// `.appeared` starts an unstructured `Task`, and two arrivals can therefore be in flight at
+    /// once (the `.task` on the Route and the shell's foreground arm, or two foreground returns in
+    /// a row). `UNUserNotificationCenter` answers through a callback whose latency nobody controls,
+    /// so the two are free to complete in the opposite order to their starts, and without this the
+    /// stale one would win by finishing last: a card left standing for a permission the user has
+    /// already granted, or taken away for one they have just revoked.
+    private var readinessGeneration = 0
+
     /// The collection. Boxed so `deinit` can cancel it — see `CancellationBox`.
     private let observation = CancellationBox()
     /// The foreground subscription, released in `deinit`.
@@ -160,8 +172,9 @@ public final class HomeViewModel {
             requestReviewIfDue()
             // Device state the user toggles outside our process, re-read on every arrival
             // (`HomeViewModel.kt:92-94`). `readiness` is `async` here where Kotlin's is blocking —
-            // `UNUserNotificationCenter` only answers through a callback — so it is a `Task`, and a
-            // second `.appeared` before the first finishes simply writes the same answer twice.
+            // `UNUserNotificationCenter` only answers through a callback — so it is a `Task`, and
+            // a second `.appeared` before the first finishes takes over: `readinessGeneration`
+            // drops whichever read is no longer the latest, however the two happen to complete.
             Task { [weak self] in
                 await self?.refreshReminderReadiness()
             }
@@ -257,7 +270,18 @@ public final class HomeViewModel {
     /// field would wait for the next repository emission to be seen — and the join emits when the
     /// data changes, which a permission grant does not do.
     private func refreshReminderReadiness() async {
+        // Claimed on the main actor before the suspension and re-checked after it, which is what
+        // makes this a guard rather than a hope: both halves run on `@MainActor`, so no other
+        // arrival can interleave between the bump and the read of `generation`.
+        readinessGeneration += 1
+        let generation = readinessGeneration
+
         let report = await environment.readiness(alarmKitSupported: alarmKitSupported)
+
+        // A newer arrival started while this one was suspended; its answer is the current one,
+        // whether it has landed yet or not, so this one publishes nothing at all.
+        guard generation == readinessGeneration else { return }
+
         let unhealthy = report.readiness == .ok ? nil : report
         reminderReadiness = unhealthy
         state.reminderReadiness = unhealthy

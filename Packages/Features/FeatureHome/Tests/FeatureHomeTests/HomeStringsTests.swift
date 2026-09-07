@@ -135,14 +135,19 @@ struct HomeStringsTests {
     @Test("Android's two dead keys are deliberately absent")
     func androidsDeadKeysAreAbsent() throws {
         // `home_title` (the shell owns the title) and `home_settings` (the settings gear Android's
-        // M9 removed) are declared in both `values/` and `values-en/` and referenced by no
-        // `R.string.*` in `HomeScreen.kt`. Porting them would add two keys the pin above carries
-        // and no accessor asks for, so the catalog is 34 where the XML is 36 — on purpose.
+        // M9 removed) were declared in both `values/` and `values-en/` and read by no `R.string.*`
+        // in `HomeScreen.kt`. iOS never ported them; Android has since deleted them itself
+        // (`aebb056`), so both XMLs hold 34 `<string>` entries today — the same count as this
+        // catalog, with neither dead key on either side.
+        //
+        // Only assertions that can fail live here. A third line used to pin
+        // `expectedKeys.count + deadAndroidKeys.count == 36` and claim the XML declared 36: it was
+        // 34 + 2 over two constants of this file, true whatever either catalog holds, and the
+        // claim was wrong besides.
         let catalog = try Self.loadCatalog()
 
         #expect(catalog.keys.isDisjoint(with: Self.deadAndroidKeys))
         #expect(Self.expectedKeys.isDisjoint(with: Self.deadAndroidKeys))
-        #expect(Self.expectedKeys.count + Self.deadAndroidKeys.count == 36)
     }
 
     @Test("Turkish is the source language and every key has both tr and en (spec 6.4)")

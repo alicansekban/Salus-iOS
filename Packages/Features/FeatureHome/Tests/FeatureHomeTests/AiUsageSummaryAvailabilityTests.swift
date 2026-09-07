@@ -51,8 +51,8 @@ struct AiUsageSummaryAvailabilityTests {
     /// `.bufferingNewest(1)` means a duplicate `true` yielded by `recordCall` is overwritten by the
     /// `false` that follows it, so a consumer that only wakes at the end reads `[true, false]`
     /// whether the guard is there or not. Here a task drains every element as it arrives and
-    /// `settle()` — a bounded run of the cooperative pool, `WaitUntil.swift`'s mechanism without
-    /// its condition — gives it the turn it needs *between* the two writes. Verified RED by
+    /// `settle()` (`Settle.swift`) — a bounded run of the cooperative pool, `WaitUntil.swift`'s
+    /// mechanism without its condition — gives it the turn it needs *between* the two writes. Verified RED by
     /// deleting `guard available != lastSent`: the middle expectation then reads `[true, true]`.
     @Test("a usage change that leaves the credit alone emits nothing", .timeLimit(.minutes(1)))
     func aUsageChangeThatLeavesTheCreditAloneEmitsNothing() async throws {
@@ -115,18 +115,5 @@ private actor Collected {
 
     func append(_ value: Bool) {
         values.append(value)
-    }
-}
-
-/// Hands the cooperative pool enough turns for everything already runnable to finish.
-///
-/// The same mechanism as `FeatureCycleTests/WaitUntil.swift` — `Task.yield()` in a bounded loop,
-/// never wall-clock time — without its condition, because what is being asserted here is that
-/// *nothing* arrives: there is no state to wait for, only a point after which "not yet" means
-/// "never". The bound is far above the two hops a healthy run needs (the wrapper's task, then the
-/// collector's), and it costs nothing when they are already done.
-private func settle(turns: Int = 500) async {
-    for _ in 0 ..< turns {
-        await Task.yield()
     }
 }

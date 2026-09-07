@@ -11,7 +11,7 @@
 import Foundation
 import SalusReminder
 
-/// A `ReminderEnvironment` whose three answers a test sets.
+/// A `ReminderEnvironment` whose three answers a test sets, and which counts what it was asked.
 final class FakeReminderEnvironment: ReminderEnvironment, @unchecked Sendable {
     private let lock = NSLock()
 
@@ -19,8 +19,18 @@ final class FakeReminderEnvironment: ReminderEnvironment, @unchecked Sendable {
     private let alarmKit: Bool
     private let backgroundRefresh: Bool
 
-    /// How many times the editor asked, so a test can prove the as-needed medication never does.
-    private(set) var readCount = 0
+    private var reads: [Read: Int] = [:]
+
+    /// Which of the three answers the editor asked for, so a test can prove the as-needed
+    /// medication never asks. Per method rather than one total, and the same shape as
+    /// `FeatureHomeTests/FakeReminderEnvironment.swift`: a single counter that only rose in
+    /// `notificationsAuthorized()` could not tell "never asked" apart from "asked one of the other
+    /// two", which is the whole point of the assertion.
+    enum Read: Hashable {
+        case notifications
+        case alarmKit
+        case backgroundRefresh
+    }
 
     init(notifications: Bool = true, alarmKit: Bool = true, backgroundRefresh: Bool = true) {
         self.notifications = notifications
@@ -30,16 +40,27 @@ final class FakeReminderEnvironment: ReminderEnvironment, @unchecked Sendable {
 
     func notificationsAuthorized() async -> Bool {
         lock.withLock {
-            readCount += 1
+            reads[.notifications, default: 0] += 1
             return notifications
         }
     }
 
     func alarmKitAuthorized() async -> Bool {
-        lock.withLock { alarmKit }
+        lock.withLock {
+            reads[.alarmKit, default: 0] += 1
+            return alarmKit
+        }
     }
 
     func backgroundRefreshAvailable() -> Bool {
-        lock.withLock { backgroundRefresh }
+        lock.withLock {
+            reads[.backgroundRefresh, default: 0] += 1
+            return backgroundRefresh
+        }
+    }
+
+    /// How many times one of the three answers was asked for.
+    func readCount(of read: Read) -> Int {
+        lock.withLock { reads[read, default: 0] }
     }
 }

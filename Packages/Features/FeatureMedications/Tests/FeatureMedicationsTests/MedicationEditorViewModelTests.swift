@@ -233,7 +233,11 @@ struct MedicationEditorViewModelTests {
         await waitUntil("the editor to pop") { navigator.commandLog == [.pop] }
 
         #expect(viewModel.state.reminderWarning == nil)
-        #expect(environment.readCount == 0)
+        // None of the three, not merely no notification read: an as-needed medication has no
+        // occurrence to schedule, so the editor never touches the environment at all.
+        #expect(environment.readCount(of: .notifications) == 0)
+        #expect(environment.readCount(of: .alarmKit) == 0)
+        #expect(environment.readCount(of: .backgroundRefresh) == 0)
         navigator.stop()
     }
 

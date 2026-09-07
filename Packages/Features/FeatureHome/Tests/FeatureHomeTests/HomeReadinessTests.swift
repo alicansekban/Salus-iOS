@@ -5,9 +5,10 @@
 // **The first three cases are Kotlin's** (`HomeViewModelTest.kt:227-276`), with one substitution
 // the iOS ruling forces: Android's soft problem is `BATTERY_OPTIMIZED`, which has no iOS twin, so
 // the degraded case denies AlarmKit instead (`ReminderReadiness.swift` — on iOS `notificationsOff`
-// is the only hard problem). The remaining four have no Kotlin twin and cover what iOS added: the
-// AlarmKit availability flag, the shell's foreground arm, and the fact that a repository emission
-// must not clear a standing report.
+// is the only hard problem). The remaining five have no Kotlin twin and cover what iOS added: the
+// AlarmKit availability flag, the shell's foreground arm, the fact that a repository emission must
+// not clear a standing report, and the generation guard that decides which of two overlapping
+// reads publishes — a question Kotlin never has to answer, because its environment read blocks.
 
 import Foundation
 import SalusCommon
@@ -57,6 +58,15 @@ struct HomeReadinessTests {
     /// all: below iOS 26 the environment is never asked about AlarmKit, and a denial there is not
     /// something the user could act on.
     private func viewModel(alarmKitSupported: Bool = true) -> HomeViewModel {
+        viewModel(environment: environment, alarmKitSupported: alarmKitSupported)
+    }
+
+    /// The same graph around a different environment, for the one case that needs reads it can
+    /// hold open rather than answers it can set.
+    private func viewModel(
+        environment: any ReminderEnvironment,
+        alarmKitSupported: Bool = true
+    ) -> HomeViewModel {
         HomeViewModel(
             repository: repository,
             aiSummaryAvailability: freeAiCredit,
@@ -143,6 +153,13 @@ struct HomeReadinessTests {
 
         await settle()
         #expect(viewModel.state.reminderReadiness == nil)
+        // The healthy card is only half of it: a run that asked AlarmKit and then discarded a
+        // denial it could not act on would look exactly the same from the state. This is the half
+        // that says the question was never put.
+        #expect(environment.readCount(of: .alarmKit) == 0)
+        // And the read did happen — otherwise the line above would pass on a ViewModel that never
+        // touched the environment at all.
+        #expect(environment.readCount(of: .notifications) == 1)
     }
 
     /// The shell's `.active` arm is the same arrival as an appearance — the one thing
@@ -194,12 +211,39 @@ struct HomeReadinessTests {
         #expect(viewModel.state.reminderReadiness?.readiness == .broken)
     }
 
-    /// Lets every already-queued `Task` run, so "nothing was published" is a measurement rather
-    /// than a race. The twin of Turbine's `expectNoEvents()`, which is what the two cases above
-    /// would say in Kotlin.
-    private func settle() async {
-        for _ in 0 ..< 100 {
-            await Task.yield()
-        }
+    /// Two arrivals can be in flight at once — the Route's `.task` and the shell's foreground arm,
+    /// or two foreground returns in a row — and `UNUserNotificationCenter` answers through a
+    /// callback whose latency nobody controls, so the second can finish before the first. What
+    /// decides the card is then whichever read *landed* last rather than whichever *started* last,
+    /// and the answer the user is looking at is one arrival out of date.
+    ///
+    /// Verified RED by deleting `refreshReminderReadiness()`'s
+    /// `guard generation == readinessGeneration`: the card the second read raised disappears again
+    /// when the first, healthy read finally resolves.
+    @Test("an out-of-order read does not overwrite the latest readiness answer")
+    func anOutOfOrderReadDoesNotOverwriteTheLatestReadinessAnswer() async {
+        // Read 0 finds a healthy device; read 1, the later arrival, finds notifications denied.
+        let environment = GatedReminderEnvironment(notifications: [true, false])
+        let viewModel = viewModel(environment: environment)
+
+        _ = await loadedState(viewModel)
+
+        // Both arrivals are started, and both are parked inside the environment. Waiting for each
+        // read to begin before starting the next is what makes "read 0" the earlier one.
+        viewModel.onEvent(.appeared)
+        await waitUntil("the first read to start") { environment.startedReads == 1 }
+        viewModel.onEvent(.appeared)
+        await waitUntil("the second read to start") { environment.startedReads == 2 }
+
+        // The later arrival answers first, and its report is the one the card draws.
+        environment.release(1)
+        await waitUntil("the latest report") { viewModel.state.reminderReadiness != nil }
+        #expect(viewModel.state.reminderReadiness?.readiness == .broken)
+
+        // The earlier one lands afterwards. It is stale, so its healthy answer publishes nothing.
+        environment.release(0)
+        await settle()
+        #expect(viewModel.state.reminderReadiness?.readiness == .broken)
+        #expect(viewModel.state.reminderReadiness?.problems == [.notificationsOff])
     }
 }
