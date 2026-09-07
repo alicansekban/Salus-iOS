@@ -141,21 +141,6 @@ struct AboutScreen: View {
             .padding(SalusSpacing.lg)
         }
         .background(colors.background)
-        // The reveal gesture lives on the navigation title, the iOS twin of the Android TopAppBar
-        // title `Text` with `Modifier.clickable { onEvent(AboutEvent.TitleTapped) }`
-        // (`AboutScreen.kt:83-86`): five consecutive taps on the title show the support code.
-        // `navigationTitle` takes a `LocalizedStringKey`, so the tappable `Text` is drawn in the
-        // toolbar alongside it and carries the same verbatim string.
-        .toolbar {
-            ToolbarItem(placement: .principal) {
-                // The taps go through a Text with hidden accessibility: the title itself already
-                // tells VoiceOver users where they are, and the gesture is a developer-only
-                // backdoor — repeating it twice would be a needless announcement.
-                Text(verbatim: SettingsStrings.aboutTitle)
-                    .accessibilityHidden(true)
-                    .onTapGesture { onEvent(.titleTapped) }
-            }
-        }
         .navigationTitle(SettingsStrings.aboutTitle)
         #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
@@ -177,6 +162,10 @@ private struct PremiumStatusCard: View {
     private var colors: SalusColorScheme { theme.colorScheme }
 
     var body: some View {
+        // The reveal gesture: five consecutive taps on this card show the support code. The card
+        // is the most natural tap target — it is the thing the user is looking at when they want
+        // their premium status, and a trusted user is told "tap your subscription card five times"
+        // (`AboutScreen.kt:152-156`).
         SalusCard(contentPadding: SalusSpacing.lg) {
             VStack(alignment: .leading, spacing: 0) {
                 Text(verbatim: SettingsStrings.supportPremiumStatusTitle)
@@ -232,7 +221,9 @@ private struct PremiumStatusCard: View {
                     }
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .onTapGesture { onEvent(.titleTapped) }
     }
 
     /// `when (state.premiumStatus)` (`AboutScreen.kt:163-167`): `gracePeriod` reads as active.
