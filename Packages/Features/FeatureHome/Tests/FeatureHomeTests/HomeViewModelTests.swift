@@ -22,6 +22,11 @@
 // as `PremiumStatus.PREMIUM` does on Android. iOS-M9 delivered the production binding
 // (`PremiumRepositoryHomePremiumStatus` over the real `PremiumRepository`), resolving divergence (d).
 //
+// **The three readiness cases are Kotlin's** (`HomeViewModelTest.kt:227-276`), with one iOS
+// substitution the ruling in Task 1 forces: Android's soft problem is `BATTERY_OPTIMIZED`, which
+// has no iOS twin, so the degraded case denies AlarmKit instead. The hard problem is
+// `NOTIFICATIONS_OFF` on both sides, and on iOS it is the only one.
+//
 // The two iOS-only cases cover what plan ruling 3 replaced `SharingStarted.WhileSubscribed(5_000)`
 // with, and the greeting table Kotlin never asserts:
 //   - `restartObservation()` re-runs `observeTodayOverview()`, which re-captures the clock, so a
@@ -31,6 +36,7 @@
 import Foundation
 import SalusCommon
 import SalusModel
+import SalusReminder
 import SalusTesting
 import Testing
 
@@ -75,19 +81,28 @@ struct HomeViewModelTests {
     /// `HomeViewModelTest.kt:86` — `PremiumStatus.FREE`.
     private let premiumStatus = FakeHomePremiumStatus(isPremium: false)
     private let doseActions = RecordingDoseActions()
+    /// `HomeViewModelTest.kt:126` — a healthy device. The cases that make it unhealthy live in
+    /// `HomeReadinessTests.swift`, which the 500-line file limit split off.
+    private let environment = FakeReminderEnvironment()
     /// A throwaway defaults suite for the review counters; the review cases live in
     /// `HomeReviewPromptTests`, this one only has to exist.
     private let preferences = ReviewPromptFixture.makePreferences()
     private let foreground = AppForegroundSignal()
 
     /// `HomeViewModelTest.kt:94-100`.
-    private func viewModel(clock: FixedSalusClock? = nil) -> HomeViewModel {
+    ///
+    /// `alarmKitSupported` defaults to true so the degraded case has a soft problem to find at
+    /// all: below iOS 26 the environment is never asked about AlarmKit, and a denial there is not
+    /// something the user could act on.
+    private func viewModel(clock: FixedSalusClock? = nil, alarmKitSupported: Bool = true) -> HomeViewModel {
         HomeViewModel(
             repository: repository,
             aiSummaryAvailability: freeAiCredit,
             premiumStatus: premiumStatus,
             clock: clock ?? self.clock,
             doseActions: doseActions,
+            environment: environment,
+            alarmKitSupported: alarmKitSupported,
             preferences: preferences,
             foreground: foreground
         )

@@ -127,7 +127,13 @@ struct RootNavigationStack: View {
                     // feature's to name, so the shell pushes it through the navigator the same way
                     // it pushes `CycleKey` above — registering the destination is
                     // `aiHealthDestinations()` below.
-                    onOpenAiSummary: { root.navigator.navigate(AiSummaryKey()) }
+                    onOpenAiSummary: { root.navigator.navigate(AiSummaryKey()) },
+                    // The readiness card. `ReminderHealthKey` belongs to `FeatureSettings`, so the
+                    // shell is what pushes it — onto THIS stack, the one the dashboard is on, which
+                    // is why `settingsDestinations()` and the settings module appear below. No pop
+                    // first, unlike the medication editor's Fix: the dashboard is a tab root and
+                    // there is nothing above it to replace.
+                    onOpenReminderHealth: { root.navigator.navigate(ReminderHealthKey()) }
                 )
                 // `cycleDestinations()` stays on this stack because two things now push `CycleKey`
                 // onto it: the card above, and a tapped cycle reminder, which `RootTab.hosting`
@@ -146,6 +152,12 @@ struct RootNavigationStack: View {
                 // The AI summary card pushes `AiSummaryKey` onto this stack, so the destination is
                 // registered here.
                 .aiHealthDestinations()
+                // Registered here as well as on the More and medications stacks, because the
+                // readiness card can now push `ReminderHealthKey` onto this one and SwiftUI
+                // resolves `navigationDestination(for:)` per stack. `ProfileKey` and `AboutKey`
+                // ride along — the modifier is that feature's whole registrar — and neither is
+                // reachable from here.
+                .settingsDestinations()
             }
             // On the stack, not inside its root — the pushed `CycleKey` and `AiSummaryKey`
             // destinations are rendered by the stack, so an environment value set on the root view
@@ -153,6 +165,9 @@ struct RootNavigationStack: View {
             .environment(\.homeModule, root.homeModule)
             .environment(\.cycleModule, root.cycleModule)
             .environment(\.aiHealthModule, root.aiHealthModule)
+            // What a pushed `ReminderHealthRoute` reads, for the same reason the three lines above
+            // exist.
+            .environment(\.settingsModule, root.settingsModule)
         }
         // No `default:` clause on purpose: `RootTab` lives in this target, so an exhaustive switch
         // is what makes a sixth tab added to the enum land as a compile error here rather than as a

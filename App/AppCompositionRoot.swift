@@ -128,7 +128,8 @@ final class AppCompositionRoot {
     /// `homeModule` (`feature/home/.../di/HomeModule.kt`), built once and handed to the Home tab
     /// through the environment. Its `TodayRepository` joins what the other modules own, and its
     /// "Al" button is Medications' `MarkDoseTakenUseCase`, reached through
-    /// ``MedicationsModule/makeMarkDoseTakenUseCase()`` in ``makeHomeGraph(infrastructure:medications:)``.
+    /// ``MedicationsModule/makeMarkDoseTakenUseCase()`` in
+    /// ``makeHomeGraph(infrastructure:medications:homePremiumStatus:reminderBase:)``.
     let homeModule: HomeModule
 
     /// `aiHealthModule` (`feature/aihealth/.../di/AiHealthModule.kt`), built once and injected on
@@ -441,7 +442,8 @@ final class AppCompositionRoot {
                 medications: scheduled.medications,
                 homePremiumStatus: PremiumRepositoryHomePremiumStatus(
                     premiumRepository: premium.premiumRepository
-                )
+                ),
+                reminderBase: reminderBase
             ),
             onboarding: makeOnboardingGraph(infrastructure: infrastructure, vitals: vitals),
             aiHealth: makeAiHealthGraph(infrastructure: infrastructure, premium: premium),

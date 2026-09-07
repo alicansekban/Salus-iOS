@@ -273,6 +273,40 @@
         }
       }
     },
+    "home_reminders_broken_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alarms will not fire"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alarmlar çalışmayacak"
+          }
+        }
+      }
+    },
+    "home_reminders_degraded_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alarms may be late"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alarmlar gecikebilir"
+          }
+        }
+      }
+    },
     "home_take_dose" : {
       "extractionState" : "manual",
       "localizations" : {

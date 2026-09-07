@@ -25,6 +25,7 @@ import SalusCommon
 import SalusDatabase
 import SalusModel
 import SalusProfile
+import SalusReminder
 import SalusSettings
 import SwiftUI
 
@@ -38,12 +39,16 @@ public struct HomeModule {
     public let makeHomeViewModel: @MainActor () -> HomeViewModel
 }
 
-// The twelve parameters are the eleven things Koin resolves inside `homeModule` (`HomeModule.kt:12-21`):
+// The fourteen parameters are the eleven things Koin resolves inside `homeModule`
+// (`HomeModule.kt:12-21`) plus three iOS-only ones:
 // the seven `get()` values `TodayRepositoryImpl` takes (medicationDao, appointmentDao, cycleDao,
 // vitalsDao, preferences, clock, profileRepository) plus the profile id, which Koin passes as a
 // literal, plus the three `viewModelOf(::HomeViewModel)` resolves that the factory passes on
-// (aiUsage, homePremiumStatus, doseActions) — clock is shared between the two — plus the iOS-only
-// `AppForegroundSignal` the review prompt listens to (`HomeViewModel.swift`).
+// (aiUsage, homePremiumStatus, doseActions) — clock is shared between the two — plus the reminder
+// environment and the AlarmKit availability the dashboard's readiness card classifies from, which
+// Android's `homeModule` resolves as one `get()` because Kotlin needs no second flag, and the
+// `AppForegroundSignal` both the review prompt and the readiness re-read hang off
+// (`HomeViewModel.swift`).
 // Bundling them into a "dependencies" struct would be a second shape for the composition root's own
 // properties. The rule is waived here rather than the signature bent, exactly as
 // `makeVitalsModule` and `makeAppointmentsModule` waive it.
@@ -64,6 +69,8 @@ public func makeHomeModule(
     homePremiumStatus: any HomePremiumStatus,
     clock: any SalusClock,
     doseActions: any DoseActions,
+    reminderEnvironment: any ReminderEnvironment,
+    alarmKitSupported: Bool,
     profileId: String = SalusDatabase.defaultProfileId,
     profileRepository: any ProfileRepository,
     foreground: AppForegroundSignal
@@ -90,6 +97,10 @@ public func makeHomeModule(
                 premiumStatus: homePremiumStatus,
                 clock: clock,
                 doseActions: doseActions,
+                // The same environment and the same AlarmKit answer Reminder Health and the
+                // medication editor are handed, so no two surfaces can disagree about the device.
+                environment: reminderEnvironment,
+                alarmKitSupported: alarmKitSupported,
                 preferences: preferences,
                 foreground: foreground
             )

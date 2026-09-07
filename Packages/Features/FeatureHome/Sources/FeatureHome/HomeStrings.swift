@@ -1,14 +1,14 @@
 // The twin of `feature/home/src/main/res/values/strings.xml` (Turkish, the source language) and
-// `feature/home/src/main/res/values-en/strings.xml` — 32 of the 34 keys `:feature:home` declares,
-// name and text verbatim, resolved against this package's own bundle exactly as `R.string`
-// resolves against `:feature:home`.
+// `feature/home/src/main/res/values-en/strings.xml` — all 34 keys `:feature:home` declares, name
+// and text verbatim, resolved against this package's own bundle exactly as `R.string` resolves
+// against `:feature:home`.
 //
-// TWO ANDROID KEYS ARE DELIBERATELY NOT HERE, and the omission is the point: `home_title` and
-// `home_settings` are declared in both locales and read by nothing — `HomeScreen.kt` names neither.
-// They are leftovers of Android's M9, which removed the settings gear and moved the title to the
-// shell. Porting them would put two keys in the catalog and in the key-set pin that no accessor
-// ever asks for, so the pin here is 32 where Android's XML is 34. If Android ever deletes them,
-// nothing on this side changes.
+// TWO ANDROID KEYS WERE DELIBERATELY NOT PORTED, and the omission is still the point: `home_title`
+// and `home_settings` were declared in both locales and read by nothing — `HomeScreen.kt` named
+// neither. They were leftovers of Android's M9, which removed the settings gear and moved the
+// title to the shell. Porting them would have put two keys in the catalog and in the key-set pin
+// that no accessor ever asks for. Android deleted them itself in `aebb056`, so the two key sets
+// are now the same 34; `HomeStringsTests` keeps the guard that neither comes back here alone.
 //
 // PLACEHOLDER MAPPING, the one place the port is not byte-for-byte. Android's specifiers are
 // Java's; nine keys carry them, and each is rewritten to the Swift spelling of the same argument:
@@ -86,6 +86,13 @@ public enum HomeStrings {
         formatted(.doseProgress, taken, total)
     }
 
+    // MARK: - The reminder readiness card (2)
+
+    /// `home_reminders_broken_title` — "Alarmlar çalışmayacak" / "Alarms will not fire".
+    public static var remindersBrokenTitle: String { localized(.remindersBrokenTitle) }
+    /// `home_reminders_degraded_title` — "Alarmlar gecikebilir" / "Alarms may be late".
+    public static var remindersDegradedTitle: String { localized(.remindersDegradedTitle) }
+
     // MARK: - The AI summary card (3)
 
     public static var aiSummaryTitle: String { localized(.aiSummaryTitle) }
@@ -152,8 +159,8 @@ public enum HomeStrings {
     /// The catalog keys, named once. Internal so the parity test can prove every accessor asks for
     /// a key the catalog really carries — a typo here would otherwise ship the key as the label.
     ///
-    /// Android's `home_title` and `home_settings` are absent on purpose: both are dead there (no
-    /// `R.string` reads either since Android's M9), so this enum has 32 cases where the XML has 34.
+    /// Android's `home_title` and `home_settings` were never ported (both were dead there, and
+    /// Android has since deleted them), so this enum and the XML are the same 34 keys.
     enum Key: String, CaseIterable {
         // The header: greeting and the card action (9).
         case greetingMorning = "home_greeting_morning"
@@ -166,6 +173,10 @@ public enum HomeStrings {
         case greetingNightPlain = "home_greeting_night_plain"
         case viewDetails = "home_view_details"
         case doseProgress = "home_dose_progress"
+
+        // The reminder readiness card (2).
+        case remindersBrokenTitle = "home_reminders_broken_title"
+        case remindersDegradedTitle = "home_reminders_degraded_title"
 
         // The AI summary card (3).
         case aiSummaryTitle = "home_ai_summary_title"

@@ -26,10 +26,20 @@
 // (`HomeViewModel.kt:18-19`, `:30-31`); iOS takes ``HomeAiSummaryAvailability`` and
 // ``HomePremiumStatus``, one property apiece — see those two files for why. `premiumStatus.isEntitled`
 // is therefore already collapsed to a boolean at the boundary rather than re-derived here.
+//
+// **The reminder readiness is not part of the join, and on Android it is.** Kotlin combines a
+// fourth source — a `MutableStateFlow<ReminderReadinessReport?>` — into the `combine` that builds
+// the state, because a `StateFlow` is the only way its state can change. Here the state is an
+// `@Observable` property this class owns outright, so ``refreshReminderReadiness()`` writes the
+// field on the standing state directly and ``publish(overview:freeAiSummaryAvailable:isPremium:)``
+// carries the stored answer forward. Same two rules on both sides: the device is re-read on every
+// ``HomeEvent/appeared`` and never as part of a repository emission, and a healthy device is
+// stored as nil so no card is drawn.
 
 import Observation
 import SalusCommon
 import SalusModel
+import SalusReminder
 import SalusSettings
 
 /// Drives the dashboard (`HomeViewModel.kt:18-69`).
@@ -49,8 +59,18 @@ public final class HomeViewModel {
     private let premiumStatus: any HomePremiumStatus
     private let clock: any SalusClock
     private let doseActions: any DoseActions
+    private let environment: any ReminderEnvironment
+    /// Whether this OS has AlarmKit at all, decided by the shell — see
+    /// ``SalusReminder/ReminderEnvironment/readiness(alarmKitSupported:)``, which stays pure by
+    /// never asking.
+    private let alarmKitSupported: Bool
     private let preferences: SalusPreferencesDataSource
     private let foreground: AppForegroundSignal
+
+    /// The last answer ``refreshReminderReadiness()`` got, nil for a healthy device. Held apart
+    /// from ``state`` so a repository emission republishes it instead of clearing it — Kotlin gets
+    /// the same by making it the fourth `combine` source (`HomeViewModel.kt:47`).
+    private var reminderReadiness: ReminderReadinessReport?
 
     /// The collection. Boxed so `deinit` can cancel it — see `CancellationBox`.
     private let observation = CancellationBox()
@@ -60,15 +80,20 @@ public final class HomeViewModel {
     /// is — Android's `LifecycleResumeEffect` only fires for the composed tab, and this is its twin.
     @ObservationIgnored private var isVisible = false
 
-    /// Seven parameters: the five Koin resolves for `viewModelOf(::HomeViewModel)`
-    /// (`HomeModule.kt:22`), in the Kotlin order, plus the review prompt's two — the preferences
-    /// that hold its counters and the shell's foreground signal (`AppForegroundSignal`, iOS-only).
+    /// Nine parameters: the five Koin resolves for `viewModelOf(::HomeViewModel)`
+    /// (`HomeModule.kt:22`), in the Kotlin order, plus the readiness card's two — the environment
+    /// Kotlin also takes (`HomeViewModel.kt:40`) and the AlarmKit availability that has no Kotlin
+    /// twin, because AlarmKit exists only from iOS 26 and the classification refuses to decide
+    /// that itself — plus the review prompt's two: the preferences that hold its counters and the
+    /// shell's foreground signal (`AppForegroundSignal`, iOS-only).
     public init(
         repository: any TodayRepository,
         aiSummaryAvailability: any HomeAiSummaryAvailability,
         premiumStatus: any HomePremiumStatus,
         clock: any SalusClock,
         doseActions: any DoseActions,
+        environment: any ReminderEnvironment,
+        alarmKitSupported: Bool,
         preferences: SalusPreferencesDataSource,
         foreground: AppForegroundSignal
     ) {
@@ -77,6 +102,8 @@ public final class HomeViewModel {
         self.premiumStatus = premiumStatus
         self.clock = clock
         self.doseActions = doseActions
+        self.environment = environment
+        self.alarmKitSupported = alarmKitSupported
         self.preferences = preferences
         self.foreground = foreground
         restartObservation()
@@ -101,8 +128,13 @@ public final class HomeViewModel {
         }
     }
 
-    /// The shell's `.active` arm reached this ViewModel (through `AppForegroundSignal`). Counts as
-    /// an open only while the dashboard is showing.
+    /// The shell's `.active` arm reached this ViewModel (through `AppForegroundSignal`).
+    ///
+    /// A subscription rather than a second `scenePhase` reader: `SalusApp` owns the one `onChange`
+    /// the graph is driven from (`SalusApp.swift`), and SwiftUI does not re-run a `.task` for a
+    /// foreground return — so without this the dashboard would keep showing a card for a permission
+    /// the user has just gone to Settings and granted. Counts as an open only while the dashboard
+    /// is showing.
     public func sceneDidBecomeActive() {
         guard isVisible else { return }
         onEvent(.appeared)
@@ -120,12 +152,19 @@ public final class HomeViewModel {
         return drained
     }
 
-    /// `HomeViewModel.kt:47-58`, plus `.appeared` for the review prompt.
+    /// `HomeViewModel.kt:47-58`, plus `.appeared` for the readiness card and the review prompt.
     public func onEvent(_ event: HomeEvent) {
         switch event {
         case .appeared:
             isVisible = true
             requestReviewIfDue()
+            // Device state the user toggles outside our process, re-read on every arrival
+            // (`HomeViewModel.kt:92-94`). `readiness` is `async` here where Kotlin's is blocking —
+            // `UNUserNotificationCenter` only answers through a callback — so it is a `Task`, and a
+            // second `.appeared` before the first finishes simply writes the same answer twice.
+            Task { [weak self] in
+                await self?.refreshReminderReadiness()
+            }
 
         case let .takeDose(scheduleId, minuteOfDay):
             // Read here rather than inside the task: Kotlin reads the clock inside the coroutine,
@@ -208,6 +247,22 @@ public final class HomeViewModel {
         pendingEffects.append(.requestReview)
     }
 
+    /// Re-reads the device and stores the answer (`HomeViewModel.kt:112-115`).
+    ///
+    /// A healthy device is stored as nil, which is what makes the card disappear on the arrival
+    /// after the user fixed the setting: the screen draws the card for a non-nil report and for
+    /// nothing else, so "no problems" and "not asked yet" are deliberately the same state.
+    ///
+    /// Both the field and the standing state are written, because a report that only reached the
+    /// field would wait for the next repository emission to be seen — and the join emits when the
+    /// data changes, which a permission grant does not do.
+    private func refreshReminderReadiness() async {
+        let report = await environment.readiness(alarmKitSupported: alarmKitSupported)
+        let unhealthy = report.readiness == .ok ? nil : report
+        reminderReadiness = unhealthy
+        state.reminderReadiness = unhealthy
+    }
+
     /// `combine`'s lambda (`HomeViewModel.kt:30-40`).
     private func publish(overview: TodayOverview, freeAiSummaryAvailable: Bool, isPremium: Bool) {
         state = HomeUiState(
@@ -222,7 +277,10 @@ public final class HomeViewModel {
             cycle: overview.cycle,
             vitals: overview.vitals,
             freeAiSummaryAvailable: freeAiSummaryAvailable,
-            isPremium: isPremium
+            isPremium: isPremium,
+            // Carried forward rather than re-read: the device is asked on `.appeared` only, and a
+            // repository emission is not one. Kotlin's fourth `combine` source does the same.
+            reminderReadiness: reminderReadiness
         )
     }
 

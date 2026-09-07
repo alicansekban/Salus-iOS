@@ -26,6 +26,7 @@ let package = Package(
         .package(path: "../../SalusAI"),
         .package(path: "../../SalusPremium"),
         .package(path: "../../SalusProfile"),
+        .package(path: "../../SalusReminder"),
         .package(path: "../../SalusTesting")
     ],
     targets: [
@@ -41,7 +42,10 @@ let package = Package(
                 .product(name: "SalusSettings", package: "SalusSettings"),
                 .product(name: "SalusAI", package: "SalusAI"),
                 .product(name: "SalusPremium", package: "SalusPremium"),
-                .product(name: "SalusProfile", package: "SalusProfile")
+                .product(name: "SalusProfile", package: "SalusProfile"),
+                // The dashboard's readiness card: `ReminderEnvironment.readiness(alarmKitSupported:)`
+                // and the `ReminderProblem.reason` sentence under it.
+                .product(name: "SalusReminder", package: "SalusReminder")
             ],
             resources: [
                 .process("Resources")

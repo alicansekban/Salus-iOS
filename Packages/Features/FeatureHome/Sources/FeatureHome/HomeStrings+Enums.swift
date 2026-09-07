@@ -14,9 +14,10 @@
 // This lives in a separate file rather than in `HomeStrings.swift` for one reason: the accessors
 // there are a flat transcription of the Android XML, and mixing switches over feature enums into it
 // would make the key list stop reading as one. It is also why this file, not that one, imports
-// `SalusModel`.
+// `SalusModel` — and, since the readiness card, `SalusReminder`.
 
 import SalusModel
+import SalusReminder
 
 extension HomeStrings {
     /// The header's greeting without a name (`HomeScreen.kt`'s `when (state.greeting)`), the
@@ -48,6 +49,21 @@ extension HomeStrings {
         case .snoozed: doseStatusSnoozed
         case .pending: doseStatusPending
         case .missed: doseStatusMissed
+        }
+    }
+
+    /// The reminder readiness card's title (`HomeScreen.kt:582-590`'s `when (report.readiness)`).
+    ///
+    /// **``ReminderReadiness/ok`` traps, exactly as Kotlin's `error(...)` arm does.** The card is
+    /// drawn only for a non-nil ``HomeUiState/reminderReadiness``, and `HomeViewModel` stores nil
+    /// for a healthy device — so reaching this arm means the ViewModel's own rule was broken, and
+    /// a silently plausible title would hide that until someone read the screen. A returned
+    /// optional would push the same decision into the view and lose the exhaustiveness.
+    public static func remindersTitle(_ readiness: ReminderReadiness) -> String {
+        switch readiness {
+        case .broken: remindersBrokenTitle
+        case .degraded: remindersDegradedTitle
+        case .ok: preconditionFailure("the reminder readiness card is not drawn for .ok")
         }
     }
 

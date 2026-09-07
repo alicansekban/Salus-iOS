@@ -5,13 +5,14 @@ import Testing
 @testable import FeatureHome
 
 /// The twin of Android's `feature/home/src/main/res/values/strings.xml` (`tr`, the source
-/// language) and `values-en/strings.xml`, and the drift detector between them: the 32 ported keys
+/// language) and `values-en/strings.xml`, and the drift detector between them: the 34 ported keys
 /// and both of their translations are pinned here, copied from the XML.
 ///
-/// 32, not the XML's 34: `home_title` and `home_settings` are declared on Android and read by
-/// nothing there, so neither is ported — see the header of `HomeStrings.swift`. The gap is
-/// asserted below rather than only commented, so a later "let's port the missing two" arrives as a
-/// failing test with the reason attached.
+/// **34 on both sides now.** iOS deliberately never ported `home_title` and `home_settings`,
+/// which Android declared and read nowhere; Android has since deleted them itself (`aebb056`), so
+/// the two catalogs finally hold the same key set. The disjointness assertion below stays as the
+/// guard it always was — if either key ever comes back, it comes back on both sides on purpose or
+/// not at all.
 ///
 /// The catalog is read off disk rather than through `Bundle.module`. Android's own parity checks
 /// read the XML for the first reason: `String(localized:)` answers for ONE locale — the host's —
@@ -43,6 +44,17 @@ struct HomeStringsTests {
             key: "home_dose_progress",
             turkish: "Bugünün ilerlemesi %1$lld/%2$lld",
             english: "Today's progress %1$lld/%2$lld"
+        ),
+        // The reminder readiness card (2).
+        HomeStringSample(
+            key: "home_reminders_broken_title",
+            turkish: "Alarmlar çalışmayacak",
+            english: "Alarms will not fire"
+        ),
+        HomeStringSample(
+            key: "home_reminders_degraded_title",
+            turkish: "Alarmlar gecikebilir",
+            english: "Alarms may be late"
         ),
         // The AI summary card (3).
         HomeStringSample(key: "home_ai_summary_title", turkish: "Yapay zekâ özeti", english: "AI summary"),
@@ -107,15 +119,15 @@ struct HomeStringsTests {
 
     static let expectedKeys = Set(samples.map(\.key))
 
-    /// The two keys Android declares and nobody reads. Named here so the omission is a pinned
-    /// decision rather than something that looks like a forgotten row.
+    /// The two keys Android used to declare and nobody read. Named here so the omission stays a
+    /// pinned decision rather than something that looks like a forgotten row.
     static let deadAndroidKeys: Set = ["home_title", "home_settings"]
 
-    @Test("the catalog holds exactly the 32 keys ported from :feature:home")
-    func catalogHoldsExactlyTheThirtyTwoKeys() throws {
+    @Test("the catalog holds exactly the 34 keys ported from :feature:home")
+    func catalogHoldsExactlyTheThirtyFourKeys() throws {
         // Pinned as a number as well as a set: a row deleted from the table together with its key
         // from the catalog would otherwise agree with itself and pass.
-        #expect(Self.samples.count == 32)
+        #expect(Self.samples.count == 34)
 
         try StringCatalogParity.assertKeys(of: Self.loadCatalog(), are: Self.expectedKeys)
     }
@@ -125,12 +137,12 @@ struct HomeStringsTests {
         // `home_title` (the shell owns the title) and `home_settings` (the settings gear Android's
         // M9 removed) are declared in both `values/` and `values-en/` and referenced by no
         // `R.string.*` in `HomeScreen.kt`. Porting them would add two keys the pin above carries
-        // and no accessor asks for, so the catalog is 32 where the XML is 34 — on purpose.
+        // and no accessor asks for, so the catalog is 34 where the XML is 36 — on purpose.
         let catalog = try Self.loadCatalog()
 
         #expect(catalog.keys.isDisjoint(with: Self.deadAndroidKeys))
         #expect(Self.expectedKeys.isDisjoint(with: Self.deadAndroidKeys))
-        #expect(Self.expectedKeys.count + Self.deadAndroidKeys.count == 34)
+        #expect(Self.expectedKeys.count + Self.deadAndroidKeys.count == 36)
     }
 
     @Test("Turkish is the source language and every key has both tr and en (spec 6.4)")

@@ -45,7 +45,8 @@ extension AppCompositionRoot {
     static func makeHomeGraph(
         infrastructure: Infrastructure,
         medications: MedicationsModule,
-        homePremiumStatus: any HomePremiumStatus
+        homePremiumStatus: any HomePremiumStatus,
+        reminderBase: ReminderEnvironmentGraph
     ) -> HomeModule {
         let database = infrastructure.database
         return makeHomeModule(
@@ -58,6 +59,11 @@ extension AppCompositionRoot {
             homePremiumStatus: homePremiumStatus,
             clock: infrastructure.clock,
             doseActions: medications.makeMarkDoseTakenUseCase(),
+            // The dashboard's readiness card. The same environment and the same AlarmKit decision
+            // Reminder Health and the medication editor are handed, so no two surfaces can
+            // disagree about the device.
+            reminderEnvironment: reminderBase.environment,
+            alarmKitSupported: reminderBase.alarmKitSupported,
             profileId: SalusDatabase.defaultProfileId,
             profileRepository: infrastructure.profileRepository,
             foreground: infrastructure.foreground

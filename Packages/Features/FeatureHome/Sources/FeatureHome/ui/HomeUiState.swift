@@ -21,11 +21,19 @@
 // perform (`@Environment(\.requestReview)`), drained through the `pendingEffects` /
 // `consumeEffects()` shape `MoreViewModel` set.
 //
+// `reminderReadiness` is the one field with no source in the repository join: permissions and the
+// background-refresh switch are toggled outside our process and no framework publishes them, so
+// the ViewModel re-reads the device on every ``HomeEvent/appeared`` and writes the answer here
+// (`HomeUiState.kt:50-54`). Nil means "healthy, or not asked yet", which is the same thing to the
+// screen — the card is drawn only for a non-nil report.
+//
 // `cycle` and `vitals` are optional **here** while `TodayOverview`'s `vitals` is not, and that is
 // Android's own asymmetry (`HomeUiState.kt:25-26` vs `TodayModels.kt:54-55`): the default state —
 // the one the screen draws before the first emission — has no snapshot to carry, so the field has
 // to admit nil. After loading they are always present. `cycle` is optional on both sides now: the
 // repository gates it on the profile's sex, so a male profile has no cycle card at all.
+
+import SalusReminder
 
 /// Which half of the day the header greets in (`HomeUiState.kt:11`).
 public enum HomeGreeting: Sendable {
@@ -40,7 +48,9 @@ public enum HomeEvent: Equatable, Sendable {
     /// The "Al" button on a pending dose row (`HomeUiState.kt:15`).
     case takeDose(scheduleId: String, minuteOfDay: Int)
     /// The dashboard became visible — an appearance or a foreground return while it was showing.
-    /// Android sends it from `LifecycleResumeEffect`; the Route and the foreground signal send it here.
+    /// Android sends it from `LifecycleResumeEffect`; the Route and the foreground signal send it
+    /// here. The ViewModel re-reads the device state the user toggles outside our process, and
+    /// counts the open the review prompt hangs off.
     case appeared
 }
 
@@ -71,6 +81,9 @@ public struct HomeUiState: Sendable {
     /// Whether the user is entitled to premium (`HomeUiState.kt:29`). Pinned `false` until iOS-M9
     /// binds a real ``HomePremiumStatus`` — recorded divergence (d).
     public var isPremium: Bool
+    /// Why reminders may not fire, when they may not (`HomeUiState.kt:50-54`). Nil while unknown
+    /// and while everything is healthy — the card is drawn only for a non-nil report.
+    public var reminderReadiness: ReminderReadinessReport?
 
     public init(
         isLoading: Bool = true,
@@ -83,7 +96,8 @@ public struct HomeUiState: Sendable {
         cycle: CycleSnapshot? = nil,
         vitals: VitalsSnapshot? = nil,
         freeAiSummaryAvailable: Bool = false,
-        isPremium: Bool = false
+        isPremium: Bool = false,
+        reminderReadiness: ReminderReadinessReport? = nil
     ) {
         self.isLoading = isLoading
         self.todayEpochDay = todayEpochDay
@@ -96,6 +110,7 @@ public struct HomeUiState: Sendable {
         self.vitals = vitals
         self.freeAiSummaryAvailable = freeAiSummaryAvailable
         self.isPremium = isPremium
+        self.reminderReadiness = reminderReadiness
     }
 }
 
@@ -117,5 +132,6 @@ extension HomeUiState: Equatable {
             && lhs.vitals == rhs.vitals
             && lhs.freeAiSummaryAvailable == rhs.freeAiSummaryAvailable
             && lhs.isPremium == rhs.isPremium
+            && lhs.reminderReadiness == rhs.reminderReadiness
     }
 }

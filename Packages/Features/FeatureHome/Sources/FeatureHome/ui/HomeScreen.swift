@@ -17,7 +17,9 @@
 //
 // THE ORDER IS LOAD-BEARING and it is Kotlin's, header first and doses immediately after
 // (`HomeScreen.kt:107-141`, whose comment says today's doses must stay the first thing the user
-// sees). Do not reorder to fit a new card in.
+// sees). Do not reorder to fit a new card in. The reminder readiness card is the one thing that
+// sits above the doses, and it is Android's own exception (`HomeScreen.kt:173-176`): a dose list
+// is worthless when the alarm behind it cannot fire.
 
 import SalusDesignSystem
 import SalusUI
@@ -28,13 +30,16 @@ import SwiftUI
 ///
 /// The template's Route: the module comes from the environment, the ViewModel is built once and
 /// owned for the route's lifetime, and the stateless `HomeScreen` gets `state`, `onEvent` and the
-/// five shell callbacks. `onOpenAiSummary`, Kotlin's fifth, arrives with the AI card (iOS-M10).
+/// six shell callbacks. `onOpenAiSummary`, Kotlin's fifth, arrives with the AI card (iOS-M10);
+/// `onOpenReminderHealth` is the readiness card's, and pushes a `FeatureSettings` key, so the
+/// shell is what names it.
 public struct HomeRoute: View {
     private let onOpenMedications: () -> Void
     private let onOpenAppointments: () -> Void
     private let onOpenCycle: () -> Void
     private let onOpenVitals: () -> Void
     private let onOpenAiSummary: () -> Void
+    private let onOpenReminderHealth: () -> Void
 
     @Environment(\.homeModule) private var module
     /// StoreKit's rating sheet, the twin of Play's `launchReviewFlow` (in-app review spec §3).
@@ -48,18 +53,21 @@ public struct HomeRoute: View {
     ///   - onOpenCycle: pushes the cycle calendar onto Home's own stack.
     ///   - onOpenVitals: switches to the Vitals tab.
     ///   - onOpenAiSummary: pushes the AI health summary onto Home's own stack.
+    ///   - onOpenReminderHealth: pushes Reminder health onto Home's own stack.
     public init(
         onOpenMedications: @escaping () -> Void,
         onOpenAppointments: @escaping () -> Void,
         onOpenCycle: @escaping () -> Void,
         onOpenVitals: @escaping () -> Void,
-        onOpenAiSummary: @escaping () -> Void
+        onOpenAiSummary: @escaping () -> Void,
+        onOpenReminderHealth: @escaping () -> Void
     ) {
         self.onOpenMedications = onOpenMedications
         self.onOpenAppointments = onOpenAppointments
         self.onOpenCycle = onOpenCycle
         self.onOpenVitals = onOpenVitals
         self.onOpenAiSummary = onOpenAiSummary
+        self.onOpenReminderHealth = onOpenReminderHealth
     }
 
     public var body: some View {
@@ -72,7 +80,8 @@ public struct HomeRoute: View {
                     onOpenAppointments: onOpenAppointments,
                     onOpenCycle: onOpenCycle,
                     onOpenVitals: onOpenVitals,
-                    onOpenAiSummary: onOpenAiSummary
+                    onOpenAiSummary: onOpenAiSummary,
+                    onOpenReminderHealth: onOpenReminderHealth
                 )
             } else {
                 // A dropped injection draws the spinner rather than a half-built graph — the
@@ -100,7 +109,8 @@ public struct HomeRoute: View {
             // query on a screen that is already showing its spinner.
             viewModel?.restartObservation()
             // Android's `LifecycleResumeEffect` (`HomeScreen.kt`): every appearance is an "open"
-            // for the review prompt. A foreground return reaches the ViewModel through
+            // for the review prompt, and a re-read of the device state the user can change outside
+            // our process (the readiness card). A foreground return reaches the ViewModel through
             // `AppForegroundSignal` instead, because `.task` does not re-run for it.
             viewModel?.onEvent(.appeared)
         }
@@ -138,6 +148,7 @@ struct HomeScreen: View {
     let onOpenCycle: () -> Void
     let onOpenVitals: () -> Void
     let onOpenAiSummary: () -> Void
+    let onOpenReminderHealth: () -> Void
 
     @Environment(\.salusTheme) private var theme
 
@@ -173,6 +184,14 @@ struct HomeScreen: View {
     /// (`HomeScreen.kt:112-141`).
     private var sections: some View {
         VStack(alignment: .leading, spacing: SalusSpacing.xs) {
+            // First on purpose, and it is the one card that outranks the doses
+            // (`HomeScreen.kt:173-176`): a dose list is worthless when the alarm behind it cannot
+            // fire. No section header — it is a warning, not a section of the dashboard. Nil while
+            // the device is healthy or has not been read yet, which is the same thing here.
+            if let report = state.reminderReadiness {
+                HomeReminderReadinessCard(report: report, onTap: onOpenReminderHealth)
+            }
+
             SalusSectionHeader(title: HomeStrings.dosesTitle)
             HomeDosesCard(doses: state.doses, onEvent: onEvent, onTap: onOpenMedications)
 
@@ -379,7 +398,8 @@ private enum PreviewData {
         onOpenAppointments: {},
         onOpenCycle: {},
         onOpenVitals: {},
-        onOpenAiSummary: {}
+        onOpenAiSummary: {},
+        onOpenReminderHealth: {}
     )
 }
 
@@ -391,7 +411,8 @@ private enum PreviewData {
         onOpenAppointments: {},
         onOpenCycle: {},
         onOpenVitals: {},
-        onOpenAiSummary: {}
+        onOpenAiSummary: {},
+        onOpenReminderHealth: {}
     )
 }
 
@@ -403,6 +424,7 @@ private enum PreviewData {
         onOpenAppointments: {},
         onOpenCycle: {},
         onOpenVitals: {},
-        onOpenAiSummary: {}
+        onOpenAiSummary: {},
+        onOpenReminderHealth: {}
     )
 }

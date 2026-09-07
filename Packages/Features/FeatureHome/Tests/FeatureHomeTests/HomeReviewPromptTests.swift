@@ -45,6 +45,8 @@ struct HomeReviewPromptTests {
     )
     private let preferences = ReviewPromptFixture.makePreferences()
     private let foreground = AppForegroundSignal()
+    /// A healthy device, so no readiness card is drawn and nothing here has to account for one.
+    private let environment = FakeReminderEnvironment()
 
     private func viewModel() -> HomeViewModel {
         HomeViewModel(
@@ -53,6 +55,8 @@ struct HomeReviewPromptTests {
             premiumStatus: FakeHomePremiumStatus(isPremium: false),
             clock: clock,
             doseActions: RecordingDoseActions(),
+            environment: environment,
+            alarmKitSupported: true,
             preferences: preferences,
             foreground: foreground
         )
