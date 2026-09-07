@@ -5,39 +5,25 @@
 // = top(sm))` → `SalusSectionHeader(title:contentPadding: .topOnly)`, the scroll column carrying the
 // screen's horizontal inset exactly as the Kotlin column does; `Card(onClick)` → `SalusCard`;
 // `Switch` → `Toggle`; `AlertDialog`+`RadioButton` → `salusDialog` over ``MoreSelectionDialog``;
-// `Icons.Outlined.*` → SF
-// Symbols (the Material→SF map is in the task brief — a recorded divergence, not byte-for-byte);
+// `Icons.Outlined.*` → SF Symbols (a recorded divergence, not byte-for-byte);
 // `stringResource(R.string.…)` → `SettingsStrings.…` in `Text(verbatim:)`; `profileName.ifBlank` →
 // `profileName.isEmpty ? … : profileName`.
 //
 // Nine platform divergences from the Kotlin twin:
 //   1. **`MoreRoute` owns the LAContext availability check** — the twin of
-//      `BiometricManager.from(context).canAuthenticate(BIOMETRIC_WEAK or DEVICE_CREDENTIAL)`
-//      (`MoreScreen.kt:94-98`); `.canEvaluatePolicy(.deviceOwnerAuthentication)` answers true with a
-//      biometric enrolled or a passcode set.
+//      `.canEvaluatePolicy(.deviceOwnerAuthentication)` (`MoreScreen.kt:98-101`).
 //   2. **The enable-re-auth interception (ruling 4) is a shell-injected closure**, not a
-//      `BiometricPrompt` the Route builds. The shell owns the `LAContext`; the Route calls
-//      `appLockPrompt(…)` and forwards `SetAppLock(true)` only on a true answer.
-//   3. **`UIApplication.openSettingsURLString` for the notification row** — the twin of
-//      `Settings.ACTION_APP_NOTIFICATION_SETTINGS` (`MoreScreen.kt:144-149`). iOS exposes no
-//      notification-only page, so the row opens the app's own Settings page.
-//   4. **`CFBundleShortVersionString` for the version footer** — the twin of
-//      `context.packageManager.getPackageInfo(…).versionName` (`MoreScreen.kt:120-124`).
-//   5. **Effect consumption drains a queue, not a `Channel`** (MoreViewModel div. 4). The Kotlin
-//      `LaunchedEffect { viewModel.effects.collect { … } }` (`MoreScreen.kt:103-116`) runs for as
-//      long as the composition lives; `@Observable` has no `Flow`, so the collector is
-//      `.onChange(of: viewModel.pendingEffects)` — the house pattern
-//      (`AppointmentEditorScreen.swift:79`), which fires on every append rather than once at
-//      appear. `restartObservation()` (ruling 3) is called where the ViewModel is created, not
-//      from a second `.task` that depended on the first one having already run.
-//   6. **`effectivePremiumTheme` reads the real three-state `PremiumStatus`** — the twin of
-//      `core/premium/.../EffectiveTheme.kt` (`isEntitled`: premium or grace get the pick, else Classic).
-//   7. **The selection dialogs are a `salusDialog` over ``MoreSelectionDialog``**, not an alert: a
-//      SwiftUI `alert`/`confirmationDialog` holds plain buttons only and cannot draw Kotlin's
-//      `RadioButton(selected = …)` (`MoreScreen.kt:504`), so the stored choice would be invisible.
-//      The popup draws Kotlin's plain radio rows itself — see `MoreSelectionDialog.swift`.
+//      `BiometricPrompt`; the shell owns the `LAContext`, the Route calls `appLockPrompt(…)`.
+//   3. **`UIApplication.openSettingsURLString` for the notification row** — iOS exposes no
+//      notification-only page (`MoreScreen.kt:155-160`).
+//   4. **`CFBundleShortVersionString` for the version footer** (`MoreScreen.kt:130-134`).
+//   5. **Effect consumption drains a queue, not a `Channel`** (MoreViewModel div. 4) — the
+//      collector is `.onChange(of: viewModel.pendingEffects)` (`AppointmentEditorScreen.swift:79`).
+//   6. **`effectivePremiumTheme` reads the real three-state `PremiumStatus`** (`isEntitled`).
+//   7. **The selection dialogs are a `salusDialog` over ``MoreSelectionDialog``**, not an alert:
+//      SwiftUI holds plain buttons only and cannot draw Kotlin's `RadioButton` (`MoreScreen.kt:529`).
 //   8. **`SalusCard`'s content padding is uniform.** Kotlin's cards use
-//      `horizontal = lg, vertical = md` (`MoreScreen.kt:376-379`); `SalusCard` takes one value by
+//      `horizontal = lg, vertical = md` (`MoreScreen.kt:404-412`); `SalusCard` takes one value by
 //      house design, so every card here is `lg` on all four edges — the accepted limitation of the
 //      shared component, not a new one.
 //   9. **A language pick applies live through `SalusLocalization`**, the twin of appcompat's
@@ -45,9 +31,9 @@
 //      the new language while the stack and selection survive. (Until the release QA pass the pick
 //      landed on the next launch and the dialog carried an iOS-only footnote saying so.)
 //
-// The three same-feature pushes (`ReminderHealthKey`/`AboutKey`/`ProfileKey`) the Kotlin Route makes
-// through `koinInject<Navigator>()` (`MoreScreen.kt:139-141`) go through the `navigator` the
-// `SettingsModule` exposes — the same way `ProfileViewModel` reaches it. The shell owns the stack.
+// The four same-feature pushes (`ReminderHealthKey`/`AboutKey`/`SupportKey`/`ProfileKey`) the Kotlin
+// Route makes through `koinInject<Navigator>()` (`MoreScreen.kt:149-152`) go through the `navigator`
+// the `SettingsModule` exposes — the same way `ProfileViewModel` reaches it. The shell owns the stack.
 
 import Foundation
 import LocalAuthentication
@@ -62,7 +48,7 @@ import SwiftUI
     import UIKit
 #endif
 
-/// Owns the ViewModel and wires it to the shell (`MoreScreen.kt:81-151`).
+/// Owns the ViewModel and wires it to the shell (`MoreScreen.kt:86-162`).
 ///
 /// `onOpenCycle`/`onOpenDoctorReport`/`onOpenTrends` are the cross-feature hops (the shell owns the
 /// keys, the feature cannot); `appLockPrompt` is the shell-owned biometric evaluation the
@@ -77,10 +63,10 @@ public struct MoreRoute: View {
     @State private var viewModel: MoreViewModel?
 
     /// Whether the device can evaluate `.deviceOwnerAuthentication` (divergence 1), read once per
-    /// Route — the same `remember(context)` the Kotlin `MoreRoute` carries (`MoreScreen.kt:94-98`).
+    /// Route — the same `remember(context)` the Kotlin `MoreRoute` carries (`MoreScreen.kt:98-101`).
     @State private var appLockAvailable = false
 
-    /// `CFBundleShortVersionString` (`MoreScreen.kt:120-124`). `nil` renders by omitting the footer.
+    /// `CFBundleShortVersionString` (`MoreScreen.kt:130-134`). `nil` renders by omitting the footer.
     @State private var versionName: String?
 
     let onOpenCycle: () -> Void
@@ -88,7 +74,7 @@ public struct MoreRoute: View {
     let onOpenTrends: () -> Void
     /// The shell-owned biometric prompt the enable-re-auth interception calls (ruling 4 / div. 2).
     /// `false` is the silence the Kotlin `onAuthenticationSucceeded`-only callback produces on
-    /// cancel/failure (`MoreScreen.kt:452-472`).
+    /// cancel/failure (`MoreScreen.kt:477-497`).
     let appLockPrompt: @MainActor (String) async -> Bool
 
     public init(
@@ -139,7 +125,7 @@ public struct MoreRoute: View {
             versionName: versionName ?? "",
             appLockAvailable: appLockAvailable,
             onEvent: { event in
-                // `MoreScreen.kt:130-137` — only the enable edge is intercepted; a disabling
+                // `MoreScreen.kt:140-147` — only the enable edge is intercepted; a disabling
                 // tap is forwarded straight through (div. 2 — the prompt is shell-owned).
                 if case let .setAppLock(enabled) = event, enabled {
                     Task { [appLockPrompt] in
@@ -153,16 +139,17 @@ public struct MoreRoute: View {
             },
             onOpenCycle: onOpenCycle,
             // `navigator.navigate(ReminderHealthKey/AboutKey/ProfileKey)`
-            // (`MoreScreen.kt:139-141`) — the shell owns the stack; a row pushes through the
+            // (`MoreScreen.kt:149-152`) — the shell owns the stack; a row pushes through the
             // navigator rather than `backStacks.push`.
             onOpenReminderHealth: { module?.navigator.navigate(ReminderHealthKey()) },
             onOpenAbout: { module?.navigator.navigate(AboutKey()) },
+            onOpenSupport: { module?.navigator.navigate(SupportKey()) },
             onOpenProfile: { module?.navigator.navigate(ProfileKey()) },
             onOpenNotificationSettings: openNotificationSettings
         )
         // The collector for `Channel<MoreEffect>` (MoreViewModel div. 4), spelled for an
         // `@Observable`: the queue is a property, so `.onChange` is the twin of the Kotlin
-        // `LaunchedEffect { viewModel.effects.collect { … } }` (`MoreScreen.kt:103-116`) — it fires
+        // `LaunchedEffect { viewModel.effects.collect { … } }` (`MoreScreen.kt:107-126`) — it fires
         // on every append, for as long as this view lives, which a `.task` on a tab root (created
         // once, never re-created) would not. `pendingEffects` is a queue rather than a single
         // effect because two rows can fire back-to-back, so the handler drains all of it.
@@ -173,7 +160,7 @@ public struct MoreRoute: View {
         }
     }
 
-    /// Performs the drained effects in order (`MoreScreen.kt:103-116`).
+    /// Performs the drained effects in order (`MoreScreen.kt:107-126`).
     @MainActor
     private func deliver(_ effects: [MoreEffect]) {
         for effect in effects {
@@ -205,7 +192,7 @@ public struct MoreRoute: View {
     }
 }
 
-/// The stateless More hub (`MoreScreen.kt:153-358`).
+/// The stateless More hub (`MoreScreen.kt:165-383`).
 struct MoreScreen: View {
     let state: MoreUiState
     let versionName: String
@@ -214,6 +201,7 @@ struct MoreScreen: View {
     let onOpenCycle: () -> Void
     let onOpenReminderHealth: () -> Void
     let onOpenAbout: () -> Void
+    let onOpenSupport: () -> Void
     let onOpenProfile: () -> Void
     let onOpenNotificationSettings: () -> Void
 
@@ -224,14 +212,14 @@ struct MoreScreen: View {
     var body: some View {
         // No `Scaffold` twin and no inset modifiers: the shell owns the one `NavigationStack` and
         // its insets, and this is a tab root — `SalusScreenHeader` rather than a `TopAppBar`
-        // (div. (d), `MoreScreen.kt:165-168`). The §1 draw order is `MoreScreen.kt:180-313`; the
+        // (div. (d), `MoreScreen.kt:180-181`). The §1 draw order is `MoreScreen.kt:193-339`; the
         // scroll column carries the screen's horizontal inset for everything in it
-        // (`MoreScreen.kt:171-175`), which is why `SectionLabel` drops the header's own.
+        // (`MoreScreen.kt:183-189`), which is why `SectionLabel` drops the header's own.
         VStack(spacing: 0) {
             SalusScreenHeader(title: SettingsStrings.moreTitle)
             ScrollView {
                 VStack(spacing: SalusSpacing.md) {
-                    // 1. Profile (`MoreScreen.kt:180-187`): blank name → onboarding skipped.
+                    // 1. Profile (`MoreScreen.kt:193-200`): blank name → onboarding skipped.
                     MoreCard(
                         icon: "person.fill",
                         title: SettingsStrings.moreProfile,
@@ -241,7 +229,7 @@ struct MoreScreen: View {
                         onClick: onOpenProfile
                     )
 
-                    // 2. Premium (`MoreScreen.kt:191-202`): sits above every section.
+                    // 2. Premium (`MoreScreen.kt:204-215`): sits above every section.
                     MoreCard(
                         icon: "crown.fill",
                         title: SettingsStrings.settingsPremium,
@@ -251,7 +239,7 @@ struct MoreScreen: View {
                         onClick: { onEvent(.premiumClicked) }
                     )
 
-                    // 3. Doctor report (`MoreScreen.kt:206-211`): the premium feature people leave
+                    // 3. Doctor report (`MoreScreen.kt:219-224`): the premium feature people leave
                     //    with.
                     MoreCard(
                         icon: "doc.text",
@@ -260,7 +248,7 @@ struct MoreScreen: View {
                         onClick: { onEvent(.doctorReportClicked) }
                     )
 
-                    // 4. Trends (`MoreScreen.kt:215-220`): not gated — the screen shows its lock.
+                    // 4. Trends (`MoreScreen.kt:228-233`): not gated — the screen shows its lock.
                     MoreCard(
                         icon: "chart.xyaxis.line",
                         title: SettingsStrings.moreTrends,
@@ -268,7 +256,7 @@ struct MoreScreen: View {
                         onClick: { onEvent(.trendsClicked) }
                     )
 
-                    // 5. [if showCycle] Tracking + Cycle (`MoreScreen.kt:222-231`): hidden for male
+                    // 5. [if showCycle] Tracking + Cycle (`MoreScreen.kt:236-244`): hidden for male
                     //    profiles; the accent is the cycle one.
                     if state.showCycle {
                         SectionLabel(title: SettingsStrings.moreSectionTracking)
@@ -281,7 +269,7 @@ struct MoreScreen: View {
                         )
                     }
 
-                    // 6-8. Appearance: theme, color theme, language (`MoreScreen.kt:233-256`).
+                    // 6-8. Appearance: theme, color theme, language (`MoreScreen.kt:246-269`).
                     SectionLabel(title: SettingsStrings.settingsSectionAppearance)
                     MoreCard(
                         icon: "paintpalette.fill",
@@ -308,7 +296,7 @@ struct MoreScreen: View {
                         onClick: { onEvent(.dialogRequested(.language)) }
                     )
 
-                    // 9-10. Security: app lock + secure screen (`MoreScreen.kt:258-279`).
+                    // 9-10. Security: app lock + secure screen (`MoreScreen.kt:271-292`).
                     SectionLabel(title: SettingsStrings.settingsSectionSecurity)
                     MoreToggleCard(
                         icon: "lock.fill",
@@ -328,7 +316,7 @@ struct MoreScreen: View {
                         onCheckedChange: { onEvent(.setSecureScreen($0)) }
                     )
 
-                    // 11-12. Notifications section (`MoreScreen.kt:281-293`).
+                    // 11-12. Notifications section (`MoreScreen.kt:294-306`).
                     SectionLabel(title: SettingsStrings.settingsSectionNotifications)
                     MoreCard(
                         icon: "bell.fill",
@@ -343,13 +331,20 @@ struct MoreScreen: View {
                         onClick: onOpenReminderHealth
                     )
 
-                    // 13. App section: about (`MoreScreen.kt:295-301`).
+                    // 13. App section: about (`MoreScreen.kt:309-314`), then support below it
+                    //     (`MoreScreen.kt:315-320`).
                     SectionLabel(title: SettingsStrings.settingsSectionApp)
                     MoreCard(
                         icon: "info.circle.fill",
                         title: SettingsStrings.settingsAbout,
                         subtitle: SettingsStrings.settingsAboutDesc,
                         onClick: onOpenAbout
+                    )
+                    MoreCard(
+                        icon: "headphones",
+                        title: SettingsStrings.settingsSupport,
+                        subtitle: SettingsStrings.settingsSupportDesc,
+                        onClick: onOpenSupport
                     )
                     // 13b. Rate Salus — the store's write-review page (in-app review spec §4).
                     MoreCard(
@@ -359,7 +354,7 @@ struct MoreScreen: View {
                         onClick: { onEvent(.rateUsClicked) }
                     )
 
-                    // 14. Version footer (`MoreScreen.kt:303-313`).
+                    // 14. Version footer (`MoreScreen.kt:328-338`).
                     if !versionName.isEmpty {
                         Text(verbatim: SettingsStrings.aboutVersion(versionName))
                             .font(SalusTypography.bodySmall.font)
@@ -375,7 +370,7 @@ struct MoreScreen: View {
             }
         }
         .background(colors.background)
-        // The three selection dialogs (`MoreScreen.kt:317-357`), driven by `activeDialog` rather
+        // The three selection dialogs (`MoreScreen.kt:342-383`), driven by `activeDialog` rather
         // than three `@State` flags (matching Kotlin's `when (state.activeDialog)`) — one popup,
         // so only one can be open at a time by construction. The binding's `false` edge is the
         // twin of `onDismissRequest`: a tap on the scrim sends `DialogDismissed`, exactly as
@@ -396,7 +391,7 @@ struct MoreScreen: View {
         }
     }
 
-    /// `when (state.activeDialog)` (`MoreScreen.kt:317-357`) — each branch maps its enum's cases to
+    /// `when (state.activeDialog)` (`MoreScreen.kt:342-383`) — each branch maps its enum's cases to
     /// options carrying `isSelected`, which is what draws the stored choice as selected.
     @ViewBuilder
     private func selectionDialog(for dialog: MoreDialog) -> some View {
@@ -469,6 +464,7 @@ struct MoreScreen: View {
             onOpenCycle: {},
             onOpenReminderHealth: {},
             onOpenAbout: {},
+            onOpenSupport: {},
             onOpenProfile: {},
             onOpenNotificationSettings: {}
         )
@@ -491,6 +487,7 @@ struct MoreScreen: View {
             onOpenCycle: {},
             onOpenReminderHealth: {},
             onOpenAbout: {},
+            onOpenSupport: {},
             onOpenProfile: {},
             onOpenNotificationSettings: {}
         )

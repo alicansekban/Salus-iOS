@@ -9,12 +9,14 @@
 //                                              Route gets a fresh one exactly as `viewModel` does.
 //   `viewModelOf(::ProfileViewModel)`        → `makeProfileViewModel`, the same shape.
 //   `viewModelOf(::MoreViewModel)`           → `makeMoreViewModel`, the same shape (iOS-M8 T6).
-//   `viewModelOf(::AboutViewModel)`          → `makeAboutViewModel`, the same shape (support-code
-//                                              plan T2).
+//   `viewModelOf(::SupportViewModel)`        → `makeSupportViewModel`, the same shape — the moved-and-
+//                                              renamed About factory (the about-redesign plan T2; the
+//                                              support-code `makeAboutViewModel` left with the About
+//                                              redesign, which carries no ViewModel anymore).
 //
 // The `navigator` is exposed alongside the factories because `MoreRoute`'s same-feature pushes
 // (`ReminderHealthKey`/`AboutKey`/`ProfileKey`) go through it the way Kotlin's `MoreRoute` reaches
-// `koinInject<Navigator>()` (`MoreScreen.kt:139-141`). The shell still owns the stack; the feature
+// `koinInject<Navigator>()` (`MoreScreen.kt:149-152`). The shell still owns the stack; the feature
 // only asks it to push.
 
 import SalusCommon
@@ -36,11 +38,11 @@ public struct SettingsModule {
     /// `viewModelOf(::MoreViewModel)` — the More hub's ViewModel, a closure so each `MoreRoute`
     /// gets a fresh one exactly as `viewModel` does.
     public let makeMoreViewModel: @MainActor () -> MoreViewModel
-    /// `viewModelOf(::AboutViewModel)` — the About screen's ViewModel, a closure so each `AboutRoute`
-    /// gets a fresh one exactly as `viewModel` does.
-    public let makeAboutViewModel: @MainActor () -> AboutViewModel
-    /// The shell's `Navigator`, exposed so the More hub's rows can push the three same-feature
-    /// destinations (`MoreScreen.kt:139-141`). Read-only; the shell is still the only stack mutator.
+    /// `viewModelOf(::SupportViewModel)` — the Support screen's ViewModel, a closure so each
+    /// `SupportRoute` gets a fresh one exactly as `viewModel` does.
+    public let makeSupportViewModel: @MainActor () -> SupportViewModel
+    /// The shell's `Navigator`, exposed so the More hub's rows can push the four same-feature
+    /// destinations (`MoreScreen.kt:149-152`). Read-only; the shell is still the only stack mutator.
     public let navigator: Navigator
 }
 
@@ -105,8 +107,8 @@ public func makeSettingsModule(
                 paywallController: paywallController
             )
         },
-        makeAboutViewModel: {
-            AboutViewModel(
+        makeSupportViewModel: {
+            SupportViewModel(
                 gateway: gateway,
                 premiumRepository: premiumRepository,
                 clock: clock

@@ -22,8 +22,8 @@ public struct ReminderHealthKey: Hashable, Sendable {
     public init() {}
 }
 
-/// The profile editor, pushed from the More tab's profile row (`SettingsNavigation.kt:17`, drawn
-/// by `:42-44`).
+/// The profile editor, pushed from the More tab's profile row (`SettingsNavigation.kt:18`, drawn
+/// by `:46-48`).
 ///
 /// It carries no argument: there is exactly one profile row, seeded by the migration, so the editor
 /// has nothing to be told apart by — unlike the vitals and appointment editors, whose keys carry an
@@ -32,10 +32,17 @@ public struct ProfileKey: Hashable, Sendable {
     public init() {}
 }
 
-/// The About screen, pushed from the More tab's about row (`SettingsNavigation.kt:18`, drawn by
-/// `:46-48` on the Kotlin side). The iOS twin of the `@Serializable AboutKey` object — `Hashable` is
+/// The About screen, pushed from the More tab's about row (`SettingsNavigation.kt:21`, drawn by
+/// `:49-51` on the Kotlin side). The iOS twin of the `@Serializable AboutKey` object — `Hashable` is
 /// what `navigationDestination(for:)` requires (see `VitalsNavigation.swift`'s note).
 public struct AboutKey: Hashable, Sendable {
+    public init() {}
+}
+
+/// The Support screen, pushed from the More tab's "Uygulama" section (`SettingsNavigation.kt:27`,
+/// drawn by `:55-57` on the Kotlin side). The iOS twin of the `@Serializable SupportKey` object —
+/// `Hashable` is what `navigationDestination(for:)` requires (see `VitalsNavigation.swift`'s note).
+public struct SupportKey: Hashable, Sendable {
     public init() {}
 }
 
@@ -47,8 +54,8 @@ extension View {
     /// rather than forcing one central `navigationDestination(for: AnyNavKey.self)` in the app
     /// target (`AnyNavKey.swift:23-29`).
     ///
-    /// The three same-feature destinations the More hub pushes — Reminder Health, Profile, About —
-    /// are registered here; the cross-feature hops (`onOpenCycle`/`onOpenDoctorReport`/
+    /// The four same-feature destinations the More hub pushes — Reminder Health, Profile, About,
+    /// Support — are registered here; the cross-feature hops (`onOpenCycle`/`onOpenDoctorReport`/
     /// `onOpenTrends`) are shell callbacks the `MoreRoute` takes, not destinations, because their
     /// keys belong to other features this one cannot see (spec §4).
     public func settingsDestinations() -> some View {
@@ -60,6 +67,9 @@ extension View {
         }
         .navigationDestination(for: AboutKey.self) { _ in
             AboutRoute()
+        }
+        .navigationDestination(for: SupportKey.self) { _ in
+            SupportRoute()
         }
     }
 }

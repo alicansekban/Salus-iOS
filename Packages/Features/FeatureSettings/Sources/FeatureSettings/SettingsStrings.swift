@@ -4,9 +4,12 @@
 // against `:feature:settings`.
 //
 // ROW MAPPING, and it is the reason the key list is not the Android key list. The catalog carries
-// 87 keys today: the 15 `reminder_health_*` keys that shipped with iOS-M3, plus the 72 More / About
-// / Profile / settings keys the M8 settings hub adds, all Android-verbatim. (The iOS-only
-// `language_relaunch_note` left with the live language switch — `SalusLocalization`.)
+// 114 keys today: the 95 `reminder_health_*` / More / About / Profile / settings keys the M8 and
+// support-code waves shipped (all Android-verbatim, except the `about_privacy_body` store-name
+// divergence below), plus the nineteen the about-redesign adds or renames. (The iOS-only
+// `language_relaunch_note` left with the live language switch — `SalusLocalization`, and the six
+// `about_support_*` / `about_premium_*` keys left when the premium-status card + hidden id moved
+// off About onto the new Support screen — the about-redesign plan T2.)
 // Android draws four health cards; iOS draws
 // three, because two of Android's questions do not exist here and one iOS question does not exist
 // there. `SystemReminderEnvironment` already records the same mapping on the reading side, member
@@ -39,7 +42,7 @@
 //                                                                     (`reminder_health_last_sync`,
 //                                                                     `reminder_health_never_synced`).
 //
-// Nine Android keys are dropped entirely, none silently. The five `reminder_health_*` ones
+// Ten Android keys are dropped entirely, none silently. The eight `reminder_health_*` ones
 // (`reminder_health_exact_*`, `reminder_health_battery_*`, `reminder_health_back`) are dropped
 // with the cards above; `settings_back` and `profile_back` are dropped with the `TopAppBar` that
 // owned them: the shell's one `NavigationStack` draws the back button, so no screen in this port
@@ -162,6 +165,8 @@ public enum SettingsStrings {
     public static var settingsColorTheme: String { localized(.settingsColorTheme) }
     public static var settingsDoctorReport: String { localized(.settingsDoctorReport) }
     public static var settingsDoctorReportDesc: String { localized(.settingsDoctorReportDesc) }
+    public static var settingsSupport: String { localized(.settingsSupport) }
+    public static var settingsSupportDesc: String { localized(.settingsSupportDesc) }
 
     // MARK: - Theme dialog
 
@@ -189,14 +194,34 @@ public enum SettingsStrings {
     public static var aboutTitle: String { localized(.aboutTitle) }
     public static var aboutAppName: String { localized(.aboutAppName) }
     public static var aboutDescription: String { localized(.aboutDescription) }
+    public static var aboutFeaturesTitle: String { localized(.aboutFeaturesTitle) }
+    public static var aboutFeatureMedications: String { localized(.aboutFeatureMedications) }
+    public static var aboutFeatureMedicationsDesc: String { localized(.aboutFeatureMedicationsDesc) }
+    public static var aboutFeatureAppointments: String { localized(.aboutFeatureAppointments) }
+    public static var aboutFeatureAppointmentsDesc: String { localized(.aboutFeatureAppointmentsDesc) }
+    public static var aboutFeatureVitals: String { localized(.aboutFeatureVitals) }
+    public static var aboutFeatureVitalsDesc: String { localized(.aboutFeatureVitalsDesc) }
+    public static var aboutFeatureCycle: String { localized(.aboutFeatureCycle) }
+    public static var aboutFeatureCycleDesc: String { localized(.aboutFeatureCycleDesc) }
+    public static var aboutFeatureAI: String { localized(.aboutFeatureAI) }
+    public static var aboutFeatureAIDesc: String { localized(.aboutFeatureAIDesc) }
+    public static var aboutFeatureTrends: String { localized(.aboutFeatureTrends) }
+    public static var aboutFeatureTrendsDesc: String { localized(.aboutFeatureTrendsDesc) }
+    public static var aboutFeatureReminders: String { localized(.aboutFeatureReminders) }
+    public static var aboutFeatureRemindersDesc: String { localized(.aboutFeatureRemindersDesc) }
     public static var aboutPrivacyTitle: String { localized(.aboutPrivacyTitle) }
     public static var aboutPrivacyBody: String { localized(.aboutPrivacyBody) }
-    public static var aboutSupportTitle: String { localized(.aboutSupportTitle) }
-    public static var aboutPremiumFree: String { localized(.aboutPremiumFree) }
-    public static var aboutPremiumActive: String { localized(.aboutPremiumActive) }
-    public static var aboutSupportCode: String { localized(.aboutSupportCode) }
-    public static var aboutSupportCopy: String { localized(.aboutSupportCopy) }
-    public static var aboutSupportCopied: String { localized(.aboutSupportCopied) }
+
+    // MARK: - Support
+
+    public static var supportTitle: String { localized(.supportTitle) }
+    public static var supportDesc: String { localized(.supportDesc) }
+    public static var supportPremiumStatusTitle: String { localized(.supportPremiumStatusTitle) }
+    public static var supportPremiumFree: String { localized(.supportPremiumFree) }
+    public static var supportPremiumActive: String { localized(.supportPremiumActive) }
+    public static var supportCode: String { localized(.supportCode) }
+    public static var supportCopy: String { localized(.supportCopy) }
+    public static var supportCopied: String { localized(.supportCopied) }
 
     // MARK: - Profile
 
@@ -273,16 +298,25 @@ public enum SettingsStrings {
     enum Key: String, CaseIterable {
         case aboutAppName = "about_app_name"
         case aboutDescription = "about_description"
+        case aboutFeatureAI = "about_feature_ai"
+        case aboutFeatureAIDesc = "about_feature_ai_desc"
+        case aboutFeatureAppointments = "about_feature_appointments"
+        case aboutFeatureAppointmentsDesc = "about_feature_appointments_desc"
+        case aboutFeatureCycle = "about_feature_cycle"
+        case aboutFeatureCycleDesc = "about_feature_cycle_desc"
+        case aboutFeatureMedications = "about_feature_medications"
+        case aboutFeatureMedicationsDesc = "about_feature_medications_desc"
+        case aboutFeatureReminders = "about_feature_reminders"
+        case aboutFeatureRemindersDesc = "about_feature_reminders_desc"
+        case aboutFeatureTrends = "about_feature_trends"
+        case aboutFeatureTrendsDesc = "about_feature_trends_desc"
+        case aboutFeatureVitals = "about_feature_vitals"
+        case aboutFeatureVitalsDesc = "about_feature_vitals_desc"
+        case aboutFeaturesTitle = "about_features_title"
         case aboutPrivacyBody = "about_privacy_body"
         case aboutPrivacyTitle = "about_privacy_title"
-        case aboutSupportCode = "about_support_code"
-        case aboutSupportCopied = "about_support_copied"
-        case aboutSupportCopy = "about_support_copy"
-        case aboutSupportTitle = "about_support_title"
         case aboutTitle = "about_title"
         case aboutVersion = "about_version"
-        case aboutPremiumActive = "about_premium_active"
-        case aboutPremiumFree = "about_premium_free"
         case colorThemeClassic = "color_theme_classic"
         case colorThemeForest = "color_theme_forest"
         case colorThemeOcean = "color_theme_ocean"
@@ -361,11 +395,21 @@ public enum SettingsStrings {
         case settingsSectionSecurity = "settings_section_security"
         case settingsSecureScreen = "settings_secure_screen"
         case settingsSecureScreenDesc = "settings_secure_screen_desc"
+        case settingsSupport = "settings_support"
+        case settingsSupportDesc = "settings_support_desc"
         case settingsTheme = "settings_theme"
         case themeDark = "theme_dark"
         case themeLight = "theme_light"
         case themeSystem = "theme_system"
         case themeTitle = "theme_title"
+        case supportCode = "support_code"
+        case supportCopied = "support_copied"
+        case supportCopy = "support_copy"
+        case supportDesc = "support_desc"
+        case supportPremiumActive = "support_premium_active"
+        case supportPremiumFree = "support_premium_free"
+        case supportPremiumStatusTitle = "support_premium_status_title"
+        case supportTitle = "support_title"
     }
 
     private static func localized(_ key: Key) -> String {

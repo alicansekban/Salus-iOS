@@ -1,5 +1,11 @@
 // Ported 1:1 from
-// `feature/settings/src/main/kotlin/com/alicansekban/salus/feature/settings/ui/about/AboutViewModel.kt`.
+// `feature/settings/src/main/kotlin/com/alicansekban/salus/feature/settings/ui/support/SupportViewModel.kt`.
+//
+// This is the moved-and-renamed About support work from the `feature/support-code` branch — the
+// same gateway read, the same 5-tap/3 s reveal, the same "Copied" label and the same
+// GRACE_PERIOD→active mapping, now owned by the Support screen. The old About twin
+// (`AboutViewModel.kt`) was deleted with the About redesign (`AboutScreen.kt:46-114` carries no
+// state anymore).
 //
 // Two shape differences from the Kotlin twin, both forced by the platform and recorded here so a
 // reader sees them without leaving the file:
@@ -22,20 +28,21 @@ import Observation
 import SalusCommon
 import SalusPremium
 
-/// Drives the About screen's support card (`AboutViewModel.kt:28-100`).
+/// Drives the Support screen's premium-status card and hidden support code
+/// (`SupportViewModel.kt:17-33`).
 ///
 /// The support code is the RevenueCat `appUserID` read straight off the gateway — the feature never
 /// imports RevenueCat, only the gateway seam. The premium status comes from the shared
 /// `PremiumRepository`, the same source every other settings screen reads.
 ///
 /// The id line and copy button are hidden until the developer reveals them: five consecutive taps on
-/// the app-name headline, each within [TAP_WINDOW_MILLIS] of the previous. The reveal is session-only
-/// — nothing is persisted, so it never survives a process restart.
+/// the screen title, each within [TAP_WINDOW_MILLIS] of the previous. The reveal is session-only —
+/// nothing is persisted, so it never survives a process restart.
 @MainActor
 @Observable
-public final class AboutViewModel {
-    /// `AboutViewModel.kt:42-57` — what the screen draws.
-    public private(set) var state = AboutUiState()
+public final class SupportViewModel {
+    /// `SupportViewModel.kt:42-57` — what the screen draws.
+    public private(set) var state = SupportUiState()
 
     // The two mutable holders the Kotlin spells as `MutableStateFlow` (divergence 2). Each is a
     // `CurrentValueStream` the ViewModel yields into from `onEvent`, and the observation folds them
@@ -48,7 +55,7 @@ public final class AboutViewModel {
     private var idRevealedHolder: CurrentValueStream<Bool>!
 
     /// The timestamp of the last tap, used to decide whether the next one is still "consecutive"
-    /// (`AboutViewModel.kt:39`).
+    /// (`SupportViewModel.kt:38-40`).
     private var lastTapMillis: Int64?
     private var tapCount = 0
 
@@ -59,8 +66,8 @@ public final class AboutViewModel {
     /// The collection. Boxed so `deinit` can cancel it — see `CancellationBox`.
     private let observation = CancellationBox()
 
-    /// The three parameters are the three Koin resolves for `viewModelOf(::AboutViewModel)`, in the
-    /// Kotlin order (`AboutViewModel.kt:29-33`).
+    /// The three parameters are the three Koin resolves for `viewModelOf(::SupportViewModel)`, in
+    /// the Kotlin order (`SupportViewModel.kt:29-33`).
     public init(
         gateway: any PurchasesGateway,
         premiumRepository: any PremiumRepository,
@@ -76,16 +83,16 @@ public final class AboutViewModel {
         observation.cancel()
     }
 
-    /// `AboutViewModel.kt:59-73`.
-    public func onEvent(_ event: AboutEvent) {
+    /// `SupportViewModel.kt:59-73`.
+    public func onEvent(_ event: SupportEvent) {
         switch event {
-        case .appNameTapped:
-            onAppNameTapped()
+        case .titleTapped:
+            onTitleTapped()
 
         case .copySupportCode:
             // The screen performs the actual clipboard write; the ViewModel only flips the brief
             // "Copied" label so the state stays the single source of truth
-            // (`AboutViewModel.kt:63-71`).
+            // (`SupportViewModel.kt:63-71`).
             copiedHolder.send(true)
             Task { [weak self] in
                 try? await Task.sleep(nanoseconds: UInt64(Constants.copiedLabelMillis) * 1_000_000)
@@ -106,7 +113,7 @@ public final class AboutViewModel {
         copiedHolder = CurrentValueStream(previousCopied)
         idRevealedHolder = CurrentValueStream(previousIdRevealed)
 
-        // `AboutViewModel.kt:42-57` — the three-source combine. The two holders and the premium
+        // `SupportViewModel.kt:42-57` — the three-source combine. The two holders and the premium
         // status stream are re-typed so they can join in `latestOfThree`.
         let combined = latestOfThree(
             throwingStream(over: copiedHolder.stream),
@@ -118,7 +125,7 @@ public final class AboutViewModel {
             do {
                 for try await (copied, idRevealed, premiumStatus) in combined {
                     guard let self, !Task.isCancelled else { return }
-                    state = AboutUiState(
+                    state = SupportUiState(
                         appUserID: gateway.appUserID,
                         premiumStatus: premiumStatus,
                         idRevealed: idRevealed,
@@ -136,8 +143,8 @@ public final class AboutViewModel {
 
     /// Counts taps toward the reveal. A tap more than [TAP_WINDOW_MILLIS] after the previous one
     /// restarts the count; five taps within the window reveal the support code for the session
-    /// (`AboutViewModel.kt:75-88`).
-    private func onAppNameTapped() {
+    /// (`SupportViewModel.kt:75-88`).
+    private func onTitleTapped() {
         if idRevealedHolder.current {
             return
         }
@@ -155,11 +162,11 @@ public final class AboutViewModel {
     }
 
     private enum Constants {
-        /// How long the button reads "Copied" before reverting to "Copy" (`AboutViewModel.kt:92`).
+        /// How long the button reads "Copied" before reverting to "Copy" (`SupportViewModel.kt:92`).
         static let copiedLabelMillis: Int64 = 2000
-        /// A tap more than this after the previous one restarts the reveal count (`AboutViewModel.kt:95`).
+        /// A tap more than this after the previous one restarts the reveal count (`SupportViewModel.kt:95`).
         static let tapWindowMillis: Int64 = 3000
-        /// Consecutive taps needed to reveal the support code (`AboutViewModel.kt:98`).
+        /// Consecutive taps needed to reveal the support code (`SupportViewModel.kt:98`).
         static let revealTaps = 5
     }
 }
