@@ -39,13 +39,6 @@ public struct AboutKey: Hashable, Sendable {
     public init() {}
 }
 
-/// The Support screen, pushed from the More tab's "Uygulama" section (`SettingsNavigation.kt:27`,
-/// drawn by `:55-57` on the Kotlin side). The iOS twin of the `@Serializable SupportKey` object —
-/// `Hashable` is what `navigationDestination(for:)` requires (see `VitalsNavigation.swift`'s note).
-public struct SupportKey: Hashable, Sendable {
-    public init() {}
-}
-
 extension View {
     /// Registers every destination this feature owns.
     ///
@@ -54,8 +47,8 @@ extension View {
     /// rather than forcing one central `navigationDestination(for: AnyNavKey.self)` in the app
     /// target (`AnyNavKey.swift:23-29`).
     ///
-    /// The four same-feature destinations the More hub pushes — Reminder Health, Profile, About,
-    /// Support — are registered here; the cross-feature hops (`onOpenCycle`/`onOpenDoctorReport`/
+    /// The three same-feature destinations the More hub pushes — Reminder Health, Profile, About —
+    /// are registered here; the cross-feature hops (`onOpenCycle`/`onOpenDoctorReport`/
     /// `onOpenTrends`) are shell callbacks the `MoreRoute` takes, not destinations, because their
     /// keys belong to other features this one cannot see (spec §4).
     public func settingsDestinations() -> some View {
@@ -67,9 +60,6 @@ extension View {
         }
         .navigationDestination(for: AboutKey.self) { _ in
             AboutRoute()
-        }
-        .navigationDestination(for: SupportKey.self) { _ in
-            SupportRoute()
         }
     }
 }

@@ -22,31 +22,68 @@
 //   `SalusIconBadge`                → stays `SalusIconBadge(systemImage:)`.
 //   `Icons.Outlined.*`              → SF Symbols (the Material→SF map is a recorded divergence, the
 //                                    same one `MoreScreen.swift` records).
+//   `TopAppBar` title Text with     → the reveal gesture lands on the `.navigationTitle`'s `Text`
+//    `Modifier.clickable { TitleTapped }`  (`.onTapGesture`), the exact mechanic the Android
+//                                    About title carries (`AboutScreen.kt:83-86`).
+//   `LocalClipboardManager`         → `UIPasteboard.general` under `#if os(iOS)`; the macOS host
+//                                    build compiles the copy button without the write.
+//   `TextButton`                    → a plain `Button` with `.buttonStyle(.borderless)`, so it stays
+//                                    inside the card rather than becoming a full-width row.
+//   `TextOverflow.MiddleEllipsis`   → `.lineLimit(1)` + `.truncationMode(.middle)`.
 //
 // The app version deliberately lives on the More screen's About row only, so the number has a
 // single home (`AboutScreen.kt:52-53`); see `docs/architecture/m9-plan.md` item 1. No version
 // footer here.
 
 import SalusDesignSystem
+import SalusPremium
 import SalusUI
 import SwiftUI
 
-/// The About screen (`AboutScreen.kt:46-114`).
+#if canImport(UIKit)
+    import UIKit
+#endif
+
+/// Owns the ViewModel and wires it to the shell (`AboutScreen.kt:56-70`).
 ///
-/// About carries no ViewModel and no state: it is pure information — the app name, a short
-/// description, a "What Salus does" feature overview, and a privacy card. The premium-status card
-/// and the hidden RevenueCat id moved to the Support screen (`SupportScreen.swift`), reached from
-/// the More tab's "Uygulama" section (`MoreScreen.kt:308-314`).
+/// The Kotlin `AboutRoute` calls `koinInject<Navigator>()` then passes `navigator::pop` as
+/// `onBack`; iOS needs neither, because the shell's one `NavigationStack` draws the back button
+/// itself once a `.navigationTitle` is set (divergence (d) — the same one `ProfileRoute` and
+/// `ReminderHealthRoute` record). The back tap pops the stack without the feature reaching for a
+/// `Navigator`.
 public struct AboutRoute: View {
+    @Environment(\.settingsModule) private var module
+    @State private var viewModel: AboutViewModel?
+
     public init() {}
 
     public var body: some View {
-        AboutScreen()
+        Group {
+            if let viewModel {
+                AboutScreen(state: viewModel.state, onEvent: viewModel.onEvent)
+            } else {
+                // Only until `.task` has run, or if the shell forgot to inject the module.
+                ProgressView()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        }
+        .task {
+            guard viewModel == nil, let module else { return }
+            viewModel = module.makeAboutViewModel()
+        }
     }
 }
 
-/// The stateless About screen (`AboutScreen.kt:54-114`), drawn as a pushed destination.
+/// The About screen (`AboutScreen.kt:72-139`), drawn as a pushed destination.
+///
+/// About is a feature overview — the app name, a short description, a "What Salus does" feature
+/// list, and a privacy card — with the premium-status card and the hidden RevenueCat id embedded
+/// below the privacy card (`AboutScreen.kt:137`). The premium-status line is always visible; the id
+/// and copy button only appear once the 5-tap reveal on the title has completed.
 struct AboutScreen: View {
+    let state: AboutUiState
+    let onEvent: (AboutEvent) -> Void
+
     @Environment(\.salusTheme) private var theme
 
     private var colors: SalusColorScheme { theme.colorScheme }
@@ -97,10 +134,28 @@ struct AboutScreen: View {
                             .foregroundStyle(colors.onSurface)
                     }
                 }
+
+                // The premium-status card, embedded below the privacy card (`AboutScreen.kt:137`).
+                PremiumStatusCard(state: state, onEvent: onEvent)
             }
             .padding(SalusSpacing.lg)
         }
         .background(colors.background)
+        // The reveal gesture lives on the navigation title, the iOS twin of the Android TopAppBar
+        // title `Text` with `Modifier.clickable { onEvent(AboutEvent.TitleTapped) }`
+        // (`AboutScreen.kt:83-86`): five consecutive taps on the title show the support code.
+        // `navigationTitle` takes a `LocalizedStringKey`, so the tappable `Text` is drawn in the
+        // toolbar alongside it and carries the same verbatim string.
+        .toolbar {
+            ToolbarItem(placement: .principal) {
+                // The taps go through a Text with hidden accessibility: the title itself already
+                // tells VoiceOver users where they are, and the gesture is a developer-only
+                // backdoor — repeating it twice would be a needless announcement.
+                Text(verbatim: SettingsStrings.aboutTitle)
+                    .accessibilityHidden(true)
+                    .onTapGesture { onEvent(.titleTapped) }
+            }
+        }
         .navigationTitle(SettingsStrings.aboutTitle)
         #if os(iOS)
             .navigationBarTitleDisplayMode(.inline)
@@ -108,8 +163,87 @@ struct AboutScreen: View {
     }
 }
 
+/// The premium-status card: the RevenueCat `appUserID` a developer pastes into the RevenueCat
+/// dashboard to grant a gift subscription. The id is long (`$RCAnonymousID:<uuid>`), so it is
+/// ellipsized in the middle; the copy button puts the full value on the clipboard. The
+/// premium-status line is always visible; the id and copy button only appear once the 5-tap reveal
+/// has completed (`AboutScreen.kt:143-207`).
+private struct PremiumStatusCard: View {
+    let state: AboutUiState
+    let onEvent: (AboutEvent) -> Void
+
+    @Environment(\.salusTheme) private var theme
+
+    private var colors: SalusColorScheme { theme.colorScheme }
+
+    var body: some View {
+        SalusCard(contentPadding: SalusSpacing.lg) {
+            VStack(alignment: .leading, spacing: 0) {
+                Text(verbatim: SettingsStrings.supportPremiumStatusTitle)
+                    .font(SalusTypography.titleMedium.font)
+                    .tracking(SalusTypography.titleMedium.tracking)
+                    .foregroundStyle(colors.onSurface)
+
+                Text(verbatim: premiumStatusLabel)
+                    .font(SalusTypography.bodyMedium.font)
+                    .tracking(SalusTypography.bodyMedium.tracking)
+                    .foregroundStyle(colors.onSurface)
+                    .padding(.top, SalusSpacing.sm)
+
+                if let appUserID = state.appUserID, state.idRevealed {
+                    Text(verbatim: SettingsStrings.supportCode)
+                        .font(SalusTypography.labelMedium.font)
+                        .tracking(SalusTypography.labelMedium.tracking)
+                        .foregroundStyle(colors.onSurface)
+                        .padding(.top, SalusSpacing.sm)
+
+                    Text(verbatim: appUserID)
+                        .font(SalusTypography.bodyMedium.font)
+                        .tracking(SalusTypography.bodyMedium.tracking)
+                        .foregroundStyle(colors.onSurface)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                        .padding(.top, SalusSpacing.sm)
+
+                    HStack {
+                        Spacer()
+                        Button {
+                            copy(appUserID)
+                            onEvent(.copySupportCode)
+                        } label: {
+                            Text(verbatim: state.copied
+                                ? SettingsStrings.supportCopied
+                                : SettingsStrings.supportCopy)
+                        }
+                        .buttonStyle(.borderless)
+                    }
+                    .padding(.top, SalusSpacing.sm)
+                }
+            }
+        }
+    }
+
+    /// `when (state.premiumStatus)` (`AboutScreen.kt:163-167`): `gracePeriod` reads as active.
+    private var premiumStatusLabel: String {
+        switch state.premiumStatus {
+        case .free: SettingsStrings.supportPremiumFree
+        case .premium: SettingsStrings.supportPremiumActive
+        case .gracePeriod: SettingsStrings.supportPremiumActive
+        }
+    }
+
+    /// `clipboardManager.setText(AnnotatedString(appUserID))` (`AboutScreen.kt:192`) — the screen
+    /// performs the actual clipboard write; the ViewModel only flips the "Copied" label. iOS-only:
+    /// the macOS host build compiles the button without the write.
+    private func copy(_ appUserID: String) {
+        #if os(iOS)
+            UIPasteboard.general.string = appUserID
+        #endif
+    }
+}
+
 /// One non-interactive feature row: an icon badge, the feature name and a one-line description
-/// (`AboutScreen.kt:119-149`). These are informational only — the `SalusCard` gets no `onTap`
+/// (`AboutScreen.kt:215-249`). These are informational only — the `SalusCard` gets no `onTap`
 /// (the twin of Kotlin's `SalusCard` without `onClick`), so there is no chevron and nothing
 /// responds to a tap.
 private struct FeatureRow: View {
@@ -141,7 +275,7 @@ private struct FeatureRow: View {
     }
 }
 
-/// The feature-overview rows, in the order they are presented (`AboutScreen.kt:151-194`). The
+/// The feature-overview rows, in the order they are presented (`AboutScreen.kt:252-290`). The
 /// Material icons map to SF Symbols exactly as the More screen's rows do (a recorded divergence);
 /// each symbol is the established one for that feature's rows elsewhere in the port.
 private struct AboutFeatureRow {
@@ -192,15 +326,41 @@ private enum AboutFeatureRows {
 
 #Preview("About") {
     NavigationStack {
-        AboutScreen()
+        AboutScreen(
+            state: AboutUiState(
+                appUserID: "$RCAnonymousID:01234567-89ab-cdef-0123-456789abcdef",
+                premiumStatus: .premium
+            ),
+            onEvent: { _ in }
+        )
     }
     .salusTheme(SalusTheme.resolve(systemIsDark: false))
 }
 
 #Preview("About, dark") {
     NavigationStack {
-        AboutScreen()
+        AboutScreen(
+            state: AboutUiState(
+                appUserID: "$RCAnonymousID:01234567-89ab-cdef-0123-456789abcdef",
+                premiumStatus: .premium
+            ),
+            onEvent: { _ in }
+        )
     }
     .salusTheme(SalusTheme.resolve(systemIsDark: true))
     .preferredColorScheme(.dark)
+}
+
+#Preview("About, revealed") {
+    NavigationStack {
+        AboutScreen(
+            state: AboutUiState(
+                appUserID: "$RCAnonymousID:01234567-89ab-cdef-0123-456789abcdef",
+                premiumStatus: .premium,
+                idRevealed: true
+            ),
+            onEvent: { _ in }
+        )
+    }
+    .salusTheme(SalusTheme.resolve(systemIsDark: false))
 }

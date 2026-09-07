@@ -31,9 +31,9 @@
 //      the new language while the stack and selection survive. (Until the release QA pass the pick
 //      landed on the next launch and the dialog carried an iOS-only footnote saying so.)
 //
-// The four same-feature pushes (`ReminderHealthKey`/`AboutKey`/`SupportKey`/`ProfileKey`) the Kotlin
-// Route makes through `koinInject<Navigator>()` (`MoreScreen.kt:149-152`) go through the `navigator`
-// the `SettingsModule` exposes — the same way `ProfileViewModel` reaches it. The shell owns the stack.
+// The three same-feature pushes (`ReminderHealthKey`/`AboutKey`/`ProfileKey`) the Kotlin Route makes
+// through `koinInject<Navigator>()` (`MoreScreen.kt:149-152`) go through the `navigator` the
+// `SettingsModule` exposes — the same way `ProfileViewModel` reaches it. The shell owns the stack.
 
 import Foundation
 import LocalAuthentication
@@ -143,7 +143,6 @@ public struct MoreRoute: View {
             // navigator rather than `backStacks.push`.
             onOpenReminderHealth: { module?.navigator.navigate(ReminderHealthKey()) },
             onOpenAbout: { module?.navigator.navigate(AboutKey()) },
-            onOpenSupport: { module?.navigator.navigate(SupportKey()) },
             onOpenProfile: { module?.navigator.navigate(ProfileKey()) },
             onOpenNotificationSettings: openNotificationSettings
         )
@@ -201,7 +200,6 @@ struct MoreScreen: View {
     let onOpenCycle: () -> Void
     let onOpenReminderHealth: () -> Void
     let onOpenAbout: () -> Void
-    let onOpenSupport: () -> Void
     let onOpenProfile: () -> Void
     let onOpenNotificationSettings: () -> Void
 
@@ -331,20 +329,13 @@ struct MoreScreen: View {
                         onClick: onOpenReminderHealth
                     )
 
-                    // 13. App section: about (`MoreScreen.kt:309-314`), then support below it
-                    //     (`MoreScreen.kt:315-320`).
+                    // 13. App section: about (`MoreScreen.kt:309-314`), then rate us below it.
                     SectionLabel(title: SettingsStrings.settingsSectionApp)
                     MoreCard(
                         icon: "info.circle.fill",
                         title: SettingsStrings.settingsAbout,
                         subtitle: SettingsStrings.settingsAboutDesc,
                         onClick: onOpenAbout
-                    )
-                    MoreCard(
-                        icon: "headphones",
-                        title: SettingsStrings.settingsSupport,
-                        subtitle: SettingsStrings.settingsSupportDesc,
-                        onClick: onOpenSupport
                     )
                     // 13b. Rate Salus — the store's write-review page (in-app review spec §4).
                     MoreCard(
@@ -464,7 +455,6 @@ struct MoreScreen: View {
             onOpenCycle: {},
             onOpenReminderHealth: {},
             onOpenAbout: {},
-            onOpenSupport: {},
             onOpenProfile: {},
             onOpenNotificationSettings: {}
         )
@@ -487,7 +477,6 @@ struct MoreScreen: View {
             onOpenCycle: {},
             onOpenReminderHealth: {},
             onOpenAbout: {},
-            onOpenSupport: {},
             onOpenProfile: {},
             onOpenNotificationSettings: {}
         )

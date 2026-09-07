@@ -165,8 +165,6 @@ public enum SettingsStrings {
     public static var settingsColorTheme: String { localized(.settingsColorTheme) }
     public static var settingsDoctorReport: String { localized(.settingsDoctorReport) }
     public static var settingsDoctorReportDesc: String { localized(.settingsDoctorReportDesc) }
-    public static var settingsSupport: String { localized(.settingsSupport) }
-    public static var settingsSupportDesc: String { localized(.settingsSupportDesc) }
 
     // MARK: - Theme dialog
 
@@ -215,7 +213,6 @@ public enum SettingsStrings {
     // MARK: - Support
 
     public static var supportTitle: String { localized(.supportTitle) }
-    public static var supportDesc: String { localized(.supportDesc) }
     public static var supportPremiumStatusTitle: String { localized(.supportPremiumStatusTitle) }
     public static var supportPremiumFree: String { localized(.supportPremiumFree) }
     public static var supportPremiumActive: String { localized(.supportPremiumActive) }
@@ -395,8 +392,6 @@ public enum SettingsStrings {
         case settingsSectionSecurity = "settings_section_security"
         case settingsSecureScreen = "settings_secure_screen"
         case settingsSecureScreenDesc = "settings_secure_screen_desc"
-        case settingsSupport = "settings_support"
-        case settingsSupportDesc = "settings_support_desc"
         case settingsTheme = "settings_theme"
         case themeDark = "theme_dark"
         case themeLight = "theme_light"
@@ -405,7 +400,6 @@ public enum SettingsStrings {
         case supportCode = "support_code"
         case supportCopied = "support_copied"
         case supportCopy = "support_copy"
-        case supportDesc = "support_desc"
         case supportPremiumActive = "support_premium_active"
         case supportPremiumFree = "support_premium_free"
         case supportPremiumStatusTitle = "support_premium_status_title"

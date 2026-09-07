@@ -1,9 +1,9 @@
 // Ported 1:1 from
-// `feature/settings/src/test/kotlin/com/alicansekban/salus/feature/settings/ui/support/SupportViewModelTest.kt`.
+// `feature/settings/src/test/kotlin/com/alicansekban/salus/feature/settings/ui/about/AboutViewModelTest.kt`.
 //
-// The five cases port by name — the moved-and-renamed About support tests
-// (`AboutViewModelTest.kt` on the support-code branch): state+id reach, the null-unconfigured path,
-// the copy toggle, the 5-tap reveal within the window, and the outside-window reset. The
+// The five cases port by name — the moved-and-renamed Support tests
+// (`SupportViewModelTest.kt` on the about-redesign plan T2): state+id reach, the null-unconfigured
+// path, the copy toggle, the 5-tap reveal within the window, and the outside-window reset. The
 // `MainDispatcherRule` + `runTest` virtual scheduler becomes the cooperative pool: each
 // `advanceUntilIdle()` is a `waitUntil` that yields the main actor until the named condition holds.
 // `hotViewModel()` — a ViewModel with a live `state` subscriber — is spelled the same way, because
@@ -11,7 +11,7 @@
 // already "hot".
 //
 // The `FixedSalusClock` is advanced with `advanceTo(_:)` and the taps are fired at the new time,
-// exactly as the Kotlin test's `tap(count:millis:)` helper does (`SupportViewModelTest.kt:69-74`).
+// exactly as the Kotlin test's `tap(count:millis:)` helper does (`AboutViewModelTest.kt:69-74`).
 
 import Foundation
 import SalusCommon
@@ -21,11 +21,11 @@ import Testing
 
 @testable import FeatureSettings
 
-@Suite("SupportViewModel")
+@Suite("AboutViewModel")
 @MainActor
-struct SupportViewModelTests {
+struct AboutViewModelTests {
     /// The fake gateway the Kotlin test holds as a field, rebuilt per case so no state leaks
-    /// across them (`SupportViewModelTest.kt:33-46`).
+    /// across them (`AboutViewModelTest.kt:33-46`).
     private final class FakePurchasesGateway: PurchasesGateway, @unchecked Sendable {
         var appUserID: String?
         let isConfigured = true
@@ -44,7 +44,7 @@ struct SupportViewModelTests {
         }
     }
 
-    /// The fake premium repository the Kotlin test holds as a field (`SupportViewModelTest.kt:27-31`).
+    /// The fake premium repository the Kotlin test holds as a field (`AboutViewModelTest.kt:27-31`).
     private final class FakePremiumRepository: PremiumRepository, @unchecked Sendable {
         private let lock = NSLock()
         private var value: PremiumStatus
@@ -91,18 +91,18 @@ struct SupportViewModelTests {
     private func makeViewModel(
         appUserID: String? = nil,
         premiumStatus: PremiumStatus = .free
-    ) -> (vm: SupportViewModel, gateway: FakePurchasesGateway, premium: FakePremiumRepository, clock: FixedSalusClock) {
+    ) -> (vm: AboutViewModel, gateway: FakePurchasesGateway, premium: FakePremiumRepository, clock: FixedSalusClock) {
         let gateway = FakePurchasesGateway()
         gateway.appUserID = appUserID
         let premium = FakePremiumRepository(value: premiumStatus)
         let clock = FixedSalusClock(now: Date(timeIntervalSince1970: 1000))
-        let vm = SupportViewModel(gateway: gateway, premiumRepository: premium, clock: clock)
+        let vm = AboutViewModel(gateway: gateway, premiumRepository: premium, clock: clock)
         return (vm, gateway, premium, clock)
     }
 
     /// Advances the fake clock by `millis` and fires `count` taps at that new time
-    /// (`SupportViewModelTest.kt:69-74`).
-    private func tap(_ vm: SupportViewModel, _ clock: FixedSalusClock, count: Int, millis: TimeInterval) {
+    /// (`AboutViewModelTest.kt:69-74`).
+    private func tap(_ vm: AboutViewModel, _ clock: FixedSalusClock, count: Int, millis: TimeInterval) {
         clock.advanceTo(clock.now().addingTimeInterval(millis))
         for _ in 0 ..< count {
             vm.onEvent(.titleTapped)
@@ -145,7 +145,7 @@ struct SupportViewModelTests {
 
         // The 2 s "Copied" label reverts after the window. The ViewModel's `Task.sleep` is real
         // wall-clock time (there is no virtual scheduler on iOS), so the test waits the same 2 s
-        // the Kotlin test's `advanceTimeBy(2_001)` advances (`SupportViewModelTest.kt:110`).
+        // the Kotlin test's `advanceTimeBy(2_001)` advances (`AboutViewModelTest.kt:110`).
         try? await Task.sleep(nanoseconds: 2_100_000_000)
         await waitUntil("the copied flag to revert") { !fixture.vm.state.copied }
         #expect(fixture.vm.state.copied == false)

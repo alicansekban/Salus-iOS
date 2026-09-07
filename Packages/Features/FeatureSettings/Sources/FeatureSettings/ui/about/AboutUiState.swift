@@ -1,18 +1,18 @@
 // Ported 1:1 from
-// `feature/settings/src/main/kotlin/com/alicansekban/salus/feature/settings/ui/support/SupportUiState.kt`.
+// `feature/settings/src/main/kotlin/com/alicansekban/salus/feature/settings/ui/about/AboutUiState.kt`.
 
 import SalusPremium
 
-/// The Support screen's state (`SupportUiState.kt:16-23`).
+/// The About screen's state (`AboutUiState.kt:16-23`).
 ///
 /// [appUserID] is the RevenueCat `appUserID` a developer pastes into the RevenueCat dashboard to
 /// grant a gift subscription; it is `nil` when the store SDK is not configured (e.g. a debug build
-/// without an API key), in which case the support card hides the id line and the copy button.
+/// without an API key), in which case the premium card hides the id line and the copy button.
 ///
 /// The id line and copy button are hidden until [idRevealed]: five consecutive taps on the screen
 /// title (each within 3 s of the previous) reveal them for the ViewModel's lifetime. Nothing is
 /// persisted — the reveal is session-only.
-public struct SupportUiState: Sendable, Equatable {
+public struct AboutUiState: Sendable, Equatable {
     public var appUserID: String?
     public var premiumStatus: PremiumStatus
     /// True once the 5-tap reveal gesture has been completed; stays true for the session.
@@ -33,10 +33,10 @@ public struct SupportUiState: Sendable, Equatable {
     }
 }
 
-/// User intents (`SupportUiState.kt:25-31`).
-public enum SupportEvent: Sendable, Equatable {
+/// User intents (`AboutUiState.kt:25-31`).
+public enum AboutEvent: Sendable, Equatable {
     /// A tap on the screen title; five consecutive taps reveal the support code.
     case titleTapped
-    /// The user tapped the copy button; the screen copies the id and this flips `SupportUiState.copied`.
+    /// The user tapped the copy button; the screen copies the id and this flips `AboutUiState.copied`.
     case copySupportCode
 }

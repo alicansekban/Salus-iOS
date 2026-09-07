@@ -5,23 +5,24 @@ import Testing
 @testable import FeatureSettings
 
 /// The twin of Android's `feature/settings/src/main/res/values/strings.xml` (`tr`, the source
-/// language) and `values-en/strings.xml`, and the drift detector between the two locales: all 114
+/// language) and `values-en/strings.xml`, and the drift detector between the two locales: all 111
 /// keys and both of their translations are pinned here.
 ///
-/// The 114 keys split four ways; two (`settings_rate_us*`) are the in-app review row, copied from
+/// The 111 keys split four ways; two (`settings_rate_us*`) are the in-app review row, copied from
 /// the XML. Of the rest, fifteen are the `reminder_health_*` block that shipped with
 /// iOS-M3 — ten copied from the XML verbatim, five iOS-only (the Background App Refresh row and the
 /// last-pass line, which answer questions Android answers with a different mechanism or not at all).
-/// Ninety-five are the More / About / Profile / settings keys the M8 hub, the support-code plan T2
+/// Ninety-two are the More / About / Profile / settings keys the M8 hub, the support-code plan T2
 /// and the about-redesign plan T2 add, copied verbatim from the XML. Two (`more_cycle`,
 /// `more_cycle_subtitle`) move here from the App target's catalog with M8. (The about-redesign moved
 /// the six `about_support_*` / `about_premium_*` keys of the support-code T2 off About onto the new
 /// Support screen as `support_*`, added the seven `about_feature_*` rows + `about_features_title`,
-/// and the More row's `settings_support_*`.) (The iOS-only `language_relaunch_note` of iOS-M8 T12 is
-/// gone: the language pick applies live through `SalusLocalization`, so there is no launch to wait
-/// for and nothing to say.) `SettingsStrings.swift`'s header carries the card-by-card mapping and
-/// the reason each Android key is kept, dropped or replaced; this table is where a drift in either
-/// direction fails.
+/// and the More row's `settings_support_*`; the about-redesign fix then scrapped the Support screen
+/// and the `settings_support_*` row with it, so those two keys left the catalog.) (The iOS-only
+/// `language_relaunch_note` of iOS-M8 T12 is gone: the language pick applies live through
+/// `SalusLocalization`, so there is no launch to wait for and nothing to say.) `SettingsStrings.swift`'s
+/// header carries the card-by-card mapping and the reason each Android key is kept, dropped or
+/// replaced; this table is where a drift in either direction fails.
 ///
 /// Ten Android keys are deliberately not here (see `SettingsStrings.swift`'s header): the three
 /// `reminder_health_exact_*`, the four `reminder_health_battery_*` — `*_title`, `*_problem`,
@@ -48,14 +49,14 @@ struct SettingsStringsTests {
         // Pinned as a number as well as a set: a row deleted from the table together with its key
         // from the catalog would otherwise agree with itself and pass.
         //
-        // The arithmetic behind 114, re-derived at the about-redesign plan T2 rather than carried
-        // from the support-code plan: Android's `feature/settings` XML holds 119 keys; ten are
-        // dropped here (the three `reminder_health_exact_*`, the four `reminder_health_battery_*`
-        // — `*_title`, `*_problem`, `*_restricted`, `*_ok` — `reminder_health_back`,
-        // `settings_back`, `profile_back`) → 109 carried over. Five are iOS-only: the
-        // `reminder_health_*` ones that shipped with iOS-M3 (three `*_background_refresh_*`,
-        // `*_last_sync`, `*_never_synced`). 119 − 10 + 5 = 114.
-        #expect(Self.samples.count == 114)
+        // The arithmetic behind 111, re-derived after the support_desc removal: Android's
+        // `feature/settings` XML holds 116 keys; ten are dropped here (the three
+        // `reminder_health_exact_*`, the four `reminder_health_battery_*` — `*_title`,
+        // `*_problem`, `*_restricted`, `*_ok` — `reminder_health_back`, `settings_back`,
+        // `profile_back`) → 106 carried over. Five are iOS-only: the `reminder_health_*`
+        // ones that shipped with iOS-M3 (three `*_background_refresh_*`, `*_last_sync`,
+        // `*_never_synced`). 116 − 10 + 5 = 111.
+        #expect(Self.samples.count == 111)
 
         try StringCatalogParity.assertKeys(of: Self.loadCatalog(), are: Self.expectedKeys)
     }
@@ -209,11 +210,6 @@ private enum SettingsSamplesFirst {
             english: "Medication and measurement reminders"
         ),
         SettingsStringSample(key: "support_title", turkish: "Destek", english: "Support"),
-        SettingsStringSample(
-            key: "support_desc",
-            turkish: "Premium durumunuzu görüntüleyin, destek için kodunuzu kopyalayın.",
-            english: "View your premium status and copy your support code for assistance."
-        ),
         SettingsStringSample(key: "support_premium_status_title", turkish: "Abonelik", english: "Subscription"),
         SettingsStringSample(key: "support_premium_free", turkish: "Ücretsiz", english: "Free"),
         SettingsStringSample(key: "support_premium_active", turkish: "Aktif Premium", english: "Active Premium"),
@@ -410,12 +406,6 @@ private enum SettingsSamplesSecond {
             key: "settings_doctor_report_desc",
             turkish: "Kayıtlarını PDF olarak dışa aktar ve paylaş",
             english: "Export your records as a PDF and share them"
-        ),
-        SettingsStringSample(key: "settings_support", turkish: "Destek", english: "Support"),
-        SettingsStringSample(
-            key: "settings_support_desc",
-            turkish: "Premium durumu ve destek kodu",
-            english: "Premium status and support code"
         ),
         SettingsStringSample(key: "settings_language", turkish: "Dil", english: "Language"),
         SettingsStringSample(
