@@ -65,9 +65,21 @@ public struct ReminderReadinessReport: Sendable, Equatable {
     /// ``readiness`` is ``ReminderReadiness/ok``.
     public let problems: [ReminderProblem]
 
-    public init(readiness: ReminderReadiness, problems: [ReminderProblem]) {
-        self.readiness = readiness
+    /// Derives ``readiness`` from the problems, which is the only way the two can be built: a
+    /// memberwise init let a caller pass `.ok` alongside a hard problem, and the invariant the
+    /// `problems` doc claims would then hold only by convention.
+    ///
+    /// - Parameter problems: what is wrong, in ``ReminderProblem`` declaration order.
+    public init(problems: [ReminderProblem]) {
         self.problems = problems
+        readiness =
+            if problems.contains(where: \.isHard) {
+                .broken
+            } else if problems.isEmpty {
+                .ok
+            } else {
+                .degraded
+            }
     }
 
     /// Only the problems that stop a reminder outright — what a "reminders will not work"
@@ -77,7 +89,7 @@ public struct ReminderReadinessReport: Sendable, Equatable {
     }
 
     /// The healthy report, so a caller never has to spell the empty case out.
-    public static let ok = ReminderReadinessReport(readiness: .ok, problems: [])
+    public static let ok = ReminderReadinessReport(problems: [])
 }
 
 extension ReminderEnvironment {
@@ -111,11 +123,8 @@ extension ReminderEnvironment {
             problems.append(.backgroundRefreshOff)
         }
 
-        guard !problems.isEmpty else { return .ok }
-
-        return ReminderReadinessReport(
-            readiness: problems.contains(where: \.isHard) ? .broken : .degraded,
-            problems: problems
-        )
+        // The classification itself is the initializer's, so an empty list is ``ok`` here without
+        // a case of its own.
+        return ReminderReadinessReport(problems: problems)
     }
 }

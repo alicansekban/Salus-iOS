@@ -191,22 +191,29 @@ struct RootView: View {
         .toolbarBackground(.visible, for: .tabBar)
     }
 
-    /// One stack per tab. No `navigationDestination` written here on purpose: `TabBackStacks.push`
-    /// puts the feature's **concrete** key into the path, so each feature package registers its own
-    /// `navigationDestination(for:)` in a `…Destinations()` modifier applied here — the twin of
-    /// Android's `vitalsEntries` / `homeEntries` `NavEntry` providers. The shell therefore never
-    /// names a key; `medicationsDestinations()`, `vitalsDestinations()`,
-    /// `appointmentsDestinations()`, `settingsDestinations()` and `cycleDestinations()` below are
-    /// those modifiers — `settingsDestinations()` arrived with the More hub in iOS-M8, which is
-    /// what retired the placeholder that used to stand in for it. Home registers no modifier of its
-    /// own: its cards push another feature's key or switch tab, so `FeatureHome` ships no
-    /// `homeDestinations()` (plan ruling 8).
+    /// One stack per tab, wrapped in the two things every tab shares: the bottom-bar rule and the
+    /// snackbar host. The stacks themselves — and the destinations registered on them — are
+    /// ``RootNavigationStack``'s, in `RootNavigationStack.swift`; this only adds what is common to
+    /// all five, which is why neither is written there.
     ///
-    /// `cycleDestinations()` is applied twice, which is the shape a feature without a tab takes:
-    /// cycle is reached from the More list and from a tapped cycle reminder, which lands on Home
-    /// (iOS-M6 rulings 1 and 2), so both of those stacks have to know how to render `CycleKey`.
-    /// SwiftUI resolves `navigationDestination(for:)` per stack, so registering it on one would
-    /// leave the other pushing a key nothing draws.
+    /// No `navigationDestination` is written in this file at all, and none is written in that one
+    /// either: `TabBackStacks.push` puts the feature's **concrete** key into the path, so each
+    /// feature package registers its own `navigationDestination(for:)` in a `…Destinations()`
+    /// modifier — the twin of Android's `vitalsEntries` / `homeEntries` `NavEntry` providers. The
+    /// shell therefore never names a key; it only decides which registrar goes on which stack, and
+    /// `medicationsDestinations(onOpenReminderHealth:)`, `vitalsDestinations()`,
+    /// `appointmentsDestinations()`, `settingsDestinations()`, `aiHealthDestinations()`,
+    /// `trendsDestinations()` and `cycleDestinations()` are those modifiers. Two of them are
+    /// applied to more than one stack, which is the shape a feature reachable from several places
+    /// takes: `cycleDestinations()` on More and on Home (iOS-M6 rulings 1 and 2), and
+    /// `settingsDestinations()` on More, on medications — the editor's post-save "Fix" — and on
+    /// Home, which the readiness card added. SwiftUI resolves `navigationDestination(for:)` per
+    /// stack, so registering either on one alone would leave the other pushing a key nothing draws.
+    ///
+    /// `medicationsDestinations(onOpenReminderHealth:)` takes a closure because that "Fix" leaves
+    /// the feature's own graph: `ReminderHealthKey` is `FeatureSettings`', so the shell is what
+    /// pushes it. Home registers no modifier of its own — its cards push another feature's key or
+    /// switch tab, so `FeatureHome` ships no `homeDestinations()` (plan ruling 8).
     private func tabStack(for tab: RootTab) -> some View {
         navigationStack(for: tab)
             // Android's `showBottomBar`, one for one (`SalusApp.kt:133-136`): "the bottom bar only

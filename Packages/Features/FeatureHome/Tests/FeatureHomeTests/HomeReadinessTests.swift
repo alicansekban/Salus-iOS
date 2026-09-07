@@ -100,6 +100,14 @@ struct HomeReadinessTests {
         // `settle()` here would also pass on a ViewModel that never asked at all, and — with the
         // review suite now running beside this one — its yield budget is spent on other cases.
         await waitUntil("the arrival's read to finish") { environment.readCount(of: .backgroundRefresh) == 1 }
+        // The read having finished is still not the answer having landed: `readiness()` returns on
+        // the environment's side of the hop back to `@MainActor`, so the publish is owed a turn
+        // that the wait above does not give it. Every nil assertion in this file needs both — the
+        // wait, so "nothing published" is not just "nothing published *yet*", and this, so it is
+        // not "nothing published *here*". Verified by making `refreshReminderReadiness()` return
+        // before its write: the two cases that assert nil stayed green, and all five that wait for
+        // a card failed.
+        await settle()
         #expect(viewModel.state.reminderReadiness == nil)
     }
 
@@ -158,6 +166,8 @@ struct HomeReadinessTests {
         // "AlarmKit was never asked" a measurement instead of a race — the read has demonstrably
         // run past the point where it would have asked.
         await waitUntil("the arrival's read to finish") { environment.readCount(of: .backgroundRefresh) == 1 }
+        // Same pair as the healthy case above: wait for the read, then hand the publish its turn.
+        await settle()
         #expect(viewModel.state.reminderReadiness == nil)
         // The healthy card is only half of it: a run that asked AlarmKit and then discarded a
         // denial it could not act on would look exactly the same from the state. This is the half
@@ -182,6 +192,8 @@ struct HomeReadinessTests {
         // case would pass on a report that never arrived.
         viewModel.onEvent(.appeared)
         await waitUntil("the first arrival's read to finish") { environment.readCount(of: .backgroundRefresh) == 1 }
+        // As above — the first arrival's read finishing does not mean its answer has been written.
+        await settle()
         #expect(viewModel.state.reminderReadiness == nil, "the device is healthy on the first arrival")
 
         environment.set(notifications: false)

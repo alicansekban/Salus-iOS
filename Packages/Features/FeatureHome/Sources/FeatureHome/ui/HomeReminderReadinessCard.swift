@@ -69,11 +69,11 @@ struct HomeReminderReadinessCard: View {
 #Preview("Reminder readiness card") {
     VStack(spacing: SalusSpacing.sm) {
         HomeReminderReadinessCard(
-            report: ReminderReadinessReport(readiness: .broken, problems: [.notificationsOff]),
+            report: ReminderReadinessReport(problems: [.notificationsOff]),
             onTap: {}
         )
         HomeReminderReadinessCard(
-            report: ReminderReadinessReport(readiness: .degraded, problems: [.alarmKitDenied]),
+            report: ReminderReadinessReport(problems: [.alarmKitDenied]),
             onTap: {}
         )
     }

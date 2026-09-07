@@ -33,14 +33,29 @@ struct ReminderReadinessTests {
 
     @Test("the healthy report names no problem")
     func healthyReportNamesNoProblem() {
-        #expect(ReminderReadinessReport.ok == ReminderReadinessReport(readiness: .ok, problems: []))
+        #expect(ReminderReadinessReport.ok == ReminderReadinessReport(problems: []))
+        #expect(ReminderReadinessReport.ok.readiness == .ok)
         #expect(ReminderReadinessReport.ok.hardProblems.isEmpty)
+    }
+
+    /// The report takes problems only, so no caller can pair a level with a list that contradicts
+    /// it — the classification is the initializer's, and this is it read directly rather than
+    /// through an environment.
+    @Test("the report derives its readiness from the problems it is given")
+    func reportDerivesItsReadinessFromItsProblems() {
+        #expect(ReminderReadinessReport(problems: []).readiness == .ok)
+        #expect(ReminderReadinessReport(problems: [.alarmKitDenied]).readiness == .degraded)
+        #expect(ReminderReadinessReport(problems: [.backgroundRefreshOff]).readiness == .degraded)
+        #expect(ReminderReadinessReport(problems: [.notificationsOff]).readiness == .broken)
+        // A hard problem decides the level whatever else is beside it.
+        #expect(
+            ReminderReadinessReport(problems: [.notificationsOff, .backgroundRefreshOff]).readiness == .broken
+        )
     }
 
     @Test("hardProblems keeps only the hard ones, in order")
     func hardProblemsKeepsOnlyHardOnes() {
         let report = ReminderReadinessReport(
-            readiness: .broken,
             problems: [.notificationsOff, .alarmKitDenied, .backgroundRefreshOff]
         )
 
