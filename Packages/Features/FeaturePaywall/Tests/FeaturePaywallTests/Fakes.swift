@@ -1,5 +1,5 @@
 // The test fakes for `PaywallViewModelTests` — ported 1:1 from the fakes in
-// `PaywallViewModelTest.kt:29-97` (FakePurchaseHost, the three plans, FakePurchasesGateway).
+// `PaywallViewModelTest.kt:29-98` (FakePurchaseHost, the three plans, FakePurchasesGateway).
 //
 // `@unchecked Sendable` over a lock rather than an actor because the protocols are not
 // `@MainActor`-isolated; the same shape `FakePurchasesGateway` in `SalusPremiumTests` uses.
@@ -69,7 +69,7 @@ final class Gate: @unchecked Sendable {
 }
 
 /// The test fake for `PurchasesGateway` — ported 1:1 from `FakePurchasesGateway` in
-/// `PaywallViewModelTest.kt:53-97`.
+/// `PaywallViewModelTest.kt:53-98`.
 final class FakePurchasesGateway: PurchasesGateway, @unchecked Sendable {
     private let lock = NSLock()
 
@@ -96,16 +96,21 @@ final class FakePurchasesGateway: PurchasesGateway, @unchecked Sendable {
 
     let isConfigured = true
 
+    /// The `appUserID` the gateway reports; `nil` stands for an unconfigured SDK.
+    var appUserID: String?
+
     init(
         offering: PaywallOffering? = PaywallOffering(plans: [monthly, sixMonth, annual]),
         customer: CustomerSnapshot? = CustomerSnapshot(entitlementActive: true, hasBillingIssue: false),
         restoreSnapshot: CustomerSnapshot = CustomerSnapshot(entitlementActive: false, hasBillingIssue: false),
-        purchaseOutcome: PurchaseOutcome = .success
+        purchaseOutcome: PurchaseOutcome = .success,
+        appUserID: String? = nil
     ) {
         offeringValue = offering
         customerValue = customer
         restoreSnapshotValue = restoreSnapshot
         purchaseOutcomeValue = purchaseOutcome
+        self.appUserID = appUserID
         let made = AsyncStream.makeStream(of: CustomerSnapshot.self, bufferingPolicy: .bufferingNewest(1))
         stream = made.stream
         continuation = made.continuation

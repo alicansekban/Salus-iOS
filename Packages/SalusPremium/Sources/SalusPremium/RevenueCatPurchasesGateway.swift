@@ -20,11 +20,21 @@ public final class RevenueCatPurchasesGateway: PurchasesGateway {
         Purchases.isConfigured
     }
 
+    /// The RevenueCat `appUserID`, or `nil` when the SDK is not configured.
+    ///
+    /// The SDK property `Purchases.shared.appUserID` is non-optional, so the `nil` comes from
+    /// `Purchases.isConfigured == false` — the same gate every other call here short-circuits on.
+    /// Ported 1:1 from `RevenueCatPurchasesGateway.kt:49-50`.
+    public var appUserID: String? {
+        guard isConfigured else { return nil }
+        return Purchases.shared.appUserID
+    }
+
     /// Entitlement pushes from the store, seeded with the current customer (when the store
     /// answers) so a collector never has to wait for a renewal to learn the status.
     ///
     /// The twin of the Android `callbackFlow` wrapping `updatedCustomerInfoListener`
-    /// (`RevenueCatPurchasesGateway.kt:49-66`): iOS surfaces the same single-collector push stream
+    /// (`RevenueCatPurchasesGateway.kt:59-76`): iOS surfaces the same single-collector push stream
     /// as `Purchases.shared.customerInfoStream`, seeded here with a `currentCustomer()` answer.
     public var customerUpdates: AsyncStream<CustomerSnapshot> {
         AsyncStream(bufferingPolicy: .bufferingNewest(1)) { continuation in

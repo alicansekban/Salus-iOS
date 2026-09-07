@@ -20,10 +20,15 @@ public protocol PurchaseHost: Sendable {}
 /// The one seam between this module and the billing SDK.
 ///
 /// Everything else in `:core:premium` is pure code and testable with a fake gateway; only the
-/// adapter implementing this interface touches the SDK. Ported 1:1 from `PurchasesGateway.kt:31-55`.
+/// adapter implementing this interface touches the SDK. Ported 1:1 from `PurchasesGateway.kt:31-64`.
 public protocol PurchasesGateway: Sendable {
     /// False when no store API key was supplied, e.g. in debug builds — nothing may be sold.
     var isConfigured: Bool { get }
+
+    /// The RevenueCat `appUserID` a developer pastes into the RevenueCat dashboard to grant a gift
+    /// subscription, or `nil` when the store SDK is not configured (e.g. a debug build without an
+    /// API key). Ported 1:1 from `PurchasesGateway.kt:43`.
+    var appUserID: String? { get }
 
     /// Entitlement changes the store pushes, including renewals and expiries.
     var customerUpdates: AsyncStream<CustomerSnapshot> { get }

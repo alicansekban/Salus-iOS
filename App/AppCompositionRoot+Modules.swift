@@ -289,7 +289,8 @@ extension AppCompositionRoot {
             preferencesDataSource: infrastructure.preferences,
             localeController: UserDefaultsAppLocaleController(defaults: .standard),
             premiumRepository: premium.premiumRepository,
-            paywallController: premium.paywallController
+            paywallController: premium.paywallController,
+            gateway: premium.paywallModule.gateway
         )
     }
 

@@ -191,6 +191,12 @@ public enum SettingsStrings {
     public static var aboutDescription: String { localized(.aboutDescription) }
     public static var aboutPrivacyTitle: String { localized(.aboutPrivacyTitle) }
     public static var aboutPrivacyBody: String { localized(.aboutPrivacyBody) }
+    public static var aboutSupportTitle: String { localized(.aboutSupportTitle) }
+    public static var aboutPremiumFree: String { localized(.aboutPremiumFree) }
+    public static var aboutPremiumActive: String { localized(.aboutPremiumActive) }
+    public static var aboutSupportCode: String { localized(.aboutSupportCode) }
+    public static var aboutSupportCopy: String { localized(.aboutSupportCopy) }
+    public static var aboutSupportCopied: String { localized(.aboutSupportCopied) }
 
     // MARK: - Profile
 
@@ -269,8 +275,14 @@ public enum SettingsStrings {
         case aboutDescription = "about_description"
         case aboutPrivacyBody = "about_privacy_body"
         case aboutPrivacyTitle = "about_privacy_title"
+        case aboutSupportCode = "about_support_code"
+        case aboutSupportCopied = "about_support_copied"
+        case aboutSupportCopy = "about_support_copy"
+        case aboutSupportTitle = "about_support_title"
         case aboutTitle = "about_title"
         case aboutVersion = "about_version"
+        case aboutPremiumActive = "about_premium_active"
+        case aboutPremiumFree = "about_premium_free"
         case colorThemeClassic = "color_theme_classic"
         case colorThemeForest = "color_theme_forest"
         case colorThemeOcean = "color_theme_ocean"

@@ -15,7 +15,7 @@ import Testing
 @Suite("PaywallViewModel (Android parity)")
 @MainActor
 struct PaywallViewModelTests {
-    /// `PaywallViewModelTest.kt:104-111` — the gateway is always the fake; the controller defaults
+    /// `PaywallViewModelTest.kt:105-112` — the gateway is always the fake; the controller defaults
     /// to a fresh one and the repository to a fake over the same gateway.
     private func viewModel(
         gateway: FakePurchasesGateway,

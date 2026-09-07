@@ -5,23 +5,26 @@ import Testing
 @testable import FeatureSettings
 
 /// The twin of Android's `feature/settings/src/main/res/values/strings.xml` (`tr`, the source
-/// language) and `values-en/strings.xml`, and the drift detector between the two locales: all 89
+/// language) and `values-en/strings.xml`, and the drift detector between the two locales: all 95
 /// keys and both of their translations are pinned here.
 ///
-/// The 89 keys split four ways; two (`settings_rate_us*`) are the in-app review row, copied from
+/// The 95 keys split four ways; two (`settings_rate_us*`) are the in-app review row, copied from
 /// the XML. Of the rest, fifteen are the `reminder_health_*` block that shipped with
 /// iOS-M3 — ten copied from the XML verbatim, five iOS-only (the Background App Refresh row and the
 /// last-pass line, which answer questions Android answers with a different mechanism or not at all).
 /// Seventy are the More / About / Profile / settings keys the M8 settings hub adds, copied verbatim
 /// from the XML. Two (`more_cycle`, `more_cycle_subtitle`) move here from the App target's catalog
-/// with M8. (The iOS-only `language_relaunch_note` of iOS-M8 T12 is gone: the language pick applies
-/// live through `SalusLocalization`, so there is no launch to wait for and nothing to say.)
-/// `SettingsStrings.swift`'s header carries the card-by-card mapping and the reason each
-/// Android key is kept, dropped or replaced; this table is where a drift in either direction fails.
+/// with M8. Six are the support-code keys the support-code plan T2 adds (`about_support_*`,
+/// `about_premium_*`), copied verbatim from the XML. (The iOS-only `language_relaunch_note` of
+/// iOS-M8 T12 is gone: the language pick applies live through `SalusLocalization`, so there is no
+/// launch to wait for and nothing to say.) `SettingsStrings.swift`'s header carries the card-by-card
+/// mapping and the reason each Android key is kept, dropped or replaced; this table is where a drift
+/// in either direction fails.
 ///
-/// Nine Android keys are deliberately not here (see `SettingsStrings.swift`'s header): the three
-/// `reminder_health_exact_*`, the three `reminder_health_battery_*`, `reminder_health_back`,
-/// `settings_back` and `profile_back`. Each is a recorded divergence, not a silent drop.
+/// Ten Android keys are deliberately not here (see `SettingsStrings.swift`'s header): the three
+/// `reminder_health_exact_*`, the four `reminder_health_battery_*` — `*_title`, `*_problem`,
+/// `*_restricted`, `*_ok` — `reminder_health_back`, `settings_back` and `profile_back`. Each is a
+/// recorded divergence, not a silent drop.
 ///
 /// `about_privacy_body` carries the iOS store-name divergence, the twin of
 /// `paywall_renewal_note`'s (D-M9-a): "App Store" where Android says "Google Play". Every
@@ -38,19 +41,18 @@ struct SettingsStringsTests {
     static let samples = SettingsSamples.all
     static let expectedKeys = Set(samples.map(\.key))
 
-    @Test("the catalog holds exactly the 89 keys :feature:settings owns")
+    @Test("the catalog holds exactly the 95 keys :feature:settings owns")
     func catalogHoldsExactlyTheKeys() throws {
         // Pinned as a number as well as a set: a row deleted from the table together with its key
         // from the catalog would otherwise agree with itself and pass.
         //
-        // The arithmetic behind 89, re-derived at iOS-M8 T12 rather than carried from the plan:
-        // Android's `feature/settings` XML holds 91 keys; nine are dropped here (the three
-        // `reminder_health_exact_*`, the three `reminder_health_battery_*`, `reminder_health_back`,
-        // `settings_back`, `profile_back`) → 82 carried over. Five are iOS-only: the
-        // `reminder_health_*` ones that shipped with iOS-M3 (three `*_background_refresh_*`,
-        // `*_last_sync`, `*_never_synced`). 91 − 9 + 5 = 87. The in-app review row adds two
-        // (`settings_rate_us`, `settings_rate_us_desc`), copied from the Android XML → 89.
-        #expect(Self.samples.count == 89)
+        // The arithmetic behind 95, re-derived at the support-code plan T2 rather than carried from
+        // the plan: Android's `feature/settings` XML holds 100 keys; ten are dropped here (the three
+        // `reminder_health_exact_*`, the four `reminder_health_battery_*` — `*_title`, `*_problem`,
+        // `*_restricted`, `*_ok` — `reminder_health_back`, `settings_back`, `profile_back`) → 90
+        // carried over. Five are iOS-only: the `reminder_health_*` ones that shipped with iOS-M3
+        // (three `*_background_refresh_*`, `*_last_sync`, `*_never_synced`). 100 − 10 + 5 = 95.
+        #expect(Self.samples.count == 95)
 
         try StringCatalogParity.assertKeys(of: Self.loadCatalog(), are: Self.expectedKeys)
     }
@@ -156,6 +158,20 @@ private enum SettingsSamples {
         SettingsStringSample(key: "about_privacy_title", turkish: "Gizlilik", english: "Privacy"),
         SettingsStringSample(key: "about_title", turkish: "Uygulama hakkında", english: "About the app"),
         SettingsStringSample(key: "about_version", turkish: "Sürüm %1$@", english: "Version %1$@"),
+        SettingsStringSample(key: "about_support_title", turkish: "Destek kodu", english: "Support code"),
+        SettingsStringSample(
+            key: "about_premium_free",
+            turkish: "Premium üye değilsin",
+            english: "You are not a Premium member"
+        ),
+        SettingsStringSample(
+            key: "about_premium_active",
+            turkish: "Premium üyesin",
+            english: "You are a Premium member"
+        ),
+        SettingsStringSample(key: "about_support_code", turkish: "Destek kodu", english: "Support code"),
+        SettingsStringSample(key: "about_support_copy", turkish: "Kopyala", english: "Copy"),
+        SettingsStringSample(key: "about_support_copied", turkish: "Kopyalandı", english: "Copied"),
         SettingsStringSample(key: "color_theme_classic", turkish: "Klasik", english: "Classic"),
         SettingsStringSample(key: "color_theme_forest", turkish: "Orman", english: "Forest"),
         SettingsStringSample(key: "color_theme_ocean", turkish: "Okyanus", english: "Ocean"),

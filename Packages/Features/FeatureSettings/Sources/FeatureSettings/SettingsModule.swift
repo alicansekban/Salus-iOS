@@ -9,6 +9,8 @@
 //                                              Route gets a fresh one exactly as `viewModel` does.
 //   `viewModelOf(::ProfileViewModel)`        → `makeProfileViewModel`, the same shape.
 //   `viewModelOf(::MoreViewModel)`           → `makeMoreViewModel`, the same shape (iOS-M8 T6).
+//   `viewModelOf(::AboutViewModel)`          → `makeAboutViewModel`, the same shape (support-code
+//                                              plan T2).
 //
 // The `navigator` is exposed alongside the factories because `MoreRoute`'s same-feature pushes
 // (`ReminderHealthKey`/`AboutKey`/`ProfileKey`) go through it the way Kotlin's `MoreRoute` reaches
@@ -34,6 +36,9 @@ public struct SettingsModule {
     /// `viewModelOf(::MoreViewModel)` — the More hub's ViewModel, a closure so each `MoreRoute`
     /// gets a fresh one exactly as `viewModel` does.
     public let makeMoreViewModel: @MainActor () -> MoreViewModel
+    /// `viewModelOf(::AboutViewModel)` — the About screen's ViewModel, a closure so each `AboutRoute`
+    /// gets a fresh one exactly as `viewModel` does.
+    public let makeAboutViewModel: @MainActor () -> AboutViewModel
     /// The shell's `Navigator`, exposed so the More hub's rows can push the three same-feature
     /// destinations (`MoreScreen.kt:139-141`). Read-only; the shell is still the only stack mutator.
     public let navigator: Navigator
@@ -67,7 +72,8 @@ public func makeSettingsModule(
     preferencesDataSource: SalusPreferencesDataSource,
     localeController: any AppLocaleController,
     premiumRepository: any PremiumRepository,
-    paywallController: PaywallController
+    paywallController: PaywallController,
+    gateway: any PurchasesGateway
 ) -> SettingsModule {
     // Exactly one More-specific dep is built inside the factory: `SettingsPreferencesImpl` is
     // `internal` to this package, so the app target cannot construct it — the composition root
@@ -97,6 +103,13 @@ public func makeSettingsModule(
                 preferences: morePreferences,
                 localeController: localeController,
                 paywallController: paywallController
+            )
+        },
+        makeAboutViewModel: {
+            AboutViewModel(
+                gateway: gateway,
+                premiumRepository: premiumRepository,
+                clock: clock
             )
         },
         navigator: navigator

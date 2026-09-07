@@ -2,7 +2,7 @@ import Foundation
 import SalusPremium
 
 // The test fake for `PurchasesGateway` — ported 1:1 from `FakePurchasesGateway` in
-// `PremiumRepositoryImplTest.kt:94-125`.
+// `PremiumRepositoryImplTest.kt:105-134`.
 //
 // `@unchecked Sendable` over a lock rather than an actor because the protocol is not
 // `@MainActor`-isolated; the same shape `FakeSettingsPreferences.swift` uses. Swift 6 disallows
@@ -27,10 +27,15 @@ final class FakePurchasesGateway: PurchasesGateway, @unchecked Sendable {
 
     let isConfigured = true
 
+    /// The `appUserID` the gateway reports; `nil` stands for an unconfigured SDK.
+    var appUserID: String?
+
     init(
-        customer: CustomerSnapshot? = CustomerSnapshot(entitlementActive: false, hasBillingIssue: false)
+        customer: CustomerSnapshot? = CustomerSnapshot(entitlementActive: false, hasBillingIssue: false),
+        appUserID: String? = nil
     ) {
         customerValue = customer
+        self.appUserID = appUserID
         let made = AsyncStream.makeStream(of: CustomerSnapshot.self, bufferingPolicy: .bufferingNewest(1))
         stream = made.stream
         continuation = made.continuation
