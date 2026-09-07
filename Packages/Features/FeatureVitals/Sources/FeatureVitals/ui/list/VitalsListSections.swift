@@ -53,6 +53,9 @@ struct VitalsListContent: View {
     /// numbers below are written in — `Locale.current` would be the device's.
     @Environment(\.locale) private var locale
 
+    /// §10: reduce motion keeps the fade and drops the move, on both platforms.
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     var body: some View {
         if state.isLoading {
             ProgressView()
@@ -99,6 +102,14 @@ struct VitalsListContent: View {
                         onTap: { onEditEntry(entry) },
                         onDelete: { onEvent(.deleteRequested(entry.id)) }
                     )
+                    // §10 list mutation: fade + vertical move on add, remove and undo's
+                    // return. Reduce motion keeps the fade and drops the move
+                    // (`VitalsScreen.kt:251-256`).
+                    .transition(
+                        reduceMotion
+                            ? SalusMotion.listMutationReducedMotionTransition
+                            : SalusMotion.listMutationTransition
+                    )
                 }
             }
             .padding(.horizontal, SalusSpacing.lg)
@@ -106,6 +117,15 @@ struct VitalsListContent: View {
             // Keeps the last row scrollable above the floating action button
             // (`VitalsScreen.kt:385-386`).
             .padding(.bottom, fabClearance)
+            // Every mutation path — delete confirmed, undo's return, an editor save landing —
+            // arrives as a state change the container observes, so the animation rides with it
+            // wherever it came from.
+            .animation(
+                reduceMotion
+                    ? SalusMotion.listMutationReducedMotionAnimation
+                    : SalusMotion.listMutationAnimation,
+                value: state.entries
+            )
         }
     }
 

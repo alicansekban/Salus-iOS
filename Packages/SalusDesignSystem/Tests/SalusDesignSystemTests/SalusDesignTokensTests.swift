@@ -9,7 +9,7 @@ import Testing
 // Every literal below is copied out of that document by hand; the token sources are
 // transcribed from the same document independently. A typo on either side fails here.
 //
-// The count assertions are the drift detector: the doc declares 217 tokens and
+// The count assertions are the drift detector: the doc declares 218 tokens and
 // 5 `FeatureAccent` sets. If a token is added, removed or renamed in the doc without the
 // Swift side following, the totals stop matching.
 
@@ -38,10 +38,10 @@ private enum TestError: Error {
 
 @Suite("Design token counts (drift detector)")
 struct DesignTokenCountTests {
-    /// `design-tokens.md` declares 217 tokens across all groups.
-    @Test("the package exposes exactly 217 tokens")
-    func totalTokenCountIs217() {
-        #expect(SalusTokens.allTokenCount == 217)
+    /// `design-tokens.md` declares 218 tokens across all groups.
+    @Test("the package exposes exactly 218 tokens")
+    func totalTokenCountIs218() {
+        #expect(SalusTokens.allTokenCount == 218)
     }
 
     /// §3 declares five feature accent sets: medications, cycle, vitals, appointments, trends.
@@ -84,7 +84,7 @@ struct DesignTokenCountTests {
         // §9 six overridden + six inherited roles
         #expect(counts["typography"] == 12)
         // §10 motion
-        #expect(counts["motion"] == 7)
+        #expect(counts["motion"] == 8)
         #expect(counts.count == 13)
     }
 }

@@ -22,6 +22,10 @@
 // `SalusSectionHeader(title:actions:)` already draws — same style, same trailing action. Using the
 // shared component instead of repeating the row costs one padding difference, recorded at the call
 // site below.
+//
+// The row itself lives in `AppointmentCard.swift`: this file is the screen's own shape — header,
+// the three content states, the agenda and the confirmation — and splitting the rows out is what M4
+// did for Medications once its screen passed 500 lines.
 
 import SalusDesignSystem
 import SalusModel
@@ -77,6 +81,9 @@ struct AppointmentsScreen: View {
     let onOpenAppointment: (String) -> Void
 
     @Environment(\.salusTheme) private var theme
+
+    /// §10: reduce motion keeps the fade and drops the move, on both platforms.
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         // No `Scaffold` twin here: the app shell owns the one navigation stack and its insets.
@@ -159,10 +166,28 @@ struct AppointmentsScreen: View {
                                 onTap: { onOpenAppointment(item.id) },
                                 onDelete: { onEvent(.deleteRequested(item.id)) }
                             )
+                            // §10 list mutation: fade + vertical move on add, remove and undo's
+                            // return. Reduce motion keeps the fade and drops the move
+                            // (`AppointmentsScreen.kt:181-186`).
+                            .transition(
+                                reduceMotion
+                                    ? SalusMotion.listMutationReducedMotionTransition
+                                    : SalusMotion.listMutationTransition
+                            )
                         }
                     } header: {
                         DayHeader(epochDay: section.epochDay, todayEpochDay: state.todayEpochDay)
                     }
+                    // Every mutation path — delete confirmed, undo's return, an editor save
+                    // landing — arrives as a state change the section observes, so the animation
+                    // rides with it wherever it came from. The header is not a row and carries no
+                    // transition, so it stays put while the cards around it move.
+                    .animation(
+                        reduceMotion
+                            ? SalusMotion.listMutationReducedMotionAnimation
+                            : SalusMotion.listMutationAnimation,
+                        value: state.upcoming
+                    )
                 }
 
                 if !state.past.isEmpty {
@@ -197,7 +222,25 @@ struct AppointmentsScreen: View {
                     onTap: { onOpenAppointment(item.id) },
                     onDelete: { onEvent(.deleteRequested(item.id)) }
                 )
+                // §10 list mutation: fade + vertical move on add, remove and undo's
+                // return. Reduce motion keeps the fade and drops the move
+                // (`AppointmentsScreen.kt:223-228`).
+                .transition(
+                    reduceMotion
+                        ? SalusMotion.listMutationReducedMotionTransition
+                        : SalusMotion.listMutationTransition
+                )
             }
+            // Every mutation path — delete confirmed, undo's return, an editor save landing —
+            // arrives as a state change the block observes, so the animation rides with it
+            // wherever it came from. The section header above is not a row and carries no
+            // transition, so it stays put while the cards below it move.
+            .animation(
+                reduceMotion
+                    ? SalusMotion.listMutationReducedMotionAnimation
+                    : SalusMotion.listMutationAnimation,
+                value: state.past
+            )
         }
     }
 }
@@ -246,116 +289,8 @@ func appointmentsDayHeaderLabel(epochDay: Int, todayEpochDay: Int, locale: Local
     }
 }
 
-/// Date tile on the left, time and what/where on the right, the trash on the far right
-/// (`AppointmentsScreen.kt:241-286`).
-///
-/// See the file header for why the card is not `SalusCard(onTap:)` with the button inside it.
-private struct AppointmentCard: View {
-    let item: AppointmentListItem
-    let onTap: () -> Void
-    let onDelete: () -> Void
-
-    @Environment(\.salusTheme) private var theme
-    /// The in-app language pick (`RootView+Locale.swift`), not `Locale.current`, which on iOS keeps
-    /// answering with the device's language whatever the in-app setting says.
-    @Environment(\.locale) private var locale
-
-    var body: some View {
-        SalusCard {
-            HStack(alignment: .top, spacing: 0) {
-                details
-                    // The column already fills every point the trash button does not, and
-                    // `contentShape` makes the empty space beside a short title tappable too.
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .contentShape(Rectangle())
-                    .onTapGesture(perform: onTap)
-                    // A tap gesture is invisible to VoiceOver, where Compose's `SalusCard(onClick =)`
-                    // is announced as a button. `.combine` reads the row's lines as one element, the
-                    // trait announces it as activatable, and the action is what a double tap runs.
-                    .accessibilityElement(children: .combine)
-                    .accessibilityAddTraits(.isButton)
-                    .accessibilityAction(.default, onTap)
-
-                // `Spacer(width = sm)` + `IconButton` (`AppointmentsScreen.kt:276-283`). A sibling
-                // of the column, not a descendant of any Button.
-                Button(action: onDelete) {
-                    Label(AppointmentsStrings.delete, systemImage: "trash")
-                        .labelStyle(.iconOnly)
-                        .foregroundStyle(theme.colorScheme.error)
-                }
-                .buttonStyle(.plain)
-                .padding(.leading, SalusSpacing.sm)
-            }
-        }
-        .padding(.horizontal, SalusSpacing.lg)
-    }
-
-    /// The date tile and the text column — everything a tap on the row opens
-    /// (`AppointmentsScreen.kt:259-275`).
-    private var details: some View {
-        HStack(alignment: .top, spacing: 0) {
-            SalusDateTile(
-                dayOfMonth: item.startsAt.date.day,
-                monthShort: item.startsAt.formatted(pattern: monthPattern, locale: locale),
-                accent: theme.extendedColors.appointments
-            )
-
-            // `Spacer(width = md)` between the tile and the content column
-            // (`AppointmentsScreen.kt:265`).
-            Spacer().frame(width: SalusSpacing.md)
-
-            VStack(alignment: .leading, spacing: 0) {
-                // The time sits directly above the title, in the accent's accent colour
-                // (`AppointmentsScreen.kt:267-271`).
-                Text(verbatim: item.startsAt.formatted(pattern: timePattern, locale: locale))
-                    .font(SalusTypography.labelLarge.font)
-                    .tracking(SalusTypography.labelLarge.tracking)
-                    .foregroundStyle(theme.extendedColors.appointments.accent)
-                Text(verbatim: item.title)
-                    .font(SalusTypography.titleMedium.font)
-                    .foregroundStyle(theme.colorScheme.onSurface)
-                if let doctorName = item.doctorName {
-                    DetailRow(systemImage: "person", text: doctorName)
-                }
-                if let location = item.location {
-                    DetailRow(systemImage: "mappin.and.ellipse", text: location)
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
-    }
-}
-
-/// `AppointmentsScreen.kt:280-299`.
-private struct DetailRow: View {
-    let systemImage: String
-    let text: String
-
-    @Environment(\.salusTheme) private var theme
-
-    var body: some View {
-        HStack(spacing: SalusSpacing.sm) {
-            Image(systemName: systemImage)
-                .font(.system(size: detailIconSize))
-                // Decoration: the text beside it already says what this is
-                // (`contentDescription = null`).
-                .accessibilityHidden(true)
-            Text(verbatim: text)
-                .font(SalusTypography.bodyMedium.font)
-        }
-        .foregroundStyle(theme.colorScheme.onSurfaceVariant)
-        .padding(.top, SalusSpacing.xs)
-    }
-}
-
 /// `AppointmentsScreen.kt:223`.
 private let dayHeaderPattern = "EEEE, d MMMM"
-/// `AppointmentsScreen.kt:249`.
-private let timePattern = "HH:mm"
-/// `AppointmentsScreen.kt:250`.
-private let monthPattern = "MMM"
-/// `AppointmentsScreen.kt:301`.
-private let detailIconSize: CGFloat = 16
 /// `AppointmentsScreen.kt:304`.
 private let fabClearance: CGFloat = 88
 

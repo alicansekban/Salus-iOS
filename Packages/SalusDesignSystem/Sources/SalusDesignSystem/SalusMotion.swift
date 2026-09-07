@@ -73,7 +73,34 @@ public enum SalusMotion {
         pushPopEasing.animation(duration: pushPopDurationSeconds)
     }
 
-    /// The seven motion tokens of §10.
+    /// 300 ms. Source: `SalusTransitions.kt` (`SalusListMotion.MUTATION_DURATION_MILLIS`).
+    public static let listMutationDurationSeconds: TimeInterval = 0.3
+
+    /// The list-mutation animation (§10): the moment a row appears, disappears or moves
+    /// inside a keyed list — the undo snackbar's resurrected row included, since it is the
+    /// same state change read in reverse. The Route wraps the state change in
+    /// `withAnimation(SalusMotion.listMutationAnimation)`; the row carries the
+    /// `listMutationTransition`. Reduce motion keeps the fade and drops the move.
+    public static var listMutationAnimation: Animation {
+        pushPopEasing.animation(duration: listMutationDurationSeconds)
+    }
+
+    /// Fade only — the reduce-motion form of the list-mutation spec.
+    public static var listMutationReducedMotionAnimation: Animation {
+        .easeInOut(duration: listMutationDurationSeconds)
+    }
+
+    /// The row-level twin of ``listMutationAnimation``: fade plus a short vertical move.
+    public static var listMutationTransition: AnyTransition {
+        .opacity.combined(with: .move(edge: .bottom))
+    }
+
+    /// The reduce-motion form: the fade stays, the move goes (§10).
+    public static var listMutationReducedMotionTransition: AnyTransition {
+        .opacity
+    }
+
+    /// The eight motion tokens of §10.
     package static var allTokens: [String: SalusMotionToken] {
         [
             "pushPopDuration": .durationSeconds(pushPopDurationSeconds),
@@ -85,7 +112,8 @@ public enum SalusMotion {
             "enterZIndexPush": .zIndex(enterZIndexPush),
             "enterZIndexPop": .zIndex(enterZIndexPop),
             // `null` everywhere (`SalusTransitions.kt:53`, `:63`).
-            "sizeTransform": .noSizeTransform
+            "sizeTransform": .noSizeTransform,
+            "listMutationDuration": .durationSeconds(listMutationDurationSeconds)
         ]
     }
 }

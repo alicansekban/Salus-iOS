@@ -65,6 +65,9 @@ struct MedicationsScreen: View {
 
     @Environment(\.salusTheme) private var theme
 
+    /// §10: reduce motion keeps the fade and drops the move, on both platforms.
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     var body: some View {
         // No `Scaffold` twin here: the app shell owns the one navigation stack and its insets.
         ZStack(alignment: .bottomTrailing) {
@@ -142,6 +145,14 @@ struct MedicationsScreen: View {
                         onTap: { onOpenMedication(item.medication.id) },
                         onDelete: { onEvent(.deleteRequested(item.medication.id)) }
                     )
+                    // §10 list mutation: fade + vertical move on add, remove and undo's
+                    // return. Reduce motion keeps the fade and drops the move
+                    // (`MedicationsScreen.kt:191-194`).
+                    .transition(
+                        reduceMotion
+                            ? SalusMotion.listMutationReducedMotionTransition
+                            : SalusMotion.listMutationTransition
+                    )
                 }
             }
             .padding(.horizontal, SalusSpacing.lg)
@@ -149,6 +160,15 @@ struct MedicationsScreen: View {
             // Keeps the last card scrollable above the floating action button
             // (`MedicationsScreen.kt:156`, `:258`).
             .padding(.bottom, fabClearance)
+            // Every mutation path — delete confirmed, undo's return, an editor save landing —
+            // arrives as a state change the container observes, so the animation rides with it
+            // wherever it came from.
+            .animation(
+                reduceMotion
+                    ? SalusMotion.listMutationReducedMotionAnimation
+                    : SalusMotion.listMutationAnimation,
+                value: state.medications
+            )
         }
     }
 }
