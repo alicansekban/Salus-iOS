@@ -190,34 +190,46 @@ private struct PremiumStatusCard: View {
                     .foregroundStyle(colors.onSurface)
                     .padding(.top, SalusSpacing.sm)
 
-                if let appUserID = state.appUserID, state.idRevealed {
-                    Text(verbatim: SettingsStrings.supportCode)
-                        .font(SalusTypography.labelMedium.font)
-                        .tracking(SalusTypography.labelMedium.tracking)
-                        .foregroundStyle(colors.onSurface)
-                        .padding(.top, SalusSpacing.sm)
+                // The revealed section shows whenever the 5-tap reveal has completed, whether or not
+                // RevenueCat has handed us an `appUserID`. With an id, the developer sees the value
+                // and a copy button; without one (RevenueCat not configured, e.g. a debug build) the
+                // reveal still answers with a short message instead of silently doing nothing.
+                if state.idRevealed {
+                    if let appUserID = state.appUserID {
+                        Text(verbatim: SettingsStrings.supportCode)
+                            .font(SalusTypography.labelMedium.font)
+                            .tracking(SalusTypography.labelMedium.tracking)
+                            .foregroundStyle(colors.onSurface)
+                            .padding(.top, SalusSpacing.sm)
 
-                    Text(verbatim: appUserID)
-                        .font(SalusTypography.bodyMedium.font)
-                        .tracking(SalusTypography.bodyMedium.tracking)
-                        .foregroundStyle(colors.onSurface)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-                        .padding(.top, SalusSpacing.sm)
+                        Text(verbatim: appUserID)
+                            .font(SalusTypography.bodyMedium.font)
+                            .tracking(SalusTypography.bodyMedium.tracking)
+                            .foregroundStyle(colors.onSurface)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                            .padding(.top, SalusSpacing.sm)
 
-                    HStack {
-                        Spacer()
-                        Button {
-                            copy(appUserID)
-                            onEvent(.copySupportCode)
-                        } label: {
-                            Text(verbatim: state.copied
-                                ? SettingsStrings.supportCopied
-                                : SettingsStrings.supportCopy)
+                        HStack {
+                            Spacer()
+                            Button {
+                                copy(appUserID)
+                                onEvent(.copySupportCode)
+                            } label: {
+                                Text(verbatim: state.copied
+                                    ? SettingsStrings.supportCopied
+                                    : SettingsStrings.supportCopy)
+                            }
+                            .buttonStyle(.borderless)
                         }
-                        .buttonStyle(.borderless)
+                        .padding(.top, SalusSpacing.sm)
+                    } else {
+                        Text(verbatim: SettingsStrings.supportCodeUnavailable)
+                            .font(SalusTypography.labelMedium.font)
+                            .tracking(SalusTypography.labelMedium.tracking)
+                            .foregroundStyle(colors.onSurface)
+                            .padding(.top, SalusSpacing.sm)
                     }
-                    .padding(.top, SalusSpacing.sm)
                 }
             }
         }

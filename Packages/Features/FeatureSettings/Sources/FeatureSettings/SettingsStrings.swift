@@ -217,6 +217,7 @@ public enum SettingsStrings {
     public static var supportPremiumFree: String { localized(.supportPremiumFree) }
     public static var supportPremiumActive: String { localized(.supportPremiumActive) }
     public static var supportCode: String { localized(.supportCode) }
+    public static var supportCodeUnavailable: String { localized(.supportCodeUnavailable) }
     public static var supportCopy: String { localized(.supportCopy) }
     public static var supportCopied: String { localized(.supportCopied) }
 
@@ -398,6 +399,7 @@ public enum SettingsStrings {
         case themeSystem = "theme_system"
         case themeTitle = "theme_title"
         case supportCode = "support_code"
+        case supportCodeUnavailable = "support_code_unavailable"
         case supportCopied = "support_copied"
         case supportCopy = "support_copy"
         case supportPremiumActive = "support_premium_active"

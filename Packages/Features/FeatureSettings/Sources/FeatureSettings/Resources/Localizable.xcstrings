@@ -375,6 +375,23 @@
         }
       }
     },
+    "support_code_unavailable": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Support code is currently unavailable."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Destek kodu şu anda kullanılamıyor."
+          }
+        }
+      }
+    },
     "support_copied": {
       "extractionState": "manual",
       "localizations": {

@@ -44,19 +44,21 @@ struct SettingsStringsTests {
     static let samples = SettingsSamples.all
     static let expectedKeys = Set(samples.map(\.key))
 
-    @Test("the catalog holds exactly the 114 keys :feature:settings owns")
+    @Test("the catalog holds exactly the 115 keys :feature:settings owns")
     func catalogHoldsExactlyTheKeys() throws {
         // Pinned as a number as well as a set: a row deleted from the table together with its key
         // from the catalog would otherwise agree with itself and pass.
         //
-        // The arithmetic behind 111, re-derived after the support_desc removal: Android's
+        // The arithmetic behind 112, re-derived after the support_desc removal: Android's
         // `feature/settings` XML holds 116 keys; ten are dropped here (the three
         // `reminder_health_exact_*`, the four `reminder_health_battery_*` — `*_title`,
         // `*_problem`, `*_restricted`, `*_ok` — `reminder_health_back`, `settings_back`,
         // `profile_back`) → 106 carried over. Five are iOS-only: the `reminder_health_*`
         // ones that shipped with iOS-M3 (three `*_background_refresh_*`, `*_last_sync`,
-        // `*_never_synced`). 116 − 10 + 5 = 111.
-        #expect(Self.samples.count == 111)
+        // `*_never_synced`). 116 − 10 + 5 = 111. The about-redesign fix then adds the iOS-only
+        // `support_code_unavailable` (the reveal's answer when RevenueCat has no `appUserID`),
+        // 111 + 1 = 112.
+        #expect(Self.samples.count == 112)
 
         try StringCatalogParity.assertKeys(of: Self.loadCatalog(), are: Self.expectedKeys)
     }
@@ -214,6 +216,11 @@ private enum SettingsSamplesFirst {
         SettingsStringSample(key: "support_premium_free", turkish: "Ücretsiz", english: "Free"),
         SettingsStringSample(key: "support_premium_active", turkish: "Aktif Premium", english: "Active Premium"),
         SettingsStringSample(key: "support_code", turkish: "Destek kodu", english: "Support code"),
+        SettingsStringSample(
+            key: "support_code_unavailable",
+            turkish: "Destek kodu şu anda kullanılamıyor.",
+            english: "Support code is currently unavailable."
+        ),
         SettingsStringSample(key: "support_copy", turkish: "Kopyala", english: "Copy"),
         SettingsStringSample(key: "support_copied", turkish: "Kopyalandı", english: "Copied"),
         SettingsStringSample(key: "color_theme_classic", turkish: "Klasik", english: "Classic"),
