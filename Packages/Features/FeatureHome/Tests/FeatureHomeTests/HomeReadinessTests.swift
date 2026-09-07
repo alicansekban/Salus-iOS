@@ -94,9 +94,12 @@ struct HomeReadinessTests {
         _ = await loadedState(viewModel)
         viewModel.onEvent(.appeared)
 
-        // The read is a `Task`, so give it every chance to publish something before concluding it
-        // published nothing — Kotlin's `expectNoEvents()` has the same job.
-        await settle()
+        // The read is a `Task`, so wait for it to *finish* before concluding it published nothing:
+        // `backgroundRefreshAvailable()` is the last of the three questions
+        // `readiness(alarmKitSupported:)` asks, so one of those is the whole read.  A bare
+        // `settle()` here would also pass on a ViewModel that never asked at all, and — with the
+        // review suite now running beside this one — its yield budget is spent on other cases.
+        await waitUntil("the arrival's read to finish") { environment.readCount(of: .backgroundRefresh) == 1 }
         #expect(viewModel.state.reminderReadiness == nil)
     }
 
@@ -151,7 +154,10 @@ struct HomeReadinessTests {
         _ = await loadedState(viewModel)
         viewModel.onEvent(.appeared)
 
-        await settle()
+        // Waiting for the *last* question rather than spending a yield budget: it is what makes
+        // "AlarmKit was never asked" a measurement instead of a race — the read has demonstrably
+        // run past the point where it would have asked.
+        await waitUntil("the arrival's read to finish") { environment.readCount(of: .backgroundRefresh) == 1 }
         #expect(viewModel.state.reminderReadiness == nil)
         // The healthy card is only half of it: a run that asked AlarmKit and then discarded a
         // denial it could not act on would look exactly the same from the state. This is the half
@@ -175,7 +181,7 @@ struct HomeReadinessTests {
         // composed tab), so without this first `.appeared` the arm below would be dropped and the
         // case would pass on a report that never arrived.
         viewModel.onEvent(.appeared)
-        await settle()
+        await waitUntil("the first arrival's read to finish") { environment.readCount(of: .backgroundRefresh) == 1 }
         #expect(viewModel.state.reminderReadiness == nil, "the device is healthy on the first arrival")
 
         environment.set(notifications: false)
