@@ -46,6 +46,26 @@
 //                                      needed the other. This footer is the first
 //                                      (`OnboardingScreen.kt:145`), so the parameter arrives with
 //                                      it rather than the pill being redrawn here.
+//   `AnimatedContent(targetState =   → `.id(state.stepIndex)` + an asymmetric
+//     state.stepIndex)`                `stepTransition(width:)` (offset+opacity via
+//   (`OnboardingScreen.kt:124-137`,   `.modifier(active:identity:)`) + a container-level
+//   parity row A45)                    `.animation(_, value: state.stepIndex)`. Steps travel in
+//                                      the flow's direction: forward from the trailing edge, back
+//                                      from the leading one, a quarter of the width each way (§10
+//                                      `parallaxDivisor`'s 4, the sibling of Android's
+//                                      `full / 4`). The slide rides `SalusMotion.entranceAnimation`
+//                                      (450 ms emphasized); the fade composes inside the same
+//                                      transition. SwiftUI's `Transition` API binds one animation
+//                                      to every phase-driven property, so the fade rides the same
+//                                      450 ms emphasized curve rather than a separate 300 ms — that
+//                                      is the platform mechanical limit of "combined in one
+//                                      asymmetric transition", not a design choice. Reduce motion
+//                                      swaps instantly: the container animation becomes `nil` and
+//                                      the phase jumps. The outgoing step renders during the
+//                                      transition for free because `.id()` rebinds identity and
+//                                      SwiftUI keeps the old view alive for the removal phase — no
+//                                      `state.copy(stepIndex:)` is needed, the twin of Kotlin's
+//                                      `state.copy(stepIndex = targetStepIndex)`.
 //
 // ONE ADDITION WITH NO KOTLIN TWIN, and it is the one this port always owes a form:
 // `.salusDismissesKeyboardOnTap()` + `.scrollDismissesKeyboard(.interactively)` on the step
@@ -132,6 +152,32 @@ struct OnboardingScreen: View {
     let onRequestNotificationPermission: () -> Void
 
     @Environment(\.salusTheme) private var theme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    /// The step index before the current change, captured via `.onChange` so the transition can
+    /// decide its direction the same way Android's `AnimatedContent` does from
+    /// `targetState >= initialState` (`OnboardingScreen.kt:126`). `OnboardingScreen` is rebuilt
+    /// by its parent with a fresh `state`, so this is the one piece of local state the screen
+    /// carries — the direction is a property of the change, not of the step.
+    @State private var previousStepIndex: Int
+
+    init(
+        state: OnboardingUiState,
+        onEvent: @escaping (OnboardingEvent) -> Void,
+        onRequestNotificationPermission: @escaping () -> Void
+    ) {
+        self.state = state
+        self.onEvent = onEvent
+        self.onRequestNotificationPermission = onRequestNotificationPermission
+        // Seed from the first state so the very first render (Welcome) is not read as a forward
+        // jump from index 0 → 0 and triggers no transition.
+        _previousStepIndex = State(initialValue: state.stepIndex)
+    }
+
+    /// `true` when the flow is moving forward — `targetState >= initialState`
+    /// (`OnboardingScreen.kt:126`). Falls back to forward when the indices match (e.g. a value
+    /// change inside the same step), matching Android's `>=`.
+    private var isForward: Bool { state.stepIndex >= previousStepIndex }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -154,16 +200,29 @@ struct OnboardingScreen: View {
         .background(theme.colorScheme.background.ignoresSafeArea())
     }
 
-    /// `OnboardingScreen.kt:101-111`.
+    /// `AnimatedContent(targetState = state.stepIndex)` (`OnboardingScreen.kt:124-137`) — steps
+    /// travel in the flow's direction: forward from the trailing edge, back from the leading one.
+    /// `.id(state.stepIndex)` rebinds identity so SwiftUI keeps the outgoing step alive for the
+    /// removal phase, and the container-level `.animation(_, value:)` drives the
+    /// `stepTransition(width:)` in both directions. Reduce motion swaps instantly (`nil` animation).
     private var steps: some View {
         GeometryReader { proxy in
             ScrollView {
                 OnboardingStepContent(state: state, onEvent: onEvent)
+                    .id(state.stepIndex)
                     .padding(.horizontal, SalusSpacing.lg)
                     .frame(maxWidth: .infinity, minHeight: proxy.size.height)
+                    .transition(stepTransition(width: proxy.size.width))
             }
             .scrollDismissesKeyboard(.interactively)
             .salusDismissesKeyboardOnTap()
+            .animation(
+                reduceMotion ? nil : SalusMotion.entranceAnimation,
+                value: state.stepIndex
+            )
+        }
+        .onChange(of: state.stepIndex) { oldIndex, _ in
+            previousStepIndex = oldIndex
         }
     }
 
@@ -206,6 +265,69 @@ struct OnboardingScreen: View {
         } else {
             onEvent(.nextClicked)
         }
+    }
+}
+
+/// The directional step transition — the twin of `AnimatedContent`'s `enter togetherWith exit`
+/// (`OnboardingScreen.kt:127-135`, parity row A45). Both phases compose a quarter-width horizontal
+/// move with an opacity fade in one `AnyTransition`, and the two phases are asymmetric: insertion
+/// comes from the edge the flow is moving toward, removal leaves toward the edge it came from.
+///
+/// SwiftUI's `Transition` API binds one animation to every phase-driven property, so the fade rides
+/// the same `entranceAnimation` (450 ms emphasized) as the slide rather than a separate 300 ms —
+/// that is the platform mechanical limit of "combined in one asymmetric transition", and the slide
+/// is the perceptually dominant phase. The animation itself is supplied by the container-level
+/// `.animation(SalusMotion.entranceAnimation, value: state.stepIndex)` in `steps`; reduce motion
+/// sets that animation to `nil`, so this transition's phases are never run and the swap is instant.
+///
+/// `SalusMotion.parallaxDivisor` (4, §10) is the sibling of Android's `full / 4` quarter-width
+/// travel. `.move(edge:)` would travel the full width, so the offset is driven by hand via
+/// `.modifier(active:identity:)`: the active phase offsets the view by a quarter width from its
+/// arrival edge, the identity phase rests at zero — the move plus the fade come from the one
+/// asymmetric `AnyTransition`.
+extension OnboardingScreen {
+    /// `slideInHorizontally { full -> if (forward) full / 4 else -full / 4 } + fadeIn`
+    /// (`OnboardingScreen.kt:128-131`) — the insertion phase.
+    private func stepTransition(width: CGFloat) -> AnyTransition {
+        let travel = width / CGFloat(SalusMotion.parallaxDivisor)
+        return .asymmetric(
+            insertion: stepInsertion(travel: travel, forward: isForward),
+            removal: stepRemoval(travel: travel, forward: isForward)
+        )
+    }
+
+    /// Forward: the arriving step enters from the trailing edge (offset `-travel` → 0) and fades in.
+    /// Back: it enters from the leading edge (offset `+travel` → 0).
+    private func stepInsertion(travel: CGFloat, forward: Bool) -> AnyTransition {
+        let offset = forward ? -travel : travel
+        return .modifier(
+            active: StepSlidePhase(offset: offset, opacity: 0),
+            identity: StepSlidePhase(offset: 0, opacity: 1)
+        )
+    }
+
+    /// Forward: the leaving step exits toward the leading edge (0 → offset `+travel`) and fades out.
+    /// Back: it exits toward the trailing edge (0 → offset `-travel`).
+    private func stepRemoval(travel: CGFloat, forward: Bool) -> AnyTransition {
+        let offset = forward ? travel : -travel
+        return .modifier(
+            active: StepSlidePhase(offset: offset, opacity: 0),
+            identity: StepSlidePhase(offset: 0, opacity: 1)
+        )
+    }
+}
+
+/// One phase of the directional slide — offset plus opacity — the shape
+/// `.modifier(active:identity:)` interpolates between. `Sendable` so it can sit in an
+/// `AnyTransition` under Swift 6 strict concurrency.
+private struct StepSlidePhase: ViewModifier, Sendable {
+    let offset: CGFloat
+    let opacity: Double
+
+    func body(content: Content) -> some View {
+        content
+            .offset(x: offset)
+            .opacity(opacity)
     }
 }
 
