@@ -175,6 +175,7 @@ struct HomeScreen: View {
                     profileName: state.profileName,
                     doseProgress: state.doseProgress
                 )
+                .salusEntrance(index: 0)
                 sections
             }
         }
@@ -190,59 +191,75 @@ struct HomeScreen: View {
             // the device is healthy or has not been read yet, which is the same thing here.
             if let report = state.reminderReadiness {
                 HomeReminderReadinessCard(report: report, onTap: onOpenReminderHealth)
+                    .salusEntrance(index: 1)
             }
 
-            SalusSectionHeader(title: HomeStrings.dosesTitle)
-            HomeDosesCard(doses: state.doses, onEvent: onEvent, onTap: onOpenMedications)
+            Group {
+                SalusSectionHeader(title: HomeStrings.dosesTitle)
+                HomeDosesCard(doses: state.doses, onEvent: onEvent, onTap: onOpenMedications)
+            }
+            .salusEntrance(index: 2)
 
-            SalusSectionHeader(title: HomeStrings.appointmentsTitle)
-            HomeAppointmentsCard(appointments: state.appointments, onTap: onOpenAppointments)
+            Group {
+                SalusSectionHeader(title: HomeStrings.appointmentsTitle)
+                HomeAppointmentsCard(appointments: state.appointments, onTap: onOpenAppointments)
+            }
+            .salusEntrance(index: 3)
 
             // Drawn only for a female profile: `cycleForProfile` returns nil for a male or missing
             // profile (`TodayModels.kt:10-11`), so `state.cycle` is nil and the card is skipped —
             // the same rule that hides the More row (`MoreViewModel.kt:64-65`). The optional is the
             // gate's, not the default state's.
             if let cycle = state.cycle {
-                SalusSectionHeader(title: HomeStrings.cycleTitle)
-                HomeCycleCard(cycle: cycle, onTap: onOpenCycle)
+                Group {
+                    SalusSectionHeader(title: HomeStrings.cycleTitle)
+                    HomeCycleCard(cycle: cycle, onTap: onOpenCycle)
+                }
+                .salusEntrance(index: 4)
             }
 
             if let vitals = state.vitals {
-                SalusSectionHeader(title: HomeStrings.vitalsTitle)
-                HomeVitalsCard(vitals: vitals, onTap: onOpenVitals)
+                Group {
+                    SalusSectionHeader(title: HomeStrings.vitalsTitle)
+                    HomeVitalsCard(vitals: vitals, onTap: onOpenVitals)
+                }
+                .salusEntrance(index: 5)
             }
 
             // The AI summary card, last on purpose because it summarises everything above it
             // (`HomeScreen.kt:132-138`). Always drawn once loaded, and for every user: the free
             // credit line is the only conditional, shown when the one-off free summary is still
             // unspent and the user is not entitled.
-            SalusSectionHeader(title: HomeStrings.aiSummaryTitle)
-            HomeDashboardCard(onTap: onOpenAiSummary) {
-                // `Row(verticalAlignment = Top) { SalusIconBadge(AutoAwesome, trends); … Column(weight(1f)) }`
-                // (`HomeScreen.kt:251-271`). `AutoAwesome` → `sparkles` (SF Symbol twin).
-                //
-                // The greedy frame is the twin of Kotlin's `Column(modifier = Modifier.weight(1f))`
-                // (`HomeScreen.kt:258`): `HomeDashboardCard` routes through `SalusCard(onTap:)`'s
-                // Button branch, and SwiftUI centers a Button's label when it does not fill the
-                // width — without the greedy frame the text column would sit centered instead of
-                // flush left with the other cards' padding rhythm.
-                HStack(alignment: .top, spacing: 0) {
-                    SalusIconBadge(systemImage: "sparkles", accent: theme.extendedColors.trends)
-                    Spacer().frame(width: SalusSpacing.md)
-                    VStack(alignment: .leading, spacing: SalusSpacing.xs) {
-                        Text(verbatim: HomeStrings.aiSummaryDescription)
-                            .font(SalusTypography.bodyMedium.font)
-                            .tracking(SalusTypography.bodyMedium.tracking)
-                        if state.freeAiSummaryAvailable, !state.isPremium {
-                            Text(verbatim: HomeStrings.aiSummaryFreeCredit)
-                                .font(SalusTypography.bodySmall.font)
-                                .tracking(SalusTypography.bodySmall.tracking)
-                                .foregroundStyle(theme.colorScheme.onSurfaceVariant)
+            Group {
+                SalusSectionHeader(title: HomeStrings.aiSummaryTitle)
+                HomeDashboardCard(onTap: onOpenAiSummary) {
+                    // `Row(verticalAlignment = Top) { SalusIconBadge(AutoAwesome, trends); … Column(weight(1f)) }`
+                    // (`HomeScreen.kt:251-271`). `AutoAwesome` → `sparkles` (SF Symbol twin).
+                    //
+                    // The greedy frame is the twin of Kotlin's `Column(modifier = Modifier.weight(1f))`
+                    // (`HomeScreen.kt:258`): `HomeDashboardCard` routes through `SalusCard(onTap:)`'s
+                    // Button branch, and SwiftUI centers a Button's label when it does not fill the
+                    // width — without the greedy frame the text column would sit centered instead of
+                    // flush left with the other cards' padding rhythm.
+                    HStack(alignment: .top, spacing: 0) {
+                        SalusIconBadge(systemImage: "sparkles", accent: theme.extendedColors.trends)
+                        Spacer().frame(width: SalusSpacing.md)
+                        VStack(alignment: .leading, spacing: SalusSpacing.xs) {
+                            Text(verbatim: HomeStrings.aiSummaryDescription)
+                                .font(SalusTypography.bodyMedium.font)
+                                .tracking(SalusTypography.bodyMedium.tracking)
+                            if state.freeAiSummaryAvailable, !state.isPremium {
+                                Text(verbatim: HomeStrings.aiSummaryFreeCredit)
+                                    .font(SalusTypography.bodySmall.font)
+                                    .tracking(SalusTypography.bodySmall.tracking)
+                                    .foregroundStyle(theme.colorScheme.onSurfaceVariant)
+                            }
                         }
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
+            .salusEntrance(index: 6)
 
             // `Spacer(Modifier.height(sm))` (`HomeScreen.kt:140`).
             Spacer().frame(height: SalusSpacing.sm)

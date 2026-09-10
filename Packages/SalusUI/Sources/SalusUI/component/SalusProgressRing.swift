@@ -19,6 +19,14 @@
 // therefore drawn by hand: a `Circle().trim(from: 0, to: progress)` stroke, rotated `-90°` so the
 // arc starts at 12 o'clock (Compose's `CircularProgressIndicator` starts at top; SwiftUI's `trim`
 // starts at 3 o'clock). The track stays a full-circle stroke behind it.
+//
+// A45 — the first-appearance sweep: the progress circle animates its trim over `progress` with
+// `SalusMotion.entranceAnimation` (450 ms emphasized), the twin of Android's `animateFloatAsState`
+// over `progress` (`SalusProgressRing.kt:36-41`). `.animation(_, value: progress)` gives the
+// first-appearance sweep for free — SwiftUI animates the first value change after appear, so the
+// ring sweeps from 0 to its first position the same way Android's `Animatable` does on first
+// composition. Reduce-motion jumps instantly (`nil` animation). The struct already clamps
+// `progress` in `init` (divergence (c)), so the sweep animates the clamped value.
 
 import SalusDesignSystem
 import SwiftUI
@@ -31,6 +39,8 @@ public struct SalusProgressRing: View {
     private let label: String
     private let size: CGFloat
     private let strokeWidth: CGFloat
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// - Parameters:
     ///   - progress: the fraction filled, clamped to 0...1 (divergence (c), M14 plan).
@@ -59,10 +69,16 @@ public struct SalusProgressRing: View {
             // `color = Color.White` and `strokeCap = StrokeCap.Round` (`SalusProgressRing.kt:40-47`).
             // Drawn with `trim` because `.progressViewStyle(.circular)` ignores determinate values
             // on iOS 17 and renders an indeterminate spinner (divergence (j), M14 QA row 1.4).
+            // The A45 sweep: `.animation(_, value: progress)` animates the trim on `progress`
+            // changes, including the first one after appear (parity row A45).
             Circle()
-                .trim(from: 0, to: CGFloat(progress))
+                .trim(from: 0, to: ringSweep)
                 .stroke(.white, style: StrokeStyle(lineWidth: strokeWidth, lineCap: .round))
                 .rotationEffect(.degrees(-90))
+                .animation(
+                    reduceMotion ? nil : SalusMotion.entranceAnimation,
+                    value: progress
+                )
             Text(verbatim: label)
                 .font(SalusTypography.labelLarge.font)
                 .tracking(SalusTypography.labelLarge.tracking)
@@ -70,6 +86,10 @@ public struct SalusProgressRing: View {
         }
         .frame(width: size, height: size)
     }
+
+    /// The animated trim fraction: the twin of `animateFloatAsState` over `progress`
+    /// (`SalusProgressRing.kt:36-41`, parity row A45) — 450 ms emphasized; reduce motion jumps.
+    private var ringSweep: CGFloat { CGFloat(progress) }
 
     /// Clamps `progress` to 0...1 (divergence (c), M14 plan — Android deferred it).
     /// `nonisolated` so the pure helper is callable from a nonisolated test context, like
