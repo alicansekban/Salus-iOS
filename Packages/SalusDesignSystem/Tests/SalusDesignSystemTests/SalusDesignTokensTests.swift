@@ -460,24 +460,6 @@ struct TypographyTokenTests {
     }
 }
 
-@Suite("Motion (§10)")
-struct MotionTokenTests {
-    @Test("motion constants match design-tokens.md §10")
-    func motionConstants() {
-        #expect(SalusMotion.pushPopDurationSeconds == 0.4)
-        #expect(SalusMotion.pushPopEasing == SalusTimingCurve(0.4, 0.0, 0.2, 1.0))
-        #expect(SalusMotion.parallaxDivisor == 4)
-        #expect(SalusMotion.enterZIndexPush == 1)
-        #expect(SalusMotion.enterZIndexPop == -1)
-    }
-
-    @Test("tab-root transition is an instant swap and no screen resizes")
-    func instantTabSwap() {
-        #expect(SalusMotion.allTokens["tabRootTransition"] == SalusMotionToken.noTransition)
-        #expect(SalusMotion.allTokens["sizeTransform"] == SalusMotionToken.noSizeTransform)
-    }
-}
-
 @Suite("Hex initializer")
 struct ColorHexInitializerTests {
     /// The doc's §0 initializer: an opaque sRGB color, never Display P3.

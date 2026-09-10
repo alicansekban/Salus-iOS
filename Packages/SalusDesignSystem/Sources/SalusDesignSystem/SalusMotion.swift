@@ -1,10 +1,13 @@
 import SwiftUI
 
-// Mirrors `salus-android/docs/design/design-tokens.md` §10.
+// Mirrors `salus-android/docs/design/design-tokens.md` §10 (navigation) and §11 (entrance &
+// component motion).
 //
-// There is no motion object in Android's `core/designsystem/`; the one shared motion spec
-// lives in `core/navigation/.../SalusTransitions.kt` and governs screen push/pop. This file
-// holds those constants only — wiring them into a navigation stack is not a token concern.
+// §10 has no motion object in Android's `core/designsystem/`; the one shared motion spec
+// lives in `core/navigation/.../SalusTransitions.kt` and governs screen push/pop. §11 adds the
+// first motion object in `core/designsystem/` (`Motion.kt`), the sibling entrance/component
+// spec. This file holds both groups — wiring them into a navigation stack or an entrance is
+// not a token concern.
 //
 // Behavior contract these constants serve:
 //   - The push spec is attached per pushed entry, never to the navigator as a whole. Tab
@@ -47,7 +50,7 @@ public enum SalusMotionToken: Equatable, Sendable {
     case noSizeTransform
 }
 
-/// §10 — the shared motion constants. Source: `SalusTransitions.kt`.
+/// §10 — the shared navigation-motion constants. Source: `SalusTransitions.kt`.
 public enum SalusMotion {
     /// 400 ms. Source: `SalusTransitions.kt:69` (`DURATION_MILLIS`).
     public static let pushPopDurationSeconds: TimeInterval = 0.4
@@ -98,6 +101,50 @@ public enum SalusMotion {
     /// The reduce-motion form: the fade stays, the move goes (§10).
     public static var listMutationReducedMotionTransition: AnyTransition {
         .opacity
+    }
+
+    // MARK: §11 — entrance & component motion (parity rows A42–A45)
+
+    /// 450 ms. Source: `Motion.kt` (`Slow`) — entrances, sweeps, directional travel.
+    public static let entranceDurationSeconds: TimeInterval = 0.45
+
+    /// 150 ms. Source: `Motion.kt` (`Fast`) — feedback-level state changes.
+    public static let feedbackDurationSeconds: TimeInterval = 0.15
+
+    /// 300 ms. Source: `Motion.kt` (`Normal`) — colour cross-fades and mid-size changes.
+    public static let stateChangeDurationSeconds: TimeInterval = 0.3
+
+    /// `CubicBezierEasing(0.2f, 0f, 0f, 1f)` — cubic-bezier(0.2, 0.0, 0.0, 1.0).
+    /// Source: `Motion.kt` (`Emphasized`).
+    public static let emphasizedEasing = SalusTimingCurve(0.2, 0.0, 0.0, 1.0)
+
+    /// 40 ms per stagger index. Source: `Motion.kt` (`StaggerStepMs`).
+    public static let entranceStaggerStepSeconds: TimeInterval = 0.04
+
+    /// Stagger delays stop growing at this index (5 × 40 ms = 200 ms).
+    /// Source: `Motion.kt` (`StaggerCapIndex`).
+    public static let entranceStaggerCapIndex = 5
+
+    /// The entrance animation: emphasized easing over 450 ms (`Motion.kt` + `SalusEnter.kt`).
+    public static var entranceAnimation: Animation {
+        emphasizedEasing.animation(duration: entranceDurationSeconds)
+    }
+
+    /// Reduce-motion form of an entrance: opacity only, no travel (§11 behavior contract).
+    public static var entranceReducedMotionAnimation: Animation {
+        .easeInOut(duration: stateChangeDurationSeconds)
+    }
+
+    /// The six §11 tokens, for the doc-count test.
+    package static var entranceTokens: [String: SalusMotionToken] {
+        [
+            "entranceDuration": .durationSeconds(entranceDurationSeconds),
+            "feedbackDuration": .durationSeconds(feedbackDurationSeconds),
+            "stateChangeDuration": .durationSeconds(stateChangeDurationSeconds),
+            "entranceEasing": .timingCurve(emphasizedEasing),
+            "entranceStaggerStep": .durationSeconds(entranceStaggerStepSeconds),
+            "entranceStaggerCap": .divisor(entranceStaggerCapIndex)
+        ]
     }
 
     /// The eight motion tokens of §10.
