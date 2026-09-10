@@ -10,6 +10,13 @@
 // `SparklineGeometry`, which is deliberately a pure function of `([Float], CGSize) -> [CGPoint]`:
 // the Kotlin arithmetic is unreachable from a unit test because it lives inside a draw scope, and
 // hoisting it out is what lets `SalusSparklineTests` pin the same numbers Android draws.
+//
+// A44 — draw-in sweep: the line draws itself in left-to-right over 450 ms on first appearance
+// (the twin of Compose's `PathMeasure.getSegment(0, length × sweep)` at `SalusSparkline.kt:48-53`).
+// SwiftUI's `Path.trimmedPath(from: 0, to: sweep)` is the same segment operation, animated by
+// `SalusMotion.entranceAnimation` (Task 1's 450 ms emphasized curve). The stroke's `lineCap:
+// .round` draws a cap at the sweep's leading edge — the rounded tip Compose's `PathMeasure`
+// segment + `StrokeCap.Round` leaves mid-sweep. Reduce-motion snaps `sweep` to 1 instantly.
 
 import SalusDesignSystem
 import SwiftUI
@@ -21,6 +28,8 @@ public struct SalusSparkline: View {
     private let lineColor: Color?
 
     @Environment(\.salusTheme) private var theme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var sweep: CGFloat = 0
 
     /// - Parameter lineColor: the line's color. `nil` means the primary role, the twin of Kotlin's
     ///   `MaterialTheme.colorScheme.primary` default (`SalusSparkline.kt:23`) — which cannot be a
@@ -46,11 +55,23 @@ public struct SalusSparkline: View {
             // `Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)`
             // (`:44-48`). No fill, no gradient, no markers, no baseline — unlike `SalusLineChart`,
             // which draws an area under its line.
+            //
+            // The draw-in: `PathMeasure.getSegment(0, length × sweep)` (`SalusSparkline.kt:48-53`)
+            // — SwiftUI's `trimmedPath` is the same segment operation.
             context.stroke(
-                path,
+                path.trimmedPath(from: 0, to: sweep),
                 with: .color(lineColor ?? theme.colorScheme.primary),
                 style: StrokeStyle(lineWidth: Self.lineWidth, lineCap: .round, lineJoin: .round)
             )
+        }
+        .onAppear {
+            guard !reduceMotion else {
+                sweep = 1
+                return
+            }
+            withAnimation(SalusMotion.entranceAnimation) {
+                sweep = 1
+            }
         }
         // Hidden from VoiceOver (iOS-M7 plan ruling 7). Compose gives the sparkline no
         // `contentDescription`, so it is silent to TalkBack; a bare port would be an unlabelled
