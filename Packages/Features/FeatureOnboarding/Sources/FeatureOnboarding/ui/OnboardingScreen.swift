@@ -66,6 +66,18 @@
 //                                      SwiftUI keeps the old view alive for the removal phase — no
 //                                      `state.copy(stepIndex:)` is needed, the twin of Kotlin's
 //                                      `state.copy(stepIndex = targetStepIndex)`.
+//                                      DIVERGENCE FROM THE KOTLIN TWIN (iOS-only): Android's
+//                                      `AnimatedContent` receives both `initialState` and
+//                                      `targetState` in its `transitionSpec` lambda, so it derives
+//                                      `forward = targetState >= initialState` at transition time.
+//                                      SwiftUI's `.transition` + `.animation(value:)` evaluates the
+//                                      transition in `body`, where only the new state is visible,
+//                                      so the direction travels in `OnboardingUiState.lastStepDirection`
+//                                      (set by the ViewModel from the event) rather than from a
+//                                      `.onChange` index comparison — SwiftUI fires `onChange` AFTER
+//                                      the body that constructs the transition, so a `@State`-based
+//                                      approach would lag by one eval and read single-step backs as
+//                                      forward. See `OnboardingUiState`'s doc comment.
 //
 // ONE ADDITION WITH NO KOTLIN TWIN, and it is the one this port always owes a form:
 // `.salusDismissesKeyboardOnTap()` + `.scrollDismissesKeyboard(.interactively)` on the step
@@ -154,30 +166,12 @@ struct OnboardingScreen: View {
     @Environment(\.salusTheme) private var theme
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    /// The step index before the current change, captured via `.onChange` so the transition can
-    /// decide its direction the same way Android's `AnimatedContent` does from
-    /// `targetState >= initialState` (`OnboardingScreen.kt:126`). `OnboardingScreen` is rebuilt
-    /// by its parent with a fresh `state`, so this is the one piece of local state the screen
-    /// carries — the direction is a property of the change, not of the step.
-    @State private var previousStepIndex: Int
-
-    init(
-        state: OnboardingUiState,
-        onEvent: @escaping (OnboardingEvent) -> Void,
-        onRequestNotificationPermission: @escaping () -> Void
-    ) {
-        self.state = state
-        self.onEvent = onEvent
-        self.onRequestNotificationPermission = onRequestNotificationPermission
-        // Seed from the first state so the very first render (Welcome) is not read as a forward
-        // jump from index 0 → 0 and triggers no transition.
-        _previousStepIndex = State(initialValue: state.stepIndex)
-    }
-
     /// `true` when the flow is moving forward — `targetState >= initialState`
-    /// (`OnboardingScreen.kt:126`). Falls back to forward when the indices match (e.g. a value
-    /// change inside the same step), matching Android's `>=`.
-    private var isForward: Bool { state.stepIndex >= previousStepIndex }
+    /// (`OnboardingScreen.kt:126`). The direction travels in `state.lastStepDirection` (set by the
+    /// ViewModel from the event), so it is correct on the FIRST body eval after the change. Falls
+    /// back to forward when the indices match (e.g. a value change inside the same step), matching
+    /// Android's `>=`.
+    private var isForward: Bool { state.lastStepDirection == .forward }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -205,6 +199,11 @@ struct OnboardingScreen: View {
     /// `.id(state.stepIndex)` rebinds identity so SwiftUI keeps the outgoing step alive for the
     /// removal phase, and the container-level `.animation(_, value:)` drives the
     /// `stepTransition(width:)` in both directions. Reduce motion swaps instantly (`nil` animation).
+    ///
+    /// The direction comes from `state.lastStepDirection` (set by the ViewModel from the event),
+    /// not from a `.onChange` comparison — SwiftUI fires `onChange` AFTER the body that constructs
+    /// the transition, so the stale-value race that a `@State previousStepIndex` approach has is
+    /// eliminated: the transition reads the correct direction on the first body eval.
     private var steps: some View {
         GeometryReader { proxy in
             ScrollView {
@@ -220,9 +219,6 @@ struct OnboardingScreen: View {
                 reduceMotion ? nil : SalusMotion.entranceAnimation,
                 value: state.stepIndex
             )
-        }
-        .onChange(of: state.stepIndex) { oldIndex, _ in
-            previousStepIndex = oldIndex
         }
     }
 
@@ -272,6 +268,9 @@ struct OnboardingScreen: View {
 /// (`OnboardingScreen.kt:127-135`, parity row A45). Both phases compose a quarter-width horizontal
 /// move with an opacity fade in one `AnyTransition`, and the two phases are asymmetric: insertion
 /// comes from the edge the flow is moving toward, removal leaves toward the edge it came from.
+///
+/// The direction (`isForward`) is read from `state.lastStepDirection`, set by the ViewModel from the
+/// event — not from a `.onChange` index comparison (which would lag by one body eval on SwiftUI).
 ///
 /// SwiftUI's `Transition` API binds one animation to every phase-driven property, so the fade rides
 /// the same `entranceAnimation` (450 ms emphasized) as the slide rather than a separate 300 ms —

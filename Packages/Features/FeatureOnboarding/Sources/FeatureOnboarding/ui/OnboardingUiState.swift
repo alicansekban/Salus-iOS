@@ -43,12 +43,30 @@ extension OnboardingStep {
     }
 }
 
+/// The direction of a step change — iOS-only, no Kotlin twin. Android's `AnimatedContent`
+/// derives `forward = targetState >= initialState` inside the `transitionSpec` lambda where both
+/// values are known at transition time; SwiftUI has no equivalent, so the direction must travel in
+/// the state instead. Set by the ViewModel's `NextClicked`/`BackClicked`/`SkipClicked` events so the
+/// transition reads the correct direction on the FIRST body evaluation after the change.
+public enum StepDirection: Sendable, Equatable {
+    case forward
+    case backward
+}
+
 /// The onboarding flow's UDF state. The twin of Kotlin's `OnboardingUiState`.
 ///
 /// `steps` is a plain `[OnboardingStep]` array rather than Kotlin's `ImmutableList` — the M2+
 /// precedent is that Swift has no immutable-list wrapper, and a value-type array on a struct is
 /// already copy-on-write. `steps.getOrElse(stepIndex) { .welcome }` becomes a safe subscript that
 /// falls back to `.welcome`, exactly as the Kotlin twin does.
+///
+/// `lastStepDirection` is iOS-only (no Kotlin twin): Android's `AnimatedContent` receives both
+/// `initialState` and `targetState` in its `transitionSpec` lambda, so it derives direction at
+/// transition time. SwiftUI's `.transition` + `.animation(value:)` mechanism evaluates the
+/// transition in `body`, where only the new state is visible — a `@State`/`.onChange` approach
+/// lags by one body eval (SwiftUI fires `onChange` AFTER the body that constructs the transition).
+/// Carrying the direction in the state eliminates the race: the ViewModel sets it from the event,
+/// and the first body eval after the change reads the correct value.
 public struct OnboardingUiState: Sendable, Equatable {
     public var steps: [OnboardingStep]
     public var stepIndex: Int
@@ -59,6 +77,9 @@ public struct OnboardingUiState: Sendable, Equatable {
     public var weightText: String
     public var healthNotes: String
     public var isSaving: Bool
+    /// The direction of the last step change, set by the ViewModel so the step transition reads
+    /// it on the first body eval (iOS-only — see the type-level doc comment above).
+    public var lastStepDirection: StepDirection
 
     public init(
         steps: [OnboardingStep] = [.welcome],
@@ -69,7 +90,8 @@ public struct OnboardingUiState: Sendable, Equatable {
         heightText: String = "",
         weightText: String = "",
         healthNotes: String = "",
-        isSaving: Bool = false
+        isSaving: Bool = false,
+        lastStepDirection: StepDirection = .forward
     ) {
         self.steps = steps
         self.stepIndex = stepIndex
@@ -80,6 +102,7 @@ public struct OnboardingUiState: Sendable, Equatable {
         self.weightText = weightText
         self.healthNotes = healthNotes
         self.isSaving = isSaving
+        self.lastStepDirection = lastStepDirection
     }
 
     public var step: OnboardingStep {

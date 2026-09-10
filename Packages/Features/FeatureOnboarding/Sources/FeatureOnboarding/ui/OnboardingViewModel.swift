@@ -68,17 +68,22 @@ public final class OnboardingViewModel {
         )
     }
 
-    /// `OnboardingViewModel.kt:39-65`.
+    /// `OnboardingViewModel.kt:39-65`. `lastStepDirection` is iOS-only (no Kotlin twin): set from
+    /// the event so the step transition reads the correct direction on the first body eval — see
+    /// `OnboardingUiState`'s type-level doc comment.
     public func onEvent(_ event: OnboardingEvent) {
         switch event {
         case .nextClicked:
+            state.lastStepDirection = .forward
             advance()
 
         case .backClicked:
             state.stepIndex = max(state.stepIndex - 1, 0)
+            state.lastStepDirection = .backward
 
         case .skipClicked:
             state.clearCurrentStep()
+            state.lastStepDirection = .forward
             advance()
 
         case let .nameChanged(value):

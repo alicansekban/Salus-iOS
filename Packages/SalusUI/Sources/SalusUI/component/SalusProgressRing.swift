@@ -20,13 +20,13 @@
 // arc starts at 12 o'clock (Compose's `CircularProgressIndicator` starts at top; SwiftUI's `trim`
 // starts at 3 o'clock). The track stays a full-circle stroke behind it.
 //
-// A45 — the first-appearance sweep: the progress circle animates its trim over `progress` with
-// `SalusMotion.entranceAnimation` (450 ms emphasized), the twin of Android's `animateFloatAsState`
-// over `progress` (`SalusProgressRing.kt:36-41`). `.animation(_, value: progress)` gives the
-// first-appearance sweep for free — SwiftUI animates the first value change after appear, so the
-// ring sweeps from 0 to its first position the same way Android's `Animatable` does on first
-// composition. Reduce-motion jumps instantly (`nil` animation). The struct already clamps
-// `progress` in `init` (divergence (c)), so the sweep animates the clamped value.
+// A45 — the progress ring sweeps on `progress` changes with `SalusMotion.entranceAnimation`
+// (450 ms emphasized), the twin of Android's `animateFloatAsState` over `progress`
+// (`SalusProgressRing.kt:36-41`). `.animation(_, value: progress)` animates the trim on subsequent
+// `progress` changes; the first composition draws the initial value directly (Android's
+// `animateFloatAsState` behaves the same — it snaps to the initial value on first composition and
+// sweeps on subsequent changes). Reduce-motion jumps instantly (`nil` animation). The struct
+// already clamps `progress` in `init` (divergence (c)), so the sweep animates the clamped value.
 
 import SalusDesignSystem
 import SwiftUI
@@ -70,7 +70,8 @@ public struct SalusProgressRing: View {
             // Drawn with `trim` because `.progressViewStyle(.circular)` ignores determinate values
             // on iOS 17 and renders an indeterminate spinner (divergence (j), M14 QA row 1.4).
             // The A45 sweep: `.animation(_, value: progress)` animates the trim on `progress`
-            // changes, including the first one after appear (parity row A45).
+            // changes; first composition draws the initial value directly (Android's
+            // `animateFloatAsState` behaves the same — parity row A45).
             Circle()
                 .trim(from: 0, to: ringSweep)
                 .stroke(.white, style: StrokeStyle(lineWidth: strokeWidth, lineCap: .round))

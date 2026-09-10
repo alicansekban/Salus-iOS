@@ -6,7 +6,7 @@ import Testing
 // file stays under the `file_length` warning (500). The suite name and contents are unchanged;
 // `swift test --filter MotionTokenTests` still picks them up.
 
-@Suite("Motion (§10)")
+@Suite("Motion (§10, §11)")
 struct MotionTokenTests {
     @Test("motion constants match design-tokens.md §10")
     func motionConstants() {
