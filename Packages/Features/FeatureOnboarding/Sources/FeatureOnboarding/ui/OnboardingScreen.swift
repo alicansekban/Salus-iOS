@@ -296,20 +296,20 @@ extension OnboardingScreen {
         )
     }
 
-    /// Forward: the arriving step enters from the trailing edge (offset `-travel` → 0) and fades in.
-    /// Back: it enters from the leading edge (offset `+travel` → 0).
+    /// Forward: the arriving step enters from the trailing edge (offset `+travel` → 0) and fades in.
+    /// Back: it enters from the leading edge (offset `-travel` → 0).
     private func stepInsertion(travel: CGFloat, forward: Bool) -> AnyTransition {
-        let offset = forward ? -travel : travel
+        let offset = forward ? travel : -travel
         return .modifier(
             active: StepSlidePhase(offset: offset, opacity: 0),
             identity: StepSlidePhase(offset: 0, opacity: 1)
         )
     }
 
-    /// Forward: the leaving step exits toward the leading edge (0 → offset `+travel`) and fades out.
-    /// Back: it exits toward the trailing edge (0 → offset `-travel`).
+    /// Forward: the leaving step exits toward the leading edge (0 → offset `-travel`) and fades out.
+    /// Back: it exits toward the trailing edge (0 → offset `+travel`).
     private func stepRemoval(travel: CGFloat, forward: Bool) -> AnyTransition {
-        let offset = forward ? travel : -travel
+        let offset = forward ? -travel : travel
         return .modifier(
             active: StepSlidePhase(offset: offset, opacity: 0),
             identity: StepSlidePhase(offset: 0, opacity: 1)
