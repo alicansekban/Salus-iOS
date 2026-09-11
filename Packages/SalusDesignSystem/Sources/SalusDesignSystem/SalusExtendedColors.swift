@@ -71,7 +71,9 @@ public struct SalusGradient: Equatable, Sendable {
 /// The Salus colors that sit outside the Material roles, for one theme: one accent set per
 /// feature area, two shared status colors, and the hero gradient.
 ///
-/// The premium theme (§4) recolors Material accent roles only — these are unaffected by it.
+/// These are the brand (CLASSIC) values. A premium theme repaints the five feature accents and
+/// the hero gradient from its own §4.6 set (`SalusPremiumExtendedColors.swift`); `success` and
+/// `warning` are inherited from here by every palette and never move.
 public struct SalusExtendedColors: Equatable, Sendable {
     public var medications: FeatureAccent
     public var cycle: FeatureAccent

@@ -6,6 +6,11 @@ import SwiftUI
 // (`PremiumThemeColors.kt:103-120`). The behavior contract is tabulated in
 // `salus-android/docs/design/design-tokens.md` §4.5.
 //
+// A palette moves two layers, not one: the eight Material accent roles (§4, `SalusPremiumAccents
+// .swift`) and — since §4.6 — the five feature accents and the hero gradient
+// (`SalusPremiumExtendedColors.swift`, mirroring `PremiumExtendedColors.kt`). Everything else,
+// backgrounds and surfaces and outlines and the two status colours, stays where §1/§2/§3.3 put it.
+//
 // This is pure resolution over the token layer: no views, no storage, no environment reads.
 // Whether the OS is in dark mode arrives as a parameter (`systemIsDark`) rather than being read
 // here, so the whole thing stays a function of its inputs and testable without a UI. The
