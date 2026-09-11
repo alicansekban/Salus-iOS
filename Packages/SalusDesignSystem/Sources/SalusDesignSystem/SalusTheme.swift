@@ -25,11 +25,12 @@ import SwiftUI
 /// `LocalSalusExtendedColors provides …`, and the `darkTheme` flag it branched on.
 ///
 /// The three are `let`: a resolved theme is the answer `resolve` computed, not a value to patch
-/// afterwards. Repainting the accents happens on the way in, through `withPremiumAccent`.
+/// afterwards. Repainting happens on the way in — `withPremiumAccent` for the Material roles,
+/// `extendedColors(dark:premiumTheme:)` for the feature accents and the hero gradient.
 public struct SalusResolvedTheme: Equatable, Sendable {
     /// The 35 Material roles, with the premium palette already applied.
     public let colorScheme: SalusColorScheme
-    /// The feature accents and status colors, which no palette ever touches.
+    /// The feature accents and hero gradient, repainted for the palette, plus the status colors.
     public let extendedColors: SalusExtendedColors
     /// Whether the dark theme was resolved.
     public let isDark: Bool
@@ -61,7 +62,7 @@ public enum SalusTheme {
         let dark = mode.isDark(systemIsDark: systemIsDark)
         return SalusResolvedTheme(
             colorScheme: colorScheme(dark: dark, premiumTheme: premiumTheme),
-            extendedColors: extendedColors(dark: dark),
+            extendedColors: extendedColors(dark: dark, premiumTheme: premiumTheme),
             isDark: dark
         )
     }
@@ -78,10 +79,32 @@ public enum SalusTheme {
         return base.withPremiumAccent(premiumTheme, dark: dark)
     }
 
-    /// The extended colors for a theme (`Theme.kt:97-98`). The premium palette is not an input:
-    /// feature accents and status colors are unaffected by it (§4.5).
+    /// The extended colors for a theme and palette (`Theme.kt:97-98`).
+    ///
+    /// The palette IS an input: §4.6 gives each premium theme its own five feature accents and
+    /// its own hero gradient, so Home, Medications, Vitals and Appointments follow the theme
+    /// rather than staying on the brand greens. `success` and `warning` never move
+    /// (`premiumExtendedColors`, `PremiumExtendedColors.kt:293-299`).
+    ///
+    /// `PremiumTheme.classic` is the brand set itself, so it returns the existing
+    /// `SalusExtendedColors.light` / `.dark` instance rather than an identical copy — the same
+    /// identity rule `withPremiumAccent` follows.
+    public static func extendedColors(
+        dark: Bool,
+        premiumTheme: PremiumTheme
+    ) -> SalusExtendedColors {
+        switch premiumTheme {
+        case .classic: dark ? SalusExtendedColors.dark : SalusExtendedColors.light
+        case .ocean: dark ? SalusExtendedColors.oceanDark : SalusExtendedColors.oceanLight
+        case .sunset: dark ? SalusExtendedColors.sunsetDark : SalusExtendedColors.sunsetLight
+        case .forest: dark ? SalusExtendedColors.forestDark : SalusExtendedColors.forestLight
+        }
+    }
+
+    /// The brand extended colors for a theme. Kept so the callers and tests that predate §4.6
+    /// keep compiling; it is `extendedColors(dark:premiumTheme:)` with the default palette.
     public static func extendedColors(dark: Bool) -> SalusExtendedColors {
-        dark ? SalusExtendedColors.dark : SalusExtendedColors.light
+        extendedColors(dark: dark, premiumTheme: .default)
     }
 }
 

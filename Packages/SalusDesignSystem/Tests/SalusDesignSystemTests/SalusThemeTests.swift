@@ -152,14 +152,14 @@ struct SalusThemeResolutionTests {
         )
         #expect(resolved.isDark)
         #expect(resolved.colorScheme == SalusTheme.colorScheme(dark: true, premiumTheme: .ocean))
-        #expect(resolved.extendedColors == SalusExtendedColors.dark)
+        #expect(resolved.extendedColors == SalusExtendedColors.oceanDark)
     }
 
     @Test("an explicit mode overrides the system in the full resolution")
     func explicitModeWins() {
         let resolved = SalusTheme.resolve(mode: .light, premiumTheme: .forest, systemIsDark: true)
         #expect(!resolved.isDark)
-        #expect(resolved.extendedColors == SalusExtendedColors.light)
+        #expect(resolved.extendedColors == SalusExtendedColors.forestLight)
         #expect(resolved.colorScheme.primary == Color(hex: 0x2E6B27))
         #expect(resolved.colorScheme.background == SalusColorScheme.light.background)
     }
@@ -172,18 +172,19 @@ struct SalusThemeResolutionTests {
     }
 
     @Test(
-        "feature accents and status colors are never touched by the palette",
+        "status colors are never touched by the palette",
         arguments: PremiumTheme.allCases
     )
-    func extendedColorsUnaffected(_ palette: PremiumTheme) {
-        // §4.5 — feature accents (§3) and status colors (§3.3) are unaffected.
-        #expect(
-            SalusTheme.resolve(mode: .light, premiumTheme: palette, systemIsDark: true)
-                .extendedColors == SalusExtendedColors.light
-        )
-        #expect(
-            SalusTheme.resolve(mode: .dark, premiumTheme: palette, systemIsDark: false)
-                .extendedColors == SalusExtendedColors.dark
-        )
+    func statusColorsUnaffected(_ palette: PremiumTheme) {
+        // §4.6 — a palette repaints the five feature accents (§3) and the hero gradient (§3.5);
+        // the status colors (§3.3) are inherited from the brand set so they keep meaning "good"
+        // and "careful". Which accents each palette lands on is pinned by
+        // `SalusPremiumExtendedColorsTests`.
+        let light = SalusTheme.resolve(mode: .light, premiumTheme: palette, systemIsDark: true)
+        #expect(light.extendedColors.success == SalusExtendedColors.light.success)
+        #expect(light.extendedColors.warning == SalusExtendedColors.light.warning)
+        let dark = SalusTheme.resolve(mode: .dark, premiumTheme: palette, systemIsDark: false)
+        #expect(dark.extendedColors.success == SalusExtendedColors.dark.success)
+        #expect(dark.extendedColors.warning == SalusExtendedColors.dark.warning)
     }
 }
