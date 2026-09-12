@@ -11,6 +11,11 @@
 // screens, so no feature could own them: the sheet header's close button and the stepper's two
 // buttons plus the state it announces while its number is still only a suggestion.
 //
+// M16 added two more, and they are the clearest case yet: the root toolbar's bell and avatar are
+// drawn by the SHELL for all five tab roots (`SalusRootToolbar.swift`), so no feature owns them
+// either, and Android keeps them in `:core:ui` for the same reason
+// (`core/ui/src/main/res/values/strings.xml:11-12`).
+//
 // TOOLCHAIN NOTE, and it costs an hour to rediscover: a `.xcstrings` catalog is compiled into
 // `.lproj/Localizable.strings` by **Xcode's** build system only. Command-line `swift build` /
 // `swift test` copies the catalog into the resource bundle verbatim, so a lookup under
@@ -42,6 +47,12 @@ public enum SalusUIStrings {
     /// `salus_stepper_suggested` — "Önerilen değer" / "Suggested value". The state a stepper
     /// announces while the number on screen is only a suggestion (`SalusStepperField.kt:188`).
     public static var stepperSuggested: String { localized(Key.stepperSuggested) }
+    /// `salus_topbar_bell_cd` — "Hatırlatıcı sağlığı" / "Reminder health". The root toolbar's bell
+    /// (`SalusTopBar.kt:163`).
+    public static var topBarBell: String { localized(Key.topBarBell) }
+    /// `salus_topbar_profile_cd` — "Profil" / "Profile". The root toolbar's avatar
+    /// (`SalusTopBar.kt:182`).
+    public static var topBarProfile: String { localized(Key.topBarProfile) }
 
     /// The catalog keys, named once. Internal so the parity test can prove every accessor asks for
     /// a key the catalog really carries — a typo here would otherwise ship the key as the label.
@@ -53,6 +64,8 @@ public enum SalusUIStrings {
         static let stepperDecrease = "salus_stepper_decrease"
         static let stepperIncrease = "salus_stepper_increase"
         static let stepperSuggested = "salus_stepper_suggested"
+        static let topBarBell = "salus_topbar_bell_cd"
+        static let topBarProfile = "salus_topbar_profile_cd"
 
         /// Every key this type reads, for the test that compares them with the catalog's.
         static let all: Set<String> = [
@@ -62,7 +75,9 @@ public enum SalusUIStrings {
             sheetClose,
             stepperDecrease,
             stepperIncrease,
-            stepperSuggested
+            stepperSuggested,
+            topBarBell,
+            topBarProfile
         ]
     }
 

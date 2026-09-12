@@ -1,7 +1,8 @@
 // Ported 1:1 from `feature/settings/src/main/kotlin/com/alicansekban/salus/feature/settings/
 // ui/more/MoreScreen.kt`. Material → SwiftUI (the mapping `docs/ios-feature-template.md` records):
-// `Column`+`verticalScroll` → `ScrollView`+`VStack(spacing:)`; tab-root `SalusScreenHeader` stays
-// `SalusScreenHeader(title:)` (no `TopAppBar` — divergence (d)); `SalusSectionHeader(contentPadding
+// `Column`+`verticalScroll` → `ScrollView`+`VStack(spacing:)`; the tab-root title is the shell's
+// root toolbar plus this screen's `.navigationTitle` (iOS-M16 retired `SalusScreenHeader`, spec
+// §2.2 — a native inline navigation bar, not a `TopAppBar`); `SalusSectionHeader(contentPadding
 // = top(sm))` → `SalusSectionHeader(title:contentPadding: .topOnly)`, the scroll column carrying the
 // screen's horizontal inset exactly as the Kotlin column does; `Card(onClick)` → `SalusCard`;
 // `Switch` → `Toggle`; `AlertDialog`+`RadioButton` → `salusDialog` over ``MoreSelectionDialog``;
@@ -209,12 +210,12 @@ struct MoreScreen: View {
 
     var body: some View {
         // No `Scaffold` twin and no inset modifiers: the shell owns the one `NavigationStack` and
-        // its insets, and this is a tab root — `SalusScreenHeader` rather than a `TopAppBar`
-        // (div. (d), `MoreScreen.kt:180-181`). The §1 draw order is `MoreScreen.kt:193-339`; the
-        // scroll column carries the screen's horizontal inset for everything in it
-        // (`MoreScreen.kt:183-189`), which is why `SectionLabel` drops the header's own.
+        // its insets, and this is a tab root — so the title is the system navigation bar's, drawn
+        // by the shell's root toolbar (`MoreScreen.kt:180-181`'s `TopAppBar` has no iOS twin, spec
+        // §2.2). The §1 draw order is `MoreScreen.kt:193-339`; the scroll column carries the
+        // screen's horizontal inset for everything in it (`MoreScreen.kt:183-189`), which is why
+        // `SectionLabel` drops the header's own.
         VStack(spacing: 0) {
-            SalusScreenHeader(title: SettingsStrings.moreTitle)
             ScrollView {
                 VStack(spacing: SalusSpacing.md) {
                     // 1. Profile (`MoreScreen.kt:193-200`): blank name → onboarding skipped.
@@ -361,6 +362,10 @@ struct MoreScreen: View {
             }
         }
         .background(colors.background)
+        // The screen title. The shell's root toolbar draws it in the navigation bar's principal
+        // slot; `.navigationTitle` is still what names the back button of everything this root
+        // pushes — Profile, About, Reminder health, Cycle — and what VoiceOver reads.
+        .navigationTitle(Text(verbatim: SettingsStrings.moreTitle))
         // The three selection dialogs (`MoreScreen.kt:342-383`), driven by `activeDialog` rather
         // than three `@State` flags (matching Kotlin's `when (state.activeDialog)`) — one popup,
         // so only one can be open at a time by construction. The binding's `false` edge is the
@@ -380,6 +385,14 @@ struct MoreScreen: View {
                 selectionDialog(for: dialog)
             }
         }
+        // LAST in the chain, and `#if os(iOS)` because the modifier is iOS-only API while every
+        // feature package also builds for the macOS test host (CLAUDE.md's `.macOS(.v14)`
+        // concession). Last because SwiftFormat indents whatever follows an `#endif` one level
+        // deeper, which reads as if those modifiers were inside the guard — the shape
+        // `AboutScreen` has carried since M8.
+        #if os(iOS)
+        .navigationBarTitleDisplayMode(.inline)
+        #endif
     }
 
     /// `when (state.activeDialog)` (`MoreScreen.kt:342-383`) — each branch maps its enum's cases to

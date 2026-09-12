@@ -17,6 +17,7 @@ import FeatureSettings
 import FeatureTrends
 import FeatureVitals
 import SalusNavigation
+import SalusUI
 import SwiftUI
 
 /// One tab's `NavigationStack`, with the destinations that tab can reach registered on it
@@ -24,8 +25,18 @@ import SwiftUI
 ///
 /// Which registrars go on which stack is not cosmetic: SwiftUI resolves `navigationDestination(for:)`
 /// per stack, so a key pushed onto a stack that does not register it draws nothing. That is why
-/// `cycleDestinations()` appears twice and why `settingsDestinations()` now appears on the
-/// medications stack as well as on More's.
+/// `cycleDestinations()` appears twice and why `settingsDestinations()` is on all five stacks since
+/// iOS-M16: the root toolbar's bell and avatar push `ReminderHealthKey` and `ProfileKey` from every
+/// tab, so every stack has to be able to draw them.
+///
+/// **The root toolbar is the shell's** (spec §2.2, decision Q2): `salusRootToolbar` is applied here
+/// to each of the five tab ROOTS and nowhere else, the twin of `SalusApp.kt:281-287` drawing
+/// `SalusTopBar.Home` only while a top-level destination is showing. A feature never writes it —
+/// a pushed screen sets its own `.navigationTitle` + `.navigationBarTitleDisplayMode(.inline)` and
+/// its own `ToolbarItem` actions instead (`docs/ios-feature-template.md`). Applied to the ROOT view
+/// rather than to the stack, which is the opposite of the tab-bar visibility rule on
+/// `RootView.tabStack(for:)` and for the same reason: this one describes the root alone, and a
+/// pushed screen must NOT inherit a brand tile where its back button goes.
 @MainActor
 struct RootNavigationStack: View {
     let tab: RootTab
@@ -49,24 +60,37 @@ struct RootNavigationStack: View {
                     // `TrendsKey` through the navigator. The destination is `trendsDestinations()`.
                     root.navigator.navigate(TrendsKey())
                 })
+                .rootToolbar(for: tab, navigator: root.navigator)
                 .vitalsDestinations()
                 .trendsDestinations()
+                // Registered because the root toolbar's bell and avatar push `ReminderHealthKey`
+                // and `ProfileKey` onto THIS stack. `AboutKey` rides along — the modifier is that
+                // feature's whole registrar — and is not reachable from here.
+                .settingsDestinations()
             }
             // Applied to the stack, not inside its root: a pushed `WeightEditorKey` destination is
             // rendered by the stack, so an environment value set on the root view would not reach
             // the editor.
             .environment(\.vitalsModule, root.vitalsModule)
             .environment(\.trendsModule, root.trendsModule)
+            // What the pushed `ReminderHealthRoute` / `ProfileRoute` read, for the same reason the
+            // two lines above exist.
+            .environment(\.settingsModule, root.settingsModule)
 
         case .appointments:
             NavigationStack(path: backStacks.binding(for: tab)) {
                 AppointmentsRoute()
+                    .rootToolbar(for: tab, navigator: root.navigator)
                     .appointmentsDestinations()
+                    // Registered for the root toolbar's two pushes, exactly as on the vitals stack.
+                    .settingsDestinations()
             }
             // On the stack, not inside its root: a pushed `AppointmentDetailKey` or
             // `AppointmentEditorKey` destination is rendered by the stack, so an environment value
             // set on the root view would not reach either.
             .environment(\.appointmentsModule, root.appointmentsModule)
+            // What the pushed `ReminderHealthRoute` / `ProfileRoute` read.
+            .environment(\.settingsModule, root.settingsModule)
 
         case .more:
             NavigationStack(path: backStacks.binding(for: tab)) {
@@ -95,6 +119,7 @@ struct RootNavigationStack: View {
                     },
                     appLockPrompt: makeLockPrompt()
                 )
+                .rootToolbar(for: tab, navigator: root.navigator)
                 .settingsDestinations()
                 .cycleDestinations()
                 // The AI health destinations — `AiSummaryKey` is pushed from Home, `DoctorReportKey`
@@ -135,6 +160,7 @@ struct RootNavigationStack: View {
                     // there is nothing above it to replace.
                     onOpenReminderHealth: { root.navigator.navigate(ReminderHealthKey()) }
                 )
+                .rootToolbar(for: tab, navigator: root.navigator)
                 // `cycleDestinations()` stays on this stack because two things now push `CycleKey`
                 // onto it: the card above, and a tapped cycle reminder, which `RootTab.hosting`
                 // routes to Home (iOS-M6 ruling 2). Neither ordering stacks two calendars —
@@ -180,6 +206,7 @@ struct RootNavigationStack: View {
     private var medicationsStack: some View {
         NavigationStack(path: backStacks.binding(for: tab)) {
             MedicationsRoute()
+                .rootToolbar(for: tab, navigator: root.navigator)
                 .medicationsDestinations(
                     // The editor's post-save warning: "Fix" replaces the editor with Reminder
                     // health, which belongs to `FeatureSettings`, so the shell is what pushes the
@@ -207,5 +234,23 @@ struct RootNavigationStack: View {
         .environment(\.medicationsModule, root.medicationsModule)
         // What a pushed `ReminderHealthRoute` reads, for the same reason the line above exists.
         .environment(\.settingsModule, root.settingsModule)
+    }
+}
+
+extension View {
+    /// The shell's root toolbar, wired to this tab.
+    ///
+    /// One helper rather than five copies of the same three arguments: the title is always the tab
+    /// label (`SalusApp.kt:283` passes the same value), and the two destinations are always
+    /// `FeatureSettings`' — which is why they are pushed here, by the shell, rather than by a
+    /// feature that cannot see that package (spec §4's cross-feature rule).
+    ///
+    /// `fileprivate` so the sixth caller has to be a tab root in this file.
+    fileprivate func rootToolbar(for tab: RootTab, navigator: Navigator) -> some View {
+        salusRootToolbar(
+            title: tab.label,
+            onBell: { navigator.navigate(ReminderHealthKey()) },
+            onAvatar: { navigator.navigate(ProfileKey()) }
+        )
     }
 }

@@ -30,8 +30,6 @@ struct CycleScreen: View {
     var body: some View {
         // No `Scaffold` twin here: the app shell owns the one navigation stack and its insets.
         VStack(spacing: 0) {
-            SalusScreenHeader(title: CycleStrings.title)
-
             if state.isLoading {
                 // `CycleScreen.kt:102-104`.
                 ProgressView()
@@ -44,8 +42,20 @@ struct CycleScreen: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(theme.colorScheme.background)
+        // A PUSHED screen, not a tab root (it opens on Home's stack and on More's), so it wears the
+        // system navigation bar with its own inline title and keeps the back button — the shell's
+        // root toolbar is for the five roots only (spec §2.2).
+        .navigationTitle(Text(verbatim: CycleStrings.title))
         // `ReminderDialogs(state:onEvent:)` (`CycleScreen.kt:142`).
         .cycleReminderDialogs(state: state, onEvent: onEvent)
+        // LAST in the chain, and `#if os(iOS)` because the modifier is iOS-only API while every
+        // feature package also builds for the macOS test host (CLAUDE.md's `.macOS(.v14)`
+        // concession). Last because SwiftFormat indents whatever follows an `#endif` one level
+        // deeper, which reads as if those modifiers were inside the guard — the shape
+        // `AboutScreen` has carried since M8.
+        #if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+        #endif
     }
 
     /// The scrolling body, in the Kotlin order (`CycleScreen.kt:106-139`).

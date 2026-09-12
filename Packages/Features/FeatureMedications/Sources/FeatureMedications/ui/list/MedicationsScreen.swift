@@ -72,14 +72,6 @@ struct MedicationsScreen: View {
         // No `Scaffold` twin here: the app shell owns the one navigation stack and its insets.
         ZStack(alignment: .bottomTrailing) {
             VStack(spacing: 0) {
-                // `MedicationsScreen.kt:99-113` — the header's `trailing` slot. The count chip is
-                // hidden while the list is empty (an empty state owns the screen), and it reuses
-                // `SalusStatusChip`'s neutral status, exactly as Kotlin's `SalusStatusChip`.
-                SalusScreenHeader(title: MedicationsStrings.title) {
-                    if !state.medications.isEmpty {
-                        SalusStatusChip(label: MedicationsStrings.medicationCount(state.medications.count))
-                    }
-                }
                 content
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -89,6 +81,22 @@ struct MedicationsScreen: View {
                 .padding(SalusSpacing.lg)
         }
         .background(theme.colorScheme.background)
+        // The screen title. The shell's root toolbar draws it in the navigation bar's principal
+        // slot; `.navigationTitle` is still what names the back button of everything this root
+        // pushes, and what VoiceOver reads for the screen.
+        .navigationTitle(Text(verbatim: MedicationsStrings.title))
+        // `MedicationsScreen.kt:99-113` — the count chip the retired `SalusScreenHeader` carried in
+        // its trailing slot, now a toolbar item beside the shell's bell and avatar. Hidden while the
+        // list is empty (an empty state owns the screen), exactly as Kotlin's header had it. M15
+        // moved the count into the list's own metric tiles (`MedicationsScreen.kt:270`, `:306`) —
+        // that is Task 7's restyle; until it lands the chip keeps the place it had.
+        .toolbar {
+            if !state.medications.isEmpty {
+                ToolbarItem(placement: .primaryAction) {
+                    SalusStatusChip(label: MedicationsStrings.medicationCount(state.medications.count))
+                }
+            }
+        }
         // `MedicationsScreen.kt:132-142`. The confirm label is the shared `salus_delete`, exactly
         // as Kotlin reaches into `core.ui`'s string rather than the feature's own.
         .salusConfirmDialog(
@@ -98,6 +106,14 @@ struct MedicationsScreen: View {
             confirm: SalusDialogAction(label: SalusUIStrings.delete) { onEvent(.deleteConfirmed) },
             dismiss: SalusDialogAction(label: SalusUIStrings.cancel) { onEvent(.deleteDismissed) }
         )
+        // LAST in the chain, and `#if os(iOS)` because the modifier is iOS-only API while every
+        // feature package also builds for the macOS test host (CLAUDE.md's `.macOS(.v14)`
+        // concession). Last because SwiftFormat indents whatever follows an `#endif` one level
+        // deeper, which reads as if those modifiers were inside the guard — the shape
+        // `AboutScreen` has carried since M8.
+        #if os(iOS)
+        .navigationBarTitleDisplayMode(.inline)
+        #endif
     }
 
     /// Kotlin writes `state.pendingDelete?.let { … }` — the dialog exists only while there is

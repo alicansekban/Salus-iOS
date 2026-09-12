@@ -21,7 +21,8 @@ import Testing
 struct SalusUIStringsTests {
     /// The keys `:core:ui` owns. Copied from the XML by name — a new key here means a new
     /// key there, in the same commit. The M15 primitives added four: the sheet's close button and
-    /// the stepper's two buttons plus its suggestion state.
+    /// the stepper's two buttons plus its suggestion state. M16 added the root toolbar's two,
+    /// which the shell speaks for every tab root.
     static let expectedKeys: Set = [
         "salus_undo",
         "salus_cancel",
@@ -29,7 +30,9 @@ struct SalusUIStringsTests {
         "salus_sheet_close",
         "salus_stepper_decrease",
         "salus_stepper_increase",
-        "salus_stepper_suggested"
+        "salus_stepper_suggested",
+        "salus_topbar_bell_cd",
+        "salus_topbar_profile_cd"
     ]
 
     @Test("the catalog holds exactly the keys :core:ui owns")
@@ -63,6 +66,10 @@ struct SalusUIStringsTests {
         #expect(catalog.value(of: "salus_stepper_increase", in: "en") == "Increase")
         #expect(catalog.value(of: "salus_stepper_suggested", in: "tr") == "Önerilen değer")
         #expect(catalog.value(of: "salus_stepper_suggested", in: "en") == "Suggested value")
+        #expect(catalog.value(of: "salus_topbar_bell_cd", in: "tr") == "Hatırlatıcı sağlığı")
+        #expect(catalog.value(of: "salus_topbar_bell_cd", in: "en") == "Reminder health")
+        #expect(catalog.value(of: "salus_topbar_profile_cd", in: "tr") == "Profil")
+        #expect(catalog.value(of: "salus_topbar_profile_cd", in: "en") == "Profile")
     }
 
     @Test("every accessor asks for a key the catalog carries")

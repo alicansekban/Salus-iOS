@@ -178,7 +178,7 @@ ViewModel rules:
 ## Shell and navigation-container rule (MANDATORY)
 
 **There is exactly one `TabView` and one `NavigationStack` per tab in the app: the shell's.**
-`App/RootView.swift:63` owns the `TabView`; `App/RootView.swift:121` builds the one
+`App/RootView.swift:186` owns the `TabView`; `App/RootNavigationStack.swift` builds the one
 `NavigationStack` a tab gets, over the tab's own `NavigationPath` from `TabBackStacks`.
 
 Feature screens:
@@ -189,14 +189,67 @@ Feature screens:
 - **NEVER call `.ignoresSafeArea`, `.safeAreaInset` or a status/home-bar padding hack.** Insets are
   consumed in one place.
 - If a title bar is needed, use `.navigationTitle(_:)` + `.toolbar { }` on the screen's own body —
-  the shell's stack renders them (`ui/editor/WeightEditorScreen.swift:82-83`).
+  the shell's stack renders them (`ui/editor/WeightEditorScreen.swift:82-83`). What goes in it, and
+  what the shell has already put there, is the **title-bar rule** below.
 - If a FAB is needed, `ZStack(alignment: .bottomTrailing)` + `.padding(16)`
   (`ui/list/VitalsScreen.swift:72-73`, whose comment names the rule).
 - Screen roots start with `.frame(maxWidth: .infinity, maxHeight: .infinity)`.
 
 The snackbar host is the shell's too, and there is exactly one
-(`App/RootView.swift:102` + `:114`): a feature raises a request through `SalusSnackbarController`
+(`App/RootView.swift:276` + `:278`): a feature raises a request through `SalusSnackbarController`
 and never mounts a host.
+
+### The title bar is the system's, and it is inline everywhere (MANDATORY)
+
+Since iOS-M16 (spec §2.2, decision Q2) there is **no in-content screen header**:
+`SalusScreenHeader` is deleted, `SalusTopBar` was never ported, and every title in the app is the
+system navigation bar's, in `.inline` display mode. Large titles are off. The bar's ground
+(`background`), its title colour (`onSurface`) and its title font (`titleMedium`) come from
+`SalusBarAppearance` (`Packages/SalusUI/Sources/SalusUI/shell/SalusBarAppearance.swift`), which the
+shell applies once per theme resolution — a screen never paints a bar.
+
+**A tab root's toolbar is the shell's.** `App/RootNavigationStack.swift` applies
+`salusRootToolbar(title:onBell:onAvatar:)` to each of the five tab roots and nowhere else: leading
+brand tile, principal title, trailing bell (→ Reminder health) and avatar (→ Profile). A feature
+**never** writes that toolbar, never draws a brand mark, and never adds a second bell — the two
+destinations live in `FeatureSettings`, which no feature may import, which is exactly why the shell
+owns the pushes. This is the twin of Android's `SalusApp.kt:281-287` drawing `SalusTopBar.Home` only
+while a top-level destination is showing.
+
+**A pushed screen writes its own title bar, and writes it like this:**
+
+- `.navigationTitle(Text(verbatim: <Feature>Strings.<title>))` — `verbatim:` because the string is
+  already resolved by the feature's typed `Strings` enum.
+- `.navigationBarTitleDisplayMode(.inline)`, **guarded and LAST in the modifier chain**:
+
+  ```swift
+  .background(colors.background)
+  .navigationTitle(Text(verbatim: SettingsStrings.aboutTitle))
+  // … every other modifier …
+  #if os(iOS)
+      .navigationBarTitleDisplayMode(.inline)
+  #endif
+  ```
+
+  The `#if` is not optional: the modifier is iOS-only API and every feature package also builds for
+  the macOS test host (the `.macOS(.v14)` concession in `CLAUDE.md`), so an unguarded call fails
+  `scripts/test-packages.sh` while the app still builds. **Last** in the chain because SwiftFormat
+  indents whatever follows an `#endif` one level deeper, which reads as if those modifiers were
+  inside the guard.
+  Inline mode is set per screen because the modifier describes the view it is applied to — a stack,
+  or a root that sets it, says nothing about what gets pushed onto it.
+- Trailing **text** actions ("Kaydet", "Düzenle", "Sil") are plain `Button`s in
+  `ToolbarItem(placement: .primaryAction)`, tinted `primary` — the twin of Android's `TextButton`
+  rule. Trailing **icon** actions are `SalusIconButton` in the same placement, and every one carries
+  an `accessibilityLabel`.
+- The system back button stays. Never hide it, never draw your own: `SalusTopBar.Pushed`'s back
+  button has no iOS twin.
+- A subtitle Android shows under a pushed title moves into the content's first row, not into the
+  bar.
+
+Reference screens: `MoreScreen` / `VitalsScreen` (tab roots — no header, the shell's toolbar, their
+own `.navigationTitle` for the back-button label), `CycleScreen` (pushed, inline title, no root
+toolbar), `AboutScreen` and `WeightEditorScreen` (pushed, inline title + a `ToolbarItem` action).
 
 **The tab bar is the shell's: it shows only on a tab's root and is hidden on every pushed
 destination; a feature never sets `.toolbar(…, for: .tabBar)` itself** (`App/RootView.swift`, the

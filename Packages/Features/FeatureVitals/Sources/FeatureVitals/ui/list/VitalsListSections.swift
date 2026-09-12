@@ -21,24 +21,6 @@ import SalusModel
 import SalusUI
 import SwiftUI
 
-/// `VitalsScreen.kt:102-115`. The trends action is deliberately ungated: a free user reaches
-/// the screen and meets its own lock.
-struct VitalsListHeader: View {
-    let onOpenTrends: () -> Void
-
-    @Environment(\.salusTheme) private var theme
-
-    var body: some View {
-        SalusScreenHeader(title: VitalsStrings.title) {
-            Button(action: onOpenTrends) {
-                Label(VitalsStrings.openTrends, systemImage: "chart.line.uptrend.xyaxis")
-                    .labelStyle(.iconOnly)
-                    .foregroundStyle(theme.colorScheme.onBackground)
-            }
-        }
-    }
-}
-
 /// `VitalsScreen.kt:124-141` — the loading spinner, the empty state, or the list.
 ///
 /// The M2 `content` property carried an `@ViewBuilder`; a `View`'s own `body` is already one.

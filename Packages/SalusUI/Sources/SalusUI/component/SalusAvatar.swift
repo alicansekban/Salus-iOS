@@ -95,6 +95,11 @@ public enum SalusAvatarDefaults {
     public static let size: CGFloat = 48
     /// `SalusAvatarDefaults.LargeSize` (`SalusAvatar.kt:73`).
     public static let largeSize: CGFloat = 72
+    /// The root toolbar's avatar. Kotlin has no `SalusAvatarDefaults` entry for it because its
+    /// top bar draws a disc of its own rather than this component; the value is that disc's,
+    /// `SalusTopBarDefaults.MarkSize` (`SalusTopBar.kt:60`), so the two platforms put the same
+    /// 32 pt circle in the same corner.
+    public static let toolbar: CGFloat = 32
 }
 
 #Preview("Avatars") {

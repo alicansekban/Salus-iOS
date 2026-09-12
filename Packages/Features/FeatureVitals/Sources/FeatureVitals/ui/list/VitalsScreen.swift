@@ -111,7 +111,6 @@ struct VitalsScreen: View {
         // No `Scaffold` twin here: the app shell owns the one navigation stack and its insets.
         ZStack(alignment: .bottomTrailing) {
             VStack(spacing: 0) {
-                VitalsListHeader(onOpenTrends: onOpenTrends)
                 typeSelector
                 VitalsListContent(
                     state: state,
@@ -129,6 +128,25 @@ struct VitalsScreen: View {
             .padding(SalusSpacing.lg)
         }
         .background(theme.colorScheme.background)
+        // The screen title, which the shell's root toolbar draws in the navigation bar's principal
+        // slot (`RootNavigationStack`). Set here all the same: `.navigationTitle` is what names the
+        // back button of everything this root pushes, and what VoiceOver reads for the screen.
+        .navigationTitle(Text(verbatim: VitalsStrings.title))
+        // `VitalsScreen.kt:184-246` drew this in the retired `SalusScreenHeader`'s trailing slot;
+        // with the header gone it is a toolbar action, beside the shell's bell and avatar. Android
+        // M15 moved it into the chart card instead (`VitalsScreen.kt:206-210`) — that is Task 8's
+        // restyle, and until it lands the action keeps the affordance it had.
+        //
+        // Deliberately ungated: a free user reaches the screen and meets its own lock.
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                SalusIconButton(
+                    systemImage: "chart.line.uptrend.xyaxis",
+                    accessibilityLabel: VitalsStrings.openTrends,
+                    action: onOpenTrends
+                )
+            }
+        }
         .salusConfirmDialog(
             isPresented: Binding(
                 get: { state.pendingDeleteId != nil },
@@ -142,6 +160,14 @@ struct VitalsScreen: View {
             confirm: SalusDialogAction(label: SalusUIStrings.delete) { onEvent(.deleteConfirmed) },
             dismiss: SalusDialogAction(label: SalusUIStrings.cancel) { onEvent(.deleteDismissed) }
         )
+        // LAST in the chain, and `#if os(iOS)` because the modifier is iOS-only API while every
+        // feature package also builds for the macOS test host (CLAUDE.md's `.macOS(.v14)`
+        // concession). Last because SwiftFormat indents whatever follows an `#endif` one level
+        // deeper, which reads as if those modifiers were inside the guard — the shape
+        // `AboutScreen` has carried since M8.
+        #if os(iOS)
+        .navigationBarTitleDisplayMode(.inline)
+        #endif
     }
 
     /// `VitalsScreen.kt:166-182`.

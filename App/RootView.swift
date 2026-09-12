@@ -148,6 +148,19 @@ struct RootView: View {
             PaywallHost()
         }
         .preferredColorScheme(themeMode.preferredColorScheme)
+        // The two things SwiftUI has no token-level API for — the UNSELECTED tab item's colour and
+        // the navigation bar's title font — go onto the `UIKit` appearance proxies, rebuilt from
+        // the resolved theme (spec §2.1/§2.2, divergence (c)). `initial: true` so the first paint
+        // is right rather than one theme resolution late.
+        //
+        // A proxy reaches bars created AFTER the call, so this alone would not repaint a bar that
+        // is already on screen when the theme sheet switches palette (spec §10). What repaints
+        // live is the `.toolbarBackground(_, for:)` pair below and on `tabStack(for:)` — SwiftUI
+        // owns those and re-applies them on every update — so between the two the bar is right at
+        // launch and after a switch. `m16-manual-qa.md` §5 is the device check; the recorded
+        // fallback, deliberately NOT taken, is `.id(theme.isDark)` on the `TabView`, which would
+        // tear down and rebuild all five tabs' content on every theme change.
+        .onChange(of: theme, initial: true) { _, resolved in SalusBarAppearance.apply(resolved) }
         // Out here rather than on the `TabView` so the splash-hold cannot change the `ZStack`'s
         // identity — a branch swapped at the top would tear down every subscription below.
         .onChange(of: root.reminderOpenRouter.pending, initial: true) { _, _ in openTappedReminder() }
@@ -184,10 +197,14 @@ struct RootView: View {
         // palette repaints the tab bar for free the moment entitlement is wired up: `primary` is
         // one of the eight roles `withPremiumAccent` swaps.
         .tint(theme.colorScheme.primary)
-        // Android's `NavigationBar` sits on `surfaceContainer` by default; pin the same role here
-        // instead of inheriting the platform's translucent material, which would sample whatever is
-        // behind it and drift from the token.
-        .toolbarBackground(theme.colorScheme.surfaceContainer, for: .tabBar)
+        // The bar's ground, pinned rather than inherited: the platform default is a translucent
+        // material that samples whatever scrolls behind it, which drifts off the token.
+        //
+        // Two grounds, not one, because Android's M15 bar has two (`SalusBottomBar.kt:227-231`):
+        // `surfaceContainerLow` in dark, the near-white `surfaceContainerLowest` in light. The
+        // split lives in `SalusBarAppearance.colors(for:)` with the rest of the mapping, so this
+        // line and the `UITabBarAppearance` the proxy carries can never disagree.
+        .toolbarBackground(SalusBarAppearance.colors(for: theme).tabBarGround, for: .tabBar)
         .toolbarBackground(.visible, for: .tabBar)
     }
 
@@ -231,6 +248,13 @@ struct RootView: View {
             // System animation on purpose: no `withAnimation`, no transition — the bar slides the
             // way every other iOS tab bar does.
             .toolbar(backStacks.isAtRoot(tab) ? .visible : .hidden, for: .tabBar)
+            // The navigation bar's ground, for the same reason the tab bar's is pinned on the
+            // `TabView`: `background`, never the platform's translucent material (spec §2.2,
+            // `SalusTopBar.kt:125`). On the STACK rather than inside its root, so it describes
+            // whatever the stack is showing — a root and everything it pushes — exactly as the
+            // tab-bar visibility rule above does. A feature never writes it.
+            .toolbarBackground(SalusBarAppearance.colors(for: theme).navigationBarGround, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
             // The app's one snackbar host, applied *inside* the tab's content region rather than
             // over the whole window. That placement is the whole fix: the tab bar's inset exists
             // only in here, so an overlay laid out against it lands above the bar (and above the

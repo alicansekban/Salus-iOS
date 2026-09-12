@@ -89,7 +89,6 @@ struct AppointmentsScreen: View {
         // No `Scaffold` twin here: the app shell owns the one navigation stack and its insets.
         ZStack(alignment: .bottomTrailing) {
             VStack(spacing: 0) {
-                SalusScreenHeader(title: AppointmentsStrings.title)
                 content
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -99,6 +98,10 @@ struct AppointmentsScreen: View {
                 .padding(SalusSpacing.lg)
         }
         .background(theme.colorScheme.background)
+        // The screen title. The shell's root toolbar draws it in the navigation bar's principal
+        // slot; `.navigationTitle` is still what names the back button of everything this root
+        // pushes, and what VoiceOver reads for the screen.
+        .navigationTitle(Text(verbatim: AppointmentsStrings.title))
         // `AppointmentsScreen.kt:126-136`.
         .salusConfirmDialog(
             isPresented: isDeleteConfirmPresented,
@@ -107,6 +110,14 @@ struct AppointmentsScreen: View {
             confirm: SalusDialogAction(label: SalusUIStrings.delete) { onEvent(.deleteConfirmed) },
             dismiss: SalusDialogAction(label: SalusUIStrings.cancel) { onEvent(.deleteDismissed) }
         )
+        // LAST in the chain, and `#if os(iOS)` because the modifier is iOS-only API while every
+        // feature package also builds for the macOS test host (CLAUDE.md's `.macOS(.v14)`
+        // concession). Last because SwiftFormat indents whatever follows an `#endif` one level
+        // deeper, which reads as if those modifiers were inside the guard — the shape
+        // `AboutScreen` has carried since M8.
+        #if os(iOS)
+        .navigationBarTitleDisplayMode(.inline)
+        #endif
     }
 
     /// Kotlin writes `state.pendingDelete?.let { … }` — the dialog exists only while there is
