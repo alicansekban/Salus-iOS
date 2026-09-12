@@ -1,4 +1,4 @@
-// Ported from `core/ui/.../chart/SalusBarChart.kt:45-137`.
+// Ported from `core/ui/.../chart/SalusBarChart.kt:56-148`.
 //
 // This file is the categorical counterpart to `SalusLineChart`, and it exists for the same
 // reason: the chart engine is an implementation detail, and it is a different engine on each
@@ -6,23 +6,23 @@
 //
 // Vico concepts and what replaces them:
 //
-//   * `CartesianChartModelProducer` + `runTransaction` (`SalusBarChart.kt:51-72`) push columns
+//   * `CartesianChartModelProducer` + `runTransaction` (`SalusBarChart.kt:60-81`) push columns
 //     into the chart asynchronously. Swift Charts is declarative — the marks ARE the data — so
 //     the producer, the `LaunchedEffect` and the "skip the transaction when empty" guard all
 //     collapse into `ForEach` over the model.
-//   * `ProvideVicoTheme(rememberM3VicoTheme())` (`:97`) hands Vico the Material scheme. Swift
+//   * `ProvideVicoTheme(rememberM3VicoTheme())` (`:108`) hands Vico the Material scheme. Swift
 //     Charts draws with what each mark is given, so the colors are named per mark from the
 //     resolved theme.
-//   * `CartesianValueFormatter` (`:78-95`) becomes `AxisValueLabel`, calling the same two
+//   * `CartesianValueFormatter` (`:89-106`) becomes `AxisValueLabel`, calling the same two
 //     closures.
-//   * `rememberVicoZoomState(initialZoom = Zoom.Content)` (`:124`) makes Vico open showing the
+//   * `rememberVicoZoomState(initialZoom = Zoom.Content)` (`:135`) makes Vico open showing the
 //     whole selected period. Swift Charts already plots the full domain in the available width;
 //     the twin of "open on Content" is therefore to add no scroll modifier.
 //
 // The bottom-axis label is total here too, but for a different reason than Vico's: Swift Charts
 // `AxisMarks(values:)` labels exactly the values it is given, so the bars' own indices are
 // passed and every tick lands on a real column. The `barAxisLabel` clamping Vico needed
-// (`SalusBarChart.kt:150-153`) has no Swift Charts twin and is dropped.
+// (`SalusBarChart.kt:161-164`) has no Swift Charts twin and is dropped.
 
 #if canImport(Charts)
     import Charts
@@ -40,7 +40,7 @@ public struct SalusBarChart: View {
 
     /// - Parameters:
     ///   - contentDescription: spoken summary of the chart; a chart is opaque to VoiceOver
-    ///     exactly as it is to TalkBack (`SalusBarChart.kt:42-43`).
+    ///     exactly as it is to TalkBack (`SalusBarChart.kt:51-52`).
     public init(model: BarChartUiModel, contentDescription: String? = nil) {
         self.model = model
         self.contentDescription = contentDescription
@@ -53,16 +53,19 @@ public struct SalusBarChart: View {
             .accessibilitySummary(contentDescription)
     }
 
-    /// `MaterialTheme.colorScheme.primary` (`SalusBarChart.kt:74`).
+    /// `MaterialTheme.colorScheme.primary` (`SalusBarChart.kt:83`).
     private var primaryColor: Color { theme.colorScheme.primary }
 
-    /// `MaterialTheme.colorScheme.tertiary` (`SalusBarChart.kt:75`) — the same primary/tertiary
-    /// pairing `SalusLineChart` uses for a systolic/diastolic pair, so the two charts read as
-    /// one family.
-    private var secondaryColor: Color { theme.colorScheme.tertiary }
+    /// `MaterialTheme.salusColors.metricDown` (`SalusBarChart.kt:86`) — M15 moved the second
+    /// column off `tertiary` onto the rose that means "the other one" app-wide, the same token
+    /// `SalusLineChart`'s second series uses, so a colour never changes meaning between the two
+    /// charts. The value is `tertiary` in every palette; the role is what moved.
+    private var secondaryColor: Color { theme.extendedColors.metricDown }
 
-    /// `MaterialTheme.shapes.extraSmall` (`SalusBarChart.kt:76`).
-    private var barCornerRadius: CGFloat { SalusShapes.extraSmall }
+    /// Grid lines and ticks. Vico gets `outlineVariant` from `rememberM3VicoTheme()`
+    /// (`SalusBarChart.kt:108`); Swift Charts has no theme to hand a scheme to, so the role is
+    /// named per axis here.
+    private var gridColor: Color { theme.colorScheme.outlineVariant }
 
     private var chart: some View {
         Chart {
@@ -72,7 +75,7 @@ public struct SalusBarChart: View {
                     y: .value(Self.ySeriesId, bar.value)
                 )
                 .foregroundStyle(primaryColor)
-                .cornerRadius(barCornerRadius)
+                .cornerRadius(SalusBarChartDefaults.cornerRadius)
 
                 if let secondaryValue = bar.secondaryValue {
                     BarMark(
@@ -80,35 +83,43 @@ public struct SalusBarChart: View {
                         y: .value(Self.ySeriesId, secondaryValue)
                     )
                     .foregroundStyle(secondaryColor)
-                    .cornerRadius(barCornerRadius)
+                    .cornerRadius(SalusBarChartDefaults.cornerRadius)
                 }
             }
         }
         .chartXAxis { xAxis }
     }
 
-    /// The bottom axis turns each bar's index back into the caller's label (`SalusBarChart.kt:78-85`).
+    /// The bottom axis turns each bar's index back into the caller's label (`SalusBarChart.kt:89-96`).
     private var xAxis: some AxisContent {
         AxisMarks(values: model.bars.indices.map { Double($0) }) { value in
-            AxisGridLine()
-            AxisTick()
+            AxisGridLine().foregroundStyle(gridColor)
+            AxisTick().foregroundStyle(gridColor)
             AxisValueLabel {
                 if let index = value.as(Int.self), model.bars.indices.contains(index) {
+                    // `labelSmall` on `onSurfaceVariant` — what `rememberM3VicoTheme()` gives Vico's
+                    // axis text (`SalusBarChart.kt:108`).
                     Text(model.bars[index].label)
+                        .font(SalusTypography.labelSmall.font)
+                        .tracking(SalusTypography.labelSmall.tracking)
+                        .foregroundStyle(theme.colorScheme.onSurfaceVariant)
                 }
             }
         }
     }
 
-    /// `VerticalAxis.rememberStart(valueFormatter = startFormatter)` (`SalusBarChart.kt:87-95`) —
+    /// `VerticalAxis.rememberStart(valueFormatter = startFormatter)` (`SalusBarChart.kt:98-106`) —
     /// "start" is the leading edge, which is `.leading` here.
     private var yAxis: some AxisContent {
         AxisMarks(position: .leading) { value in
-            AxisGridLine()
-            AxisTick()
+            AxisGridLine().foregroundStyle(gridColor)
+            AxisTick().foregroundStyle(gridColor)
             AxisValueLabel {
                 if let y = value.as(Double.self) {
                     Text(model.yLabel(Float(y)))
+                        .font(SalusTypography.labelSmall.font)
+                        .tracking(SalusTypography.labelSmall.tracking)
+                        .foregroundStyle(theme.colorScheme.onSurfaceVariant)
                 }
             }
         }
@@ -120,9 +131,16 @@ public struct SalusBarChart: View {
     private static let ySeriesId = "value"
 }
 
+/// The bar chart's own dimensions.
+public enum SalusBarChartDefaults {
+    /// `columnShape = MaterialTheme.shapes.extraSmall` (`SalusBarChart.kt:87`) — a shape token, so
+    /// the radius is read from `SalusShapes` rather than spelled as a number here.
+    public static let cornerRadius: CGFloat = SalusShapes.extraSmall
+}
+
 extension View {
     /// Replaces the chart's own (unreadable) accessibility tree with one spoken summary, the twin
-    /// of `Modifier.semantics { contentDescription = … }` (`SalusBarChart.kt:129-133`). A `nil`
+    /// of `Modifier.semantics { contentDescription = … }` (`SalusBarChart.kt:140-144`). A `nil`
     /// summary leaves the view untouched, exactly as the Kotlin `else` branch does.
     @ViewBuilder
     fileprivate func accessibilitySummary(_ summary: String?) -> some View {
@@ -137,35 +155,35 @@ extension View {
 
 #if canImport(Charts)
     #Preview("Bar chart") {
-        SalusBarChart(
-            model: BarChartUiModel(
-                bars: [
-                    BarEntry(label: "Morning", value: 125),
-                    BarEntry(label: "Midday", value: 118),
-                    BarEntry(label: "Evening", value: 131)
-                ],
-                yLabel: { String(format: "%.0f", $0) }
-            ),
-            contentDescription: "Morning 125, midday 118, evening 131"
-        )
-        .frame(height: 200)
-        .padding(SalusSpacing.lg)
-        .salusTheme(SalusTheme.resolve(systemIsDark: false))
-    }
+        SalusPreviewPalettes {
+            VStack(spacing: SalusSpacing.lg) {
+                SalusBarChart(
+                    model: BarChartUiModel(
+                        bars: [
+                            BarEntry(label: "Morning", value: 125),
+                            BarEntry(label: "Midday", value: 118),
+                            BarEntry(label: "Evening", value: 131)
+                        ],
+                        yLabel: { String(format: "%.0f", $0) }
+                    ),
+                    contentDescription: "Morning 125, midday 118, evening 131"
+                )
+                .frame(height: 200)
 
-    #Preview("Grouped bars, dark") {
-        SalusBarChart(
-            model: BarChartUiModel(
-                bars: [
-                    BarEntry(label: "Morning", value: 125, secondaryValue: 82),
-                    BarEntry(label: "Midday", value: 118, secondaryValue: 79),
-                    BarEntry(label: "Evening", value: 131, secondaryValue: 84)
-                ],
-                yLabel: { String(format: "%.0f", $0) }
-            )
-        )
-        .frame(height: 200)
-        .padding(SalusSpacing.lg)
-        .salusTheme(SalusTheme.resolve(systemIsDark: true))
+                // Grouped: `primary` and the `metricDown` rose, so a palette that collapses the
+                // two into one colour is visible at a glance.
+                SalusBarChart(
+                    model: BarChartUiModel(
+                        bars: [
+                            BarEntry(label: "Morning", value: 125, secondaryValue: 82),
+                            BarEntry(label: "Midday", value: 118, secondaryValue: 79),
+                            BarEntry(label: "Evening", value: 131, secondaryValue: 84)
+                        ],
+                        yLabel: { String(format: "%.0f", $0) }
+                    )
+                )
+                .frame(height: 200)
+            }
+        }
     }
 #endif

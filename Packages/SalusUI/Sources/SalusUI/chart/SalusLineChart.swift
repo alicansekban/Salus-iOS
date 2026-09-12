@@ -1,4 +1,4 @@
-// Ported from `core/ui/.../chart/SalusLineChart.kt:31-125`.
+// Ported from `core/ui/.../chart/SalusLineChart.kt:68-213`.
 //
 // This file is the reason `SalusUI` exists as a layer and the reason features are forbidden to
 // `import Charts` (CLAUDE.md, enforced by the `.swiftlint.yml` rule `no_charts_in_features`): the
@@ -19,6 +19,15 @@
 //     the available width; the twin of "open on Content" is therefore to add no scroll modifier.
 //     Vico's residual scroll/zoom gestures have no Swift Charts equivalent that keeps the whole
 //     period visible, and a period the user picked from the range control is the thing to show.
+//
+// M15 hung a halo under the line: a second Vico *layer*, registered before the line layer
+// (`SalusLineChart.kt:97,118-128,191`), stroking the same series in `accentGlow` at `GlowThickness`
+// under the `LineThickness` line. Vico draws layers in registration order and Swift Charts draws
+// marks in declaration order, so the port is simply to declare the glow's `LineMark` first; the
+// area fill and the line, one Vico layer there, follow it here in that order.
+//
+// Vico's press marker (`SalusLineChart.kt:159-178`) has no twin here and this file does not add
+// one: a marker is an interaction rather than a style, and the port has never had it.
 
 import Charts
 import SalusDesignSystem
@@ -65,42 +74,102 @@ public struct SalusLineChart: View {
 
     private var primaryColor: Color { lineColor ?? theme.colorScheme.primary }
 
-    /// `MaterialTheme.colorScheme.tertiary` (`SalusLineChart.kt:60`).
-    private var secondaryColor: Color { theme.colorScheme.tertiary }
+    /// `MaterialTheme.salusColors.metricDown` (`SalusLineChart.kt:96`). M15 moved the second
+    /// series off `tertiary` onto the rose that means "the other one" app-wide — the same token a
+    /// negative delta and `SalusBarChart`'s second column use — so a colour never changes meaning
+    /// between two charts. The value is `tertiary` in every palette; the role is what moved.
+    private var secondaryColor: Color { theme.extendedColors.metricDown }
+
+    /// `MaterialTheme.salusColors.accentGlow` (`SalusLineChart.kt:97`) — `primary` at 24 % dark /
+    /// 16 % light, so the halo reads as light around the line rather than as a second line.
+    private var glowColor: Color { theme.extendedColors.accentGlow }
+
+    /// Grid lines and ticks. Vico gets `outlineVariant` from `rememberM3VicoTheme()`
+    /// (`SalusLineChart.kt:117`); Swift Charts has no theme to hand a scheme to, so the role is
+    /// named per axis here.
+    private var gridColor: Color { theme.colorScheme.outlineVariant }
 
     private var chart: some View {
         Chart {
-            ForEach(model.points, id: \.xEpochDay) { point in
-                // Gradient area under the line, fading to transparent; in dark themes the brighter
-                // accent gives the mockups' glow feel for free (`SalusLineChart.kt:87-98`).
-                AreaMark(
-                    x: .value(Self.xSeriesId, point.xEpochDay),
-                    y: .value(Self.ySeriesId, point.y)
-                )
-                .foregroundStyle(areaGradient)
-
-                LineMark(
-                    x: .value(Self.xSeriesId, point.xEpochDay),
-                    y: .value(Self.ySeriesId, point.y),
-                    series: .value(Self.seriesId, Self.primarySeries)
-                )
-                .foregroundStyle(primaryColor)
-            }
-
-            ForEach(model.secondaryPoints, id: \.xEpochDay) { point in
-                LineMark(
-                    x: .value(Self.xSeriesId, point.xEpochDay),
-                    y: .value(Self.ySeriesId, point.y),
-                    series: .value(Self.seriesId, Self.secondarySeries)
-                )
-                .foregroundStyle(secondaryColor)
-            }
+            glowMarks
+            areaMarks
+            primaryMarks
+            secondaryMarks
         }
+    }
+
+    /// The halo, declared **first** so everything else lands on top of it — the order Vico gets by
+    /// registering `glowLayer` before `lineLayer` (`SalusLineChart.kt:118-128,191`).
+    @ChartContentBuilder
+    private var glowMarks: some ChartContent {
+        ForEach(model.points, id: \.xEpochDay) { point in
+            LineMark(
+                x: .value(Self.xSeriesId, point.xEpochDay),
+                y: .value(Self.ySeriesId, point.y),
+                series: .value(Self.seriesId, Self.glowSeries)
+            )
+            .foregroundStyle(glowColor)
+            .lineStyle(glowStroke)
+        }
+    }
+
+    /// Gradient area under the line, fading to transparent (`SalusLineChart.kt:138-148`). Part of
+    /// Vico's line layer, so it is drawn over the glow and under the line.
+    @ChartContentBuilder
+    private var areaMarks: some ChartContent {
+        ForEach(model.points, id: \.xEpochDay) { point in
+            AreaMark(
+                x: .value(Self.xSeriesId, point.xEpochDay),
+                y: .value(Self.ySeriesId, point.y)
+            )
+            .foregroundStyle(areaGradient)
+        }
+    }
+
+    @ChartContentBuilder
+    private var primaryMarks: some ChartContent {
+        ForEach(model.points, id: \.xEpochDay) { point in
+            LineMark(
+                x: .value(Self.xSeriesId, point.xEpochDay),
+                y: .value(Self.ySeriesId, point.y),
+                series: .value(Self.seriesId, Self.primarySeries)
+            )
+            .foregroundStyle(primaryColor)
+            .lineStyle(lineStroke)
+        }
+    }
+
+    @ChartContentBuilder
+    private var secondaryMarks: some ChartContent {
+        ForEach(model.secondaryPoints, id: \.xEpochDay) { point in
+            LineMark(
+                x: .value(Self.xSeriesId, point.xEpochDay),
+                y: .value(Self.ySeriesId, point.y),
+                series: .value(Self.seriesId, Self.secondarySeries)
+            )
+            .foregroundStyle(secondaryColor)
+            .lineStyle(lineStroke)
+        }
+    }
+
+    /// `LineStroke.Continuous(thickness = GlowThickness, cap = StrokeCap.Round)`
+    /// (`SalusLineChart.kt:121-125`).
+    private var glowStroke: StrokeStyle {
+        StrokeStyle(lineWidth: SalusLineChartDefaults.glowWidth, lineCap: .round, lineJoin: .round)
+    }
+
+    /// `LineStroke.Continuous(thickness = LineThickness, cap = StrokeCap.Round)`
+    /// (`SalusLineChart.kt:132-136`).
+    private var lineStroke: StrokeStyle {
+        StrokeStyle(lineWidth: SalusLineChartDefaults.lineWidth, lineCap: .round, lineJoin: .round)
     }
 
     private var areaGradient: LinearGradient {
         LinearGradient(
-            colors: [primaryColor.opacity(Self.areaTopAlpha), primaryColor.opacity(0)],
+            colors: [
+                primaryColor.opacity(SalusLineChartDefaults.areaTopAlpha),
+                primaryColor.opacity(0)
+            ],
             startPoint: .top,
             endPoint: .bottom
         )
@@ -111,15 +180,20 @@ public struct SalusLineChart: View {
     /// see `ChartAxisScale.xAxisValues(for:)` for how that lines up with Vico's item placer.
     private var xAxis: some AxisContent {
         AxisMarks(values: ChartAxisScale.xAxisValues(for: model)) { value in
-            AxisGridLine()
-            AxisTick()
+            AxisGridLine().foregroundStyle(gridColor)
+            AxisTick().foregroundStyle(gridColor)
             // The first and last marks sit exactly on the plot edges, because the domain is the
             // data's own range. A centred label there would hang half outside the chart, and Swift
             // Charts drops rather than clips it — the last date simply vanished. Anchoring the
             // extremes inwards is Vico's `shiftExtremeLines` idea applied to the labels.
             AxisValueLabel(anchor: Self.labelAnchor(at: value.index, of: value.count)) {
                 if let epochDay = value.as(Int.self) {
+                    // `labelSmall` on `onSurfaceVariant` — what `rememberM3VicoTheme()` gives Vico's
+                    // axis text (`SalusLineChart.kt:117`).
                     Text(model.xLabel(epochDay))
+                        .font(SalusTypography.labelSmall.font)
+                        .tracking(SalusTypography.labelSmall.tracking)
+                        .foregroundStyle(theme.colorScheme.onSurfaceVariant)
                 }
             }
         }
@@ -137,28 +211,42 @@ public struct SalusLineChart: View {
     /// "start" is the leading edge, which is `.leading` here.
     private var yAxis: some AxisContent {
         AxisMarks(position: .leading) { value in
-            AxisGridLine()
-            AxisTick()
+            AxisGridLine().foregroundStyle(gridColor)
+            AxisTick().foregroundStyle(gridColor)
             AxisValueLabel {
                 if let y = value.as(Double.self) {
                     Text(model.yLabel(Float(y)))
+                        .font(SalusTypography.labelSmall.font)
+                        .tracking(SalusTypography.labelSmall.tracking)
+                        .foregroundStyle(theme.colorScheme.onSurfaceVariant)
                 }
             }
         }
     }
 
-    /// `SalusLineChart.kt:125` (`AREA_TOP_ALPHA`). A component constant, not a design token:
-    /// `design-tokens.md` carries no alpha ramps and Android does not name this one either.
-    private static let areaTopAlpha = 0.28
-
     // Swift Charts needs a name per plottable value; these never reach the screen (the legend is
-    // hidden and the axis labels come from the model's own closures), they only keep the two
-    // series apart so the marks are not joined into one line.
+    // hidden and the axis labels come from the model's own closures), they only keep the three
+    // lines apart so the marks are not joined into one.
     private static let xSeriesId = "epochDay"
     private static let ySeriesId = "value"
     private static let seriesId = "series"
+    private static let glowSeries = "glow"
     private static let primarySeries = "primary"
     private static let secondarySeries = "secondary"
+}
+
+/// The line chart's own dimensions. Component constants the Kotlin file spells inline, not
+/// `design-tokens.md` tokens — which is why they live here rather than in `SalusDesignSystem`.
+public enum SalusLineChartDefaults {
+    /// `LineThickness` (`SalusLineChart.kt:258`) — the visible line.
+    public static let lineWidth: CGFloat = 2.5
+    /// `GlowThickness` (`SalusLineChart.kt:261`) — the halo: wide enough to read as light around
+    /// the line rather than as a second line.
+    public static let glowWidth: CGFloat = 6
+    /// `AreaTopAlpha` (`SalusLineChart.kt:252`) — the share of the line colour the area fill starts
+    /// at, directly under the line. M15 took it from 0.28 to 0.24: the halo now carries part of the
+    /// brightness the area used to carry alone.
+    public static let areaTopAlpha = 0.24
 }
 
 extension View {
@@ -200,41 +288,41 @@ extension View {
 }
 
 #Preview("Line chart") {
-    SalusLineChart(
-        model: ChartUiModel(
-            points: [
-                ChartPoint(xEpochDay: 20000, y: 72.4),
-                ChartPoint(xEpochDay: 20003, y: 71.8),
-                ChartPoint(xEpochDay: 20007, y: 71.1),
-                ChartPoint(xEpochDay: 20012, y: 70.6)
-            ],
-            xLabel: { "\($0 - 20000) d" },
-            yLabel: { String(format: "%.1f", $0) }
-        ),
-        contentDescription: "Latest weight 70.6 kilograms"
-    )
-    .frame(height: 220)
-    .padding(SalusSpacing.lg)
-    .salusTheme(SalusTheme.resolve(systemIsDark: false))
-}
+    SalusPreviewPalettes {
+        VStack(spacing: SalusSpacing.lg) {
+            // One series: the glow reads as light under the line, and the area fill under both.
+            SalusLineChart(
+                model: ChartUiModel(
+                    points: [
+                        ChartPoint(xEpochDay: 20000, y: 72.4),
+                        ChartPoint(xEpochDay: 20003, y: 71.8),
+                        ChartPoint(xEpochDay: 20007, y: 71.1),
+                        ChartPoint(xEpochDay: 20012, y: 70.6)
+                    ],
+                    xLabel: { "\($0 - 20000) d" },
+                    yLabel: { String(format: "%.1f", $0) }
+                ),
+                contentDescription: "Latest weight 70.6 kilograms"
+            )
+            .frame(height: 200)
 
-#Preview("Two series, dark") {
-    SalusLineChart(
-        model: ChartUiModel(
-            points: [
-                ChartPoint(xEpochDay: 20000, y: 128),
-                ChartPoint(xEpochDay: 20002, y: 124),
-                ChartPoint(xEpochDay: 20005, y: 131)
-            ],
-            xLabel: { "\($0 - 20000) d" },
-            secondaryPoints: [
-                ChartPoint(xEpochDay: 20000, y: 82),
-                ChartPoint(xEpochDay: 20002, y: 79),
-                ChartPoint(xEpochDay: 20005, y: 84)
-            ]
-        )
-    )
-    .frame(height: 220)
-    .padding(SalusSpacing.lg)
-    .salusTheme(SalusTheme.resolve(systemIsDark: true))
+            // Two series: `primary` over the halo, `metricDown` for the second reading.
+            SalusLineChart(
+                model: ChartUiModel(
+                    points: [
+                        ChartPoint(xEpochDay: 20000, y: 128),
+                        ChartPoint(xEpochDay: 20002, y: 124),
+                        ChartPoint(xEpochDay: 20005, y: 131)
+                    ],
+                    xLabel: { "\($0 - 20000) d" },
+                    secondaryPoints: [
+                        ChartPoint(xEpochDay: 20000, y: 82),
+                        ChartPoint(xEpochDay: 20002, y: 79),
+                        ChartPoint(xEpochDay: 20005, y: 84)
+                    ]
+                )
+            )
+            .frame(height: 200)
+        }
+    }
 }
