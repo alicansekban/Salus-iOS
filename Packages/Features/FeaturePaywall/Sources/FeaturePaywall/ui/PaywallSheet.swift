@@ -84,23 +84,20 @@ struct PaywallSheet: View {
     private var closeButton: some View {
         HStack {
             Spacer()
-            Button {
-                onEvent(.dismissClicked)
-            } label: {
-                Image(systemName: "xmark")
-                    .font(.system(size: 20, weight: .medium))
-                    .foregroundStyle(theme.colorScheme.onSurface)
-                    .frame(width: SalusTouchTarget.min, height: SalusTouchTarget.min)
-                    .contentShape(.rect)
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(PaywallStrings.close)
+            // `SalusIconButton(Icons.Rounded.Close, contentDescription = paywall_close,
+            // tone = Neutral)` (`PaywallScreen.kt:121-126`).
+            SalusIconButton(
+                systemImage: "xmark",
+                accessibilityLabel: PaywallStrings.close,
+                action: { onEvent(.dismissClicked) }
+            )
         }
         .padding(.horizontal, SalusSpacing.sm)
     }
 }
 
-/// Everything that scrolls: the pitch, the feature list and the plan cards.
+/// Everything that scrolls: the hero, the feature list and the plan cards
+/// (`PaywallScreen.kt:155-228`).
 private struct PaywallContent: View {
     let state: PaywallUiState
     let onEvent: (PaywallEvent) -> Void
@@ -109,19 +106,33 @@ private struct PaywallContent: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 0) {
+            VStack(spacing: 0) {
+                // `SalusIconBadge(Icons.Rounded.AutoAwesome, accent = trends, Large)`
+                // (`PaywallScreen.kt:168-173`) — the hero mark above the headline.
+                SalusIconBadge(
+                    systemImage: "sparkles",
+                    accent: theme.extendedColors.trends,
+                    size: .large
+                )
+
                 // Named after the wall the user hit, so the sheet answers the tap that opened it.
+                Spacer().frame(height: SalusSpacing.lg)
                 Text(verbatim: PaywallStrings.resolve(headlineKey(for: state.source)))
                     .font(SalusTypography.headlineMedium.font)
                     .foregroundStyle(theme.colorScheme.onSurface)
+                    .multilineTextAlignment(.center)
                 Spacer().frame(height: SalusSpacing.sm)
                 Text(verbatim: PaywallStrings.subtitle)
                     .font(SalusTypography.bodyMedium.font)
                     .foregroundStyle(theme.colorScheme.onSurfaceVariant)
+                    .multilineTextAlignment(.center)
 
                 Spacer().frame(height: SalusSpacing.xl)
-                ForEach(FeatureRows, id: \.labelKey) { row in
-                    FeatureRow(icon: row.icon, label: PaywallStrings.resolve(row.labelKey))
+                // The four promises in one card (`PaywallScreen.kt:203-210`).
+                SalusCard {
+                    ForEach(FeatureRows, id: \.labelKey) { row in
+                        FeatureRow(icon: row.icon, label: PaywallStrings.resolve(row.labelKey))
+                    }
                 }
 
                 Spacer().frame(height: SalusSpacing.xl)
@@ -130,16 +141,23 @@ private struct PaywallContent: View {
                     planDisplayOrder.firstIndex(of: lhs.period) ?? .max
                         < planDisplayOrder.firstIndex(of: rhs.period) ?? .max
                 }
-                ForEach(ordered, id: \.packageId) { plan in
-                    PlanCard(
-                        plan: plan,
-                        selected: plan.packageId == state.selectedPackageId,
-                        onClick: { onEvent(.planSelected(plan.packageId)) }
-                    )
-                    Spacer().frame(height: SalusSpacing.md)
+                // One radio group, so a screen reader announces "2 of 3, selected" rather than
+                // three unrelated buttons (`Column(Modifier.selectableGroup())`,
+                // `PaywallScreen.kt:217`).
+                VStack(spacing: 0) {
+                    ForEach(ordered, id: \.packageId) { plan in
+                        PlanCard(
+                            plan: plan,
+                            selected: plan.packageId == state.selectedPackageId,
+                            onClick: { onEvent(.planSelected(plan.packageId)) }
+                        )
+                        Spacer().frame(height: SalusSpacing.md)
+                    }
                 }
+                .accessibilityElement(children: .contain)
             }
-            .padding(.horizontal, SalusSpacing.xl)
+            .padding(.horizontal, SalusSpacing.lg)
+            .frame(maxWidth: .infinity)
         }
     }
 }
@@ -156,20 +174,21 @@ private struct PaywallActions: View {
 
     var body: some View {
         let selected = state.plans.first { $0.packageId == state.selectedPackageId }
-        VStack(spacing: 0) {
+        VStack(spacing: SalusSpacing.sm) {
             // OFFERING_UNAVAILABLE is already spelled out in the body above; only the failures
-            // that leave the sheet usable get a line here.
+            // that leave the sheet usable get a note here (`PaywallScreen.kt:251-262`).
             let errorText: String? = switch state.error {
             case .purchaseFailed: PaywallStrings.errorPurchase
             case .restoreNoEntitlement: PaywallStrings.errorRestore
             case nil, .offeringUnavailable: nil
             }
             if let errorText {
-                Text(verbatim: errorText)
-                    .font(SalusTypography.bodySmall.font)
-                    .foregroundStyle(theme.colorScheme.error)
-                    .multilineTextAlignment(.center)
-                Spacer().frame(height: SalusSpacing.sm)
+                SalusInfoNote(
+                    text: errorText,
+                    systemImage: "exclamationmark.triangle",
+                    tone: .warning
+                )
+                .frame(maxWidth: .infinity)
             }
 
             // The store sheet and the restore call are both "busy": one signal disables every
@@ -181,6 +200,7 @@ private struct PaywallActions: View {
                     enabled: !state.isPurchasing,
                     action: { onEvent(.reload) }
                 )
+                .frame(maxWidth: .infinity)
             } else {
                 SalusButton(
                     selected?.hasFreeTrial == true
@@ -191,11 +211,14 @@ private struct PaywallActions: View {
                 )
             }
 
+            // `TextButton(paywall_restore)` (`PaywallScreen.kt:288-296`) — the quiet restore as a
+            // tinted label over the 48-pt target.
             Button {
                 onEvent(.restoreClicked)
             } label: {
                 Text(verbatim: PaywallStrings.restore)
                     .font(SalusTypography.labelLarge.font)
+                    .tracking(SalusTypography.labelLarge.tracking)
                     .foregroundStyle(theme.colorScheme.primary)
                     .frame(minHeight: SalusTouchTarget.min)
                     .contentShape(.rect)
@@ -204,15 +227,13 @@ private struct PaywallActions: View {
             .disabled(state.isPurchasing)
 
             if !state.plans.isEmpty {
-                Text(verbatim: PaywallStrings.renewalNote)
-                    .font(SalusTypography.bodySmall.font)
-                    .foregroundStyle(theme.colorScheme.onSurfaceVariant)
-                    .multilineTextAlignment(.center)
+                // `SalusDisclaimer(paywall_renewal_note)` (`PaywallScreen.kt:298-300`).
+                SalusDisclaimer(PaywallStrings.renewalNote)
             }
 
             PolicyLinks(onOpenUrl: onOpenUrl)
         }
-        .padding(.horizontal, SalusSpacing.xl)
+        .padding(.horizontal, SalusSpacing.lg)
         .padding(.vertical, SalusSpacing.md)
     }
 }
@@ -276,24 +297,19 @@ private struct FeatureRow: View {
     @Environment(\.salusTheme) private var theme
 
     var body: some View {
-        HStack(spacing: SalusSpacing.md) {
-            Image(systemName: icon)
-                .font(.system(size: Self.iconSize))
-                .foregroundStyle(theme.colorScheme.primary)
-                .frame(width: Self.iconSize, height: Self.iconSize)
-                // `contentDescription = null` (`PaywallSheet.kt:337`): the label beside it already
-                // says what the feature is.
-                .accessibilityHidden(true)
+        HStack(spacing: SalusSpacing.lg) {
+            // `SalusIconBadge(icon, shape = small)` (`PaywallScreen.kt:359`): the tinted small
+            // tile, not a bare glyph — the M15 shape that tells two rows apart.
+            SalusIconBadge(systemImage: icon, size: .small)
             Text(verbatim: label)
                 .font(SalusTypography.bodyLarge.font)
                 .foregroundStyle(theme.colorScheme.onSurface)
+            Spacer()
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.vertical, SalusSpacing.sm)
+        .padding(.horizontal, SalusSpacing.lg)
+        .padding(.vertical, SalusSpacing.md)
     }
-
-    /// `private val FeatureIconSize = 22.dp` (`PaywallSheet.kt:439`).
-    private static let iconSize: CGFloat = 22
 }
 
 private struct PlanCard: View {
@@ -305,9 +321,18 @@ private struct PlanCard: View {
 
     var body: some View {
         let colors = theme.colorScheme
-        Button(action: onClick) {
+        // `SalusCard(onClick, selected, tone = if selected Accent else Standard)`
+        // (`PaywallScreen.kt:370-426`): the card is the click target and carries the radio role;
+        // handing it `selected` is what makes a screen reader read it as one option of the group
+        // above rather than as a button (`SalusCard.kt:49-54`).
+        SalusCard(
+            tone: selected ? .accent : .standard,
+            selected: selected,
+            onTap: onClick
+        ) {
             HStack(spacing: SalusSpacing.md) {
-                // The card is the click target; the ring only mirrors the selection.
+                // `RadioButton(selected, onClick = null)` (`PaywallScreen.kt:381`) — the ring
+                // only mirrors the selection.
                 radioIndicator
                 VStack(alignment: .leading, spacing: 0) {
                     HStack(spacing: SalusSpacing.sm) {
@@ -315,7 +340,9 @@ private struct PlanCard: View {
                             .font(SalusTypography.titleMedium.font)
                             .foregroundStyle(colors.onSurface)
                         if plan.period == .annual {
-                            BestValueBadge()
+                            // `SalusStatusChip(paywall_badge_best_value, status = Accent)`
+                            // (`PaywallScreen.kt:396-401`).
+                            SalusStatusChip(label: PaywallStrings.badgeBestValue, status: .accent)
                         }
                     }
                     if let monthlyEquivalent = plan.monthlyEquivalent {
@@ -331,26 +358,7 @@ private struct PlanCard: View {
                     .font(SalusTypography.titleMedium.font)
                     .foregroundStyle(colors.onSurface)
             }
-            .padding(.horizontal, SalusSpacing.lg)
-            .padding(.vertical, SalusSpacing.md)
-            .frame(maxWidth: .infinity, minHeight: SalusTouchTarget.min)
-            .background(
-                SalusShapes.largeShape.fill(
-                    selected ? colors.primaryContainer : colors.surfaceContainerLow
-                )
-            )
-            .overlay {
-                SalusShapes.largeShape.stroke(
-                    selected ? colors.primary : colors.outlineVariant,
-                    lineWidth: selected ? Self.selectedBorderWidth : Self.unselectedBorderWidth
-                )
-            }
-            .contentShape(.rect)
         }
-        .buttonStyle(.plain)
-        // `Modifier.selectable(role = Role.RadioButton)` (`PaywallSheet.kt:369`): a plan is a
-        // radio choice, and only this reports "selected" to a screen reader.
-        .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
     }
 
     private var planName: String {
@@ -361,16 +369,15 @@ private struct PlanCard: View {
         }
     }
 
-    /// The radio mark, drawn rather than composed so it stays purely visual — the same shape
-    /// `SalusSelectableRow`'s indicator uses.
+    /// The radio mark, drawn rather than composed so it stays purely visual.
     private var radioIndicator: some View {
         let colors = theme.colorScheme
-        return SalusShapes.pill
-            .stroke(selected ? colors.primary : colors.outlineVariant, lineWidth: Self.indicatorBorder)
+        return Circle()
+            .strokeBorder(selected ? colors.primary : colors.outlineVariant, lineWidth: Self.indicatorBorder)
             .frame(width: Self.indicatorSize, height: Self.indicatorSize)
             .overlay {
                 if selected {
-                    SalusShapes.pill
+                    Circle()
                         .fill(colors.primary)
                         .frame(width: Self.indicatorDotSize, height: Self.indicatorDotSize)
                 }
@@ -378,26 +385,12 @@ private struct PlanCard: View {
             .accessibilityHidden(true)
     }
 
-    /// `SelectedBorderWidth = 2.dp` / `UnselectedBorderWidth = 1.dp` (`PaywallSheet.kt:440-441`).
-    private static let selectedBorderWidth: CGFloat = 2
-    private static let unselectedBorderWidth: CGFloat = 1
     /// The radio ring, matching `SalusSelectableRow`'s indicator dimensions.
+    /// `SelectedBorderWidth = 2.dp` / `UnselectedBorderWidth = 1.dp` (`PaywallSheet.kt:440-441`)
+    /// are the card's own; the radio ring here keeps the indicator sizes.
     private static let indicatorSize: CGFloat = 24
     private static let indicatorBorder: CGFloat = 2
     private static let indicatorDotSize: CGFloat = 12
-}
-
-private struct BestValueBadge: View {
-    @Environment(\.salusTheme) private var theme
-
-    var body: some View {
-        Text(verbatim: PaywallStrings.badgeBestValue)
-            .font(SalusTypography.labelSmall.font)
-            .foregroundStyle(theme.colorScheme.onPrimary)
-            .padding(.horizontal, SalusSpacing.sm)
-            .padding(.vertical, SalusSpacing.xs)
-            .background(SalusShapes.pill.fill(theme.colorScheme.primary))
-    }
 }
 
 // MARK: - Previews
@@ -430,31 +423,28 @@ private func previewPlans() -> [PremiumPlan] {
 }
 
 #Preview("Paywall sheet") {
-    let theme = SalusTheme.resolve(systemIsDark: false)
-    var state = PaywallUiState()
-    state.isLoading = false
-    state.plans = previewPlans()
-    state.selectedPackageId = "annual"
-    state.source = .themes
-    return PaywallSheet(
-        state: state,
-        onEvent: { _ in },
-        onPurchase: {},
-        onOpenUrl: { _ in }
-    )
-    .salusTheme(theme)
+    // Android's `@PreviewLightDark @PreviewParameter(SalusPaletteProvider)` fan-out
+    // (`PaywallScreen.kt:434-452`): one render per premium palette in both modes.
+    var loaded = PaywallUiState()
+    loaded.isLoading = false
+    loaded.plans = previewPlans()
+    loaded.selectedPackageId = "annual"
+    loaded.source = .themes
+    return SalusPreviewPalettes {
+        PaywallSheet(state: loaded, onEvent: { _ in }, onPurchase: {}, onOpenUrl: { _ in })
+    }
 }
 
-#Preview("Paywall sheet, offering unavailable") {
-    let theme = SalusTheme.resolve(systemIsDark: false)
-    var state = PaywallUiState()
-    state.isLoading = false
-    state.error = .offeringUnavailable
-    return PaywallSheet(
-        state: state,
-        onEvent: { _ in },
-        onPurchase: {},
-        onOpenUrl: { _ in }
-    )
-    .salusTheme(theme)
+#Preview("Paywall sheet — offering unavailable") {
+    var unavailable = PaywallUiState()
+    unavailable.isLoading = false
+    unavailable.error = .offeringUnavailable
+    return SalusPreviewPalettes {
+        PaywallSheet(state: unavailable, onEvent: { _ in }, onPurchase: {}, onOpenUrl: { _ in })
+    }
+}
+
+#Preview("Paywall sheet — loading") {
+    // `PaywallScreenLoadingPreview` (`PaywallScreen.kt:473-486`).
+    PaywallSheet(state: PaywallUiState(), onEvent: { _ in }, onPurchase: {}, onOpenUrl: { _ in })
 }

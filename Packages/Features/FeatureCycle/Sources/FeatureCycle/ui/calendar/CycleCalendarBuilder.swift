@@ -17,12 +17,13 @@ import SalusModel
 
 /// Builds ``CycleUiState`` and its month grid from what the two streams last produced.
 enum CycleCalendarBuilder {
-    /// `CycleViewModel.kt:101-152`.
+    /// `CycleViewModel.kt:101-152` (the reminder dialog is set by the caller afterwards, keeping
+    /// this at six parameters — the `function_parameter_count` limit).
     static func buildState(
         monthStart: LocalDate,
         periods: [CyclePeriod],
+        todaySymptomKeys: [String],
         reminderConfig: CycleReminderConfig,
-        reminderDialog: CycleReminderDialog?,
         predictor: CyclePredictor,
         today: LocalDate
     ) -> CycleUiState {
@@ -68,11 +69,12 @@ enum CycleCalendarBuilder {
             averageCycleLength: prediction?.averageCycleLength,
             confidence: prediction?.confidence,
             isIrregular: prediction?.isIrregular ?? false,
+            todaySymptoms: todaySymptomKeys,
+            todayEpochDay: today.epochDay,
             reminderEnabled: reminderConfig.enabled,
             reminderLeadDays: reminderConfig.leadDays,
             reminderMinuteOfDay: reminderConfig.minuteOfDay,
-            reminderHasUsablePrediction: prediction != nil && prediction?.confidence != .low,
-            activeReminderDialog: reminderDialog
+            reminderHasUsablePrediction: prediction != nil && prediction?.confidence != .low
         )
     }
 

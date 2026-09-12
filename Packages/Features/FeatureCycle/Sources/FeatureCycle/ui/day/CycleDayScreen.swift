@@ -5,17 +5,16 @@
 //   `TopAppBar`                  → `.navigationTitle(_:)` on the shell's stack. Kotlin draws the
 //                                  bar itself because Android's shell does not; here the shell owns
 //                                  the one `NavigationStack`, and its own back arrow pops exactly
-//                                  the path `Navigator.pop()` mutates. That is why `cycle_back` has
-//                                  no reader — the same divergence `MedicationEditorScreen.swift`
-//                                  (**iOS-M5** (h)) and `AppointmentEditorScreen.swift` record;
-//                                  for Cycle it is this milestone's divergence (o). Hiding the
-//                                  system button to relabel it would also disable the interactive
-//                                  swipe-back gesture, which is a worse trade than an unread
-//                                  string; the string stays in the catalog because the catalog is
-//                                  Android-verbatim.
+//                                  the path `Navigator.pop()` mutates. The twin's `SalusTopBar.Pushed`
+//                                  carries no trailing action (`CycleDayScreen.kt:73-78`), so the
+//                                  iOS nav bar shows only the back arrow and the inline date title;
+//                                  "Kaydet" is the `SalusButton` at the foot of the form, exactly
+//                                  where Kotlin puts it.
 //   `FilterChip` in a `FlowRow`  → `ChipFlowLayout` of `SalusChoiceChip`s, which wraps on measured
 //                                  width exactly as `FlowRow` does.
-//   `OutlinedTextField`          → `TextField(…, axis: .vertical).textFieldStyle(.roundedBorder)`.
+//   `SalusTextField(…)`          → `SalusUI.SalusTextField`, the M15 bordered box with the label as
+//                                  an overline and a vertical axis for the multi-line note
+//                                  (`minLines = 2`, `CycleDayScreen.kt:136-145`).
 //   `CircularProgressIndicator`  → `ProgressView()`.
 //
 // The five items of the content are Kotlin's, in Kotlin's order: symptoms, flow, mood, note, save.
@@ -41,6 +40,12 @@ struct CycleDayScreen: View {
             // `CycleDayScreen.kt:70-74` — the pattern is fixed rather than templated, exactly as
             // Android's is, so both platforms order the components the same way.
             .navigationTitle(LocalDate(epochDay: state.epochDay).formatted(pattern: "d MMMM yyyy", locale: locale))
+        // LAST in the chain, and `#if os(iOS)` because the modifier is iOS-only API while every
+        // feature package also builds for the macOS test host (CLAUDE.md's `.macOS(.v14)`
+        // concession).
+        #if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+        #endif
     }
 
     /// `CycleDayScreen.kt:86-92`.
@@ -70,19 +75,21 @@ struct CycleDayScreen: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(SalusSpacing.lg)
         }
-        // iOS-only, with no line in `CycleDayScreen.kt` behind it: the note field's keyboard is
-        // `axis: .vertical`, so its return key inserts a newline rather than closing the keyboard.
-        // These two give it the two ways down the platform expects — a tap, and a drag over the
-        // form — and both belong on the `ScrollView` itself.
+        // iOS-only, with no line in `CycleDayScreen.kt` behind it: the note field is multi-line
+        // (`SalusTextField` with `isSingleLine: false`, which drives `axis: .vertical`), so its
+        // return key inserts a newline rather than closing the keyboard. These two give it the two
+        // ways down the platform expects — a tap, and a drag over the form — and both belong on the
+        // `ScrollView` itself.
         .salusDismissesKeyboardOnTap()
         .scrollDismissesKeyboard(.interactively)
     }
 
-    /// The `titleMedium` header Kotlin writes above each chip group (`CycleDayScreen.kt:109-112`).
+    /// `CycleDayScreen.kt:103-108` — the symptom group's `SalusSectionHeader`.
     private func sectionTitle(_ text: String) -> some View {
-        Text(verbatim: text)
-            .font(SalusTypography.titleMedium.font)
-            .foregroundStyle(theme.colorScheme.onSurface)
+        SalusSectionHeader(
+            title: text,
+            contentPadding: .init(top: SalusSpacing.xs, leading: 0, bottom: SalusSpacing.xs, trailing: 0)
+        )
     }
 
     /// `CycleDayScreen.kt:113-124`.
@@ -121,21 +128,18 @@ struct CycleDayScreen: View {
         }
     }
 
-    /// `CycleDayScreen.kt:160-167`.
+    /// `CycleDayScreen.kt:136-145`.
     private var noteField: some View {
-        TextField(
-            CycleStrings.noteLabel,
+        SalusTextField(
             text: Binding(get: { state.noteText }, set: { onEvent(.noteChanged($0)) }),
-            axis: .vertical
+            label: CycleStrings.noteLabel,
+            placeholder: CycleStrings.notePlaceholder,
+            // `singleLine = false`, `minLines = 2` (`CycleDayScreen.kt:141-142`) with no upper
+            // bound: a day's note is free text and the field grows with it.
+            isSingleLine: false,
+            // `KeyboardCapitalization.Sentences` (`CycleDayScreen.kt:144`).
+            capitalization: .sentences
         )
-        .textFieldStyle(.roundedBorder)
-        // `minLines = 2` (`CycleDayScreen.kt:165`), with no upper bound: a day's note is free text
-        // and the field grows with it.
-        .lineLimit(2...)
-        #if os(iOS)
-            // `KeyboardCapitalization.Sentences` (`CycleDayScreen.kt:164`).
-            .textInputAutocapitalization(.sentences)
-        #endif
     }
 
     /// `CycleDayScreen.kt:169-175`.

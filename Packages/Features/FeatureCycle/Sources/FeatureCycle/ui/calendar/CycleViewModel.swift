@@ -57,11 +57,15 @@ public final class CycleViewModel {
     /// `CycleViewModel.kt:43`.
     private var activeReminderDialog: CycleReminderDialog?
 
-    /// The latest pair the two streams have formed, or nil while `latestOfBoth` has emitted
-    /// nothing — the state `combine` is in before all of its sources have produced a value. A month
-    /// change arriving before that first pair must not paint an empty grid over the initial loading
-    /// state, which is what `republish()`'s `guard` is for.
-    private var loaded: (periods: [CyclePeriod], config: CycleReminderConfig)?
+    /// The latest tuple the streams have formed, or nil while the combine has emitted nothing —
+    /// the state before all of its sources have produced a value. A month change arriving before
+    /// that first tuple must not paint an empty grid over the initial loading state, which is what
+    /// `republish()`'s `guard` is for.
+    private var loaded: (
+        periods: [CyclePeriod],
+        symptomKeys: [String],
+        config: CycleReminderConfig
+    )?
 
     /// The collection. Boxed so `deinit` can cancel it — see `CancellationBox`.
     private let observation = CancellationBox()
@@ -102,6 +106,11 @@ public final class CycleViewModel {
 
         case .nextMonthClicked:
             monthFirstDay = monthFirstDay.plusMonths(1)
+            republish()
+
+        case .todayClicked:
+            // `CycleViewModel.kt:84-85` — `monthFirstDay.value = clock.today().firstDayOfMonth()`.
+            monthFirstDay = clock.today().firstDayOfMonth
             republish()
 
         case .startPeriodClicked:
@@ -162,22 +171,31 @@ public final class CycleViewModel {
     private func start(repository: any CycleRepository) {
         // Read once: `config` builds a fresh stream per access, so a second read would open a
         // second observation of the same settings.
-        let pairs = latestOfBoth(
+        //
+        // The five inputs are Android's `combine` (`CycleViewModel.kt:61-69`): the month and the
+        // open dialog are local state here, so the remaining three streams — periods, today's
+        // symptoms, and the reminder config — are the `latestOfThree` sources. Today's symptom
+        // keys are derived from the day log and the catalog exactly as Kotlin's `todaySymptoms`
+        // flow does (`CycleViewModel.kt:47-59`): the log's stored symptom ids are looked up in the
+        // catalog and their name keys emitted in catalog order, and a log for a date other than
+        // what the clock calls today must not leak into today's chips.
+        let todaySymptomKeys = latestOfThree(
             repository.observePeriods(),
+            todaySymptoms(repository),
             throwingStream(over: reminderSettings.config)
-        ) { ($0, $1) }
+        )
         observation.replace(with: Task { [weak self] in
             do {
-                for try await (periods, config) in pairs {
+                for try await (periods, symptomKeys, config) in todaySymptomKeys {
                     guard let self else { return }
-                    loaded = (periods, config)
+                    loaded = (periods, symptomKeys, config)
                     republish()
                 }
             } catch {
                 // A failing `Flow` cancels its collector on Android and the screen keeps whatever
                 // it last drew; the same happens here, and it is this port's house pattern — there
                 // is no retry affordance on either platform, so there is nothing the user could act
-                // on. Its one visible edge, said plainly: a failure *before* the first pair leaves
+                // on. Its one visible edge, said plainly: a failure *before* the first tuple leaves
                 // `loaded` nil, so `state.isLoading` stays true and the screen spins rather than
                 // showing an error. Android's spinner is equally permanent (`stateIn`'s initial
                 // value is the loading state and the cancelled flow never replaces it), so this is
@@ -186,19 +204,55 @@ public final class CycleViewModel {
         })
     }
 
+    /// `todaySymptoms` (`CycleViewModel.kt:47-59`): the catalog keys of the symptoms logged for
+    /// today, folded into one stream so the state combine stays inside its typed arity.
+    ///
+    /// Driven off the day log rather than a one-shot read so editing today in the day screen
+    /// updates the chips on the way back (`repository.observeDayLog`).
+    ///
+    /// The iOS repository adds `observeDayLog` in this milestone; before it, `CycleDayLog` had no
+    /// live observation. The twin keeps the flow shape: the day-log emission and the catalog
+    /// emission combine into `(log, catalog)` and the name keys of the logged symptom ids are
+    /// derived. A day log for a date that is not today (say the screen sat open past midnight)
+    /// contributes nothing, exactly as Kotlin's `clock.today()` argument makes the observation's
+    /// filter time-bound at subscription rather than per emission.
+    private func todaySymptoms(_ repository: any CycleRepository) -> AsyncThrowingStream<[String], any Error> {
+        let combined: AsyncThrowingStream<(CycleDayLog?, [Symptom]), any Error> = latestOfBoth(
+            repository.observeDayLog(on: clock.today()),
+            repository.observeSymptoms()
+        ) { log, catalog in (log, catalog) }
+        return AsyncThrowingStream([String].self, bufferingPolicy: .bufferingNewest(1)) { continuation in
+            let task = Task {
+                do {
+                    for try await (log, catalog) in combined {
+                        let logged = log?.symptomIds ?? []
+                        continuation.yield(catalog.filter { logged.contains($0.id) }.map(\.nameKey))
+                    }
+                } catch {
+                    continuation.finish(throwing: error)
+                }
+            }
+            continuation.onTermination = { _ in task.cancel() }
+        }
+    }
+
     /// `combine`'s lambda (`CycleViewModel.kt:51-52`), minus the two arms that are local state
     /// here: the month and the open dialog are read straight off the properties, so paging the grid
     /// redraws it without a repository round trip.
     private func republish() {
         guard let loaded else { return }
-        state = CycleCalendarBuilder.buildState(
+        var rebuilt = CycleCalendarBuilder.buildState(
             monthStart: monthFirstDay,
             periods: loaded.periods,
+            todaySymptomKeys: loaded.symptomKeys,
             reminderConfig: loaded.config,
-            reminderDialog: activeReminderDialog,
             predictor: predictor,
-            // Read per rebuild, exactly where Kotlin reads it (`CycleViewModel.kt:107`).
+            // Read per rebuild, exactly where Kotlin reads it (`CycleViewModel.kt:128`).
             today: clock.today()
         )
+        // The open dialog is local state (`CycleViewModel.kt:45`) read from the property rather
+        // than passed in (keeps `buildState` inside the parameter-count limit).
+        rebuilt.activeReminderDialog = activeReminderDialog
+        state = rebuilt
     }
 }

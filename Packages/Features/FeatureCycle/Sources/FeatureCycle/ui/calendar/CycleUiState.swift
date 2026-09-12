@@ -76,6 +76,16 @@ public struct CycleUiState: Equatable, Sendable {
     public var averageCycleLength: Int?
     public var confidence: CycleConfidence?
     public var isIrregular: Bool
+
+    /// Catalog name keys of the symptoms logged for today, in catalog order; empty when today has
+    /// none logged (`CycleUiState.kt:41-45`). The "Tümünü Gör" row opens today's day screen.
+    public var todaySymptoms: [String]
+
+    /// Today's epoch day, so the screen can open the day editor for today (see-all gesture) —
+    /// iOS carries the day in `UiState` the way `FeatureHome`'s `todayEpochDay` does, where Kotlin
+    /// reads a clock at the Route instead (divergence, recorded in the task report).
+    public var todayEpochDay: Int
+
     public var reminderEnabled: Bool
 
     /// Days before the predicted start; 0 = the predicted day itself.
@@ -100,6 +110,8 @@ public struct CycleUiState: Equatable, Sendable {
         averageCycleLength: Int? = nil,
         confidence: CycleConfidence? = nil,
         isIrregular: Bool = false,
+        todaySymptoms: [String] = [],
+        todayEpochDay: Int = 0,
         reminderEnabled: Bool = false,
         reminderLeadDays: Int = 1,
         reminderMinuteOfDay: Int = 9 * 60,
@@ -115,6 +127,8 @@ public struct CycleUiState: Equatable, Sendable {
         self.averageCycleLength = averageCycleLength
         self.confidence = confidence
         self.isIrregular = isIrregular
+        self.todaySymptoms = todaySymptoms
+        self.todayEpochDay = todayEpochDay
         self.reminderEnabled = reminderEnabled
         self.reminderLeadDays = reminderLeadDays
         self.reminderMinuteOfDay = reminderMinuteOfDay
@@ -130,6 +144,9 @@ public enum CycleEvent: Equatable, Sendable {
 
     /// `CycleUiState.kt:54`.
     case nextMonthClicked
+
+    /// `CycleUiState.kt:62` — jumps the grid back to the month that contains today.
+    case todayClicked
 
     /// `CycleUiState.kt:56`.
     case startPeriodClicked

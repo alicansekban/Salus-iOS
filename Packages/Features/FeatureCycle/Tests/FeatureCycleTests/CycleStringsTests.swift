@@ -6,7 +6,7 @@ import Testing
 @testable import FeatureCycle
 
 /// The twin of Android's `feature/cycle/src/main/res/values/strings.xml` (`tr`, the source
-/// language) and `values-en/strings.xml`, and the drift detector between them: all 56 keys and
+/// language) and `values-en/strings.xml`, and the drift detector between them: all 64 keys and
 /// both of their translations are pinned here, copied from the XML.
 ///
 /// The catalog is read off disk rather than through `Bundle.module`. Android's own parity checks
@@ -25,13 +25,15 @@ struct CycleStringsTests {
     /// there means a new row here, in the same commit — that is the whole job of this table. The
     /// rows follow the XML's order, grouped by the screen that reads them.
     static let samples: [CycleStringSample] = [
-        // The calendar screen: chrome and legend (6).
+        // The calendar screen: chrome and legend (8).
         CycleStringSample(key: "cycle_title", turkish: "Döngü", english: "Cycle"),
         CycleStringSample(key: "cycle_previous_month", turkish: "Önceki ay", english: "Previous month"),
         CycleStringSample(key: "cycle_next_month", turkish: "Sonraki ay", english: "Next month"),
         CycleStringSample(key: "cycle_legend_period", turkish: "Regl", english: "Period"),
         CycleStringSample(key: "cycle_legend_predicted", turkish: "Tahmin", english: "Predicted"),
         CycleStringSample(key: "cycle_legend_fertile", turkish: "Doğurgan dönem", english: "Fertile window"),
+        CycleStringSample(key: "cycle_overline", turkish: "SALUS HEALTH", english: "SALUS HEALTH"),
+        CycleStringSample(key: "cycle_today_cd", turkish: "Bugüne git", english: "Go to today"),
         // The prediction summary (9).
         CycleStringSample(key: "cycle_day_number", turkish: "Döngünün %1$lld. günü", english: "Cycle day %1$lld"),
         CycleStringSample(
@@ -50,19 +52,42 @@ struct CycleStringsTests {
             english: "Log at least two periods to see predictions."
         ),
         CycleStringSample(
-            key: "cycle_confidence",
-            turkish: "Tahmin güveni: %1$@",
-            english: "Prediction confidence: %1$@"
+            key: "cycle_period_due_today",
+            turkish: "Tahmini regl bugün",
+            english: "Predicted period is today"
         ),
         CycleStringSample(key: "cycle_confidence_low", turkish: "Düşük", english: "Low"),
         CycleStringSample(key: "cycle_confidence_medium", turkish: "Orta", english: "Medium"),
         CycleStringSample(key: "cycle_confidence_high", turkish: "Yüksek", english: "High"),
         CycleStringSample(
+            key: "cycle_confidence_chip",
+            turkish: "Güven: %1$@",
+            english: "Confidence: %1$@"
+        ),
+        CycleStringSample(
             key: "cycle_irregular",
             turkish: "Döngülerin düzensiz görünüyor; tahminler daha az isabetli olabilir.",
             english: "Your cycles look irregular; predictions may be less accurate."
         ),
-        // The day sheet: actions and section headers (9).
+        // The analysis card and today's symptoms (5).
+        CycleStringSample(
+            key: "cycle_analysis_title",
+            turkish: "DÖNGÜ ANALİZİ",
+            english: "CYCLE ANALYSIS"
+        ),
+        CycleStringSample(
+            key: "cycle_today_symptoms",
+            turkish: "BUGÜNÜN BELİRTİLERİ",
+            english: "SYMPTOMS TODAY"
+        ),
+        CycleStringSample(key: "cycle_see_all", turkish: "Tümünü Gör", english: "See all"),
+        CycleStringSample(
+            key: "cycle_no_symptoms_today",
+            turkish: "Bugün için henüz belirti kaydetmedin.",
+            english: "No symptoms logged for today yet."
+        ),
+        CycleStringSample(key: "cycle_note_placeholder", turkish: "Kısa bir not ekle", english: "Add a short note"),
+        // The day screen: actions and section headers (8).
         CycleStringSample(key: "cycle_period_started", turkish: "Regl başladı", english: "Period started"),
         CycleStringSample(key: "cycle_period_ended", turkish: "Regl bitti", english: "Period ended"),
         CycleStringSample(
@@ -70,12 +95,11 @@ struct CycleStringsTests {
             turkish: "Bu tıbbi tavsiye değildir.",
             english: "This is not medical advice."
         ),
-        CycleStringSample(key: "cycle_symptoms_title", turkish: "Belirtiler", english: "Symptoms"),
-        CycleStringSample(key: "cycle_flow_title", turkish: "Akış", english: "Flow"),
-        CycleStringSample(key: "cycle_mood_title", turkish: "Ruh hali", english: "Mood"),
+        CycleStringSample(key: "cycle_symptoms_title", turkish: "BELİRTİLER", english: "SYMPTOMS"),
+        CycleStringSample(key: "cycle_flow_title", turkish: "AKIŞ", english: "FLOW"),
+        CycleStringSample(key: "cycle_mood_title", turkish: "RUH HALİ", english: "MOOD"),
         CycleStringSample(key: "cycle_note_label", turkish: "Not (isteğe bağlı)", english: "Note (optional)"),
         CycleStringSample(key: "cycle_save", turkish: "Kaydet", english: "Save"),
-        CycleStringSample(key: "cycle_back", turkish: "Geri", english: "Back"),
         // The symptom catalog (8).
         CycleStringSample(key: "cycle_symptom_cramps", turkish: "Kramp", english: "Cramps"),
         CycleStringSample(key: "cycle_symptom_headache", turkish: "Baş ağrısı", english: "Headache"),
@@ -123,6 +147,12 @@ struct CycleStringsTests {
         ),
         CycleStringSample(key: "cycle_reminder_cancel", turkish: "Vazgeç", english: "Cancel"),
         CycleStringSample(key: "cycle_reminder_time_confirm", turkish: "Tamam", english: "OK"),
+        // The reminder summary (1).
+        CycleStringSample(
+            key: "cycle_reminder_summary",
+            turkish: "%1$@ · %2$@",
+            english: "%1$@ · %2$@"
+        ),
         // The reminder notification (3).
         CycleStringSample(
             key: "cycle_reminder_notification_title",
@@ -146,11 +176,11 @@ struct CycleStringsTests {
 
     static let expectedKeys = Set(samples.map(\.key))
 
-    @Test("the catalog holds exactly the 56 keys :feature:cycle owns")
-    func catalogHoldsExactlyTheFiftySixKeys() throws {
+    @Test("the catalog holds exactly the 64 keys :feature:cycle owns")
+    func catalogHoldsExactlyTheSixtyFourKeys() throws {
         // Pinned as a number as well as a set: a row deleted from the table together with its key
         // from the catalog would otherwise agree with itself and pass.
-        #expect(Self.samples.count == 56)
+        #expect(Self.samples.count == 64)
 
         try StringCatalogParity.assertKeys(of: Self.loadCatalog(), are: Self.expectedKeys)
     }
@@ -180,7 +210,7 @@ struct CycleStringsTests {
         #expect(Set(CycleStrings.Key.allCases.map(\.rawValue)) == catalog.keys)
     }
 
-    @Test("the six format keys carry Swift specifiers and render the Android sentence")
+    @Test("the format keys carry Swift specifiers and render the Android sentence")
     func formatKeysRenderTheAndroidSentence() throws {
         // Android's `%1$s`/`%1$d` are Java specifiers. `%s` reads a C string pointer under
         // `String(format:)` and `%d` reads 32 bits of a 64-bit Swift `Int`, so the catalog carries
@@ -192,10 +222,14 @@ struct CycleStringsTests {
         try #expect(Self.render("cycle_days_until_period", "en", 3) == "Predicted next period in 3 days")
         try #expect(Self.render("cycle_period_overdue", "tr", 2) == "Tahmini regl 2 gün gecikti")
         try #expect(Self.render("cycle_period_overdue", "en", 2) == "Predicted period is 2 days late")
-        try #expect(Self.render("cycle_confidence", "tr", "Yüksek") == "Tahmin güveni: Yüksek")
-        try #expect(Self.render("cycle_confidence", "en", "High") == "Prediction confidence: High")
+        try #expect(Self.render("cycle_confidence_chip", "tr", "Yüksek") == "Güven: Yüksek")
+        try #expect(Self.render("cycle_confidence_chip", "en", "High") == "Confidence: High")
         try #expect(Self.render("cycle_reminder_lead_days_before", "tr", 2) == "2 gün önce")
         try #expect(Self.render("cycle_reminder_lead_days_before", "en", 2) == "2 days before")
+        try #expect(Self
+            .render("cycle_reminder_summary", "tr", "Tahmin edilen gün", "09:00") == "Tahmin edilen gün · 09:00")
+        try #expect(Self
+            .render("cycle_reminder_summary", "en", "On the predicted day", "09:00") == "On the predicted day · 09:00")
         try #expect(
             Self.render("cycle_reminder_notification_body_days", "tr", 3)
                 == "Tahmini dönem başlangıcına 3 gün var. Tahminler kesin değildir."
@@ -293,8 +327,9 @@ struct CycleStringsTests {
             for key in integerKeys {
                 try #expect(#require(catalog.value(of: key, in: locale)).contains("%1$lld"))
             }
-            // The one `%1$s` on the Android side, and so the one `%1$@` here.
-            try #expect(#require(catalog.value(of: "cycle_confidence", in: locale)).contains("%1$@"))
+            // The three `%1$s` (now `%1$@`) on the Android side, each with its own sentence.
+            try #expect(#require(catalog.value(of: "cycle_confidence_chip", in: locale)).contains("%1$@"))
+            try #expect(#require(catalog.value(of: "cycle_reminder_summary", in: locale)).contains("%1$@"))
         }
     }
 
@@ -303,6 +338,12 @@ struct CycleStringsTests {
     static func render(_ key: String, _ locale: String, _ argument: CVarArg) throws -> String {
         let format = try #require(loadCatalog().value(of: key, in: locale))
         return String(format: format, locale: nil, argument)
+    }
+
+    /// One catalog value with its two arguments substituted (`cycle_reminder_summary`).
+    static func render(_ key: String, _ locale: String, _ first: CVarArg, _ second: CVarArg) throws -> String {
+        let format = try #require(loadCatalog().value(of: key, in: locale))
+        return String(format: format, locale: nil, first, second)
     }
 
     /// The catalog file itself, read from the package tree relative to this test.

@@ -137,7 +137,12 @@ struct CycleCalendarGrid: View {
     }
 }
 
-/// One day of the month (`CycleScreen.kt:225-292`).
+/// One day of the month (`CycleCalendarGrid.kt:100-190`).
+///
+/// Marker language (spec 4.14, `CycleCalendarGrid.kt:42-49`): a recorded period day is filled with
+/// the cycle accent's **container**, a predicted one only wears a dashed ring of the same hue — a
+/// prediction never looks like a record — the fertile window is a soft **primary** fill, ovulation
+/// adds a dot and today wears a primary ring.
 struct CycleDayCellView: View {
     let cell: CycleDayCell
     let onTap: () -> Void
@@ -146,85 +151,107 @@ struct CycleDayCellView: View {
 
     var body: some View {
         Button(action: onTap) {
-            // `Modifier.weight(1f).aspectRatio(1f)` (`CycleScreen.kt:215`, `:273`): a square whose
+            // `Modifier.weight(1f).aspectRatio(1f)` (`CycleCalendarGrid.kt:160`): a square whose
             // side is the column width. `Color.clear` is what carries the aspect ratio, because a
             // `Text` would size the cell to its own glyphs instead.
             Color.clear
                 .aspectRatio(1, contentMode: .fit)
                 .background(Circle().fill(backgroundColor))
-                .overlay { border }
+                .overlay { predictedRing }
+                .overlay { todayRing }
+                .overlay { ovulationDot }
                 .overlay { number }
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)
-        // `clickable(enabled = cell.isInMonth)` (`CycleScreen.kt:277`).
+        // `clickable(enabled = cell.isInMonth)` (`CycleCalendarGrid.kt:165`).
         .disabled(!cell.isInMonth)
         // `semantics(mergeDescendants = true) { contentDescription = label }`
-        // (`CycleScreen.kt:280`) — one element that reads the whole cell, with the tap intact.
+        // (`CycleCalendarGrid.kt:168`) — one element that reads the whole cell, with the tap
+        // intact. `semantics`, not `clearAndSetSemantics`: the latter would take the click action
+        // down with the label and leave the cell unusable under VoiceOver.
         .accessibilityElement(children: .combine)
         .accessibilityLabel(accessibilityLabel)
     }
 
-    /// `CycleScreen.kt:283-290`. Kotlin hides the number from the screen reader
+    /// `CycleCalendarGrid.kt:171-178`. Kotlin hides the number from the screen reader
     /// (`clearAndSetSemantics`) because it is already the first word of the merged label; here the
     /// merge above does that, so the number carries no label of its own.
     private var number: some View {
         Text(verbatim: String(cell.dayOfMonth))
             .font(SalusTypography.bodyMedium.font)
-            .fontWeight(cell.isToday ? .bold : .regular)
+            .fontWeight(cell.isToday ? .semibold : .regular)
             .tracking(SalusTypography.bodyMedium.tracking)
             .foregroundStyle(textColor)
             .accessibilityHidden(true)
     }
 
-    /// `CycleScreen.kt:233-240`.
+    /// `CycleCalendarGrid.kt:108-113`.
     private var backgroundColor: Color {
-        let cycle = theme.extendedColors.cycle
         if !cell.isInMonth {
             return .clear
         }
         if cell.isPeriod {
-            return cycle.accent
-        }
-        // Prediction: same rose hue as recorded period days, but faded + outlined.
-        if cell.isPredictedPeriod {
-            return cycle.accent.opacity(predictedDayBackgroundAlpha)
+            return theme.extendedColors.cycle.container
         }
         if cell.isFertile {
-            return theme.extendedColors.vitals.container
+            return theme.colorScheme.primaryContainer
         }
         return .clear
     }
 
-    /// `CycleScreen.kt:241-246`.
+    /// `CycleCalendarGrid.kt:114-121`.
     private var textColor: Color {
         if !cell.isInMonth {
-            return theme.colorScheme.onSurface.opacity(outOfMonthTextAlpha)
+            return theme.colorScheme.onSurfaceVariant.opacity(outOfMonthTextAlpha)
         }
         if cell.isPeriod {
-            return theme.extendedColors.cycle.onAccent
+            return theme.extendedColors.cycle.onContainer
         }
-        if cell.isFertile, !cell.isPredictedPeriod {
-            return theme.extendedColors.vitals.onContainer
+        if cell.isFertile {
+            return theme.colorScheme.onPrimaryContainer
         }
         return theme.colorScheme.onSurface
     }
 
-    /// `CycleScreen.kt:247-258` — first match wins, so today outranks a predicted day and a
-    /// predicted day outranks ovulation.
+    /// A prediction is drawn, never filled: the dashed ring is the whole marker, so a predicted
+    /// day can never be mistaken for a day the user recorded (`CycleCalendarGrid.kt:125-140`).
     @ViewBuilder
-    private var border: some View {
+    private var predictedRing: some View {
+        if cell.isPredictedPeriod {
+            Circle()
+                .strokeBorder(
+                    theme.extendedColors.cycle.accent,
+                    style: StrokeStyle(lineWidth: predictedRingWidth, dash: [predictedDashLength, predictedDashLength])
+                )
+        }
+    }
+
+    /// `CycleCalendarGrid.kt:141-145` — `Modifier.border(width: TodayRingWidth, color: primary,
+    /// shape = CircleShape)`.
+    @ViewBuilder
+    private var todayRing: some View {
         if cell.isToday {
-            Circle().strokeBorder(theme.colorScheme.primary, lineWidth: todayBorderWidth)
-        } else if cell.isPredictedPeriod {
-            Circle().strokeBorder(theme.extendedColors.cycle.accent, lineWidth: markerBorderWidth)
-        } else if cell.isOvulation {
-            Circle().strokeBorder(theme.extendedColors.vitals.accent, lineWidth: markerBorderWidth)
+            Circle().strokeBorder(theme.colorScheme.primary, lineWidth: todayRingWidth)
+        }
+    }
+
+    /// The 4 dp primary ovulation dot, at the cell's bottom (`CycleCalendarGrid.kt:179-188`).
+    @ViewBuilder
+    private var ovulationDot: some View {
+        if cell.isOvulation, cell.isInMonth {
+            VStack {
+                Spacer()
+                Circle()
+                    .fill(theme.colorScheme.primary)
+                    .frame(width: ovulationDotSize, height: ovulationDotSize)
+                    .padding(.bottom, SalusSpacing.xs)
+            }
         }
     }
 
     /// A bare "14" tells a screen reader nothing: the colour is what carries the meaning here, so
-    /// the markers are spelled out and replace the number entirely (`CycleScreen.kt:260-269`).
+    /// the markers are spelled out and replace the number entirely (`CycleCalendarGrid.kt:149-156`).
     private var accessibilityLabel: String {
         var parts = [String(cell.dayOfMonth)]
         if cell.isToday {
@@ -246,66 +273,86 @@ struct CycleDayCellView: View {
     }
 }
 
-/// What the three fills mean (`CycleScreen.kt:294-313`).
+/// What the three fills mean (`CycleCalendarGrid.kt:192-215`).
 ///
-/// There is deliberately no ovulation entry: the ring is a detail inside the fertile window, and
-/// Kotlin's legend names the window rather than the day.
+/// There is deliberately no ovulation entry: the ring/dot is a detail inside the fertile window,
+/// and Kotlin's legend names the window rather than the day.
 struct CycleCalendarLegend: View {
     @Environment(\.salusTheme) private var theme
 
     var body: some View {
-        HStack(spacing: SalusSpacing.lg) {
-            CycleLegendItem(color: theme.extendedColors.cycle.accent, label: CycleStrings.legendPeriod)
-            CycleLegendItem(
-                color: theme.extendedColors.cycle.accent.opacity(predictedDayBackgroundAlpha),
-                label: CycleStrings.legendPredicted
-            )
-            CycleLegendItem(color: theme.extendedColors.vitals.container, label: CycleStrings.legendFertile)
+        // FlowRow, not Row, so three labels still share a line at a large system font scale
+        // (`CycleCalendarGrid.kt:195-200` and `:196`'s note).
+        let legendColors = [
+            CycleStrings.legendPeriod: theme.extendedColors.cycle.container,
+            CycleStrings.legendPredicted: theme.extendedColors.cycle.accent,
+            CycleStrings.legendFertile: theme.colorScheme.primaryContainer
+        ]
+        ChipFlowLayout(spacing: SalusSpacing.lg) {
+            ForEach(Array(legendColors.keys), id: \.self) { label in
+                CycleLegendItem(
+                    color: legendColors[label] ?? .clear,
+                    label: label,
+                    outlined: label == CycleStrings.legendPredicted
+                )
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
-/// A dot and its word (`CycleScreen.kt:315-329`).
+/// A dot and its word (`CycleCalendarGrid.kt:217-242`); the predicted legend dot wears a ring to
+/// mirror the predicted cell's ring (`outlined`).
 struct CycleLegendItem: View {
     let color: Color
     let label: String
+    var outlined = false
 
     @Environment(\.salusTheme) private var theme
 
     var body: some View {
         HStack(spacing: SalusSpacing.xs) {
-            Circle()
-                .fill(color)
-                .frame(width: legendDotSize, height: legendDotSize)
+            if outlined {
+                Circle()
+                    .strokeBorder(color, lineWidth: legendRingWidth)
+                    .frame(width: legendDotSize, height: legendDotSize)
+            } else {
+                Circle()
+                    .fill(color)
+                    .frame(width: legendDotSize, height: legendDotSize)
+            }
             Text(verbatim: label)
-                .font(SalusTypography.labelSmall.font)
-                .tracking(SalusTypography.labelSmall.tracking)
-                .foregroundStyle(theme.colorScheme.onSurface)
+                .font(SalusTypography.labelMedium.font)
+                .tracking(SalusTypography.labelMedium.tracking)
+                .foregroundStyle(theme.colorScheme.onSurfaceVariant)
         }
     }
 }
 
 // MARK: - Component dimensions
 
-// The five values `CycleScreen.kt:76-77` and `:545-547` keep beside the screen, under the same
-// names. They are Material component dimensions, not `design-tokens.md` tokens, which is why they
-// live here rather than in `SalusDesignSystem`.
+// The values `CycleCalendarGrid.kt:244-251` keep beside the calendar, under the same names. They
+// are Material component dimensions, not `design-tokens.md` tokens, which is why they live here
+// rather than in `SalusDesignSystem`.
 //
-// `DAYS_PER_WEEK` (`CycleScreen.kt:542`) used to sit in this list; iOS-M7 hoisted it to
+// `DAYS_PER_WEEK` (`CycleCalendarGrid.kt:244`) used to sit in this list; iOS-M7 hoisted it to
 // `SalusModel.LocalDate.daysPerWeek`, which the grid above reads, because a week's length is a
 // fact about the calendar rather than a dimension of this screen.
 
-/// `PREDICTED_DAY_BACKGROUND_ALPHA` (`CycleScreen.kt:76`).
-private let predictedDayBackgroundAlpha = 0.25
-/// `OUT_OF_MONTH_TEXT_ALPHA` (`CycleScreen.kt:77`).
-private let outOfMonthTextAlpha = 0.3
-/// `TodayBorderWidth` (`CycleScreen.kt:545`).
-private let todayBorderWidth: CGFloat = 2
-/// `MarkerBorderWidth` (`CycleScreen.kt:546`).
-private let markerBorderWidth: CGFloat = 1
-/// `LegendDotSize` (`CycleScreen.kt:547`).
-private let legendDotSize: CGFloat = 12
+/// `OutOfMonthTextAlpha` (`CycleCalendarGrid.kt:245`).
+private let outOfMonthTextAlpha = 0.38
+/// `TodayRingWidth` (`CycleCalendarGrid.kt:246`).
+private let todayRingWidth: CGFloat = 2
+/// `PredictedRingWidth` (`CycleCalendarGrid.kt:247`).
+private let predictedRingWidth: CGFloat = 1
+/// `PredictedDashLength` (`CycleCalendarGrid.kt:248`).
+private let predictedDashLength: CGFloat = 3
+/// `OvulationDotSize` (`CycleCalendarGrid.kt:249`).
+private let ovulationDotSize: CGFloat = 4
+/// `LegendDotSize` (`CycleCalendarGrid.kt:250`).
+private let legendDotSize: CGFloat = 8
+/// `LegendRingWidth` (`CycleCalendarGrid.kt:251`).
+private let legendRingWidth: CGFloat = 1
 
 /// `DateTimeFormatter.ofPattern("LLLL yyyy", locale)` (`CycleScreen.kt:160`).
 private let monthTitlePattern = "LLLL yyyy"

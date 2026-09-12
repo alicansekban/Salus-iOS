@@ -74,6 +74,13 @@ final class FakeCycleRepository: CycleRepository, @unchecked Sendable {
         lock.withLock { state.periods.values.sorted { $0.startDate < $1.startDate } }
     }
 
+    /// `FakeCycleRepository.kt:22-24`.
+    func setDayLogs(_ items: CycleDayLog...) {
+        mutate { state in
+            state.dayLogs = Dictionary(items.map { ($0.date, $0) }, uniquingKeysWith: { _, last in last })
+        }
+    }
+
     /// `FakeCycleRepository.kt:28`.
     func currentDayLogs() -> [CycleDayLog] {
         lock.withLock { state.dayLogs.values.sorted { $0.date < $1.date } }
@@ -116,9 +123,14 @@ final class FakeCycleRepository: CycleRepository, @unchecked Sendable {
         lock.withLock { state.dayLogs[date] }
     }
 
-    /// `FakeCycleRepository.kt:51-53` — keyed by day, never by id: one log per date.
+    /// `FakeCycleRepository.kt:49-53` — keyed by day, never by id: one log per date.
     func saveDayLog(_ log: CycleDayLog) async throws {
         mutate { state in state.dayLogs[log.date] = log }
+    }
+
+    /// `FakeCycleRepository.kt:55-57` — the value of the day's log, re-emitted on every mutation.
+    func observeDayLog(on date: LocalDate) -> AsyncThrowingStream<CycleDayLog?, any Error> {
+        stream { state in state.dayLogs[date] }
     }
 
     /// `FakeCycleRepository.kt:55-59` — the starter catalog every fake begins with.

@@ -209,6 +209,21 @@ days in a week, more for a month), and on a free account for the paywall rows.
 | 3.5.8 | Trends: open it (free) | the range tabs (1 ay / 3 ay / 6 ay / 1 yıl) are **disabled** — dimmed, not selectable, announced unavailable; the locked blur + paywall card unchanged | ☐ |
 | 3.5.9 | Trends: unlock with Premium | the tabs become selectable; each metric card shows its upper-case overline (TANSİYON / KAN ŞEKERİ / KİLO), its chart, and a summary tile with the period average, the count line and the change sentence | ☐ |
 
+### 3.6 Cycle — the "today" jump, the month and the day editor (Task 12)
+
+Run with cycle tracking on and at least two recorded periods, so the prediction markers (recorded
+`container` fill, predicted `dashed` ring, fertile `primaryContainer`, ovulation dot, today
+`primary` ring) are distinguishable.
+
+| # | Step | Expect | ☐ |
+|---|---|---|---|
+| 3.6.1 | Cycle calendar: tap the "today" icon in the top bar (accessibility label "Bugüne git") | the grid jumps to the month containing today and the today cell wears the `primary` ring — from any other month | ☐ |
+| 3.6.2 | Cycle calendar: tap the left/right chevrons | the month title and the grid move one month at a time; the chevrons are reachable (≥44 pt), each announced with its own label | ☐ |
+| 3.6.3 | Cycle calendar: tap a cell | the **day editor opens pushed** — a system back button, an inline date title, and the tab bar slides away. It is NOT a sheet. Back returns to the same calendar month | ☐ |
+| 3.6.4 | Cycle calendar: tap "Tümünü Gör" beside "BUGÜNÜN BELİRTİLERİ" | today's day editor opens pushed; the chips above are read-only (nothing on the calendar is a picker) | ☐ |
+| 3.6.5 | Cycle day editor: save with one symptom, a flow and a mood | editing today through the editor updates the "BUGÜNÜN BELİRTİLERİ" chips on the way back (the calendar observes the day log) | ☐ |
+| 3.6.6 | Cycle day editor at a large system font | the SYMPTOMS / AKIŞ / RUH HALİ overline headers, the chip rows and the optional note all wrap without clipping | ☐ |
+
 ---
 
 ---
@@ -260,7 +275,7 @@ theme change.
 | 5.2.7 | Vitals root: the trends action | the navigation bar carries **only** the brand tile, the title, the bell and the avatar — no chart icon (Task 8 moved the action into the content, the Android M15 shape; 3.3.2 checks the same thing from the other side) | ☐ |
 | 5.2.8 | Medications root: add a medication to an empty list, then delete the last one, without leaving the screen | the count is the "Aktif ilaç" metric tile in the list's own header and its number tracks the list in the same interaction. The navigation bar carries **only** the brand tile, the title, the bell and the avatar — no count chip (Task 7 retired it; 3.2.3 checks the same thing from the other side) | ☐ |
 | 5.2.9 | VoiceOver on any root | the bell announces "Hatırlatıcı sağlığı", the avatar "Profil"; the brand tile is skipped | ☐ |
-| 5.2.10 | Cycle calendar (pushed from Home's card and from the More row) | inline title "Döngü" with a back button, no root toolbar | ☐ |
+| 5.2.10 | Cycle calendar (pushed from Home's card and from the More row) | inline title "Döngü" with a back button, no root toolbar — and today's "Bugüne git" icon as the one trailing action | ☐ |
 
 ### 5.3 The theme and language sheets (Task 10)
 
@@ -281,6 +296,18 @@ same sheet, so mode and palette share one popup. Both sheets apply their pick li
 | 5.3.9 | Open both sheets one after the other | only one is ever up at a time; the More hub behind shows the drawn palette (a lapsed subscriber sees CLASSIC here while the sheet still draws their stored OCEAN as selected) | ☐ |
 | 5.3.10 | VoiceOver on the appearance sheet | each palette row announces "selected" for the stored pick; the lock glyph on a free user's locked rows is announced by its row's label, not as a separate control | ☐ |
 
+### 5.4 The paywall full-screen cover (Task 12)
+
+The paywall stays a `fullScreenCover` — above the tab bar, outside every `NavigationStack`. Run on
+a free account from More → a locked palette, or from a locked feature (Trends free).
+
+| # | Step | Expect | ☐ |
+|---|---|---|---|
+| 5.4.1 | Open the paywall | it is full-screen (no partial sheet, no visible tab bar), slides up, and shows: the sparkles hero badge, a headline naming the feature that was locked, the subtitle, the four promises in one card, annual-first plan cards, and pinned actions below | ☐ |
+| 5.4.2 | Tap a plan card | it selects — a `primary` edge and radio dot move to it, and a screen reader reads the group as one radio set ("plan of plan, selected") | ☐ |
+| 5.4.3 | VoiceOver over the feature card | the four promises each announce with their own label; their small tinted tiles are decorative and skipped | ☐ |
+| 5.4.4 | Tap the close button (accessibility label "Kapat") | the cover slides down and returns to what was behind it, unchanged — no purchase, no stored palette change | ☐ |
+| 5.4.5 | On a flaky connection (plans failed to load) | the "Planlar şu an yüklenemedi" note and a "Tekrar dene" button appear; retry asks the store again without leaving the cover | ☐ |
 
 ---
 
@@ -310,6 +337,13 @@ number on the keyboard's Done or on the field losing focus, and opens focused on
 instance; neither is something a unit test can observe. §3.3.6–§3.3.8 and §3.3.12 are the rows
 that settle them. Note in particular whether a value typed and then saved **without** dismissing
 the keyboard is the value that gets stored.
+
+**Task 12 — the Cycle top-bar overline is a content line.** Android's `SalusTopBar.Pushed(overline:)`
+puts "SALUS HEALTH" inside the top bar above the title; iOS's pushed nav bar has no overline slot,
+so the overline is spent in content above the month header (the same convention Profile's
+"HESAP" and Home's "BUGÜN" already use). Nothing is lost but its attachment to the scroll: it
+scrolls away with the month header. This is a recorded divergence, not a bug — §3.6 has no row for
+it because the intended position is the content line. Note only if it reads as a defect on screen.
 
 ---
 

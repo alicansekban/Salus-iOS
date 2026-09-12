@@ -112,6 +112,45 @@ struct CycleRepositoryImpl: CycleRepository {
         )
     }
 
+    /// Watches a single day (`CycleRepositoryImpl.kt:55-63`). Only the entry table is observed:
+    /// its symptom links hang off the entry id and every save writes the entry itself, so a change
+    /// to either side invalidates this observation.
+    ///
+    /// The mapper mirrors `getDayLog(on:)`: an empty observation (nothing written for that day)
+    /// maps to nil, and a present entry reads its symptom ids on the observation's own task — the
+    /// link read is `async throws` on the DAO, so the observation is built by hand here rather than
+    /// with `SalusCommon.mapped`, whose transform is synchronous.
+    func observeDayLog(on date: LocalDate) -> AsyncThrowingStream<CycleDayLog?, any Error> {
+        let epochDay = date.epochDay
+        let cycleDao = cycleDao
+        let profileId = profileId
+        return AsyncThrowingStream(bufferingPolicy: .bufferingNewest(1)) { continuation in
+            let task = Task {
+                do {
+                    for try await records in cycleDao.observeDailyEntries(
+                        profileId: profileId,
+                        fromEpochDay: epochDay,
+                        untilEpochDay: epochDay
+                    ) {
+                        guard let entry = records.first else {
+                            continuation.yield(nil)
+                            continue
+                        }
+                        let symptomIds = try await Set(
+                            cycleDao.getEntrySymptoms(entryId: entry.id).map(\.symptomId)
+                        )
+                        continuation.yield(CycleMappers.toDomain(entry, symptomIds: symptomIds))
+                    }
+                    continuation.finish()
+                } catch {
+                    continuation.finish(throwing: error)
+                }
+            }
+            // A consumer that stops reading must stop the observation too.
+            continuation.onTermination = { _ in task.cancel() }
+        }
+    }
+
     /// `CycleRepositoryImpl.kt:55-59`. Guarded by the stored count rather than by a flag this
     /// process holds, so a second screen — or the same screen after a relaunch — re-runs the guard
     /// and writes nothing.

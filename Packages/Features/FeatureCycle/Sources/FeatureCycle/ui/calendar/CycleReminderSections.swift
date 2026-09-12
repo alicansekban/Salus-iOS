@@ -35,7 +35,7 @@ import SalusUI
 import SwiftUI
 
 /// Opt-in period-start reminder: toggle + lead-day and time-of-day options
-/// (`CycleScreen.kt:377-423`).
+/// (`CycleScreen.kt:241-280`).
 struct CycleReminderCard: View {
     let state: CycleUiState
     let onEvent: (CycleEvent) -> Void
@@ -43,55 +43,51 @@ struct CycleReminderCard: View {
     @Environment(\.salusTheme) private var theme
 
     var body: some View {
-        SalusCard {
-            HStack(alignment: .center, spacing: 0) {
-                VStack(alignment: .leading, spacing: 0) {
-                    Text(verbatim: CycleStrings.reminderTitle)
-                        .font(SalusTypography.titleMedium.font)
-                        .tracking(SalusTypography.titleMedium.tracking)
-                        .foregroundStyle(theme.colorScheme.onSurface)
-                    Text(verbatim: subtitle)
-                        .font(SalusTypography.bodySmall.font)
-                        .tracking(SalusTypography.bodySmall.tracking)
-                        .foregroundStyle(theme.colorScheme.onSurfaceVariant)
-                }
-                // `Modifier.weight(1f)` (`CycleScreen.kt:382`).
-                .frame(maxWidth: .infinity, alignment: .leading)
+        // The rows bring their own horizontal inset, so the card only pads vertically
+        // (`CycleScreen.kt:244-248`).
+        SalusCard(contentPadding: .init(top: SalusSpacing.sm, leading: 0, bottom: SalusSpacing.sm, trailing: 0)) {
+            SalusListItem(
+                title: CycleStrings.reminderTitle,
+                subtitle: subtitle,
+                systemImage: "bell",
+                accent: theme.extendedColors.cycle,
+                trailing: { Toggle(CycleStrings.reminderTitle, isOn: isOn).labelsHidden() }
+            )
 
-                // The label is given and then hidden rather than omitted: `Toggle("")` would
-                // announce an unnamed switch, where Compose's `Switch` inherits the row's text.
-                Toggle(CycleStrings.reminderTitle, isOn: isOn)
-                    .labelsHidden()
-                    // `Spacer(width = sm)` (`CycleScreen.kt:399`).
-                    .padding(.leading, SalusSpacing.sm)
-            }
-
-            // `CycleScreen.kt:405-421`.
+            // `CycleScreen.kt:261-278`.
             if state.reminderEnabled {
-                Spacer()
-                    .frame(height: SalusSpacing.sm)
-                CycleReminderOptionRow(
-                    label: CycleStrings.reminderLeadLabel,
-                    value: leadDaysLabel(state.reminderLeadDays)
-                ) {
-                    onEvent(.reminderDialogRequested(.leadDays))
-                }
-                CycleReminderOptionRow(
-                    label: CycleStrings.reminderTimeLabel,
-                    value: formatMinuteOfDay(state.reminderMinuteOfDay)
-                ) {
-                    onEvent(.reminderDialogRequested(.time))
-                }
+                SalusListItem(
+                    title: CycleStrings.reminderLeadLabel,
+                    systemImage: "calendar",
+                    accent: theme.extendedColors.cycle,
+                    onTap: { onEvent(.reminderDialogRequested(.leadDays)) },
+                    trailing: { reminderValue(leadDaysLabel(state.reminderLeadDays)) }
+                )
+                SalusListItem(
+                    title: CycleStrings.reminderTimeLabel,
+                    systemImage: "clock",
+                    accent: theme.extendedColors.cycle,
+                    onTap: { onEvent(.reminderDialogRequested(.time)) },
+                    trailing: { reminderValue(formatMinuteOfDay(state.reminderMinuteOfDay)) }
+                )
             }
         }
     }
 
-    /// `cycle_reminder_needs_data` while the toggle is on but nothing can fire yet, otherwise
-    /// `cycle_reminder_desc` (`CycleScreen.kt:388-394`).
+    /// Kotlin's `when` (`CycleScreen.kt:291-300`): while the toggle is off the plain description;
+    /// while it is on but nothing can fire yet, `cycle_reminder_needs_data`; while it can fire,
+    /// the `cycle_reminder_summary` of the lead-day label and the time.
     private var subtitle: String {
-        state.reminderEnabled && !state.reminderHasUsablePrediction
-            ? CycleStrings.reminderNeedsData
-            : CycleStrings.reminderDescription
+        if !state.reminderEnabled {
+            return CycleStrings.reminderDescription
+        }
+        if !state.reminderHasUsablePrediction {
+            return CycleStrings.reminderNeedsData
+        }
+        return CycleStrings.reminderSummary(
+            leadDaysLabel(state.reminderLeadDays),
+            formatMinuteOfDay(state.reminderMinuteOfDay)
+        )
     }
 
     /// The switch draws what the settings last emitted, never a local copy.
@@ -102,38 +98,14 @@ struct CycleReminderCard: View {
     private var isOn: Binding<Bool> {
         Binding(get: { state.reminderEnabled }, set: { onEvent(.reminderToggled($0)) })
     }
-}
 
-/// A label on the left, its current value in the feature accent on the right
-/// (`CycleScreen.kt:425-446`).
-struct CycleReminderOptionRow: View {
-    let label: String
-    let value: String
-    let onTap: () -> Void
-
-    @Environment(\.salusTheme) private var theme
-
-    var body: some View {
-        Button(action: onTap) {
-            HStack(alignment: .center, spacing: 0) {
-                Text(verbatim: label)
-                    .font(SalusTypography.bodyMedium.font)
-                    .tracking(SalusTypography.bodyMedium.tracking)
-                    .foregroundStyle(theme.colorScheme.onSurface)
-                    // `Modifier.weight(1f)` (`CycleScreen.kt:438`).
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                Text(verbatim: value)
-                    .font(SalusTypography.bodyMedium.font)
-                    .tracking(SalusTypography.bodyMedium.tracking)
-                    .foregroundStyle(theme.extendedColors.cycle.accent)
-            }
-            // `defaultMinSize(minHeight = SalusTouchTarget.min)` + `padding(vertical = sm)`
-            // (`CycleScreen.kt:430`, `:432`).
-            .padding(.vertical, SalusSpacing.sm)
-            .frame(maxWidth: .infinity, minHeight: SalusTouchTarget.min)
-            .contentShape(.rect)
-        }
-        .buttonStyle(.plain)
+    /// `ReminderValue(text)` (`CycleScreen.kt:282-289`) — the option row's value in the feature
+    /// accent at `bodyMedium` on the trailing edge.
+    private func reminderValue(_ text: String) -> some View {
+        Text(verbatim: text)
+            .font(SalusTypography.bodyMedium.font)
+            .tracking(SalusTypography.bodyMedium.tracking)
+            .foregroundStyle(theme.extendedColors.cycle.accent)
     }
 }
 

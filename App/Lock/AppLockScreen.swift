@@ -50,18 +50,24 @@ struct AppLockScreen: View {
                     iconSize: SalusIconBadgeDefaults.largeIconSize
                 )
                 Spacer().frame(height: SalusSpacing.lg)
-                // `Text(app_lock_locked_title, style = titleLarge)` (`AppLockScreen.kt:49-52`).
+                // `Text(app_lock_locked_title, style = headlineMedium)` (`AppLockScreen.kt:59-63`).
                 // `Text(verbatim:)` because the value is already resolved — `Text(_:)` would read
                 // it back as a `LocalizedStringKey` against the main bundle.
                 Text(verbatim: AppStrings.appLockLockedTitle)
-                    .font(SalusTypography.titleLarge.font)
-                    .tracking(SalusTypography.titleLarge.tracking)
+                    .font(SalusTypography.headlineMedium.font)
+                    .tracking(SalusTypography.headlineMedium.tracking)
                     .foregroundStyle(theme.colorScheme.onBackground)
                     .multilineTextAlignment(.center)
                 Spacer().frame(height: SalusSpacing.xl)
-                // `SalusButton(app_lock_unlock, onClick = onUnlockRequest)`
-                // (`AppLockScreen.kt:54-57`) — the retry after a cancelled or failed prompt.
-                SalusButton(AppStrings.appLockUnlock, action: onUnlockRequest)
+                // `SalusButton(app_lock_unlock, icon = Fingerprint, onClick = onUnlockRequest)`
+                // (`AppLockScreen.kt:65-70`) — the retry after a cancelled or failed prompt. The
+                // fingerprint names what the tap opens: the same system prompt the screen already
+                // fired on entry. Decorative inside the button, whose label says it too.
+                SalusButton(
+                    AppStrings.appLockUnlock,
+                    systemImage: "touchid",
+                    action: onUnlockRequest
+                )
             }
         }
         // `LaunchedEffect(Unit) { onUnlockRequest() }` (`AppLockScreen.kt:32`).

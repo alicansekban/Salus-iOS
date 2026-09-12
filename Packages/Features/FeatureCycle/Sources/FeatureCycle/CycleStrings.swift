@@ -1,7 +1,7 @@
 // The twin of `feature/cycle/src/main/res/values/strings.xml` (Turkish, the source language) and
-// `feature/cycle/src/main/res/values-en/strings.xml` — all 56 keys `:feature:cycle` owns, name and
-// text verbatim, resolved against this package's own bundle exactly as `R.string` resolves against
-// `:feature:cycle`.
+// `feature/cycle/src/main/res/values-en/strings.xml` — all 64 keys `:feature:cycle` owns in its M15
+// shape, name and text verbatim, resolved against this package's own bundle exactly as `R.string`
+// resolves against `:feature:cycle`.
 //
 // TURKISH MIXES "Regl" AND "Dönem", and that is Android's copy, not a slip to tidy up. The
 // calendar surfaces say "Regl" (`cycle_legend_period`, `cycle_period_started`,
@@ -11,7 +11,8 @@
 // wording is ever settled, it is settled in the Android XML first and copied back.
 //
 // PLACEHOLDER MAPPING, the one place the port is not byte-for-byte. Android's specifiers are
-// Java's; six keys carry them, and each is rewritten to the Swift spelling of the same argument:
+// Java's; Android carries `%1$s` on three M15 keys, each rewritten to the Swift `%1$@` spelling
+// of the same argument (a `String`), plus the two-`%1$s` `cycle_reminder_summary`:
 //
 //   Android      Swift        Keys                                    Why
 //   -------------------------------------------------------------------------------------------
@@ -21,8 +22,8 @@
 //                             cycle_reminder_lead_days_before,        waiting for a bigger
 //                             cycle_reminder_notification_body_days   number. `%lld` is the exact
 //                                                                     width.
-//   %1$s         %1$@         cycle_confidence                        `%s` under `String(format:)`
-//                                                                     reads a C string pointer.
+//   %1$s         %1$@         cycle_confidence_chip,                 `%s` under `String(format:)`
+//                             cycle_reminder_summary (two)            reads a C string pointer.
 //                                                                     Handed a Swift `String` it
 //                                                                     prints garbage or crashes;
 //                                                                     `%@` is the object form.
@@ -53,6 +54,13 @@ public enum CycleStrings {
     public static var legendPredicted: String { localized(.legendPredicted) }
     public static var legendFertile: String { localized(.legendFertile) }
 
+    // MARK: - The M15 chrome: overline and today (2)
+
+    public static var overline: String { localized(.overline) }
+
+    /// `cycle_today_cd` — the "today" icon button's accessibility label.
+    public static var today: String { localized(.today) }
+
     // MARK: - The prediction summary (9)
 
     /// `cycle_day_number` — "Döngünün %1$lld. günü" / "Cycle day %1$lld".
@@ -71,21 +79,31 @@ public enum CycleStrings {
     }
 
     public static var noPrediction: String { localized(.noPrediction) }
-
-    /// `cycle_confidence` — "Tahmin güveni: %1$@" / "Prediction confidence: %1$@".
-    ///
-    /// The argument is the already-localized confidence label, as on Android, where the outer
-    /// `stringResource` takes the inner one as its argument (`CycleScreen.kt:361`).
-    public static func confidence(_ label: String) -> String {
-        formatted(.confidence, label)
-    }
+    public static var periodDueToday: String { localized(.periodDueToday) }
 
     public static var confidenceLow: String { localized(.confidenceLow) }
     public static var confidenceMedium: String { localized(.confidenceMedium) }
     public static var confidenceHigh: String { localized(.confidenceHigh) }
+
+    /// `cycle_confidence_chip` — "Güven: %1$@" / "Confidence: %1$@".
+    ///
+    /// The argument is the already-localized confidence label, as on Android, where the outer
+    /// `stringResource` takes the inner one as its argument (`CycleAnalysisCard.kt:46-49`).
+    public static func confidenceChip(_ label: String) -> String {
+        formatted(.confidenceChip, label)
+    }
+
     public static var irregular: String { localized(.irregular) }
 
-    // MARK: - The day sheet: actions and section headers (9)
+    // MARK: - The analysis card and today's symptoms (5)
+
+    public static var analysisTitle: String { localized(.analysisTitle) }
+    public static var todaySymptoms: String { localized(.todaySymptoms) }
+    public static var seeAll: String { localized(.seeAll) }
+    public static var noSymptomsToday: String { localized(.noSymptomsToday) }
+    public static var notePlaceholder: String { localized(.notePlaceholder) }
+
+    // MARK: - The day screen: actions and section headers (8)
 
     public static var periodStarted: String { localized(.periodStarted) }
     public static var periodEnded: String { localized(.periodEnded) }
@@ -95,7 +113,6 @@ public enum CycleStrings {
     public static var moodTitle: String { localized(.moodTitle) }
     public static var noteLabel: String { localized(.noteLabel) }
     public static var save: String { localized(.save) }
-    public static var back: String { localized(.back) }
 
     // MARK: - The symptom catalog (8)
 
@@ -140,6 +157,12 @@ public enum CycleStrings {
 
     public static var reminderCancel: String { localized(.reminderCancel) }
     public static var reminderTimeConfirm: String { localized(.reminderTimeConfirm) }
+
+    /// `cycle_reminder_summary` — "%1$@ · %2$@" / "%1$@ · %2$@", for the reminder card's subtitle
+    /// when a usable prediction exists. The arguments are the lead-day label and the time.
+    public static func reminderSummary(_ leadLabel: String, _ time: String) -> String {
+        String(format: localized(.reminderSummary), locale: .current, leadLabel, time)
+    }
 
     // MARK: - The reminder notification (3)
 
@@ -234,26 +257,36 @@ public enum CycleStrings {
     /// The catalog keys, named once. Internal so the parity test can prove every accessor asks for
     /// a key the catalog really carries — a typo here would otherwise ship the key as the label.
     enum Key: String, CaseIterable {
-        // The calendar screen: chrome and legend (6).
+        // The calendar screen: chrome and legend (8).
         case title = "cycle_title"
         case previousMonth = "cycle_previous_month"
         case nextMonth = "cycle_next_month"
         case legendPeriod = "cycle_legend_period"
         case legendPredicted = "cycle_legend_predicted"
         case legendFertile = "cycle_legend_fertile"
+        case overline = "cycle_overline"
+        case today = "cycle_today_cd"
 
         // The prediction summary (9).
         case dayNumber = "cycle_day_number"
         case daysUntilPeriod = "cycle_days_until_period"
         case periodOverdue = "cycle_period_overdue"
         case noPrediction = "cycle_no_prediction"
-        case confidence = "cycle_confidence"
+        case periodDueToday = "cycle_period_due_today"
         case confidenceLow = "cycle_confidence_low"
         case confidenceMedium = "cycle_confidence_medium"
         case confidenceHigh = "cycle_confidence_high"
+        case confidenceChip = "cycle_confidence_chip"
         case irregular = "cycle_irregular"
 
-        // The day sheet: actions and section headers (9).
+        // The analysis card and today's symptoms (5).
+        case analysisTitle = "cycle_analysis_title"
+        case todaySymptoms = "cycle_today_symptoms"
+        case seeAll = "cycle_see_all"
+        case noSymptomsToday = "cycle_no_symptoms_today"
+        case notePlaceholder = "cycle_note_placeholder"
+
+        // The day screen: actions and section headers (8).
         case periodStarted = "cycle_period_started"
         case periodEnded = "cycle_period_ended"
         case disclaimer = "cycle_disclaimer"
@@ -262,7 +295,6 @@ public enum CycleStrings {
         case moodTitle = "cycle_mood_title"
         case noteLabel = "cycle_note_label"
         case save = "cycle_save"
-        case back = "cycle_back"
 
         // The symptom catalog (8).
         case symptomCramps = "cycle_symptom_cramps"
@@ -296,6 +328,7 @@ public enum CycleStrings {
         case reminderTimeLabel = "cycle_reminder_time_label"
         case reminderLeadSameDay = "cycle_reminder_lead_same_day"
         case reminderLeadDaysBefore = "cycle_reminder_lead_days_before"
+        case reminderSummary = "cycle_reminder_summary"
         case reminderCancel = "cycle_reminder_cancel"
         case reminderTimeConfirm = "cycle_reminder_time_confirm"
 

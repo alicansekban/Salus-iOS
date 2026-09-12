@@ -39,6 +39,11 @@ public protocol CycleRepository: Sendable {
     /// `CycleRepository.kt:24`.
     func getDayLog(on date: LocalDate) async throws -> CycleDayLog?
 
-    /// `CycleRepository.kt:26`.
+    /// Emits `date`'s log, or nil while the day carries none, and re-emits after every save
+    /// (`CycleRepository.kt:26-27`). The day screen's editor calls it so a log written there
+    /// updates the calendar's today-symptoms chips on the way back.
+    func observeDayLog(on date: LocalDate) -> AsyncThrowingStream<CycleDayLog?, any Error>
+
+    /// `CycleRepository.kt:29`.
     func saveDayLog(_ log: CycleDayLog) async throws
 }

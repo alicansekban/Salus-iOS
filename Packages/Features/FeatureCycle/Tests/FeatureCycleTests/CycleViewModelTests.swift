@@ -60,6 +60,11 @@ struct CycleViewModelTests {
         CyclePeriod(id: id, startDate: start, endDate: end, flowPeak: nil, note: nil, createdAt: Self.now)
     }
 
+    /// `CycleViewModelTest.kt:67-68`.
+    private func dayLog(id: String, date: LocalDate, symptomIds: Set<String>) -> CycleDayLog {
+        CycleDayLog(id: id, date: date, flow: nil, mood: nil, note: nil, symptomIds: symptomIds)
+    }
+
     /// Turbine's `awaitItem() // initial loading state` followed by the first loaded `awaitItem()`.
     private func loadedState(_ viewModel: CycleViewModel) async -> CycleUiState {
         #expect(viewModel.state.isLoading, "the state before the first (periods, config) pair is the default")
@@ -172,6 +177,42 @@ struct CycleViewModelTests {
         await waitUntil("the stored time") { viewModel.state.reminderMinuteOfDay == 20 * 60 }
 
         #expect(scheduler.syncRequests == 3)
+    }
+
+    /// `CycleViewModelTest.kt:189-195` — `todaySymptoms` is empty without a day log.
+    @Test("today symptoms are empty without a day log")
+    func todaySymptomsAreEmptyWithoutADayLog() async {
+        let loaded = await loadedState(viewModel())
+        #expect(loaded.todaySymptoms.isEmpty)
+    }
+
+    /// `CycleViewModelTest.kt:197-210` — `todaySymptoms` carries the catalog keys logged for today.
+    @Test("today symptoms carry the catalog keys logged for today")
+    func todaySymptomsCarryTheCatalogKeysLoggedForToday() async {
+        let today = Self.today
+        repository.setDayLogs(
+            dayLog(id: "log-today", date: today, symptomIds: ["symptom-cramps"]),
+            // Another day's log must not leak into today's chips; the fake's `symptomIds` are ids,
+            // matched against the catalog's seeded ids as the real repository maps them.
+            dayLog(id: "log-other", date: today.minusDays(1), symptomIds: ["symptom-fatigue"])
+        )
+
+        let loaded = await loadedState(viewModel())
+        #expect(loaded.todaySymptoms == ["cramps"])
+    }
+
+    /// `CycleViewModelTest.kt:212-226` — today click returns the grid to the month containing today.
+    @Test("today click returns the grid to the month containing today")
+    func todayClickReturnsTheGridToTheMonthContainingToday() async {
+        let viewModel = viewModel()
+        let initial = await loadedState(viewModel)
+        #expect(initial.monthFirstEpochDay == LocalDate(year: 2025, month: 8, day: 1).epochDay)
+
+        viewModel.onEvent(.nextMonthClicked)
+        #expect(viewModel.state.monthFirstEpochDay == LocalDate(year: 2025, month: 9, day: 1).epochDay)
+
+        viewModel.onEvent(.todayClicked)
+        #expect(viewModel.state.monthFirstEpochDay == LocalDate(year: 2025, month: 8, day: 1).epochDay)
     }
 
     // MARK: - iOS-only
