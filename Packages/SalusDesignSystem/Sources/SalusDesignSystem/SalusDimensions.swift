@@ -30,11 +30,11 @@ public enum SalusSpacing {
 /// `style: .continuous`: the squircle is the platform-correct rendering of the same radius
 /// and reads as the same shape as Compose's circular rounding at these sizes.
 public enum SalusShapes {
-    public static let extraSmall: CGFloat = 8 // Shape.kt:10
-    public static let small: CGFloat = 12 // Shape.kt:11
-    public static let medium: CGFloat = 16 // Shape.kt:12
-    public static let large: CGFloat = 24 // Shape.kt:13
-    public static let extraLarge: CGFloat = 28 // Shape.kt:14
+    public static let extraSmall: CGFloat = 8 // Shape.kt:12
+    public static let small: CGFloat = 12 // Shape.kt:13
+    public static let medium: CGFloat = 14 // Shape.kt:14 — M15: fields and chips (was 16)
+    public static let large: CGFloat = 20 // Shape.kt:15 — M15: cards (was 24)
+    public static let extraLarge: CGFloat = 28 // Shape.kt:16
 
     /// A continuous-corner rectangle at one of the radii above.
     public static func rounded(_ radius: CGFloat) -> RoundedRectangle {

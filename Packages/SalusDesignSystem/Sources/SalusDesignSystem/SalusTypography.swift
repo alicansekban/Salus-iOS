@@ -39,34 +39,39 @@ public struct SalusTextStyle: Equatable, Sendable {
 
 /// §9 — the twelve type roles Salus draws.
 ///
-/// Six are overridden in `Type.kt` (§9.1); six are inherited unchanged from the Material 3
+/// Seven are overridden in `Type.kt` (§9.1); six are inherited unchanged from the Material 3
 /// baseline (§9.2) and spelled out here so nothing has to be looked up.
-/// `displayLarge` / `displayMedium` / `displaySmall` exist in the baseline but Salus never
-/// draws them, so they are deliberately absent.
+/// `displayLarge` / `displayMedium` exist in the baseline but Salus never draws them, so they
+/// are deliberately absent. `displaySmall` is the M15 metric-value role (§14.6) and is drawn.
 public enum SalusTypography {
     // §9.1 — overridden roles.
 
-    /// Bold; baseline was 32/40/Regular. Source: `Type.kt:12-16`.
+    /// The metric value role ("120/80", "78.7 kg") — the one place the app shouts. M15 added it:
+    /// 36 / Bold, over the M3 baseline. Source: `Type.kt:14-17`.
+    public static let displaySmall = SalusTextStyle(
+        size: 36, lineHeight: 44, weight: .bold, tracking: 0.0, dynamicTypeStyle: .largeTitle
+    )
+    /// Bold; baseline was 32/40/Regular. Source: `Type.kt:18-22`.
     public static let headlineLarge = SalusTextStyle(
         size: 32, lineHeight: 38, weight: .bold, tracking: 0.0, dynamicTypeStyle: .largeTitle
     )
-    /// Bold; baseline was 28/36/Regular. Source: `Type.kt:17-21`.
+    /// Bold; M15 tightened 28 → 26 and added −0.5 tracking. Source: `Type.kt:23-28`.
     public static let headlineMedium = SalusTextStyle(
-        size: 28, lineHeight: 34, weight: .bold, tracking: 0.0, dynamicTypeStyle: .title
+        size: 26, lineHeight: 34, weight: .bold, tracking: -0.5, dynamicTypeStyle: .title
     )
-    /// Weight only (was Regular). Source: `Type.kt:22-24`.
+    /// Weight only (was Regular). Source: `Type.kt:29-31`.
     public static let headlineSmall = SalusTextStyle(
         size: 24, lineHeight: 32, weight: .semibold, tracking: 0.0, dynamicTypeStyle: .title2
     )
-    /// Weight only (was Regular). Source: `Type.kt:25-27`.
+    /// SemiBold; M15 tightened 22 → 20. Source: `Type.kt:32-35`.
     public static let titleLarge = SalusTextStyle(
-        size: 22, lineHeight: 28, weight: .semibold, tracking: 0.0, dynamicTypeStyle: .title3
+        size: 20, lineHeight: 28, weight: .semibold, tracking: 0.0, dynamicTypeStyle: .title3
     )
-    /// Weight only (was Medium). Source: `Type.kt:28-30`.
+    /// Weight only (was Medium). Source: `Type.kt:36-38`.
     public static let titleMedium = SalusTextStyle(
         size: 16, lineHeight: 24, weight: .semibold, tracking: 0.2, dynamicTypeStyle: .headline
     )
-    /// Weight restated (already Medium). Source: `Type.kt:31-33`.
+    /// Weight restated (already Medium). Source: `Type.kt:39-41`.
     public static let labelLarge = SalusTextStyle(
         size: 14, lineHeight: 20, weight: .medium, tracking: 0.1, dynamicTypeStyle: .footnote
     )
@@ -85,16 +90,19 @@ public enum SalusTypography {
     public static let bodySmall = SalusTextStyle(
         size: 12, lineHeight: 16, weight: .regular, tracking: 0.4, dynamicTypeStyle: .caption
     )
+    /// The chip role — M15 pinned it at 12 / Medium. Source: `Type.kt:43-46`.
     public static let labelMedium = SalusTextStyle(
         size: 12, lineHeight: 16, weight: .medium, tracking: 0.5, dynamicTypeStyle: .caption
     )
+    /// The overline role — M15 made it SemiBold with +1.2 tracking. Source: `Type.kt:49-53`.
     public static let labelSmall = SalusTextStyle(
-        size: 11, lineHeight: 16, weight: .medium, tracking: 0.5, dynamicTypeStyle: .caption2
+        size: 11, lineHeight: 16, weight: .semibold, tracking: 1.2, dynamicTypeStyle: .caption2
     )
 
-    /// The twelve roles keyed by Material role name.
+    /// The thirteen roles keyed by Material role name.
     package static var allTokens: [String: SalusTextStyle] {
         [
+            "displaySmall": displaySmall,
             "headlineLarge": headlineLarge,
             "headlineMedium": headlineMedium,
             "headlineSmall": headlineSmall,

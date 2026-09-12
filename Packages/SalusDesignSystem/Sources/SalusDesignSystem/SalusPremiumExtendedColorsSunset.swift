@@ -42,10 +42,17 @@ private enum SunsetLightExtendedValues {
     static let trendsOnContainer = Color(hex: 0x410B34)
 
     // Hero — orange into burnt orange.
-    // PremiumExtendedColors.kt:150-153
+    // PremiumExtendedColors.kt:174-177
     static let heroTop = Color(hex: 0x6C4326)
     static let heroBottom = Color(hex: 0x835432)
     static let hero = SalusGradient(top: heroTop, bottom: heroBottom)
+
+    // Accent-derived roles, restated from the palette's own primary (0x9A3412, orange-800).
+    // PremiumExtendedColors.kt:178-181
+    static let accentGlow = Color(hex: 0x9A3412).opacity(0.16)
+    static let overline = Color(hex: 0x9A3412)
+    static let metricUp = Color(hex: 0x9A3412)
+    static let aiGradientTop = Color(hex: 0x9A3412)
 
     static let medications = FeatureAccent(
         accent: medicationsAccent,
@@ -116,11 +123,18 @@ private enum SunsetDarkExtendedValues {
     static let trendsContainer = Color(hex: 0x511F44)
     static let trendsOnContainer = Color(hex: 0xF0CAE6)
 
-    // Hero — orange into burnt orange.
-    // PremiumExtendedColors.kt:193-196
-    static let heroTop = Color(hex: 0x482E1C)
-    static let heroBottom = Color(hex: 0x5C3C26)
+    // Hero — the app ground rising into the Sunset primary container.
+    // PremiumExtendedColors.kt:221-224
+    static let heroTop = Color(hex: 0x090D0B) // BackgroundDark
+    static let heroBottom = Color(hex: 0x7C2D12) // Sunset dark primaryContainer (orange-900)
     static let hero = SalusGradient(top: heroTop, bottom: heroBottom)
+
+    // Accent-derived roles, restated from the palette's own primary (0xFB923C, orange-400).
+    // PremiumExtendedColors.kt:225-228
+    static let accentGlow = Color(hex: 0xFB923C).opacity(0.24)
+    static let overline = Color(hex: 0xF97316) // orange-500
+    static let metricUp = Color(hex: 0xFB923C)
+    static let aiGradientTop = Color(hex: 0xFB923C)
 
     static let medications = FeatureAccent(
         accent: medicationsAccent,
@@ -155,7 +169,7 @@ private enum SunsetDarkExtendedValues {
 }
 
 extension SalusExtendedColors {
-    /// §4.6 — SUNSET, light (`PremiumExtendedColors.kt:113`).
+    /// §4.6 — SUNSET, light (`PremiumExtendedColors.kt:137`).
     static let sunsetLight = SalusExtendedColors.light.replacingFeatureAccents(
         medications: SunsetLightExtendedValues.medications,
         cycle: SunsetLightExtendedValues.cycle,
@@ -164,8 +178,14 @@ extension SalusExtendedColors {
         trends: SunsetLightExtendedValues.trends,
         hero: SunsetLightExtendedValues.hero
     )
+    .restatingAccentDerivedRoles(
+        accentGlow: SunsetLightExtendedValues.accentGlow,
+        overline: SunsetLightExtendedValues.overline,
+        metricUp: SunsetLightExtendedValues.metricUp,
+        aiGradientTop: SunsetLightExtendedValues.aiGradientTop
+    )
 
-    /// §4.6 — SUNSET, dark (`PremiumExtendedColors.kt:156`).
+    /// §4.6 — SUNSET, dark (`PremiumExtendedColors.kt:184`).
     static let sunsetDark = SalusExtendedColors.dark.replacingFeatureAccents(
         medications: SunsetDarkExtendedValues.medications,
         cycle: SunsetDarkExtendedValues.cycle,
@@ -173,5 +193,11 @@ extension SalusExtendedColors {
         appointments: SunsetDarkExtendedValues.appointments,
         trends: SunsetDarkExtendedValues.trends,
         hero: SunsetDarkExtendedValues.hero
+    )
+    .restatingAccentDerivedRoles(
+        accentGlow: SunsetDarkExtendedValues.accentGlow,
+        overline: SunsetDarkExtendedValues.overline,
+        metricUp: SunsetDarkExtendedValues.metricUp,
+        aiGradientTop: SunsetDarkExtendedValues.aiGradientTop
     )
 }

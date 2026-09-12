@@ -57,12 +57,12 @@ typealias PremiumHeroRow = (palette: PremiumTheme, dark: Bool, top: UInt32, bott
 /// The §4.6 tables. 3 premium palettes x 2 modes x 5 features.
 enum PremiumExtendedColorTables {
     static let accents: [PremiumAccentRow] = [
-        (.ocean, false, .medications, 0x1E7A68, 0xFFFFFF, 0xD4F0EA, 0x0B4136),
+        (.ocean, false, .medications, 0x1B6FA8, 0xFFFFFF, 0xD6EAF8, 0x0B3A5C),
         (.ocean, false, .cycle, 0xBB2FA3, 0xFFFFFF, 0xF0D4EB, 0x410B38),
         (.ocean, false, .vitals, 0x2F6DBD, 0xFFFFFF, 0xD4E0F0, 0x0B2341),
         (.ocean, false, .appointments, 0x257592, 0xFFFFFF, 0xD4E8F0, 0x0B3341),
         (.ocean, false, .trends, 0x5347D1, 0xFFFFFF, 0xD6D4F0, 0x100B41),
-        (.ocean, true, .medications, 0x8ADDCD, 0x084438, 0x1F5147, 0xCAF0E8),
+        (.ocean, true, .medications, 0x7CC4F5, 0x06263B, 0x123A55, 0xCFE8FB),
         (.ocean, true, .cycle, 0xDD8ACF, 0x37062F, 0x511F49, 0xF0CAE9),
         (.ocean, true, .vitals, 0x8AAEDD, 0x072143, 0x1F3551, 0xCADAF0),
         (.ocean, true, .appointments, 0x8AC7DD, 0x083546, 0x1F4451, 0xCAE5F0),
@@ -77,26 +77,27 @@ enum PremiumExtendedColorTables {
         (.sunset, true, .vitals, 0xDDC48A, 0x473408, 0x51421F, 0xF0E4CA),
         (.sunset, true, .appointments, 0xDD918A, 0x380A06, 0x51241F, 0xF0CDCA),
         (.sunset, true, .trends, 0xDD8AC8, 0x37062A, 0x511F44, 0xF0CAE6),
-        (.forest, false, .medications, 0x1F7D3E, 0xFFFFFF, 0xD4F0DD, 0x0B411D),
+        (.forest, false, .medications, 0x6B7A16, 0xFFFFFF, 0xEDF3C8, 0x2E3607),
         (.forest, false, .cycle, 0xC3317A, 0xFFFFFF, 0xF0D4E2, 0x410B26),
         (.forest, false, .vitals, 0x447A1E, 0xFFFFFF, 0xDFF0D4, 0x22410B),
         (.forest, false, .appointments, 0x1F7A63, 0xFFFFFF, 0xD4F0E9, 0x0B4134),
         (.forest, false, .trends, 0x27749A, 0xFFFFFF, 0xD4E6F0, 0x0B2F41),
-        (.forest, true, .medications, 0x8ADDA6, 0x08441C, 0x1F5130, 0xCAF0D6),
+        (.forest, true, .medications, 0xD4E157, 0x2A3300, 0x3E4A12, 0xEEF5C4),
         (.forest, true, .cycle, 0xDD8AB4, 0x35061D, 0x511F38, 0xF0CADD),
         (.forest, true, .vitals, 0xADDD8A, 0x214508, 0x34511F, 0xD9F0CA),
         (.forest, true, .appointments, 0x8ADDC8, 0x084435, 0x1F5144, 0xCAF0E6),
         (.forest, true, .trends, 0x8AC2DD, 0x083246, 0x1F4051, 0xCAE3F0)
     ]
 
-    /// 3 premium palettes x 2 modes, hero top/bottom.
+    /// 3 premium palettes x 2 modes, hero top/bottom. Dark hero starts on the app ground and
+    /// rises into the palette's dark primaryContainer.
     static let heroes: [PremiumHeroRow] = [
         (.ocean, false, 0x26606C, 0x327683),
-        (.ocean, true, 0x1C4048, 0x26535C),
+        (.ocean, true, 0x090D0B, 0x164E63),
         (.sunset, false, 0x6C4326, 0x835432),
-        (.sunset, true, 0x482E1C, 0x5C3C26),
+        (.sunset, true, 0x090D0B, 0x7C2D12),
         (.forest, false, 0x266C31, 0x32833F),
-        (.forest, true, 0x1C4823, 0x265C2F)
+        (.forest, true, 0x090D0B, 0x14532D)
     ]
 
     /// Every palette and mode, including CLASSIC.
@@ -193,38 +194,56 @@ struct PremiumExtendedColorsStatusTests {
     }
 }
 
+@Suite("Every premium palette differs from classic on the accent-derived roles (PremiumExtendedColors.kt)")
+struct PremiumExtendedColorsRestatedRolesTests {
+    /// Each premium palette restates the accent-derived roles from its own primary, so all four
+    /// must differ from CLASSIC's (`PremiumExtendedColorsTest.kt:46-62`).
+    @Test(
+        "accentGlow, overline, metricUp and aiGradient.top differ from classic",
+        arguments: PremiumExtendedColorTables.allPalettesAndModes
+    )
+    func accentDerivedRoles(_ row: (palette: PremiumTheme, dark: Bool)) {
+        guard row.palette != .classic else { return }
+        let premium = SalusTheme.extendedColors(dark: row.dark, premiumTheme: row.palette)
+        let classic: SalusExtendedColors = row.dark ? .dark : .light
+        let label = "\(row.palette.rawValue) dark=\(row.dark)"
+        #expect(premium.accentGlow != classic.accentGlow, "\(label) accentGlow")
+        #expect(premium.overline != classic.overline, "\(label) overline")
+        #expect(premium.metricUp != classic.metricUp, "\(label) metricUp")
+        #expect(premium.aiGradient.top != classic.aiGradient.top, "\(label) aiGradient.top")
+    }
+
+    /// `metricDown` is the "worse" colour and `cardBorder` is structure, not accent: a palette
+    /// that repainted either would change what "down" means or move the app's outlines
+    /// (`PremiumExtendedColorsTest.kt:68-83`).
+    @Test(
+        "metricDown, cardBorder and aiGradient.bottom never move across palettes",
+        arguments: PremiumExtendedColorTables.allPalettesAndModes
+    )
+    func paletteIndependentRoles(_ row: (palette: PremiumTheme, dark: Bool)) {
+        let palette = SalusTheme.extendedColors(dark: row.dark, premiumTheme: row.palette)
+        let classic: SalusExtendedColors = row.dark ? .dark : .light
+        let label = "\(row.palette.rawValue) dark=\(row.dark)"
+        #expect(palette.metricDown == classic.metricDown, "\(label) metricDown")
+        #expect(palette.cardBorder == classic.cardBorder, "\(label) cardBorder")
+        #expect(palette.aiGradient.bottom == classic.aiGradient.bottom, "\(label) aiGradient.bottom")
+    }
+}
+
 @Suite("WCAG AA over the §4.6 parity table")
 struct PremiumExtendedColorsContrastTests {
-    /// Relative luminance of an opaque `0xRRGGBB` per WCAG 2.1.
-    static func relativeLuminance(_ hex: UInt32) -> Double {
-        func channel(_ raw: UInt32) -> Double {
-            let value = Double(raw) / 255
-            return value <= 0.03928 ? value / 12.92 : pow((value + 0.055) / 1.055, 2.4)
-        }
-        let red = channel((hex >> 16) & 0xFF)
-        let green = channel((hex >> 8) & 0xFF)
-        let blue = channel(hex & 0xFF)
-        return 0.2126 * red + 0.7152 * green + 0.0722 * blue
-    }
-
-    /// The WCAG contrast ratio `(lighter + 0.05) / (darker + 0.05)`.
-    static func contrastRatio(_ one: UInt32, _ other: UInt32) -> Double {
-        let first = relativeLuminance(one)
-        let second = relativeLuminance(other)
-        return (max(first, second) + 0.05) / (min(first, second) + 0.05)
-    }
-
     /// Deliberately the premium table only. The brand (CLASSIC) light set predates this rule and
     /// has two sub-AA pairs of its own (medications 4.45:1, vitals 4.05:1); asserting AA on it
-    /// would be changing a shipped brand value from a test, which the port does not do.
+    /// would be changing a shipped brand value from a test, which the port does not do. Both
+    /// shortfalls are recorded on the Android ledger (`PremiumExtendedColorsTest.kt:124-140`).
     @Test(
         "both content pairs clear 4.5:1",
         arguments: PremiumExtendedColorTables.accents
     )
     func contentPairsClearAA(_ row: PremiumAccentRow) {
         let label = "\(row.palette.rawValue) dark=\(row.dark) \(row.feature.rawValue)"
-        let onAccent = Self.contrastRatio(row.onAccent, row.accent)
-        let onContainer = Self.contrastRatio(row.onContainer, row.container)
+        let onAccent = ContrastMath.contrastRatio(row.onAccent, row.accent)
+        let onContainer = ContrastMath.contrastRatio(row.onContainer, row.container)
         #expect(onAccent >= 4.5, "\(label) onAccent/accent is \(onAccent)")
         #expect(onContainer >= 4.5, "\(label) onContainer/container is \(onContainer)")
     }
@@ -232,7 +251,7 @@ struct PremiumExtendedColorsContrastTests {
     @Test("the ratio helper agrees with the two WCAG anchors")
     func helperIsCalibrated() {
         // Black on white is the definitional 21:1; a color against itself is 1:1.
-        #expect(abs(Self.contrastRatio(0x000000, 0xFFFFFF) - 21) < 0.001)
-        #expect(abs(Self.contrastRatio(0x3E7D5F, 0x3E7D5F) - 1) < 0.001)
+        #expect(abs(ContrastMath.contrastRatio(0x000000, 0xFFFFFF) - 21) < 0.001)
+        #expect(abs(ContrastMath.contrastRatio(0x3E7D5F, 0x3E7D5F) - 1) < 0.001)
     }
 }

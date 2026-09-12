@@ -41,14 +41,14 @@ struct ThemeModePresentationTests {
 struct PremiumPaletteResolutionTests {
     /// The doc's §4.1–§4.4 tables, one identifying row per palette and theme.
     static let rows: [PaletteRow] = [
-        (.classic, false, 0x3E7D5F, 0x0E1F17),
-        (.classic, true, 0x8BD6B2, 0xD3E8DB),
-        (.ocean, false, 0x0E7490, 0x061F29),
-        (.ocean, true, 0x5FD4F0, 0xCDE7F2),
-        (.sunset, false, 0xB4491F, 0x2C160D),
-        (.sunset, true, 0xFFB598, 0xFFDBCF),
-        (.forest, false, 0x2E6B27, 0x121F0E),
-        (.forest, true, 0x95D888, 0xD7E8CD)
+        (.classic, false, 0x065F46, 0x0E1F17),
+        (.classic, true, 0x34D399, 0xD3E8DB),
+        (.ocean, false, 0x155E75, 0x061F29),
+        (.ocean, true, 0x22D3EE, 0xCDE7F2),
+        (.sunset, false, 0x9A3412, 0x2C160D),
+        (.sunset, true, 0xFB923C, 0xFFDBCF),
+        (.forest, false, 0x166534, 0x121F0E),
+        (.forest, true, 0x4ADE80, 0xD7E8CD)
     ]
 
     @Test("each palette repaints the accent roles with its own §4 values", arguments: rows)
@@ -141,9 +141,33 @@ struct PremiumPaletteResolutionTests {
     }
 }
 
+@Suite("PremiumTheme.swatch(dark:) (PremiumThemeColors.kt:130-135)")
+struct PremiumThemeSwatchTests {
+    /// The theme sheet paints its swatches from `swatch(dark:)`, so each swatch must land on
+    /// that palette's primary in the requested mode; CLASSIC answers with the brand primary.
+    @Test(
+        "the swatch is the palette's primary in each mode",
+        arguments: PremiumTheme.allCases, [false, true]
+    )
+    func swatchIsPrimary(_ palette: PremiumTheme, dark: Bool) {
+        #expect(
+            palette.swatch(dark: dark)
+                == palette.accentPalette(dark: dark).primary,
+            "\(palette.rawValue) dark=\(dark)"
+        )
+    }
+
+    @Test("the swatches differ across palettes within a mode")
+    func swatchesAreDistinct() {
+        for dark in [false, true] {
+            let swatches = PremiumTheme.allCases.map { $0.swatch(dark: dark) }
+            #expect(Set(swatches).count == PremiumTheme.allCases.count, "dark=\(dark)")
+        }
+    }
+}
+
 @Suite("SalusTheme.resolve (Theme.kt:86-104)")
-struct SalusThemeResolutionTests {
-    @Test("the resolved theme carries the scheme, the extended colors and the dark flag")
+struct SalusThemeResolutionTests { @Test("the resolved theme carries the scheme, the extended colors and the dark flag")
     func resolvesEverything() {
         let resolved = SalusTheme.resolve(
             mode: .system,
@@ -160,7 +184,7 @@ struct SalusThemeResolutionTests {
         let resolved = SalusTheme.resolve(mode: .light, premiumTheme: .forest, systemIsDark: true)
         #expect(!resolved.isDark)
         #expect(resolved.extendedColors == SalusExtendedColors.forestLight)
-        #expect(resolved.colorScheme.primary == Color(hex: 0x2E6B27))
+        #expect(resolved.colorScheme.primary == Color(hex: 0x166534))
         #expect(resolved.colorScheme.background == SalusColorScheme.light.background)
     }
 

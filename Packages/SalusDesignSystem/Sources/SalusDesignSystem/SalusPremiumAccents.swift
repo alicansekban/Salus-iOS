@@ -78,79 +78,79 @@ private enum ClassicDarkValues {
     static let onSecondaryContainer = brand.onSecondaryContainer
 }
 
-/// §4.2 — OCEAN, cyan/teal, light. Source: `PremiumThemeColors.kt:29-38`.
+/// §4.2 — OCEAN, cyan/teal, light. Source: `PremiumThemeColors.kt:31-40`.
 private enum OceanLightValues {
-    static let primary = Color(hex: 0x0E7490)
-    static let onPrimary = Color(hex: 0xFFFFFF)
-    static let primaryContainer = Color(hex: 0xBEE9F7)
-    static let onPrimaryContainer = Color(hex: 0x001F29)
-    static let secondary = Color(hex: 0x4A6470)
-    static let onSecondary = Color(hex: 0xFFFFFF)
-    static let secondaryContainer = Color(hex: 0xCDE7F2)
-    static let onSecondaryContainer = Color(hex: 0x061F29)
+    static let primary = Color(hex: 0x155E75) // primary, PremiumThemeColors.kt:32 — cyan-800
+    static let onPrimary = Color(hex: 0xFFFFFF) // onPrimary, PremiumThemeColors.kt:33
+    static let primaryContainer = Color(hex: 0xCFFAFE) // primaryContainer, PremiumThemeColors.kt:34 — cyan-100
+    static let onPrimaryContainer = Color(hex: 0x164E63) // onPrimaryContainer, PremiumThemeColors.kt:35 — cyan-900
+    static let secondary = Color(hex: 0x4A6470) // secondary, PremiumThemeColors.kt:36
+    static let onSecondary = Color(hex: 0xFFFFFF) // onSecondary, PremiumThemeColors.kt:37
+    static let secondaryContainer = Color(hex: 0xCDE7F2) // secondaryContainer, PremiumThemeColors.kt:38
+    static let onSecondaryContainer = Color(hex: 0x061F29) // onSecondaryContainer, PremiumThemeColors.kt:39
 }
 
-/// §4.2 — OCEAN, dark. Source: `PremiumThemeColors.kt:40-49`.
+/// §4.2 — OCEAN, dark. Source: `PremiumThemeColors.kt:42-51`.
 private enum OceanDarkValues {
-    static let primary = Color(hex: 0x5FD4F0)
-    static let onPrimary = Color(hex: 0x00363F)
-    static let primaryContainer = Color(hex: 0x004E5F)
-    static let onPrimaryContainer = Color(hex: 0xBEE9F7)
-    static let secondary = Color(hex: 0xB2CBD8)
-    static let onSecondary = Color(hex: 0x1C333E)
-    static let secondaryContainer = Color(hex: 0x334A55)
-    static let onSecondaryContainer = Color(hex: 0xCDE7F2)
+    static let primary = Color(hex: 0x22D3EE) // primary, PremiumThemeColors.kt:43 — cyan-400
+    static let onPrimary = Color(hex: 0x083344) // onPrimary, PremiumThemeColors.kt:44 — cyan-950
+    static let primaryContainer = Color(hex: 0x164E63) // primaryContainer, PremiumThemeColors.kt:45 — cyan-900
+    static let onPrimaryContainer = Color(hex: 0xA5F3FC) // onPrimaryContainer, PremiumThemeColors.kt:46 — cyan-200
+    static let secondary = Color(hex: 0xB2CBD8) // secondary, PremiumThemeColors.kt:47
+    static let onSecondary = Color(hex: 0x1C333E) // onSecondary, PremiumThemeColors.kt:48
+    static let secondaryContainer = Color(hex: 0x334A55) // secondaryContainer, PremiumThemeColors.kt:49
+    static let onSecondaryContainer = Color(hex: 0xCDE7F2) // onSecondaryContainer, PremiumThemeColors.kt:50
 }
 
 /// §4.3 — SUNSET, warm orange over a brown secondary, light.
-/// Source: `PremiumThemeColors.kt:52-61`. `primaryContainer` and `secondaryContainer` are the
-/// same `#FFDBCF` by design.
+/// Source: `PremiumThemeColors.kt:54-63`. `primaryContainer` and `secondaryContainer` are not the
+/// same hex any more (M15 moved `primaryContainer` onto orange-100).
 private enum SunsetLightValues {
-    static let primary = Color(hex: 0xB4491F)
-    static let onPrimary = Color(hex: 0xFFFFFF)
-    static let primaryContainer = Color(hex: 0xFFDBCF)
-    static let onPrimaryContainer = Color(hex: 0x3B0A00)
-    static let secondary = Color(hex: 0x77574B)
-    static let onSecondary = Color(hex: 0xFFFFFF)
-    static let secondaryContainer = Color(hex: 0xFFDBCF)
-    static let onSecondaryContainer = Color(hex: 0x2C160D)
+    static let primary = Color(hex: 0x9A3412) // primary, PremiumThemeColors.kt:55 — orange-800
+    static let onPrimary = Color(hex: 0xFFFFFF) // onPrimary, PremiumThemeColors.kt:56
+    static let primaryContainer = Color(hex: 0xFFEDD5) // primaryContainer, PremiumThemeColors.kt:57 — orange-100
+    static let onPrimaryContainer = Color(hex: 0x7C2D12) // onPrimaryContainer, PremiumThemeColors.kt:58 — orange-900
+    static let secondary = Color(hex: 0x77574B) // secondary, PremiumThemeColors.kt:59
+    static let onSecondary = Color(hex: 0xFFFFFF) // onSecondary, PremiumThemeColors.kt:60
+    static let secondaryContainer = Color(hex: 0xFFDBCF) // secondaryContainer, PremiumThemeColors.kt:61
+    static let onSecondaryContainer = Color(hex: 0x2C160D) // onSecondaryContainer, PremiumThemeColors.kt:62
 }
 
-/// §4.3 — SUNSET, dark. Source: `PremiumThemeColors.kt:63-72`.
+/// §4.3 — SUNSET, dark. Source: `PremiumThemeColors.kt:65-74`.
 private enum SunsetDarkValues {
-    static let primary = Color(hex: 0xFFB598)
-    static let onPrimary = Color(hex: 0x5F1600)
-    static let primaryContainer = Color(hex: 0x8A3308)
-    static let onPrimaryContainer = Color(hex: 0xFFDBCF)
-    static let secondary = Color(hex: 0xE7BDAC)
-    static let onSecondary = Color(hex: 0x442A20)
-    static let secondaryContainer = Color(hex: 0x5D4035)
-    static let onSecondaryContainer = Color(hex: 0xFFDBCF)
+    static let primary = Color(hex: 0xFB923C) // primary, PremiumThemeColors.kt:66 — orange-400
+    static let onPrimary = Color(hex: 0x431407) // onPrimary, PremiumThemeColors.kt:67 — orange-950
+    static let primaryContainer = Color(hex: 0x7C2D12) // primaryContainer, PremiumThemeColors.kt:68 — orange-900
+    static let onPrimaryContainer = Color(hex: 0xFED7AA) // onPrimaryContainer, PremiumThemeColors.kt:69 — orange-200
+    static let secondary = Color(hex: 0xE7BDAC) // secondary, PremiumThemeColors.kt:70
+    static let onSecondary = Color(hex: 0x442A20) // onSecondary, PremiumThemeColors.kt:71
+    static let secondaryContainer = Color(hex: 0x5D4035) // secondaryContainer, PremiumThemeColors.kt:72
+    static let onSecondaryContainer = Color(hex: 0xFFDBCF) // onSecondaryContainer, PremiumThemeColors.kt:73
 }
 
 /// §4.4 — FOREST, a deeper, more saturated green than the brand sage, light.
-/// Source: `PremiumThemeColors.kt:75-84`.
+/// Source: `PremiumThemeColors.kt:77-86`.
 private enum ForestLightValues {
-    static let primary = Color(hex: 0x2E6B27)
-    static let onPrimary = Color(hex: 0xFFFFFF)
-    static let primaryContainer = Color(hex: 0xAFF2A1)
-    static let onPrimaryContainer = Color(hex: 0x002203)
-    static let secondary = Color(hex: 0x54634D)
-    static let onSecondary = Color(hex: 0xFFFFFF)
-    static let secondaryContainer = Color(hex: 0xD7E8CD)
-    static let onSecondaryContainer = Color(hex: 0x121F0E)
+    static let primary = Color(hex: 0x166534) // primary, PremiumThemeColors.kt:78 — green-800
+    static let onPrimary = Color(hex: 0xFFFFFF) // onPrimary, PremiumThemeColors.kt:79
+    static let primaryContainer = Color(hex: 0xDCFCE7) // primaryContainer, PremiumThemeColors.kt:80 — green-100
+    static let onPrimaryContainer = Color(hex: 0x14532D) // onPrimaryContainer, PremiumThemeColors.kt:81 — green-900
+    static let secondary = Color(hex: 0x54634D) // secondary, PremiumThemeColors.kt:82
+    static let onSecondary = Color(hex: 0xFFFFFF) // onSecondary, PremiumThemeColors.kt:83
+    static let secondaryContainer = Color(hex: 0xD7E8CD) // secondaryContainer, PremiumThemeColors.kt:84
+    static let onSecondaryContainer = Color(hex: 0x121F0E) // onSecondaryContainer, PremiumThemeColors.kt:85
 }
 
-/// §4.4 — FOREST, dark. Source: `PremiumThemeColors.kt:86-95`.
+/// §4.4 — FOREST, dark. Source: `PremiumThemeColors.kt:88-97`.
 private enum ForestDarkValues {
-    static let primary = Color(hex: 0x95D888)
-    static let onPrimary = Color(hex: 0x033900)
-    static let primaryContainer = Color(hex: 0x155210)
-    static let onPrimaryContainer = Color(hex: 0xAFF2A1)
-    static let secondary = Color(hex: 0xBBCBB1)
-    static let onSecondary = Color(hex: 0x263422)
-    static let secondaryContainer = Color(hex: 0x3C4B37)
-    static let onSecondaryContainer = Color(hex: 0xD7E8CD)
+    static let primary = Color(hex: 0x4ADE80) // primary, PremiumThemeColors.kt:89 — green-400
+    static let onPrimary = Color(hex: 0x052E16) // onPrimary, PremiumThemeColors.kt:90 — green-950
+    static let primaryContainer = Color(hex: 0x14532D) // primaryContainer, PremiumThemeColors.kt:91 — green-900
+    static let onPrimaryContainer = Color(hex: 0xBBF7D0) // onPrimaryContainer, PremiumThemeColors.kt:92 — green-200
+    static let secondary = Color(hex: 0xBBCBB1) // secondary, PremiumThemeColors.kt:93
+    static let onSecondary = Color(hex: 0x263422) // onSecondary, PremiumThemeColors.kt:94
+    static let secondaryContainer = Color(hex: 0x3C4B37) // secondaryContainer, PremiumThemeColors.kt:95
+    static let onSecondaryContainer = Color(hex: 0xD7E8CD) // onSecondaryContainer, PremiumThemeColors.kt:96
 }
 
 /// The four premium accent palettes, light and dark.

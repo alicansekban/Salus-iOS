@@ -125,6 +125,13 @@ public enum SalusMotion {
     /// Source: `Motion.kt` (`StaggerCapIndex`).
     public static let entranceStaggerCapIndex = 5
 
+    /// The segmented-tabs indicator slide: `tween(SalusMotion.Normal,
+    /// FastOutSlowInEasing)` — the same curve a pushed screen travels with
+    /// (`SalusSegmentedTabs.kt:86-88`). Named so the slide can never drift into a second
+    /// duration/easing pair; duration `= stateChangeDurationSeconds`, easing `= pushPopEasing`
+    /// (the §10 push/pop curve, which Android spells `FastOutSlowInEasing`).
+    public static let segmentedSlideDurationSeconds: TimeInterval = stateChangeDurationSeconds
+
     /// The entrance animation: emphasized easing over 450 ms (`Motion.kt` + `SalusEnter.kt`).
     public static var entranceAnimation: Animation {
         emphasizedEasing.animation(duration: entranceDurationSeconds)

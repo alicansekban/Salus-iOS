@@ -33,4 +33,13 @@ struct MotionTokenTests {
         #expect(SalusMotion.entranceStaggerCapIndex == 5)
         #expect(SalusMotion.entranceTokens.count == 6)
     }
+
+    /// §11 / §14.6 — the segmented-tabs indicator slides with `tween(Normal, FastOutSlowIn)`,
+    /// the same duration and easing the push/pop transition uses (`SalusSegmentedTabs.kt:86-88`).
+    @Test("the segmented-tabs slide reuses the state-change duration and push/pop easing")
+    func segmentedSlideToken() {
+        #expect(SalusMotion.segmentedSlideDurationSeconds == SalusMotion.stateChangeDurationSeconds)
+        #expect(SalusMotion.segmentedSlideDurationSeconds == 0.3)
+        #expect(SalusMotion.pushPopEasing == SalusTimingCurve(0.4, 0.0, 0.2, 1.0))
+    }
 }

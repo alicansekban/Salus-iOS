@@ -9,7 +9,7 @@ import Testing
 // Every literal below is copied out of that document by hand; the token sources are
 // transcribed from the same document independently. A typo on either side fails here.
 //
-// The count assertions are the drift detector: the doc declares 218 tokens and
+// The count assertions are the drift detector: the doc declares 233 tokens and
 // 5 `FeatureAccent` sets. If a token is added, removed or renamed in the doc without the
 // Swift side following, the totals stop matching.
 
@@ -38,10 +38,10 @@ private enum TestError: Error {
 
 @Suite("Design token counts (drift detector)")
 struct DesignTokenCountTests {
-    /// `design-tokens.md` declares 218 tokens across all groups.
-    @Test("the package exposes exactly 218 tokens")
+    /// `design-tokens.md` declares 233 tokens across all groups.
+    @Test("the package exposes exactly 233 tokens")
     func totalTokenCountIs218() {
-        #expect(SalusTokens.allTokenCount == 218)
+        #expect(SalusTokens.allTokenCount == 233)
     }
 
     /// §3 declares five feature accent sets: medications, cycle, vitals, appointments, trends.
@@ -69,8 +69,11 @@ struct DesignTokenCountTests {
         #expect(counts["featureAccents.dark"] == 20)
         // §3.3 success + warning, light and dark
         #expect(counts["statusColors"] == 4)
-        // §3.5 hero gradient stops (top + bottom), light and dark
-        #expect(counts["heroGradients"] == 4)
+        // §3.6 structural and metric roles, light and dark
+        #expect(counts["accentRoles.light"] == 5)
+        #expect(counts["accentRoles.dark"] == 5)
+        // §3.5 hero + AI gradient stops (top + bottom), light and dark
+        #expect(counts["gradients"] == 8)
         // §4 four palettes x 8 roles x light+dark
         #expect(counts["premiumAccents"] == 64)
         // §5 spacing
@@ -81,11 +84,11 @@ struct DesignTokenCountTests {
         #expect(counts["elevation"] == 4)
         // §8 touch target
         #expect(counts["touchTarget"] == 1)
-        // §9 six overridden + six inherited roles
-        #expect(counts["typography"] == 12)
+        // §9 seven overridden + six inherited roles (displaySmall is the M15 addition)
+        #expect(counts["typography"] == 13)
         // §10 motion
         #expect(counts["motion"] == 8)
-        #expect(counts.count == 13)
+        #expect(counts.count == 15)
     }
 }
 
@@ -94,13 +97,13 @@ struct MaterialColorRoleTests {
     @Test(
         "light roles match design-tokens.md §1",
         arguments: [
-            ("primary", SalusColorScheme.light.primary, UInt32(0x3E7D5F)),
+            ("primary", SalusColorScheme.light.primary, UInt32(0x065F46)),
             ("onPrimary", SalusColorScheme.light.onPrimary, UInt32(0xFFFFFF)),
-            ("primaryContainer", SalusColorScheme.light.primaryContainer, UInt32(0xC4E8D2)),
-            ("tertiary", SalusColorScheme.light.tertiary, UInt32(0x9C5566)),
+            ("primaryContainer", SalusColorScheme.light.primaryContainer, UInt32(0xD1FAE5)),
+            ("tertiary", SalusColorScheme.light.tertiary, UInt32(0xE11D48)),
             ("error", SalusColorScheme.light.error, UInt32(0xBA1A1A)),
-            ("background", SalusColorScheme.light.background, UInt32(0xEAF2EC)),
-            ("outlineVariant", SalusColorScheme.light.outlineVariant, UInt32(0xC0CBC2)),
+            ("background", SalusColorScheme.light.background, UInt32(0xF1F5F2)),
+            ("outlineVariant", SalusColorScheme.light.outlineVariant, UInt32(0xE4ECE7)),
             ("scrim", SalusColorScheme.light.scrim, UInt32(0x000000)),
             // Cards are white, not tonal — see the callout under §1.
             (
@@ -120,21 +123,21 @@ struct MaterialColorRoleTests {
     @Test(
         "dark roles match design-tokens.md §2",
         arguments: [
-            ("primary", SalusColorScheme.dark.primary, UInt32(0x8BD6B2)),
-            ("onPrimary", SalusColorScheme.dark.onPrimary, UInt32(0x0A3B26)),
-            ("tertiaryContainer", SalusColorScheme.dark.tertiaryContainer, UInt32(0x653747)),
-            ("errorContainer", SalusColorScheme.dark.errorContainer, UInt32(0x93000A)),
-            ("background", SalusColorScheme.dark.background, UInt32(0x0A0F0C)),
-            ("outline", SalusColorScheme.dark.outline, UInt32(0x8A938C)),
-            ("inversePrimary", SalusColorScheme.dark.inversePrimary, UInt32(0x3E7D5F)),
+            ("primary", SalusColorScheme.dark.primary, UInt32(0x34D399)),
+            ("onPrimary", SalusColorScheme.dark.onPrimary, UInt32(0x022C22)),
+            ("tertiaryContainer", SalusColorScheme.dark.tertiaryContainer, UInt32(0x4C0519)),
+            ("errorContainer", SalusColorScheme.dark.errorContainer, UInt32(0x3A1717)),
+            ("background", SalusColorScheme.dark.background, UInt32(0x090D0B)),
+            ("outline", SalusColorScheme.dark.outline, UInt32(0x2A352E)),
+            ("inversePrimary", SalusColorScheme.dark.inversePrimary, UInt32(0x065F46)),
             ("surfaceBright", SalusColorScheme.dark.surfaceBright, UInt32(0x303632)),
             (
                 "surfaceContainerLowest", SalusColorScheme.dark.surfaceContainerLowest,
-                UInt32(0x050807)
+                UInt32(0x0E1311)
             ),
             (
                 "surfaceContainerHighest", SalusColorScheme.dark.surfaceContainerHighest,
-                UInt32(0x2D3430)
+                UInt32(0x243029)
             )
         ] as [ColorSample]
     )
@@ -153,7 +156,7 @@ struct FeatureAccentTests {
                 "medications.onContainer", SalusExtendedColors.light.medications.onContainer,
                 UInt32(0x063D33)
             ),
-            ("cycle.container", SalusExtendedColors.light.cycle.container, UInt32(0xF8DCE2)),
+            ("cycle.container", SalusExtendedColors.light.cycle.container, UInt32(0xFFE4E6)),
             ("vitals.accent", SalusExtendedColors.light.vitals.accent, UInt32(0x3E8D5F)),
             // §3 callout: appointments deliberately equals the brand primary.
             (
@@ -176,7 +179,7 @@ struct FeatureAccentTests {
                 "medications.onAccent", SalusExtendedColors.dark.medications.onAccent,
                 UInt32(0x00382D)
             ),
-            ("cycle.accent", SalusExtendedColors.dark.cycle.accent, UInt32(0xEC93A8)),
+            ("cycle.accent", SalusExtendedColors.dark.cycle.accent, UInt32(0xFB7185)),
             ("vitals.accent", SalusExtendedColors.dark.vitals.accent, UInt32(0x86CFA1)),
             (
                 "appointments.container", SalusExtendedColors.dark.appointments.container,
@@ -210,10 +213,10 @@ struct HeroGradientTests {
                 "light.hero.bottom", SalusExtendedColors.light.hero.bottom, UInt32(0x3E7D5F)
             ),
             (
-                "dark.hero.top", SalusExtendedColors.dark.hero.top, UInt32(0x1E4A36)
+                "dark.hero.top", SalusExtendedColors.dark.hero.top, UInt32(0x090D0B)
             ),
             (
-                "dark.hero.bottom", SalusExtendedColors.dark.hero.bottom, UInt32(0x275B43)
+                "dark.hero.bottom", SalusExtendedColors.dark.hero.bottom, UInt32(0x064E3B)
             )
         ] as [ColorSample]
     )
@@ -222,18 +225,19 @@ struct HeroGradientTests {
     }
 
     /// §3.5 callout — gradients are the only raw two-color pairs; `hero` must stay a single
-    /// gradient, never two independent roles.
+    /// gradient, never two independent roles. In dark, `hero` starts on the app ground and rises
+    /// into `primaryContainer`.
     @Test("hero is not exposed as two independent color roles")
     func heroIsAGradient() {
         let all = Set(SalusTokens.groupCounts.map(\.group))
-        #expect(all.contains("heroGradients"))
+        #expect(all.contains("gradients"))
         #expect(SalusExtendedColors.light.hero == SalusGradient(
             top: Color(hex: 0x2C6B4F),
             bottom: Color(hex: 0x3E7D5F)
         ))
         #expect(SalusExtendedColors.dark.hero == SalusGradient(
-            top: Color(hex: 0x1E4A36),
-            bottom: Color(hex: 0x275B43)
+            top: Color(hex: 0x090D0B),
+            bottom: Color(hex: 0x064E3B)
         ))
     }
 
@@ -254,8 +258,11 @@ struct HeroGradientTests {
         let bottomSample = try pixel(of: image, x: 32, y: 63)
         // The two stops' bytes as the renderer's sRGB space reads them (hex-pinned in `heroStop`).
         let topBytes: (UInt8, UInt8, UInt8) = (0x2C, 0x6B, 0x4F)
-        let bottomBytes: (UInt8, UInt8, UInt8) = (0x3E, 0x7D, 0x5F)
-        // The top-most pixel must be the top stop, the bottom-most the bottom stop. A two-stop
+        let bottomBytes: (UInt8, UInt8, UInt8) = (
+            0x3E,
+            0x7D,
+            0x5F
+        ) // The top-most pixel must be the top stop, the bottom-most the bottom stop. A two-stop
         // vertical gradient with the stops in the wrong order would flip both comparisons.
         #expect(distance(topSample, to: topBytes) < distance(topSample, to: bottomBytes))
         #expect(distance(bottomSample, to: bottomBytes) < distance(bottomSample, to: topBytes))
@@ -305,33 +312,33 @@ struct PremiumAccentPaletteTests {
         "premium palettes match design-tokens.md §4",
         arguments: [
             // §4.1 CLASSIC is the brand palette itself.
-            ("classicLight.primary", SalusPremiumAccents.classicLight.primary, UInt32(0x3E7D5F)),
+            ("classicLight.primary", SalusPremiumAccents.classicLight.primary, UInt32(0x065F46)),
             (
                 "classicDark.onSecondaryContainer",
                 SalusPremiumAccents.classicDark.onSecondaryContainer, UInt32(0xD3E8DB)
             ),
             // §4.2 OCEAN
-            ("oceanLight.primary", SalusPremiumAccents.oceanLight.primary, UInt32(0x0E7490)),
+            ("oceanLight.primary", SalusPremiumAccents.oceanLight.primary, UInt32(0x155E75)),
             (
                 "oceanDark.primaryContainer", SalusPremiumAccents.oceanDark.primaryContainer,
-                UInt32(0x004E5F)
+                UInt32(0x164E63)
             ),
             // §4.3 SUNSET
-            ("sunsetLight.primary", SalusPremiumAccents.sunsetLight.primary, UInt32(0xB4491F)),
+            ("sunsetLight.primary", SalusPremiumAccents.sunsetLight.primary, UInt32(0x9A3412)),
             (
                 "sunsetLight.secondaryContainer",
                 SalusPremiumAccents.sunsetLight.secondaryContainer, UInt32(0xFFDBCF)
             ),
             (
                 "sunsetDark.onPrimaryContainer", SalusPremiumAccents.sunsetDark.onPrimaryContainer,
-                UInt32(0xFFDBCF)
+                UInt32(0xFED7AA)
             ),
             // §4.4 FOREST
             (
                 "forestLight.secondaryContainer",
                 SalusPremiumAccents.forestLight.secondaryContainer, UInt32(0xD7E8CD)
             ),
-            ("forestDark.primary", SalusPremiumAccents.forestDark.primary, UInt32(0x95D888))
+            ("forestDark.primary", SalusPremiumAccents.forestDark.primary, UInt32(0x4ADE80))
         ] as [ColorSample]
     )
     func premiumRole(_ sample: ColorSample) {
@@ -372,8 +379,8 @@ struct DimensionTokenTests {
         arguments: [
             ("extraSmall", SalusShapes.extraSmall, CGFloat(8)),
             ("small", SalusShapes.small, CGFloat(12)),
-            ("medium", SalusShapes.medium, CGFloat(16)),
-            ("large", SalusShapes.large, CGFloat(24)),
+            ("medium", SalusShapes.medium, CGFloat(14)),
+            ("large", SalusShapes.large, CGFloat(20)),
             ("extraLarge", SalusShapes.extraLarge, CGFloat(28))
         ] as [DimensionSample]
     )
@@ -427,10 +434,11 @@ struct TypographyTokenTests {
     @Test(
         "text styles match design-tokens.md §9.1/§9.2/§9.3",
         arguments: [
+            ("displaySmall", SalusTypography.displaySmall, 36, 44, Font.Weight.bold, 0.0, Font.TextStyle.largeTitle),
             ("headlineLarge", SalusTypography.headlineLarge, 32, 38, Font.Weight.bold, 0.0, Font.TextStyle.largeTitle),
-            ("headlineMedium", SalusTypography.headlineMedium, 28, 34, Font.Weight.bold, 0.0, Font.TextStyle.title),
+            ("headlineMedium", SalusTypography.headlineMedium, 26, 34, Font.Weight.bold, -0.5, Font.TextStyle.title),
             ("headlineSmall", SalusTypography.headlineSmall, 24, 32, Font.Weight.semibold, 0.0, Font.TextStyle.title2),
-            ("titleLarge", SalusTypography.titleLarge, 22, 28, Font.Weight.semibold, 0.0, Font.TextStyle.title3),
+            ("titleLarge", SalusTypography.titleLarge, 20, 28, Font.Weight.semibold, 0.0, Font.TextStyle.title3),
             ("titleMedium", SalusTypography.titleMedium, 16, 24, Font.Weight.semibold, 0.2, Font.TextStyle.headline),
             ("titleSmall", SalusTypography.titleSmall, 14, 20, Font.Weight.medium, 0.1, Font.TextStyle.subheadline),
             ("bodyLarge", SalusTypography.bodyLarge, 16, 24, Font.Weight.regular, 0.5, Font.TextStyle.body),
@@ -438,7 +446,7 @@ struct TypographyTokenTests {
             ("bodySmall", SalusTypography.bodySmall, 12, 16, Font.Weight.regular, 0.4, Font.TextStyle.caption),
             ("labelLarge", SalusTypography.labelLarge, 14, 20, Font.Weight.medium, 0.1, Font.TextStyle.footnote),
             ("labelMedium", SalusTypography.labelMedium, 12, 16, Font.Weight.medium, 0.5, Font.TextStyle.caption),
-            ("labelSmall", SalusTypography.labelSmall, 11, 16, Font.Weight.medium, 0.5, Font.TextStyle.caption2)
+            ("labelSmall", SalusTypography.labelSmall, 11, 16, Font.Weight.semibold, 1.2, Font.TextStyle.caption2)
         ] as [TypeSample]
     )
     func textStyle(_ sample: TypeSample) {
@@ -452,11 +460,13 @@ struct TypographyTokenTests {
         )
     }
 
-    /// §9.2: display roles exist in the M3 baseline but Salus never draws them.
-    @Test("display roles are not ported")
+    /// §9.2: display roles exist in the M3 baseline; `displayLarge` and `displayMedium` are not
+    /// drawn, while `displaySmall` is the M15 metric-value role and is.
+    @Test("displayLarge and displayMedium are not ported")
     func displayRolesAbsent() {
         let names = Set(SalusTypography.allTokens.keys)
-        #expect(names.isDisjoint(with: ["displayLarge", "displayMedium", "displaySmall"]))
+        #expect(names.isDisjoint(with: ["displayLarge", "displayMedium"]))
+        #expect(names.contains("displaySmall"))
     }
 }
 

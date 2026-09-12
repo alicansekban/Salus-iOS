@@ -32,4 +32,18 @@ extension PremiumTheme {
         case .forest: dark ? SalusPremiumAccents.forestDark : SalusPremiumAccents.forestLight
         }
     }
+
+    /// The one color that stands for this palette in the requested mode: its `primary`.
+    ///
+    /// The theme sheet paints its swatches with it, so a swatch can never drift from the palette
+    /// it offers. `classic` answers with the Salus brand primary. Mirror of `PremiumTheme.swatch`
+    /// (`PremiumThemeColors.kt:130-135`).
+    public func swatch(dark: Bool) -> Color {
+        switch self {
+        case .classic: dark ? SalusColorScheme.dark.primary : SalusColorScheme.light.primary
+        case .ocean: dark ? SalusPremiumAccents.oceanDark.primary : SalusPremiumAccents.oceanLight.primary
+        case .sunset: dark ? SalusPremiumAccents.sunsetDark.primary : SalusPremiumAccents.sunsetLight.primary
+        case .forest: dark ? SalusPremiumAccents.forestDark.primary : SalusPremiumAccents.forestLight.primary
+        }
+    }
 }

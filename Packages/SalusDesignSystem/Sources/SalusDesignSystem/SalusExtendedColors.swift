@@ -1,11 +1,11 @@
 import SwiftUI
 
-// Mirrors `salus-android/docs/design/design-tokens.md` §3
+// Mirrors `salus-android/docs/design/design-tokens.md` §3 (M15: §14.1–14.3)
 // (Android: `core/designsystem/.../theme/ExtendedColors.kt`).
 //
-// Colors with no Material role: one accent set per feature area, plus two shared status
-// colors. Member names are kept byte-identical to the Kotlin ones so the two files stay
-// diffable by eye.
+// Colors with no Material role: one accent set per feature area, the shared status colors, the
+// hero and AI gradients, and the five structural/metric roles of §3.6. Member names are kept
+// byte-identical to the Kotlin ones so the two files stay diffable by eye.
 //
 // Every hex lives on its own named `private static let` below rather than inline in the
 // `SalusExtendedColors` initializer: a `Color(hex:)` call as an initializer argument costs
@@ -91,6 +91,26 @@ public struct SalusExtendedColors: Equatable, Sendable {
     /// §3.5 the hero gradient — the avatar, the Home hero band and the Profile band.
     public var hero: SalusGradient
 
+    /// §3.4 the card edge — `outline` in both modes. Dark mode draws no card shadow, so this
+    /// line carries the whole card (`ExtendedColors.kt:109`); in light mode it is a faint line
+    /// next to the shadow.
+    public var cardBorder: Color
+    /// §3.4 the translucent wash behind a primary button, a FAB and a chart line — `primary`
+    /// at 24 % dark / 16 % light (`ExtendedColors.kt:110`).
+    public var accentGlow: Color
+    /// §3.4 the small upper-case section label — `#10B981` dark / `#065F46` light
+    /// (`ExtendedColors.kt:166,112`).
+    public var overline: Color
+    /// §3.4 a delta that moved the good way; follows the palette's `primary`
+    /// (`ExtendedColors.kt:167,113`).
+    public var metricUp: Color
+    /// §3.4 a delta that moved the bad way, and missed doses — `tertiary`, rose in every
+    /// palette, so "worse" never changes hue with the theme (`ExtendedColors.kt:168,114`).
+    public var metricDown: Color
+    /// §3.4 the two-stop border of the AI cards — `primary` → `tertiary`, recognisable as an AI
+    /// surface across palettes (`ExtendedColors.kt:169-172,115-118`).
+    public var aiGradient: SalusGradient
+
     /// The five feature accents in document order.
     public var featureAccents: [SalusFeatureAccentEntry] {
         [
@@ -113,14 +133,30 @@ public struct SalusExtendedColors: Equatable, Sendable {
         return tokens
     }
 
-    /// The two status colors of this theme.
+    /// The two-status-colors of this theme.
     package var statusTokens: [String: Color] {
         ["success": success, "warning": warning]
     }
 
-    /// The two hero gradient stops of this theme, keyed `<colorRole>.<stop>`.
+    /// The five accent-derived structural/metric roles of this theme.
+    package var accentRoleTokens: [String: Color] {
+        [
+            "cardBorder": cardBorder,
+            "accentGlow": accentGlow,
+            "overline": overline,
+            "metricUp": metricUp,
+            "metricDown": metricDown
+        ]
+    }
+
+    /// The gradient stops of this theme — the hero and the AI border — keyed `<role>.<stop>`.
     package var gradientTokens: [String: Color] {
-        ["hero.top": hero.top, "hero.bottom": hero.bottom]
+        [
+            "hero.top": hero.top,
+            "hero.bottom": hero.bottom,
+            "aiGradient.top": aiGradient.top,
+            "aiGradient.bottom": aiGradient.bottom
+        ]
     }
 }
 
@@ -132,12 +168,6 @@ private enum LightAccentPalette {
     static let medicationsContainer = Color(hex: 0xC4EFE3)
     static let medicationsOnContainer = Color(hex: 0x063D33)
 
-    // cycle — ExtendedColors.kt:45-50
-    static let cycleAccent = Color(hex: 0xAE5064)
-    static let cycleOnAccent = Color(hex: 0xFFFFFF)
-    static let cycleContainer = Color(hex: 0xF8DCE2)
-    static let cycleOnContainer = Color(hex: 0x451723)
-
     // vitals — ExtendedColors.kt:51-56
     static let vitalsAccent = Color(hex: 0x3E8D5F)
     static let vitalsOnAccent = Color(hex: 0xFFFFFF)
@@ -145,8 +175,9 @@ private enum LightAccentPalette {
     static let vitalsOnContainer = Color(hex: 0x0D2E1C)
 
     // appointments — ExtendedColors.kt:57-62.
-    // `accent` deliberately equals the brand `primary` — that is not a copy-paste slip,
-    // do not "differentiate" it.
+    // §3.1 note: `accent` was historically the brand primary; in M15 the brand `primary` moved
+    // to emerald-800 (`#065F46`), but appointments keeps its pre-M15 `#3E7D5F` accent — that is
+    // not a copy-paste slip, do not "differentiate" it.
     static let appointmentsAccent = Color(hex: 0x3E7D5F)
     static let appointmentsOnAccent = Color(hex: 0xFFFFFF)
     static let appointmentsContainer = Color(hex: 0xD5E8DC)
@@ -158,6 +189,13 @@ private enum LightAccentPalette {
     static let trendsContainer = Color(hex: 0xDEE0FF)
     static let trendsOnContainer = Color(hex: 0x00105C)
 
+    // cycle — ExtendedColors.kt:75-80. The cycle accent is the tertiary role itself: "period"
+    // is one hue app-wide, whether it is drawn as a feature accent or as a Material surface.
+    static let cycleAccent = Color(hex: 0xE11D48) // TertiaryLight — rose-600
+    static let cycleOnAccent = Color(hex: 0xFFFFFF) // OnTertiaryLight
+    static let cycleContainer = Color(hex: 0xFFE4E6) // TertiaryContainerLight — rose-100
+    static let cycleOnContainer = Color(hex: 0x881337) // OnTertiaryContainerLight — rose-900
+
     // §3.3 status colors
     static let success = Color(hex: 0x2E7D4F) // ExtendedColors.kt:84
     static let warning = Color(hex: 0xA66B00) // ExtendedColors.kt:85
@@ -166,6 +204,14 @@ private enum LightAccentPalette {
     static let heroTop = Color(hex: 0x2C6B4F)
     static let heroBottom = Color(hex: 0x3E7D5F)
     static let hero = SalusGradient(top: heroTop, bottom: heroBottom)
+
+    // §3.6 structural and metric roles — ExtendedColors.kt:109-118
+    static let cardBorder = Color(hex: 0xD6E2DA) // OutlineLight
+    static let accentGlow = Color(hex: 0x065F46).opacity(0.16) // PrimaryLight @ 16 %
+    static let overline = Color(hex: 0x065F46) // PrimaryLight (emerald-800)
+    static let metricUp = Color(hex: 0x065F46) // PrimaryLight
+    static let metricDown = Color(hex: 0xE11D48) // TertiaryLight
+    static let aiGradient = SalusGradient(top: Color(hex: 0x065F46), bottom: Color(hex: 0xE11D48)) // primary → tertiary
 
     static let medications = FeatureAccent(
         accent: medicationsAccent,
@@ -207,12 +253,6 @@ private enum DarkAccentPalette {
     static let medicationsContainer = Color(hex: 0x0F4A3D)
     static let medicationsOnContainer = Color(hex: 0xBFF2E3)
 
-    // cycle — ExtendedColors.kt:84-89
-    static let cycleAccent = Color(hex: 0xEC93A8)
-    static let cycleOnAccent = Color(hex: 0x4C1926)
-    static let cycleContainer = Color(hex: 0x5C2735)
-    static let cycleOnContainer = Color(hex: 0xFBD5DE)
-
     // vitals — ExtendedColors.kt:90-95
     static let vitalsAccent = Color(hex: 0x86CFA1)
     static let vitalsOnAccent = Color(hex: 0x0C3A22)
@@ -231,14 +271,30 @@ private enum DarkAccentPalette {
     static let trendsContainer = Color(hex: 0x363E90)
     static let trendsOnContainer = Color(hex: 0xDEE0FF)
 
+    // cycle — ExtendedColors.kt:129-134. The cycle accent is the tertiary role itself — see the
+    // light set.
+    static let cycleAccent = Color(hex: 0xFB7185) // TertiaryDark — rose-400
+    static let cycleOnAccent = Color(hex: 0x4C0519) // OnTertiaryDark — rose-950
+    static let cycleContainer = Color(hex: 0x4C0519) // TertiaryContainerDark — rose-950
+    static let cycleOnContainer = Color(hex: 0xFECDD3) // OnTertiaryContainerDark — rose-200
+
     // §3.3 status colors
     static let success = Color(hex: 0x7ED29A) // ExtendedColors.kt:124
     static let warning = Color(hex: 0xE5B85C) // ExtendedColors.kt:125
 
-    // §3.5 hero gradient — ExtendedColors.kt:126-129
-    static let heroTop = Color(hex: 0x1E4A36)
-    static let heroBottom = Color(hex: 0x275B43)
+    // §3.5 hero gradient — ExtendedColors.kt:158-161. Subtle in dark: the hero rises out of the
+    // app ground into the primary container instead of being a painted panel of its own.
+    static let heroTop = Color(hex: 0x090D0B) // BackgroundDark
+    static let heroBottom = Color(hex: 0x064E3B) // PrimaryContainerDark
     static let hero = SalusGradient(top: heroTop, bottom: heroBottom)
+
+    // §3.6 structural and metric roles — ExtendedColors.kt:162-172
+    static let cardBorder = Color(hex: 0x2A352E) // OutlineDark
+    static let accentGlow = Color(hex: 0x34D399).opacity(0.24) // PrimaryDark @ 24 %
+    static let overline = Color(hex: 0x10B981) // emerald-500 — the palette 500
+    static let metricUp = Color(hex: 0x34D399) // PrimaryDark
+    static let metricDown = Color(hex: 0xFB7185) // TertiaryDark
+    static let aiGradient = SalusGradient(top: Color(hex: 0x34D399), bottom: Color(hex: 0xFB7185)) // primary → tertiary
 
     static let medications = FeatureAccent(
         accent: medicationsAccent,
@@ -273,7 +329,7 @@ private enum DarkAccentPalette {
 }
 
 extension SalusExtendedColors {
-    /// §3.1 / §3.3 / §3.5 — light.
+    /// §3.1 / §3.3 / §3.5 / §3.6 — light.
     public static let light = SalusExtendedColors(
         medications: LightAccentPalette.medications,
         cycle: LightAccentPalette.cycle,
@@ -282,10 +338,16 @@ extension SalusExtendedColors {
         trends: LightAccentPalette.trends,
         success: LightAccentPalette.success,
         warning: LightAccentPalette.warning,
-        hero: LightAccentPalette.hero
+        hero: LightAccentPalette.hero,
+        cardBorder: LightAccentPalette.cardBorder,
+        accentGlow: LightAccentPalette.accentGlow,
+        overline: LightAccentPalette.overline,
+        metricUp: LightAccentPalette.metricUp,
+        metricDown: LightAccentPalette.metricDown,
+        aiGradient: LightAccentPalette.aiGradient
     )
 
-    /// §3.2 / §3.3 / §3.5 — dark.
+    /// §3.2 / §3.3 / §3.5 / §3.6 — dark.
     public static let dark = SalusExtendedColors(
         medications: DarkAccentPalette.medications,
         cycle: DarkAccentPalette.cycle,
@@ -294,6 +356,12 @@ extension SalusExtendedColors {
         trends: DarkAccentPalette.trends,
         success: DarkAccentPalette.success,
         warning: DarkAccentPalette.warning,
-        hero: DarkAccentPalette.hero
+        hero: DarkAccentPalette.hero,
+        cardBorder: DarkAccentPalette.cardBorder,
+        accentGlow: DarkAccentPalette.accentGlow,
+        overline: DarkAccentPalette.overline,
+        metricUp: DarkAccentPalette.metricUp,
+        metricDown: DarkAccentPalette.metricDown,
+        aiGradient: DarkAccentPalette.aiGradient
     )
 }
