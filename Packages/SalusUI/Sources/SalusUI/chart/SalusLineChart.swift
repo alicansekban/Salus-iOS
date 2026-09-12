@@ -84,11 +84,6 @@ public struct SalusLineChart: View {
     /// 16 % light, so the halo reads as light around the line rather than as a second line.
     private var glowColor: Color { theme.extendedColors.accentGlow }
 
-    /// Grid lines and ticks. Vico gets `outlineVariant` from `rememberM3VicoTheme()`
-    /// (`SalusLineChart.kt:117`); Swift Charts has no theme to hand a scheme to, so the role is
-    /// named per axis here.
-    private var gridColor: Color { theme.colorScheme.outlineVariant }
-
     private var chart: some View {
         Chart {
             glowMarks
@@ -180,20 +175,15 @@ public struct SalusLineChart: View {
     /// see `ChartAxisScale.xAxisValues(for:)` for how that lines up with Vico's item placer.
     private var xAxis: some AxisContent {
         AxisMarks(values: ChartAxisScale.xAxisValues(for: model)) { value in
-            AxisGridLine().foregroundStyle(gridColor)
-            AxisTick().foregroundStyle(gridColor)
+            AxisGridLine().foregroundStyle(ChartAxisStyle.gridColor(theme))
+            AxisTick().foregroundStyle(ChartAxisStyle.gridColor(theme))
             // The first and last marks sit exactly on the plot edges, because the domain is the
             // data's own range. A centred label there would hang half outside the chart, and Swift
             // Charts drops rather than clips it — the last date simply vanished. Anchoring the
             // extremes inwards is Vico's `shiftExtremeLines` idea applied to the labels.
             AxisValueLabel(anchor: Self.labelAnchor(at: value.index, of: value.count)) {
                 if let epochDay = value.as(Int.self) {
-                    // `labelSmall` on `onSurfaceVariant` — what `rememberM3VicoTheme()` gives Vico's
-                    // axis text (`SalusLineChart.kt:117`).
-                    Text(model.xLabel(epochDay))
-                        .font(SalusTypography.labelSmall.font)
-                        .tracking(SalusTypography.labelSmall.tracking)
-                        .foregroundStyle(theme.colorScheme.onSurfaceVariant)
+                    Text(model.xLabel(epochDay)).salusChartAxisLabel(theme: theme)
                 }
             }
         }
@@ -211,14 +201,11 @@ public struct SalusLineChart: View {
     /// "start" is the leading edge, which is `.leading` here.
     private var yAxis: some AxisContent {
         AxisMarks(position: .leading) { value in
-            AxisGridLine().foregroundStyle(gridColor)
-            AxisTick().foregroundStyle(gridColor)
+            AxisGridLine().foregroundStyle(ChartAxisStyle.gridColor(theme))
+            AxisTick().foregroundStyle(ChartAxisStyle.gridColor(theme))
             AxisValueLabel {
                 if let y = value.as(Double.self) {
-                    Text(model.yLabel(Float(y)))
-                        .font(SalusTypography.labelSmall.font)
-                        .tracking(SalusTypography.labelSmall.tracking)
-                        .foregroundStyle(theme.colorScheme.onSurfaceVariant)
+                    Text(model.yLabel(Float(y))).salusChartAxisLabel(theme: theme)
                 }
             }
         }

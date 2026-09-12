@@ -98,16 +98,11 @@ public struct SalusMultiSeriesChart: View {
     /// (`SalusMultiSeriesChart.kt:126`).
     private var xAxis: some AxisContent {
         AxisMarks(values: xAxisValues) { value in
-            AxisGridLine().foregroundStyle(theme.colorScheme.outlineVariant)
-            AxisTick().foregroundStyle(theme.colorScheme.outlineVariant)
+            AxisGridLine().foregroundStyle(ChartAxisStyle.gridColor(theme))
+            AxisTick().foregroundStyle(ChartAxisStyle.gridColor(theme))
             AxisValueLabel {
                 if let epochDay = value.as(Int.self) {
-                    // `labelSmall` on `onSurfaceVariant` — what `rememberM3VicoTheme()` gives Vico's
-                    // axis text (`SalusMultiSeriesChart.kt:99`).
-                    Text(model.xLabel(epochDay))
-                        .font(SalusTypography.labelSmall.font)
-                        .tracking(SalusTypography.labelSmall.tracking)
-                        .foregroundStyle(theme.colorScheme.onSurfaceVariant)
+                    Text(model.xLabel(epochDay)).salusChartAxisLabel(theme: theme)
                 }
             }
         }

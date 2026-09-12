@@ -62,11 +62,6 @@ public struct SalusBarChart: View {
     /// charts. The value is `tertiary` in every palette; the role is what moved.
     private var secondaryColor: Color { theme.extendedColors.metricDown }
 
-    /// Grid lines and ticks. Vico gets `outlineVariant` from `rememberM3VicoTheme()`
-    /// (`SalusBarChart.kt:108`); Swift Charts has no theme to hand a scheme to, so the role is
-    /// named per axis here.
-    private var gridColor: Color { theme.colorScheme.outlineVariant }
-
     private var chart: some View {
         Chart {
             ForEach(Array(model.bars.enumerated()), id: \.offset) { index, bar in
@@ -93,16 +88,11 @@ public struct SalusBarChart: View {
     /// The bottom axis turns each bar's index back into the caller's label (`SalusBarChart.kt:89-96`).
     private var xAxis: some AxisContent {
         AxisMarks(values: model.bars.indices.map { Double($0) }) { value in
-            AxisGridLine().foregroundStyle(gridColor)
-            AxisTick().foregroundStyle(gridColor)
+            AxisGridLine().foregroundStyle(ChartAxisStyle.gridColor(theme))
+            AxisTick().foregroundStyle(ChartAxisStyle.gridColor(theme))
             AxisValueLabel {
                 if let index = value.as(Int.self), model.bars.indices.contains(index) {
-                    // `labelSmall` on `onSurfaceVariant` — what `rememberM3VicoTheme()` gives Vico's
-                    // axis text (`SalusBarChart.kt:108`).
-                    Text(model.bars[index].label)
-                        .font(SalusTypography.labelSmall.font)
-                        .tracking(SalusTypography.labelSmall.tracking)
-                        .foregroundStyle(theme.colorScheme.onSurfaceVariant)
+                    Text(model.bars[index].label).salusChartAxisLabel(theme: theme)
                 }
             }
         }
@@ -112,14 +102,11 @@ public struct SalusBarChart: View {
     /// "start" is the leading edge, which is `.leading` here.
     private var yAxis: some AxisContent {
         AxisMarks(position: .leading) { value in
-            AxisGridLine().foregroundStyle(gridColor)
-            AxisTick().foregroundStyle(gridColor)
+            AxisGridLine().foregroundStyle(ChartAxisStyle.gridColor(theme))
+            AxisTick().foregroundStyle(ChartAxisStyle.gridColor(theme))
             AxisValueLabel {
                 if let y = value.as(Double.self) {
-                    Text(model.yLabel(Float(y)))
-                        .font(SalusTypography.labelSmall.font)
-                        .tracking(SalusTypography.labelSmall.tracking)
-                        .foregroundStyle(theme.colorScheme.onSurfaceVariant)
+                    Text(model.yLabel(Float(y))).salusChartAxisLabel(theme: theme)
                 }
             }
         }
