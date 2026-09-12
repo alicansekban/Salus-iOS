@@ -70,4 +70,47 @@ struct SalusStepperFieldTests {
 
         #expect(committed == "72.5")
     }
+
+    /// The caller contract in the file header, from the field's side. The range left the component
+    /// (`parse` answers yes/no, there is no `range`), so out-of-range text is routine and the
+    /// caller's answer to it is a *clamped re-emission*. `commit()` leaves `lastSeed` holding what
+    /// it reported, so that re-emission arrives as a moved seed and replaces the text — no flash,
+    /// no second round trip.
+    @Test("a caller's clamped re-emission replaces the text that was reported")
+    func clampedReEmissionReplacesTheReportedText() {
+        let text = SalusStepperFieldState.reseeded(
+            text: "999",
+            seed: "250",
+            lastSeed: "999",
+            editing: false
+        )
+
+        #expect(text == "250")
+    }
+
+    /// `SalusStepperField.kt:111-116` — a seed that moved wins even mid-edit, because with the
+    /// field focused a nudge is the only way it moves and the user is watching the number.
+    @Test("a seed that moved wins even while the field is being edited")
+    func movedSeedWinsWhileEditing() {
+        let text = SalusStepperFieldState.reseeded(text: "7", seed: "3", lastSeed: "2", editing: true)
+
+        #expect(text == "3")
+    }
+
+    /// `SalusStepperField.kt:117-121` — while an edit is open the keystrokes are the truth; once
+    /// it closes the value is, which is what re-asserts the number after a reverted edit.
+    @Test(
+        "an unmoved seed yields to keystrokes while editing and re-asserts itself after",
+        arguments: [(true, "7"), (false, "70")]
+    )
+    func unmovedSeedFollowsTheEditState(_ editing: Bool, _ expected: String) {
+        let text = SalusStepperFieldState.reseeded(
+            text: "7",
+            seed: "70",
+            lastSeed: "70",
+            editing: editing
+        )
+
+        #expect(text == expected)
+    }
 }

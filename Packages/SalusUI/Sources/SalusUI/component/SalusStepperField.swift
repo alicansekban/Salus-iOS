@@ -10,6 +10,23 @@
 // `parse` therefore answers a yes/no (is this text a number this field accepts?) rather than
 // returning one, and `rangeHint` is Kotlin's `hint` (`:89`) under the name spec §3.3 gives it.
 //
+// **THE CALLER CONTRACT THAT COMES WITH THAT, and it binds: a state holder must answer every
+// `onValueChange` — by accepting the text as the new `value`, or by clamping it and re-emitting
+// the value it will accept. Silently ignoring one is a bug in the caller, not in the field.**
+//
+// The field cannot cover for it. `value` reaches a SwiftUI view only as a new struct, so from in
+// here "the caller declined" and "the caller has not answered yet" are the same non-event: there
+// is nothing to re-seed from and the field would go on displaying a number the state holder
+// rejected. Kotlin is not in this position twice over — its re-seed block runs on *every*
+// recomposition (`SalusStepperField.kt:111-121`), and it clamps to `range` itself before reporting
+// (`:151`), so a decline is close to unreachable there. Neither half survives moving the range out
+// of the component, which is why the obligation is written down here instead.
+//
+// A caller that honours it is corrected on the very next update at no cost: `commit()` leaves
+// `lastSeed` holding what was reported, so a re-emitted (clamped) `value` differs from it and
+// `syncSeed()` replaces the text, while an accepted one matches and nothing moves — no flash
+// either way. Recorded as an iOS divergence for spec §9 (see `task-3-report.md`).
+//
 // **Recorded deviation from the plan's Interfaces block:** `keyboard` is a
 // ``SalusTextField/Keyboard``, not a `UIKeyboardType`. `SalusUI` builds for macOS too — that is
 // what hosts `swift test` — and `UIKeyboardType` does not exist there, so the parameter would
@@ -195,21 +212,34 @@ public struct SalusStepperField: View {
     }
 
     /// `SalusStepperField.kt:110-121` — the value moved underneath the field (a nudge, a unit
-    /// switch, a reload) and that wins; while the field is not being edited the value is the
-    /// source of truth, and while it is, the user's keystrokes are.
+    /// switch, a reload) and that wins, even mid-edit; while the field is not being edited the
+    /// value is the source of truth, and while it is, the user's keystrokes are.
+    ///
+    /// Kotlin runs this on every recomposition; here it runs when the field appears and whenever
+    /// `value` or `placeholder` actually changes — which is every moment it has anything to do,
+    /// **provided the caller answers what `commit()` reported** (see the file header). It cannot
+    /// restore a value the caller declined without changing `value`, because no update arrives to
+    /// run it.
     private func syncSeed() {
         let seed = seed
-        if seed != lastSeed {
-            lastSeed = seed
-            text = seed
-        } else if !editing, text != seed {
-            text = seed
-        }
+        text = SalusStepperFieldState.reseeded(
+            text: text,
+            seed: seed,
+            lastSeed: lastSeed,
+            editing: editing
+        )
+        lastSeed = seed
     }
 
     /// Ends the edit. Clearing `editing` first is what makes this run exactly once: Done commits
     /// and then drops focus, and the focus handler only commits while an edit is still open
     /// (`SalusStepperField.kt:136-157`).
+    ///
+    /// What it reports is a *proposal*, and the caller owes it an answer — accept it as the new
+    /// `value`, or clamp it and re-emit (the file header states the contract and why the field
+    /// cannot enforce it). `lastSeed` is left holding the reported text so that either answer is
+    /// picked up by ``syncSeed()`` on the next update: a clamped re-emission differs from it and
+    /// replaces the text, an accepted one matches and nothing moves.
     private func commit() {
         editing = false
         let typed = text
@@ -244,6 +274,19 @@ enum SalusStepperFieldState {
     /// only holds numbers (`SalusStepperField.kt:141-157`).
     static func committed(text: String, seed: String, parse: (String) -> Bool) -> String {
         parse(text) ? text : seed
+    }
+
+    /// The text the field holds after an update, given the seed it now has and the one it had
+    /// (`SalusStepperField.kt:110-121`).
+    ///
+    /// A seed that moved wins outright, mid-edit included: with the field focused, tapping − or +
+    /// is the only way that happens and the user is watching the number they just nudged. It is
+    /// also how a caller's clamped re-emission lands, because `commit()` leaves `lastSeed` holding
+    /// what it reported. A seed that did not move yields to the keystrokes while an edit is open,
+    /// and otherwise re-asserts itself, which is the "the value is the source of truth" half.
+    static func reseeded(text: String, seed: String, lastSeed: String, editing: Bool) -> String {
+        guard seed == lastSeed else { return seed }
+        return editing ? text : seed
     }
 }
 
