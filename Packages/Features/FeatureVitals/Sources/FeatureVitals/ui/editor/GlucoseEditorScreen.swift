@@ -5,7 +5,7 @@
 // screen adds over `BloodPressureEditorScreen`:
 //   `SingleChoiceSegmentedButtonRow`   → a `.segmented` `Picker`, the same widget the list screen's
 //                                        type selector already is.
-//   `Row { FilterChip … }`             → `ChipFlowLayout` of `SalusFilterChip`s. Kotlin's plain
+//   `Row { FilterChip … }`             → `ChipFlowLayout` of `SalusChoiceChip`s. Kotlin's plain
 //                                        `Row` does not wrap, and the four Turkish context labels
 //                                        ("Açlık", "Tokluk", "Yatmadan önce", "Rastgele") do not
 //                                        fit one line on any phone — the layout that wraps is what
@@ -183,7 +183,7 @@ struct GlucoseEditorScreen: View {
     private var contextChips: some View {
         ChipFlowLayout(spacing: SalusSpacing.sm) {
             ForEach(MeasurementContext.allCases, id: \.self) { context in
-                SalusFilterChip(
+                SalusChoiceChip(
                     label: context.vitalsLabel,
                     isSelected: state.measurementContext == context
                 ) {

@@ -58,7 +58,7 @@ public struct SalusDateTile: View {
 }
 
 /// The two accent resolutions of `SalusDateTile.kt:34-35`, hoisted out of the view so the fallback
-/// is testable without rendering it — the shape `SalusOptionRowStyle` sets.
+/// is testable without rendering it — the shape `SalusSelectableRowStyle` sets.
 enum SalusDateTileStyle {
     /// `accent?.container ?: colorScheme.primaryContainer` (`SalusDateTile.kt:34`).
     static func container(accent: FeatureAccent?, theme: SalusResolvedTheme) -> Color {

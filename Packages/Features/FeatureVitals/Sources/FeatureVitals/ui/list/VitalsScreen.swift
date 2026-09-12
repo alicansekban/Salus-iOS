@@ -5,7 +5,7 @@
 //   `SingleChoiceSegmentedButtonRow` (types) → `Picker(…).pickerStyle(.segmented)`.
 //   `FilterChip` row (ranges)                → `Picker(…).pickerStyle(.segmented)`. There is no
 //                                              chip spec in `design-tokens.md`, so no
-//                                              `SalusFilterChip` is invented for one call site.
+//                                              `SalusChoiceChip` is invented for one call site.
 //   `LazyColumn`                             → `ScrollView` + `LazyVStack`.
 //   `CircularProgressIndicator`              → `ProgressView()`.
 //   `IconButton`                             → `Button` with a `Label`, icons as SF Symbols.

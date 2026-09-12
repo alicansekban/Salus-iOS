@@ -39,7 +39,7 @@ extension MedicationEditorScreen {
             fieldLabel(MedicationsStrings.editorForm)
             ChipFlowLayout(spacing: SalusSpacing.sm) {
                 ForEach(MedicationForm.allCases, id: \.self) { form in
-                    SalusFilterChip(label: form.label, isSelected: form == state.form) {
+                    SalusChoiceChip(label: form.label, isSelected: form == state.form) {
                         onEvent(.formSelected(form))
                     }
                 }
@@ -157,7 +157,7 @@ extension MedicationEditorScreen {
     var recurrenceSelector: some View {
         ChipFlowLayout(spacing: SalusSpacing.sm) {
             ForEach(Recurrence.allCases, id: \.self) { recurrence in
-                SalusFilterChip(
+                SalusChoiceChip(
                     label: Self.recurrenceLabel(recurrence),
                     isSelected: recurrence == state.recurrence
                 ) { onEvent(.recurrenceSelected(recurrence)) }
@@ -185,7 +185,7 @@ extension MedicationEditorScreen {
     private var daysOfWeekRow: some View {
         ChipFlowLayout(spacing: SalusSpacing.xs) {
             ForEach(Array(Self.dayLabels.enumerated()), id: \.offset) { index, label in
-                SalusFilterChip(label: label, isSelected: state.daysOfWeekMask & (1 << index) != 0) {
+                SalusChoiceChip(label: label, isSelected: state.daysOfWeekMask & (1 << index) != 0) {
                     onEvent(.dayOfWeekToggled(mondayBasedIndex: index))
                 }
             }

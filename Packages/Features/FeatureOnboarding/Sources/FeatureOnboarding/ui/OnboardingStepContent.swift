@@ -38,14 +38,14 @@
 //     Sentences`                     sits behind `#if os(iOS)` exactly as `ProfileScreen.swift:129`
 //                                    does for `.textContentType`.
 //   `ContentType.PersonFullName`   → `.textContentType(.name)` (same precedent).
-//   `imeAction = ImeAction.Done`   → DROPPED on both text steps, the recorded `SalusPillTextField`
+//   `imeAction = ImeAction.Done`   → DROPPED on both text steps, the recorded `SalusTextField`
 //     (`:83`, `:281`)                divergence: Compose's IME action relabels the return key *and*
 //                                    drives focus, SwiftUI splits those, and half of it is worse
-//                                    than none. `SalusPillTextField.swift`'s header carries the
+//                                    than none. `SalusTextField.swift`'s header carries the
 //                                    reasoning; the profile editor dropped `ImeAction.Next` for it.
 //   `MaterialTheme.shapes.large`   → `SalusShapes.largeShape` (24, `SalusDimensions.swift:35`).
 //
-// `MeasureField` keeps Kotlin's name and shape but calls `SalusPillTextField` with
+// `MeasureField` keeps Kotlin's name and shape but calls `SalusTextField` with
 // `keyboard: .decimal`, which is where `MeasurementInput`'s comma→dot normalisation (divergence
 // (h)) matters: the Turkish keyboard's decimal separator is a comma, and the state's
 // `showInvalidWeight` already parses through it.
@@ -152,7 +152,7 @@ struct OnboardingStepContent: View {
 
     /// `OnboardingStepContent.kt:75-88`.
     private var nameField: some View {
-        SalusPillTextField(
+        SalusTextField(
             text: Binding(get: { state.name }, set: { onEvent(.nameChanged($0)) }),
             placeholder: OnboardingStrings.onboardingNamePlaceholder,
             capitalization: .words,
@@ -174,7 +174,7 @@ struct OnboardingStepContent: View {
     private var sexOptions: some View {
         VStack(alignment: .leading, spacing: SalusSpacing.lg) {
             ForEach(Sex.allCases, id: \.self) { option in
-                SalusOptionRow(
+                SalusSelectableRow(
                     systemImage: option.onboardingSystemImage,
                     label: option.onboardingLabel,
                     isSelected: state.sex == option,
@@ -339,7 +339,7 @@ private struct MeasureField: View {
     let error: String
 
     var body: some View {
-        SalusPillTextField(
+        SalusTextField(
             text: Binding(get: { value }, set: { onValueChange($0) }),
             placeholder: placeholder,
             suffix: suffix,

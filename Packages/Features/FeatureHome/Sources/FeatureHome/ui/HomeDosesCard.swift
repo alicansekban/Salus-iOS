@@ -5,10 +5,10 @@
 //   `Spacer(width = md)` + `Modifier.weight(1f)` → a leading `padding` on a greedy `frame`, which
 //                                                  is the same drawn result: fixed time column,
 //                                                  `md` gap, name filling what is left.
-//   `SalusPillButton(tonal = true, accent = …)`  → `SalusUI.SalusPillButton`, argument for argument.
+//   `SalusButton(tonal = true, accent = …)`  → `SalusUI.SalusButton`, argument for argument.
 //
 // THE CARD IS NOT A BUTTON HERE, AND KOTLIN'S IS. Compose dispatches a tap to the innermost
-// clickable, so `SalusCard(onClick = …)` with a `SalusPillButton` inside it works there. On iOS
+// clickable, so `SalusCard(onClick = …)` with a `SalusButton` inside it works there. On iOS
 // `SalusCard(onTap:)` is `Button(action:) { surface }` (`SalusCard.swift:33-34`), and a `Button`
 // inside another `Button`'s label is treated as decoration: the outer one swallows the tap, so
 // "Al" would switch tabs and never record the dose. Three shipped features settled the shape —
@@ -99,11 +99,11 @@ private struct HomeDoseRow: View {
         }
     }
 
-    /// `if (dose.status == PENDING) SalusPillButton(...) else DoseStatusChip(...)`
+    /// `if (dose.status == PENDING) SalusButton(...) else DoseStatusChip(...)`
     /// (`HomeScreen.kt:244-255`). A sibling of `slot`, not a descendant of any Button.
     @ViewBuilder private var trailing: some View {
         if dose.status == .pending {
-            SalusPillButton(
+            SalusButton(
                 text: HomeStrings.takeDose,
                 tonal: true,
                 accent: theme.extendedColors.medications

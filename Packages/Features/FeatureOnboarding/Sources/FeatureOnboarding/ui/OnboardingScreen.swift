@@ -39,9 +39,9 @@
 //                                      the step is never dropped (`OnboardingViewModel.swift:49-53`
 //                                      already records that `includeNotificationStep` defaults to
 //                                      true here).
-//   `SalusPillButton(trailingIcon)`  → `trailingSystemImage:`, which this task adds to the
-//                                      component. Kotlin's `SalusPillButton` has carried both
-//                                      `icon` and `trailingIcon` since `SalusPillButton.kt:45-46`;
+//   `SalusButton(trailingIcon)`  → `trailingSystemImage:`, which this task adds to the
+//                                      component. Kotlin's `SalusButton` has carried both
+//                                      `icon` and `trailingIcon` since `SalusButton.kt:45-46`;
 //                                      the iOS port only had the leading one because no caller
 //                                      needed the other. This footer is the first
 //                                      (`OnboardingScreen.kt:145`), so the parameter arrives with
@@ -226,7 +226,7 @@ struct OnboardingScreen: View {
     private var footer: some View {
         VStack(spacing: 0) {
             Spacer().frame(height: SalusSpacing.xxl)
-            SalusPillButton(
+            SalusButton(
                 text: state.primaryLabel,
                 enabled: state.canContinue,
                 trailingSystemImage: state.primarySystemImage,

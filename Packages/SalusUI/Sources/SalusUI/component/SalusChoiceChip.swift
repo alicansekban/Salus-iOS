@@ -14,7 +14,7 @@ import SwiftUI
 
 /// Multi-select filter chip: tap to toggle. Selected chips lead with a checkmark, exactly as
 /// Material's does (`FilterChipDefaults`' `selectedIcon` slot, which Kotlin leaves at its default).
-public struct SalusFilterChip: View {
+public struct SalusChoiceChip: View {
     private let label: String
     private let isSelected: Bool
     private let action: () -> Void
@@ -84,9 +84,9 @@ public struct SalusFilterChip: View {
     return ZStack {
         theme.colorScheme.background
         HStack(spacing: SalusSpacing.sm) {
-            SalusFilterChip(label: "1 hour before", isSelected: true, action: {})
-            SalusFilterChip(label: "1 day before", isSelected: false, action: {})
-            SalusFilterChip(label: "1 week before", isSelected: false, action: {})
+            SalusChoiceChip(label: "1 hour before", isSelected: true, action: {})
+            SalusChoiceChip(label: "1 day before", isSelected: false, action: {})
+            SalusChoiceChip(label: "1 week before", isSelected: false, action: {})
         }
         .padding(SalusSpacing.lg)
     }

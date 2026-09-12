@@ -1,11 +1,11 @@
 // Ported from `core/ui/.../component/SalusEmptyState.kt:29-72`.
 //
 // Kotlin composes two other `:core:ui` components here — `SalusIconBadge` (`SalusEmptyState.kt:45`)
-// and `SalusPillButton` (`:69`). Neither was part of the iOS-M2 component set (they arrive with the
+// and `SalusButton` (`:69`). Neither was part of the iOS-M2 component set (they arrive with the
 // feature that first needs them on their own), so both were hand-drawn here as private views
 // rather than as public API that milestone did not owe.
 //
-// One of the two copies is now gone: `SalusPillButton` shipped with iOS-M6 and this file calls it
+// One of the two copies is now gone: `SalusButton` shipped with iOS-M6 and this file calls it
 // (iOS-M7 — the last of the three inline pills the M6 plan deferred). `SalusIconBadge` shipped
 // with iOS-M5 too, but in its *default* 40/22 size, which is not the 72/32 one this file draws, so
 // the private badge below stays until a caller needs the large one as public API too. Its
@@ -71,11 +71,11 @@ public struct SalusEmptyState: View {
             }
             if let actionLabel, let onAction {
                 Spacer().frame(height: SalusSpacing.xl)
-                // `SalusPillButton(text = actionLabel, onClick = onAction)`
+                // `SalusButton(text = actionLabel, onClick = onAction)`
                 // (`SalusEmptyState.kt:69`) — the default filled, content-width pill. This was
-                // hand-drawn here until `SalusPillButton` shipped with iOS-M6; the component draws
+                // hand-drawn here until `SalusButton` shipped with iOS-M6; the component draws
                 // the identical capsule, so the copy is gone.
-                SalusPillButton(text: actionLabel, action: onAction)
+                SalusButton(text: actionLabel, action: onAction)
             }
         }
         .frame(maxWidth: .infinity)

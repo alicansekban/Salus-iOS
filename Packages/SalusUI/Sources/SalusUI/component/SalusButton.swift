@@ -1,9 +1,9 @@
-// Ported from `core/ui/.../component/SalusPillButton.kt:38-101`.
+// Ported from `core/ui/.../component/SalusButton.kt:38-101` in its pre-M15 M14 shape.
 //
 // The pill is hand-drawn — `.buttonStyle(.plain)` over a `SalusShapes.pill` background — rather
 // than worn as one of SwiftUI's bordered button styles, and the reason is the touch target.
 // Kotlin hangs `heightIn(min = SalusTouchTarget.min)` on the *container*
-// (`SalusPillButton.kt:67`, passed as the button's own `Modifier` at `:71` and `:86`), so the drawn
+// (`SalusButton.kt:67`, passed as the button's own `Modifier` at `:71` and `:86`), so the drawn
 // pill is 48 dp and its clickable surface is the same 48 dp. `.bordered` / `.borderedProminent`
 // size their background to whatever label they are handed and pad around it, so the floor cannot
 // sit on their container: put it on the label and the pill draws 48 plus twice the style's padding,
@@ -25,7 +25,7 @@ import SwiftUI
 
 /// Fully rounded brand button. `tonal` switches from the filled primary style to the tonal
 /// (container-tinted) style for secondary actions. Pass the feature's `FeatureAccent` to color the
-/// button with that accent instead of the primary role (`SalusPillButton.kt:29-36`).
+/// button with that accent instead of the primary role (`SalusButton.kt:29-36`).
 ///
 /// Width is the caller's: Kotlin takes a `Modifier`, so whether the pill fills its row is decided
 /// at the call site rather than by the component for every one. Two widths, and only two:
@@ -41,7 +41,7 @@ import SwiftUI
 /// button reports its content width and the outer frame merely centres a text-width capsule in a
 /// full-width slot. The greedy frame has to be *inside*, after the horizontal padding — on the
 /// `HStack` it would overflow the row by `2 × SalusSpacing.xl`.
-public struct SalusPillButton: View {
+public struct SalusButton: View {
     private let text: String
     private let enabled: Bool
     private let tonal: Bool
@@ -53,10 +53,10 @@ public struct SalusPillButton: View {
 
     /// - Parameters:
     ///   - systemImage: SF Symbol name for the leading icon, which labels the action and leads the
-    ///     text (`SalusPillButton.kt:34-35`). Kotlin takes an `ImageVector` from `Icons`; the iOS
+    ///     text (`SalusButton.kt:34-35`). Kotlin takes an `ImageVector` from `Icons`; the iOS
     ///     twin of that catalogue is SF Symbols, named rather than referenced.
     ///   - trailingSystemImage: SF Symbol name for the trailing icon, which "points at what
-    ///     happens next" (`SalusPillButton.kt:34-35`, `trailingIcon` at `:46`). Unported until
+    ///     happens next" (`SalusButton.kt:34-35`, `trailingIcon` at `:46`). Unported until
     ///     iOS-M8 because no caller passed one; the onboarding footer is the first
     ///     (`OnboardingScreen.kt:145`), so the parameter arrives with it rather than the whole
     ///     button being reimplemented at the call site. Additive and defaulted, so every existing
@@ -86,7 +86,7 @@ public struct SalusPillButton: View {
 
     public var body: some View {
         Button(action: action) {
-            SalusPillLabel(
+            SalusButtonLabel(
                 text: text,
                 enabled: enabled,
                 tonal: tonal,
@@ -104,18 +104,17 @@ public struct SalusPillButton: View {
     }
 }
 
-/// The drawn pill on its own — everything `SalusPillButton` shows, minus the `Button`.
+/// The drawn pill on its own — everything `SalusButton` shows, minus the `Button`.
 ///
-/// Split out so a *system* control can wear the same capsule: `ShareLink` is the one SwiftUI
-/// button the app cannot replace with its own `Button` + action (there is no public API that
-/// presents the share sheet from a closure the way `Intent.createChooser` does on Android), and
-/// it takes a label view. Wrapping it in this label keeps the doctor report's Share pill
-/// byte-for-byte the pill next to it instead of a second hand-drawn capsule (`DoctorReportScreen.swift`).
-/// Every other call site keeps using `SalusPillButton`; this is not a second button component.
+/// Internal rather than public (the renamed `SalusPillLabel`): a system control can wear the same
+/// capsule, because `ShareLink` is the one SwiftUI button the app cannot replace with its own
+/// `Button` + action (there is no public API that presents the share sheet from a closure the way
+/// `Intent.createChooser` does on Android), and it takes a label view. `DoctorReportScreen.swift`
+/// keeps its Share pill byte-for-byte the pill next to it through this label.
 ///
 /// The caller is responsible for `.buttonStyle(.plain)` on whatever control wraps it, exactly as
-/// `SalusPillButton` does, so the system style does not pad a second background around the pill.
-public struct SalusPillLabel: View {
+/// `SalusButton` does, so the system style does not pad a second background around the pill.
+struct SalusButtonLabel: View {
     private let text: String
     private let enabled: Bool
     private let tonal: Bool
@@ -126,7 +125,7 @@ public struct SalusPillLabel: View {
 
     @Environment(\.salusTheme) private var theme
 
-    public init(
+    init(
         text: String,
         enabled: Bool = true,
         tonal: Bool = false,
@@ -144,7 +143,7 @@ public struct SalusPillLabel: View {
         self.fillsWidth = fillsWidth
     }
 
-    public var body: some View {
+    var body: some View {
         HStack(spacing: SalusSpacing.sm) {
             if let systemImage {
                 Image(systemName: systemImage)
@@ -156,7 +155,7 @@ public struct SalusPillLabel: View {
             Text(verbatim: text)
                 .font(SalusTypography.labelLarge.font)
                 .tracking(SalusTypography.labelLarge.tracking)
-            // `trailingIcon` (`SalusPillButton.kt:58-65`), the same `ButtonIconSize` and the
+            // `trailingIcon` (`SalusButton.kt:58-65`), the same `ButtonIconSize` and the
             // same `SalusSpacing.sm` gap the leading icon gets.
             if let trailingSystemImage {
                 Image(systemName: trailingSystemImage)
@@ -166,7 +165,7 @@ public struct SalusPillLabel: View {
         // `ButtonDefaults.ContentPadding`'s 24 dp horizontal, which Kotlin inherits without
         // naming it — the same `SalusSpacing.xl` the empty state's pill already uses.
         .padding(.horizontal, SalusSpacing.xl)
-        // `heightIn(min = SalusTouchTarget.min)` (`SalusPillButton.kt:67`), on the container as
+        // `heightIn(min = SalusTouchTarget.min)` (`SalusButton.kt:67`), on the container as
         // Kotlin has it: the pill *draws* 48 pt and is hittable across exactly that, rather
         // than drawing short and reserving dead space around itself. The same frame carries
         // the caller's `fillMaxWidth()`, and it has to be this one: it is the last view before
@@ -181,7 +180,7 @@ public struct SalusPillLabel: View {
 
     private var colors: SalusColorScheme { theme.colorScheme }
 
-    /// Kotlin's `containerColor` (`SalusPillButton.kt:76`, `:91`), with `ButtonDefaults`' own
+    /// Kotlin's `containerColor` (`SalusButton.kt:76`, `:91`), with `ButtonDefaults`' own
     /// values — `primary` filled, `secondaryContainer` tonal — standing in for the `accent == null`
     /// rows.
     private var containerColor: Color {
@@ -190,7 +189,7 @@ public struct SalusPillLabel: View {
         return tonal ? accent.container : accent.accent
     }
 
-    /// Kotlin's `contentColor` (`SalusPillButton.kt:77`, `:92`), with `onPrimary` /
+    /// Kotlin's `contentColor` (`SalusButton.kt:77`, `:92`), with `onPrimary` /
     /// `onSecondaryContainer` for the `accent == null` rows.
     private var contentColor: Color {
         guard enabled else { return colors.onSurface.opacity(Self.disabledContentAlpha) }
@@ -205,7 +204,7 @@ public struct SalusPillLabel: View {
     private static let disabledContainerAlpha = 0.12
     private static let disabledContentAlpha = 0.38
 
-    /// `private val ButtonIconSize = 18.dp` (`SalusPillButton.kt:101`) — a Material component
+    /// `private val ButtonIconSize = 18.dp` (`SalusButton.kt:101`) — a Material component
     /// dimension that lives in the Kotlin file, not a token `design-tokens.md` carries.
     private static let iconSize: CGFloat = 18
 }
@@ -215,22 +214,22 @@ public struct SalusPillLabel: View {
     return ZStack {
         theme.colorScheme.background
         VStack(spacing: SalusSpacing.sm) {
-            // The two rows of `SalusPillButtonPreview` (`SalusPillButton.kt:104-115`).
-            SalusPillButton(text: "Log period", systemImage: "plus", action: {})
-            SalusPillButton(text: "Next", trailingSystemImage: "arrow.forward", action: {})
-            SalusPillButton(text: "View details", tonal: true, action: {})
+            // The two rows of `SalusButtonPreview` (`SalusButton.kt:104-115`).
+            SalusButton(text: "Log period", systemImage: "plus", action: {})
+            SalusButton(text: "Next", trailingSystemImage: "arrow.forward", action: {})
+            SalusButton(text: "View details", tonal: true, action: {})
             // The accent and disabled rows, which Kotlin's preview does not draw.
-            SalusPillButton(text: "Log period", accent: theme.extendedColors.cycle, action: {})
-            SalusPillButton(
+            SalusButton(text: "Log period", accent: theme.extendedColors.cycle, action: {})
+            SalusButton(
                 text: "View details",
                 tonal: true,
                 accent: theme.extendedColors.cycle,
                 action: {}
             )
-            SalusPillButton(text: "Log period", enabled: false, action: {})
+            SalusButton(text: "Log period", enabled: false, action: {})
             // The full-width row, which Kotlin's preview does not draw either: the caller that
             // passes `Modifier.fillMaxWidth()` (`CycleScreen.kt:137`).
-            SalusPillButton(
+            SalusButton(
                 text: "Log period",
                 accent: theme.extendedColors.cycle,
                 fillsWidth: true,

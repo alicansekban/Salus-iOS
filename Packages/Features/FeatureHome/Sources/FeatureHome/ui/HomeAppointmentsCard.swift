@@ -45,7 +45,7 @@ struct HomeAppointmentsCard: View {
                         }
                         // `Spacer(height = sm)` then the trailing pill (`HomeScreen.kt:381-387`).
                         Spacer().frame(height: SalusSpacing.sm)
-                        SalusPillButton(text: HomeStrings.viewDetails, tonal: true, action: onTap)
+                        SalusButton(text: HomeStrings.viewDetails, tonal: true, action: onTap)
                             .frame(maxWidth: .infinity, alignment: .trailing)
                     }
                 }

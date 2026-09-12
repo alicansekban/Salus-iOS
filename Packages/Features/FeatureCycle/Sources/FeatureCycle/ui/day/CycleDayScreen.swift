@@ -13,7 +13,7 @@
 //                                  swipe-back gesture, which is a worse trade than an unread
 //                                  string; the string stays in the catalog because the catalog is
 //                                  Android-verbatim.
-//   `FilterChip` in a `FlowRow`  → `ChipFlowLayout` of `SalusFilterChip`s, which wraps on measured
+//   `FilterChip` in a `FlowRow`  → `ChipFlowLayout` of `SalusChoiceChip`s, which wraps on measured
 //                                  width exactly as `FlowRow` does.
 //   `OutlinedTextField`          → `TextField(…, axis: .vertical).textFieldStyle(.roundedBorder)`.
 //   `CircularProgressIndicator`  → `ProgressView()`.
@@ -89,7 +89,7 @@ struct CycleDayScreen: View {
     private var symptomChips: some View {
         ChipFlowLayout(spacing: SalusSpacing.sm) {
             ForEach(state.symptoms) { symptom in
-                SalusFilterChip(
+                SalusChoiceChip(
                     label: CycleStrings.symptomLabel(nameKey: symptom.nameKey),
                     isSelected: symptom.isSelected
                 ) { onEvent(.symptomToggled(symptom.id)) }
@@ -101,7 +101,7 @@ struct CycleDayScreen: View {
     private var flowChips: some View {
         ChipFlowLayout(spacing: SalusSpacing.sm) {
             ForEach(FlowLevel.allCases, id: \.self) { level in
-                SalusFilterChip(
+                SalusChoiceChip(
                     label: CycleStrings.flowLabel(level),
                     isSelected: state.flow == level
                 ) { onEvent(.flowSelected(level)) }
@@ -113,7 +113,7 @@ struct CycleDayScreen: View {
     private var moodChips: some View {
         ChipFlowLayout(spacing: SalusSpacing.sm) {
             ForEach(Mood.allCases, id: \.self) { mood in
-                SalusFilterChip(
+                SalusChoiceChip(
                     label: CycleStrings.moodLabel(mood),
                     isSelected: state.mood == mood
                 ) { onEvent(.moodSelected(mood)) }
@@ -144,7 +144,7 @@ struct CycleDayScreen: View {
     /// the whole width story: an outer `.frame(maxWidth: .infinity)` would only centre a
     /// content-width capsule, since the drawn pill has to be widened from inside the component.
     private var saveButton: some View {
-        SalusPillButton(
+        SalusButton(
             text: CycleStrings.save,
             enabled: !state.isSaving,
             accent: theme.extendedColors.cycle,

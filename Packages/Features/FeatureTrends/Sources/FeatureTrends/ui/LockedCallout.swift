@@ -32,7 +32,7 @@ struct LockedCallout: View {
                     .tracking(SalusTypography.bodyMedium.tracking)
                     .foregroundStyle(theme.colorScheme.onSurfaceVariant)
                 Spacer().frame(height: SalusSpacing.lg)
-                SalusPillButton(
+                SalusButton(
                     text: TrendsStrings.lockedAction,
                     accent: theme.extendedColors.trends,
                     action: onUpgrade

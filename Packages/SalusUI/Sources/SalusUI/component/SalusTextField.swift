@@ -1,5 +1,5 @@
 // Ported from `core/ui/src/main/kotlin/com/alicansekban/salus/core/ui/component/
-// SalusPillTextField.kt:35-120`.
+// SalusTextField.kt:35-120`.
 //
 // The model for the SwiftUI shape is `FeatureVitals`' `VitalsEditorField` (iOS-M7's `D-M7-y`), not
 // a bare `TextField`: Material's `TextField` carries `placeholder`, `suffix`, `isError` and
@@ -14,7 +14,7 @@
 //   `TextFieldDefaults.colors(…)`   → the container is drawn by hand: a `SalusShapes.pill` filled
 //    with four transparent          with `surfaceVariant` behind a `.plain` `TextField`. Kotlin
 //    indicators                     clears all four indicator colours to get a pill with no
-//                                   underline (`SalusPillTextField.kt:79-88`); SwiftUI's `.plain`
+//                                   underline (`SalusTextField.kt:79-88`); SwiftUI's `.plain`
 //                                   style has no indicator to clear.
 //   `isError` on a Material field   → an error **stroke** on that capsule. Because Kotlin cleared
 //                                   `errorIndicatorColor` too, `isError` there only reddens the
@@ -46,16 +46,16 @@ import SwiftUI
 
 /// Fully rounded filled text field carrying a placeholder instead of a floating label — the shape
 /// Material's own fields cannot take, because their indicator line and label animation both assume
-/// a flat-bottomed box (`SalusPillTextField.kt:26-33`).
+/// a flat-bottomed box (`SalusTextField.kt:26-33`).
 ///
 /// `suffix` is the unit that trails the value (`cm`, `kg`); `supportingText` is rendered below the
 /// pill rather than inside it, so the pill never changes height.
-public struct SalusPillTextField: View {
+public struct SalusTextField: View {
     /// Which keyboard the field asks for. A small enum rather than a `UIKeyboardType`, because
     /// this package builds for macOS too (the test host), where that type does not exist — the
     /// same reason `VitalsEditorField.Keyboard` is one.
     public enum Keyboard: Sendable {
-        /// `KeyboardOptions.Default` (`SalusPillTextField.kt:42`).
+        /// `KeyboardOptions.Default` (`SalusTextField.kt:42`).
         case standard
         /// `KeyboardType.Decimal` — the height field (`ProfileScreen.kt:158`).
         case decimal
@@ -85,7 +85,7 @@ public struct SalusPillTextField: View {
     @Environment(\.salusTheme) private var theme
 
     /// Every argument past `placeholder` is defaulted, exactly as Kotlin defaults them
-    /// (`SalusPillTextField.kt:39-45`). `enabled` is not ported: no caller disables one, and an
+    /// (`SalusTextField.kt:39-45`). `enabled` is not ported: no caller disables one, and an
     /// unused knob is a knob that drifts.
     ///
     /// - Parameter autocorrects: Kotlin's `autoCorrectEnabled`, which it sets independently of
@@ -117,20 +117,20 @@ public struct SalusPillTextField: View {
     public var body: some View {
         VStack(alignment: .leading, spacing: SalusSpacing.xs) {
             pill
-            if SalusPillTextFieldStyle.showsSupportingText(supportingText) {
-                // `SalusPillTextField.kt:91-104` — below the pill, inset to the content edge so it
+            if SalusTextFieldStyle.showsSupportingText(supportingText) {
+                // `SalusTextField.kt:91-104` — below the pill, inset to the content edge so it
                 // lines up with the value above it.
                 Text(verbatim: supportingText ?? "")
                     .font(SalusTypography.bodySmall.font)
                     .foregroundStyle(
-                        SalusPillTextFieldStyle.supportingTextColor(isError: isError, colors: colors)
+                        SalusTextFieldStyle.supportingTextColor(isError: isError, colors: colors)
                     )
                     .padding(.horizontal, Self.contentInset)
             }
         }
     }
 
-    /// `SalusPillTextField.kt:48-89` — the capsule, its value and its trailing unit.
+    /// `SalusTextField.kt:48-89` — the capsule, its value and its trailing unit.
     private var pill: some View {
         HStack(spacing: SalusSpacing.sm) {
             field
@@ -146,14 +146,14 @@ public struct SalusPillTextField: View {
         .frame(maxWidth: .infinity, minHeight: Self.height, alignment: .leading)
         .background(SalusShapes.pill.fill(colors.surfaceVariant))
         .overlay {
-            if let stroke = SalusPillTextFieldStyle.stroke(isError: isError, colors: colors) {
+            if let stroke = SalusTextFieldStyle.stroke(isError: isError, colors: colors) {
                 SalusShapes.pill.stroke(stroke, lineWidth: Self.errorStroke)
             }
         }
     }
 
     private var field: some View {
-        // `prompt:` is Kotlin's `placeholder = { Text(…) }` (`SalusPillTextField.kt:56-62`); the
+        // `prompt:` is Kotlin's `placeholder = { Text(…) }` (`SalusTextField.kt:56-62`); the
         // label repeats it so VoiceOver names a filled field too, and `.labelsHidden()` keeps it
         // off screen. `verbatim:` on both, because a resolved string handed to `Text(_:)` is read
         // as a `LocalizedStringKey` against the main bundle.
@@ -164,7 +164,7 @@ public struct SalusPillTextField: View {
         .textFieldStyle(.plain)
         .font(SalusTypography.bodyLarge.font)
         .foregroundStyle(colors.onSurface)
-        .lineLimit(SalusPillTextFieldStyle.lineLimit(isSingleLine: isSingleLine))
+        .lineLimit(SalusTextFieldStyle.lineLimit(isSingleLine: isSingleLine))
         #if os(iOS)
             .keyboardType(keyboard == .decimal ? .decimalPad : .default)
             .textInputAutocapitalization(autocapitalization)
@@ -174,7 +174,7 @@ public struct SalusPillTextField: View {
     }
 
     /// A single-line field never grows; a multi-line one does, which is what `singleLine = false`
-    /// buys the health-notes field (`SalusPillTextField.kt:41`).
+    /// buys the health-notes field (`SalusTextField.kt:41`).
     private var axis: Axis {
         isSingleLine ? .horizontal : .vertical
     }
@@ -191,7 +191,7 @@ public struct SalusPillTextField: View {
 
     private var colors: SalusColorScheme { theme.colorScheme }
 
-    /// `SalusPillTextFieldDefaults` (`SalusPillTextField.kt:109-120`). Component dimensions, not
+    /// `SalusTextFieldDefaults` (`SalusTextField.kt:109-120`). Component dimensions, not
     /// design tokens — Android keeps them in `:core:ui` too. `ContentPadding` is not ported: it
     /// exists there for the birth-date trigger, which on iOS is `SalusDateField` and draws its own.
     private static let height: CGFloat = 64
@@ -200,17 +200,17 @@ public struct SalusPillTextField: View {
     private static let errorStroke: CGFloat = 1
 }
 
-/// The decisions ``SalusPillTextField`` makes, lifted out of the view so they can be tested without
+/// The decisions ``SalusTextField`` makes, lifted out of the view so they can be tested without
 /// SwiftUI — the arrangement ``SalusDateFieldState`` sets.
-enum SalusPillTextFieldStyle {
-    /// `SalusPillTextField.kt:90` — an absent message and an empty one are the same thing, and
+enum SalusTextFieldStyle {
+    /// `SalusTextField.kt:90` — an absent message and an empty one are the same thing, and
     /// neither may add a row under the pill.
     static func showsSupportingText(_ supportingText: String?) -> Bool {
         guard let supportingText else { return false }
         return !supportingText.isEmpty
     }
 
-    /// `SalusPillTextField.kt:94-98`.
+    /// `SalusTextField.kt:94-98`.
     static func supportingTextColor(isError: Bool, colors: SalusColorScheme) -> Color {
         isError ? colors.error : colors.onSurfaceVariant
     }
@@ -221,7 +221,7 @@ enum SalusPillTextFieldStyle {
         isError ? colors.error : nil
     }
 
-    /// `singleLine` (`SalusPillTextField.kt:41`). The upper bound on the growing field keeps a long
+    /// `singleLine` (`SalusTextField.kt:41`). The upper bound on the growing field keeps a long
     /// note from pushing the rest of the form off screen, exactly as Compose's own scrolling field
     /// does.
     static func lineLimit(isSingleLine: Bool) -> ClosedRange<Int> {
@@ -239,11 +239,11 @@ enum SalusPillTextFieldStyle {
     return ZStack {
         theme.colorScheme.background
         VStack(spacing: SalusSpacing.md) {
-            // The four fields of `SalusPillTextFieldPreview` (`SalusPillTextField.kt:122-154`).
-            SalusPillTextField(text: $empty, placeholder: "Örn: Ayşe")
-            SalusPillTextField(text: $name, placeholder: "Örn: Ayşe", capitalization: .words)
-            SalusPillTextField(text: $height, placeholder: "Örn: 170", suffix: "cm", keyboard: .decimal)
-            SalusPillTextField(
+            // The four fields of `SalusTextFieldPreview` (`SalusTextField.kt:122-154`).
+            SalusTextField(text: $empty, placeholder: "Örn: Ayşe")
+            SalusTextField(text: $name, placeholder: "Örn: Ayşe", capitalization: .words)
+            SalusTextField(text: $height, placeholder: "Örn: 170", suffix: "cm", keyboard: .decimal)
+            SalusTextField(
                 text: $rejected,
                 placeholder: "Örn: 170",
                 suffix: "cm",

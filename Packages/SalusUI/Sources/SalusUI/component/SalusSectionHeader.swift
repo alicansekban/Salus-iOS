@@ -12,7 +12,7 @@ import SalusDesignSystem
 import SwiftUI
 
 /// The header's two padding values, named rather than spelled at each call site — the shape
-/// `SalusOptionRow`'s component dimensions set.
+/// `SalusSelectableRow`'s component dimensions set.
 public enum SalusSectionHeaderDefaults {
     /// Kotlin's `PaddingValues(horizontal = SalusSpacing.lg, vertical = SalusSpacing.sm)`
     /// (`SalusSectionHeader.kt:27-30`) — the header carries the screen inset itself.

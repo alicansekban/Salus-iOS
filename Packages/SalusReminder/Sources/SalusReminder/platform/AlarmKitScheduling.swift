@@ -161,7 +161,7 @@ public enum ReminderAlarmIdentity {
         ///     not a view: it runs from a sync with no SwiftUI environment around it, so the one
         ///     place that can resolve the theme is the composition root. Android's twin colours the
         ///     same buttons with the *medications* feature accent (`AlarmScreen.kt:143-150`, whose
-        ///     `SalusPillButton(accent = MaterialTheme.salusColors.medications)` fills the
+        ///     `SalusButton(accent = MaterialTheme.salusColors.medications)` fills the
         ///     un-tonal button with `accent.accent`), so that is the value to hand in — not
         ///     `Color.accentColor`, which this app has no asset for and which therefore resolved
         ///     to the system blue until iOS-M5's post-QA fix.

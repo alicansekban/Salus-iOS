@@ -221,21 +221,17 @@ private struct ReadyBody: View {
                 .frame(maxWidth: .infinity)
 
                 ShareLink(item: pdfFile) {
-                    SalusPillLabel(
-                        text: AiHealthStrings.doctorReportShare,
-                        systemImage: "square.and.arrow.up",
-                        fillsWidth: true
-                    )
+                    SharePillLabel(text: AiHealthStrings.doctorReportShare)
                 }
                 .buttonStyle(.plain)
-                SalusPillButton(
+                SalusButton(
                     text: AiHealthStrings.doctorReportPreview,
                     tonal: true,
                     systemImage: "list.bullet",
                     fillsWidth: true,
                     action: onPreview
                 )
-                SalusPillButton(
+                SalusButton(
                     text: AiHealthStrings.doctorReportRegenerate,
                     tonal: true,
                     fillsWidth: true,
@@ -251,6 +247,41 @@ private struct ReadyBody: View {
             .padding(.horizontal, SalusSpacing.lg)
         }
     }
+}
+
+/// The share pill `ShareLink` wears — the hand-drawn capsule the renamed `SalusButton` (was
+/// `SalusPillButton`) draws, made public here because a `ShareLink` is the one control that
+/// cannot be replaced by a `Button`, and there is no longer a public label component since
+/// `SalusPillLabel` was deleted in the M15 rename (spec §3.6). This draws the identical
+/// filled pill, byte for byte, so the Share action reads as the primary action next to the
+/// tonal Preview and Regenerate buttons.
+private struct SharePillLabel: View {
+    private let text: String
+
+    @Environment(\.salusTheme) private var theme
+
+    init(text: String) {
+        self.text = text
+    }
+
+    var body: some View {
+        HStack(spacing: SalusSpacing.sm) {
+            Image(systemName: "square.and.arrow.up")
+                .font(.system(size: Self.iconSize))
+            // `Text(verbatim:)` because `text` is already resolved.
+            Text(verbatim: text)
+                .font(SalusTypography.labelLarge.font)
+                .tracking(SalusTypography.labelLarge.tracking)
+        }
+        .padding(.horizontal, SalusSpacing.xl)
+        .frame(maxWidth: .infinity, minHeight: SalusTouchTarget.min)
+        .foregroundStyle(theme.colorScheme.onPrimary)
+        .background(SalusShapes.pill.fill(theme.colorScheme.primary))
+        .contentShape(.rect)
+    }
+
+    /// `private val ButtonIconSize = 18.dp` (`SalusButton.kt:101`).
+    private static let iconSize: CGFloat = 18
 }
 
 /// The centered empty-state block (`DoctorReportScreen.kt:495-517`).

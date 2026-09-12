@@ -42,7 +42,7 @@ extension View {
     /// the two cover the two gestures a user tries, a tap and a drag down over the form.
     ///
     /// Nothing is swallowed. The gesture runs *simultaneously* with whatever is under the finger,
-    /// so text fields, `SalusFilterChip`s, `SalusDateField` / `SalusTimeField`, toggles and buttons
+    /// so text fields, `SalusChoiceChip`s, `SalusDateField` / `SalusTimeField`, toggles and buttons
     /// keep their taps exactly as before. Read the file comment above before reaching for a
     /// tidier-looking `background` or `onTapGesture` instead: both were measured, and both are
     /// inert here.

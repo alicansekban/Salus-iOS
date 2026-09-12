@@ -26,7 +26,7 @@
 //                                      and the iOS segmented control has no per-segment icon slot.
 //   `ContentType.PersonFullName`     → `.textContentType(.name)`, AutoFill's twin of Compose's
 //                                      autofill content type.
-//   `imeAction = ImeAction.Next`     → DROPPED, a recorded divergence. `SalusPillTextField.swift`'s
+//   `imeAction = ImeAction.Next`     → DROPPED, a recorded divergence. `SalusTextField.swift`'s
 //    (`:114`, `:159`)                  header carries the reasoning: Compose's `Next` relabels the
 //                                      return key *and* advances focus, SwiftUI splits those, and
 //                                      half of it is worse than none. The multi-line field's
@@ -149,7 +149,7 @@ struct ProfileScreen: View {
     private var form: some View {
         VStack(alignment: .leading, spacing: SalusSpacing.md) {
             SalusSectionHeader(title: SettingsStrings.profileName)
-            SalusPillTextField(
+            SalusTextField(
                 text: Binding(get: { state.name }, set: { onEvent(.nameChanged($0)) }),
                 placeholder: SettingsStrings.profileNamePlaceholder,
                 capitalization: .words,
@@ -178,7 +178,7 @@ struct ProfileScreen: View {
                 .padding(.horizontal, SalusSpacing.lg)
 
             SalusSectionHeader(title: SettingsStrings.profileHeight)
-            SalusPillTextField(
+            SalusTextField(
                 text: Binding(get: { state.heightText }, set: { onEvent(.heightChanged($0)) }),
                 placeholder: SettingsStrings.profileHeightPlaceholder,
                 // The unit symbol is a literal on both platforms (`ProfileScreen.kt:150`).
@@ -191,7 +191,7 @@ struct ProfileScreen: View {
             .padding(.horizontal, SalusSpacing.lg)
 
             SalusSectionHeader(title: SettingsStrings.profileHealthNotes)
-            SalusPillTextField(
+            SalusTextField(
                 text: Binding(get: { state.healthNotes }, set: { onEvent(.healthNotesChanged($0)) }),
                 placeholder: SettingsStrings.profileHealthNotesPlaceholder,
                 isSingleLine: false,

@@ -11,7 +11,7 @@
 //   `OutlinedButton` + `DatePickerDialog` / `TimePickerDialog`
 //                                → `SalusDateField` / `SalusTimeField`, which are the button and
 //                                  its picker in one view (see those files' header comments).
-//   `FilterChip`                 → `SalusFilterChip`.
+//   `FilterChip`                 → `SalusChoiceChip`.
 //   `Button` / `OutlinedButton`  → `.borderedProminent` / `.bordered`.
 //   `AlertDialog`                → `.salusConfirmDialog(isPresented:…)`.
 //   `Intent(ACTION_INSERT)`      → a `.sheet` over `CalendarEventEditSheet` — divergence (e).
@@ -278,7 +278,7 @@ struct AppointmentEditorScreen: View {
                 .foregroundStyle(theme.colorScheme.onSurface)
             HStack(spacing: SalusSpacing.sm) {
                 ForEach(ReminderOffsets.options, id: \.self) { offsetMinutes in
-                    SalusFilterChip(
+                    SalusChoiceChip(
                         label: offsetLabel(offsetMinutes),
                         isSelected: state.selectedOffsets.contains(offsetMinutes)
                     ) { onEvent(.reminderOffsetToggled(offsetMinutes)) }

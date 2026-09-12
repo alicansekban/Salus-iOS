@@ -4,7 +4,7 @@
 // The paywall is a full-screen sheet rather than a destination, which is why it applies its own
 // safe-area padding — it is drawn above the shell's tab bar, outside its insets. The Android
 // `Surface` becomes a `Color` background; the `IconButton` becomes a plain `Button` over an SF
-// Symbol; the `RadioButton` selection is a hand-drawn ring, the same shape `SalusOptionRow` uses.
+// Symbol; the `RadioButton` selection is a hand-drawn ring, the same shape `SalusSelectableRow` uses.
 //
 // `onPurchase` is separate from `onEvent` because only the composition can reach the window the
 // store sheet attaches to; this file never learns what a purchase host is. `onOpenUrl` is separate
@@ -175,7 +175,7 @@ private struct PaywallActions: View {
             // The store sheet and the restore call are both "busy": one signal disables every
             // button here, so nothing can be fired twice.
             if state.plans.isEmpty {
-                SalusPillButton(
+                SalusButton(
                     text: PaywallStrings.retry,
                     enabled: !state.isPurchasing,
                     tonal: true,
@@ -183,7 +183,7 @@ private struct PaywallActions: View {
                     action: { onEvent(.reload) }
                 )
             } else {
-                SalusPillButton(
+                SalusButton(
                     text: selected?.hasFreeTrial == true
                         ? PaywallStrings.ctaTrial
                         : PaywallStrings.ctaSubscribe,
@@ -364,7 +364,7 @@ private struct PlanCard: View {
     }
 
     /// The radio mark, drawn rather than composed so it stays purely visual — the same shape
-    /// `SalusOptionRow`'s indicator uses.
+    /// `SalusSelectableRow`'s indicator uses.
     private var radioIndicator: some View {
         let colors = theme.colorScheme
         return SalusShapes.pill
@@ -383,7 +383,7 @@ private struct PlanCard: View {
     /// `SelectedBorderWidth = 2.dp` / `UnselectedBorderWidth = 1.dp` (`PaywallSheet.kt:440-441`).
     private static let selectedBorderWidth: CGFloat = 2
     private static let unselectedBorderWidth: CGFloat = 1
-    /// The radio ring, matching `SalusOptionRow`'s indicator dimensions.
+    /// The radio ring, matching `SalusSelectableRow`'s indicator dimensions.
     private static let indicatorSize: CGFloat = 24
     private static let indicatorBorder: CGFloat = 2
     private static let indicatorDotSize: CGFloat = 12

@@ -275,7 +275,7 @@ struct HomeScreen: View {
 ///
 ///   * **Cycle and vitals pass it.** They contain no interactive child, so the card can be the
 ///     real `Button` `SalusCard(onTap:)` builds — free button semantics, free VoiceOver.
-///   * **Doses and appointments do not.** Each contains a `SalusPillButton`, and a `Button` inside
+///   * **Doses and appointments do not.** Each contains a `SalusButton`, and a `Button` inside
 ///     another `Button`'s label is treated as decoration by SwiftUI: the outer one swallows the
 ///     tap. Three shipped features settled this — `VitalsRow` first, then `MedicationCard` and
 ///     `AppointmentCard` — so those two cards are non-interactive here and carry the "open" tap on

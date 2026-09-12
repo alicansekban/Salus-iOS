@@ -8,7 +8,7 @@
 //
 // The rows are Kotlin's rows, drawn plain on purpose: `RadioButton(selected) + Spacer(lg) +
 // Text(bodyLarge)` inside a `selectable` row with `md` vertical padding (`MoreScreen.kt:493-508`).
-// Not `SalusOptionRow` — that is the editors' pill row with an icon circle, and the release QA pass
+// Not `SalusSelectableRow` — that is the editors' pill row with an icon circle, and the release QA pass
 // found the two dialogs visibly different for it. `RadioButton` has no SwiftUI twin, so ``RadioMark``
 // draws Material's 20pt ring and 10pt dot from tokens.
 //

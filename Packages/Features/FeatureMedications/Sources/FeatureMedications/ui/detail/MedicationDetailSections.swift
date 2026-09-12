@@ -12,7 +12,7 @@
 // Material → SwiftUI, the same table `MedicationsScreen.swift` and `AppointmentDetailScreen.swift`
 // already list:
 //   `Switch(checked:onCheckedChange:)` → `Toggle(_:isOn:)` over a get/set `Binding`.
-//   `SalusPillButton`                  → `SalusUI.SalusPillButton`, one for one, since iOS-M7:
+//   `SalusButton`                  → `SalusUI.SalusButton`, one for one, since iOS-M7:
 //                                        `tonal:` for Kotlin's `tonal`, `fillsWidth:` for its
 //                                        `fillMaxWidth()`. The bordered stand-in is gone.
 //   `Icons.Outlined.NotificationsOff`  → the `bell.slash` SF Symbol, the same one the list card's
@@ -275,16 +275,16 @@ struct MedicationDetailActions: View {
         // Compose emits both as children of the screen's own `Column(spacedBy = md)`, so they are
         // spaced `md` here too. `fillsWidth: true` is Kotlin's `Modifier.fillMaxWidth()` on both
         // (`:339`, `:345`); an outer `.frame(maxWidth: .infinity)` would only centre a text-width
-        // capsule in a full-width slot (`SalusPillButton.swift:35-39`).
+        // capsule in a full-width slot (`SalusButton.swift:35-39`).
         VStack(spacing: SalusSpacing.md) {
-            SalusPillButton(
+            SalusButton(
                 text: MedicationsStrings.detailEdit,
                 fillsWidth: true,
                 action: onEdit
             )
 
             // `tonal = true` (`MedicationDetailScreen.kt:344`).
-            SalusPillButton(
+            SalusButton(
                 text: MedicationsStrings.detailDelete,
                 tonal: true,
                 fillsWidth: true,

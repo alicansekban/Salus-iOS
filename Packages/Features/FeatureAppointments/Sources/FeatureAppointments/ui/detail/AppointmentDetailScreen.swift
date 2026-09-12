@@ -7,7 +7,7 @@
 //                                 mutates (`WeightEditorScreen.swift` records the ruling).
 //   `Column(verticalScroll)`    → `ScrollView` + `VStack`.
 //   `FlowRow`                   → `SalusUI.ChipFlowLayout`; SwiftUI ships no flow stack.
-//   `SalusPillButton`           → `SalusUI.SalusPillButton`, one for one, since iOS-M7: `tonal:`
+//   `SalusButton`           → `SalusUI.SalusButton`, one for one, since iOS-M7: `tonal:`
 //                                 for Kotlin's `tonal`, `fillsWidth:` for its `fillMaxWidth()`,
 //                                 `enabled:` for its `enabled`. The `.borderedProminent` /
 //                                 `.bordered` stand-in this file carried is gone.
@@ -231,10 +231,10 @@ struct AppointmentDetailScreen: View {
     ///
     /// `fillsWidth: true` is Kotlin's `Modifier.fillMaxWidth()` on each of the three
     /// (`:302`, `:310`, `:316`); an outer `.frame(maxWidth: .infinity)` would only centre a
-    /// text-width capsule in a full-width slot (`SalusPillButton.swift:35-39`).
+    /// text-width capsule in a full-width slot (`SalusButton.swift:35-39`).
     private var actions: some View {
         VStack(spacing: SalusSpacing.md) {
-            SalusPillButton(
+            SalusButton(
                 text: AppointmentsStrings.detailEdit,
                 fillsWidth: true,
                 action: onEdit
@@ -243,7 +243,7 @@ struct AppointmentDetailScreen: View {
             // Only where a calendar editor exists to present. On any other platform this is the
             // empty view the brief calls for, rather than a button that opens nothing.
             #if canImport(EventKitUI)
-                SalusPillButton(
+                SalusButton(
                     text: AppointmentsStrings.addToCalendar,
                     // `canAddToCalendar = state.startEpochMs > 0L` (`:144`), passed straight
                     // through as `enabled` (`:307`) — nothing to propose until the bounds are
@@ -257,7 +257,7 @@ struct AppointmentDetailScreen: View {
                 }
             #endif
 
-            SalusPillButton(
+            SalusButton(
                 text: AppointmentsStrings.detailDelete,
                 tonal: true,
                 fillsWidth: true
@@ -353,10 +353,10 @@ private struct OpenMapsButton: View {
     @Environment(\.openURL) private var openURL
 
     var body: some View {
-        // `SalusPillButton(tonal = true, icon = Icons.Filled.Map)`
+        // `SalusButton(tonal = true, icon = Icons.Filled.Map)`
         // (`AppointmentDetailScreen.kt:237-242`) — content width, since Kotlin passes it no
         // `Modifier.fillMaxWidth()` unlike the three in the action block.
-        SalusPillButton(
+        SalusButton(
             text: AppointmentsStrings.detailOpenMaps,
             tonal: true,
             systemImage: "map"

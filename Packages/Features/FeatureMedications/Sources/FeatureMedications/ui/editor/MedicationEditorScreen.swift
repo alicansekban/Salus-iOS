@@ -11,7 +11,7 @@
 //                                  `SalusDateField` / `SalusTimeField` are the button and its
 //                                  picker in one view, with no OK button to name.
 //   `OutlinedTextField`          → `TextField(…).textFieldStyle(.roundedBorder)`.
-//   `FilterChip` rows            → `ChipFlowLayout` of `SalusFilterChip`s. Kotlin chunks its chips
+//   `FilterChip` rows            → `ChipFlowLayout` of `SalusChoiceChip`s. Kotlin chunks its chips
 //                                  three to a row to avoid a `FlowRow` dependency
 //                                  (`MedicationEditorScreen.kt:303`); the iOS layout wraps on
 //                                  measured width, which is what that comment settles for.

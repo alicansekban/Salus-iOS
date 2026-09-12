@@ -59,9 +59,9 @@ struct AppLockScreen: View {
                     .foregroundStyle(theme.colorScheme.onBackground)
                     .multilineTextAlignment(.center)
                 Spacer().frame(height: SalusSpacing.xl)
-                // `SalusPillButton(app_lock_unlock, onClick = onUnlockRequest)`
+                // `SalusButton(app_lock_unlock, onClick = onUnlockRequest)`
                 // (`AppLockScreen.kt:54-57`) — the retry after a cancelled or failed prompt.
-                SalusPillButton(text: AppStrings.appLockUnlock, action: onUnlockRequest)
+                SalusButton(text: AppStrings.appLockUnlock, action: onUnlockRequest)
             }
         }
         // `LaunchedEffect(Unit) { onUnlockRequest() }` (`AppLockScreen.kt:32`).

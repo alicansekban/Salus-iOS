@@ -167,9 +167,9 @@ private struct SalusDialogPreview: View {
                 VStack(alignment: .leading, spacing: SalusSpacing.lg) {
                     Text(verbatim: "Tema")
                         .font(SalusTypography.headlineSmall.font)
-                    SalusOptionRow(systemImage: "paintpalette", label: "Açık", isSelected: true, onSelected: {})
-                    SalusOptionRow(systemImage: "paintpalette", label: "Koyu", isSelected: false, onSelected: {})
-                    SalusPillButton(text: "İptal", tonal: true) { isPresented = false }
+                    SalusSelectableRow(systemImage: "paintpalette", label: "Açık", isSelected: true, onSelected: {})
+                    SalusSelectableRow(systemImage: "paintpalette", label: "Koyu", isSelected: false, onSelected: {})
+                    SalusButton(text: "İptal", tonal: true) { isPresented = false }
                         .frame(maxWidth: .infinity, alignment: .trailing)
                 }
                 .padding(SalusSpacing.xl)
