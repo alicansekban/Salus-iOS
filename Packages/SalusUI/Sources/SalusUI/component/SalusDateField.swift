@@ -224,6 +224,7 @@ enum SalusDateFieldDefaults {
 }
 
 #Preview("Editor date field — dark") {
+    let theme = SalusTheme.resolve(systemIsDark: true)
     Form {
         SalusDateField(
             title: "Date",
@@ -240,5 +241,5 @@ enum SalusDateFieldDefaults {
             onChange: { _ in }
         )
     }
-    .preferredColorScheme(.dark)
+    .salusTheme(theme)
 }
