@@ -7,6 +7,10 @@
 // (`VitalsScreen.kt:158-159`, `WeightEditorScreen.kt:143-144`, and six more). They are resolved
 // against this package's own bundle, exactly as `R.string` resolves against `:core:ui`'s.
 //
+// The M15 primitives added four more for the same reason — they are spoken by components, not by
+// screens, so no feature could own them: the sheet header's close button and the stepper's two
+// buttons plus the state it announces while its number is still only a suggestion.
+//
 // TOOLCHAIN NOTE, and it costs an hour to rediscover: a `.xcstrings` catalog is compiled into
 // `.lproj/Localizable.strings` by **Xcode's** build system only. Command-line `swift build` /
 // `swift test` copies the catalog into the resource bundle verbatim, so a lookup under
@@ -28,6 +32,16 @@ public enum SalusUIStrings {
     public static var cancel: String { localized(Key.cancel) }
     /// `salus_delete` — "Sil" / "Delete".
     public static var delete: String { localized(Key.delete) }
+    /// `salus_sheet_close` — "Kapat" / "Close". The sheet header's close button
+    /// (`SalusBottomSheet.kt:98`).
+    public static var sheetClose: String { localized(Key.sheetClose) }
+    /// `salus_stepper_decrease` — "Azalt" / "Decrease" (`SalusStepperField.kt:175`).
+    public static var stepperDecrease: String { localized(Key.stepperDecrease) }
+    /// `salus_stepper_increase` — "Artır" / "Increase" (`SalusStepperField.kt:271`).
+    public static var stepperIncrease: String { localized(Key.stepperIncrease) }
+    /// `salus_stepper_suggested` — "Önerilen değer" / "Suggested value". The state a stepper
+    /// announces while the number on screen is only a suggestion (`SalusStepperField.kt:188`).
+    public static var stepperSuggested: String { localized(Key.stepperSuggested) }
 
     /// The catalog keys, named once. Internal so the parity test can prove every accessor asks for
     /// a key the catalog really carries — a typo here would otherwise ship the key as the label.
@@ -35,9 +49,21 @@ public enum SalusUIStrings {
         static let undo = "salus_undo"
         static let cancel = "salus_cancel"
         static let delete = "salus_delete"
+        static let sheetClose = "salus_sheet_close"
+        static let stepperDecrease = "salus_stepper_decrease"
+        static let stepperIncrease = "salus_stepper_increase"
+        static let stepperSuggested = "salus_stepper_suggested"
 
         /// Every key this type reads, for the test that compares them with the catalog's.
-        static let all: Set<String> = [undo, cancel, delete]
+        static let all: Set<String> = [
+            undo,
+            cancel,
+            delete,
+            sheetClose,
+            stepperDecrease,
+            stepperIncrease,
+            stepperSuggested
+        ]
     }
 
     private static func localized(_ key: String) -> String {

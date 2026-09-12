@@ -1,60 +1,132 @@
 {
-  "sourceLanguage" : "tr",
-  "strings" : {
-    "salus_cancel" : {
-      "comment" : "Dismiss button of every SalusConfirmDialog. Android: core/ui values/strings.xml salus_cancel.",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cancel"
+  "sourceLanguage": "tr",
+  "strings": {
+    "salus_cancel": {
+      "comment": "Dismiss button of every SalusConfirmDialog. Android: core/ui values/strings.xml salus_cancel.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vazgeç"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vazgeç"
           }
         }
       }
     },
-    "salus_delete" : {
-      "comment" : "Confirm button of every SalusConfirmDialog. Android: core/ui values/strings.xml salus_delete.",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Delete"
+    "salus_delete": {
+      "comment": "Confirm button of every SalusConfirmDialog. Android: core/ui values/strings.xml salus_delete.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sil"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sil"
           }
         }
       }
     },
-    "salus_undo" : {
-      "comment" : "Snackbar action that takes a pending delete back. Android: core/ui values/strings.xml salus_undo.",
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Undo"
+    "salus_sheet_close": {
+      "comment": "Close button in the SalusBottomSheet header. Android: core/ui values/strings.xml salus_sheet_close.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Close"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Geri al"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kapat"
+          }
+        }
+      }
+    },
+    "salus_stepper_decrease": {
+      "comment": "VoiceOver label of the SalusStepperField minus button. Android: core/ui values/strings.xml salus_stepper_decrease.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Decrease"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Azalt"
+          }
+        }
+      }
+    },
+    "salus_stepper_increase": {
+      "comment": "VoiceOver label of the SalusStepperField plus button. Android: core/ui values/strings.xml salus_stepper_increase.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Increase"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Artır"
+          }
+        }
+      }
+    },
+    "salus_stepper_suggested": {
+      "comment": "VoiceOver state of a SalusStepperField showing a suggestion rather than an entered value. Android: core/ui values/strings.xml salus_stepper_suggested.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Suggested value"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Önerilen değer"
+          }
+        }
+      }
+    },
+    "salus_undo": {
+      "comment": "Snackbar action that takes a pending delete back. Android: core/ui values/strings.xml salus_undo.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Undo"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geri al"
           }
         }
       }
     }
   },
-  "version" : "1.0"
+  "version": "1.0"
 }

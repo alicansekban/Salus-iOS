@@ -22,4 +22,27 @@ struct SalusEntranceTests {
     func cap(_ index: Int) {
         #expect(SalusEntrance.delaySeconds(index: index) == 0.2)
     }
+
+    /// Spec §3.5 / divergence (g): the entrance plays **once per view instance**. `TabView` keeps
+    /// a tab's root alive, so returning to a tab re-runs `onAppear` on a view that has already
+    /// arrived — and replaying the fade there reads as the screen reloading. The played flag is
+    /// `@State` on the modifier and this is the ladder it gates.
+    @Test("a first appearance animates after its stagger delay", arguments: [0, 2, 9])
+    func firstAppearanceAnimates(_ index: Int) {
+        let step = SalusEntrance.progress(for: index, played: false)
+
+        #expect(step.animates)
+        #expect(step.delay == SalusEntrance.delaySeconds(index: index))
+        #expect(step.target == 1)
+    }
+
+    @Test("a second appearance animates nothing", arguments: [0, 2, 9])
+    func secondAppearanceAnimatesNothing(_ index: Int) {
+        let step = SalusEntrance.progress(for: index, played: true)
+
+        #expect(step.animates == false)
+        #expect(step.delay == nil)
+        // Still settled, not hidden: a view that has played is drawn where it landed.
+        #expect(step.target == 1)
+    }
 }

@@ -19,12 +19,21 @@ import Testing
 /// helper can own.
 @Suite("SalusUI strings")
 struct SalusUIStringsTests {
-    /// The three keys `:core:ui` owns. Copied from the XML by name — a new key here means a new
-    /// key there, in the same commit.
-    static let expectedKeys: Set = ["salus_undo", "salus_cancel", "salus_delete"]
+    /// The keys `:core:ui` owns. Copied from the XML by name — a new key here means a new
+    /// key there, in the same commit. The M15 primitives added four: the sheet's close button and
+    /// the stepper's two buttons plus its suggestion state.
+    static let expectedKeys: Set = [
+        "salus_undo",
+        "salus_cancel",
+        "salus_delete",
+        "salus_sheet_close",
+        "salus_stepper_decrease",
+        "salus_stepper_increase",
+        "salus_stepper_suggested"
+    ]
 
-    @Test("the catalog holds exactly the three keys :core:ui owns")
-    func catalogHoldsExactlyTheThreeKeys() throws {
+    @Test("the catalog holds exactly the keys :core:ui owns")
+    func catalogHoldsExactlyTheKeysCoreUiOwns() throws {
         try StringCatalogParity.assertKeys(of: Self.loadCatalog(), are: Self.expectedKeys)
     }
 
@@ -46,6 +55,14 @@ struct SalusUIStringsTests {
         #expect(catalog.value(of: "salus_cancel", in: "en") == "Cancel")
         #expect(catalog.value(of: "salus_delete", in: "tr") == "Sil")
         #expect(catalog.value(of: "salus_delete", in: "en") == "Delete")
+        #expect(catalog.value(of: "salus_sheet_close", in: "tr") == "Kapat")
+        #expect(catalog.value(of: "salus_sheet_close", in: "en") == "Close")
+        #expect(catalog.value(of: "salus_stepper_decrease", in: "tr") == "Azalt")
+        #expect(catalog.value(of: "salus_stepper_decrease", in: "en") == "Decrease")
+        #expect(catalog.value(of: "salus_stepper_increase", in: "tr") == "Artır")
+        #expect(catalog.value(of: "salus_stepper_increase", in: "en") == "Increase")
+        #expect(catalog.value(of: "salus_stepper_suggested", in: "tr") == "Önerilen değer")
+        #expect(catalog.value(of: "salus_stepper_suggested", in: "en") == "Suggested value")
     }
 
     @Test("every accessor asks for a key the catalog carries")
