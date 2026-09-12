@@ -61,10 +61,10 @@ public struct SalusFab: View {
 }
 
 /// The labelled FAB variant: a primary pill for the one action a list screen exists to offer
-/// ("Add medication", "New appointment"), the twin of `SalusExtendedFab.kt:71-109`.
+/// ("Add medication", "New appointment"), the twin of `SalusFab.kt:72-109`.
 ///
 /// In dark it sits in the same `accentGlow` wash as `SalusButton`'s primary variant — the glow is
-/// what separates it from the near-black ground (`SalusExtendedFab.kt:78-94`, esp. `:84-85`). In
+/// what separates it from the near-black ground (`SalusFab.kt:78-94`, esp. `:84-85`). In
 /// light the wash is replaced by the neutral raised step (§7), the twin of
 /// `shadowElevation = SalusElevation.raised` (`SalusFab.kt:94`).
 public struct SalusExtendedFab: View {
@@ -75,7 +75,7 @@ public struct SalusExtendedFab: View {
     @Environment(\.salusTheme) private var theme
 
     /// - Parameters:
-    ///   - label: the pill's text, in `labelLarge` (`SalusExtendedFab.kt:106`).
+    ///   - label: the pill's text, in `labelLarge` (`SalusFab.kt:106`).
     ///   - systemImage: SF Symbol name — the iOS twin of the `Icons.Outlined.Add` Kotlin passes.
     ///   - action: what the tap runs.
     public init(label: String, systemImage: String, action: @escaping () -> Void) {
@@ -104,7 +104,7 @@ public struct SalusExtendedFab: View {
         .accessibilityLabel(Text(verbatim: label))
     }
 
-    /// `containerColor = primary`, `shape = CircleShape` (`SalusExtendedFab.kt:91-92`). The mode
+    /// `containerColor = primary`, `shape = CircleShape` (`SalusFab.kt:90-91`). The mode
     /// split is exactly the twin's (`SalusFab.kt:84-94`): in dark the `accentGlow` wash — set via
     /// `.shadow`'s `ambientColor`/`spotColor` — is what separates the pill from the near-black
     /// ground; in light the wash under a saturated primary pill would read as a smudge, so it is

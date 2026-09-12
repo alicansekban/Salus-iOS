@@ -105,7 +105,7 @@ extension BarEntry {
 }
 
 extension DayPart {
-    /// `DayPart.labelRes()` (`TrendsScreen.kt:889-894`).
+    /// `DayPart.labelRes()` (`TrendsCards.kt:534-539`).
     var label: String {
         switch self {
         case .morning: TrendsStrings.dayPartMorning

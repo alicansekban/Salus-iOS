@@ -90,7 +90,7 @@ private enum ForestLightExtendedValues {
 /// §4.6 — FOREST, dark. Source: `PremiumExtendedColors.kt:244-285`.
 private enum ForestDarkExtendedValues {
     // Deep green — the Forest primary's own hue.
-    // Prem.kt:284-289 — Olive-lime after owner QA: the old mint green *was* the Forest primary's
+    // `PremiumExtendedColors.kt:284-289` — Olive-lime after owner QA: the old mint green *was* the Forest primary's
     // hue; medication icons read as the brand green. Pushed to olive (owner QA, §14.8).
     static let medicationsAccent = Color(hex: 0xD4E157)
     static let medicationsOnAccent = Color(hex: 0x2A3300)

@@ -8,8 +8,9 @@
 // buttons, `rememberDatePickerState` and `MILLIS_PER_DAY` all disappear into one view — the same
 // collapse `SalusTimeField` documents, and the two rows draw the same three faces:
 //
-//   * nothing picked yet → the button, which is Kotlin's `OutlinedButton` showing
-//     `vitals_select_date` / `appointments_select_date` (`EditorDateField.kt:35-44`);
+//   * nothing picked yet → the button, which is the clickable field row Kotlin dresses as a
+//     `SalusTextField` (`SalusDateField.kt:69-100`), showing the placeholder its caller binds —
+//     `vitals_select_date` for the three editors (`EditorDateField.kt:19-24`);
 //   * tapped → the wheel, seeded at `seedEpochDay` where Kotlin passes
 //     `initialSelectedDateMillis = dateEpochDay?.let { it * MILLIS_PER_DAY }`
 //     (`EditorDateField.kt:47-49`) and lets Material open on the current month when that is null;
@@ -80,7 +81,8 @@ public struct SalusDateField: View {
             case .placeholder:
                 // Kotlin's M15 date picker is dressed as a `SalusTextField`: a button on the
                 // same `medium` corners, `surfaceContainerHigh` fill and `cardBorder` border as
-                // the fields around it (`EditorDateField.kt:35-44`, `SalusDateField.kt:69-100`).
+                // the fields around it (`SalusDateField.kt:69-100`), showing the placeholder its
+                // caller binds (`EditorDateField.kt:19-24`).
                 // Opening the picker is all it does.
                 Button {
                     isPicking = true

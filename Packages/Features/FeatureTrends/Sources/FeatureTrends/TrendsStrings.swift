@@ -56,7 +56,7 @@ public enum TrendsStrings {
     public static var metricWeight: String { localized(.metricWeight) }
 
     /// The same metric names, stored upper-case for the places they are drawn as an overline
-    /// (`TrendsScreen.kt:549-560`). A second key rather than `uppercase()`: Turkish folds `i` to
+    /// (`TrendsCards.kt:549-560`). A second key rather than `uppercase()`: Turkish folds `i` to
     /// `İ` and a runtime fold depends on the device's locale, not on the resource.
     public static var metricBloodPressureOverline: String { localized(.metricBloodPressureOverline) }
     public static var metricGlucoseOverline: String { localized(.metricGlucoseOverline) }
@@ -239,7 +239,7 @@ public enum TrendsStrings {
         case summaryChangeNoPrevious = "trends_summary_change_no_previous"
         case summaryChangeNotComputable = "trends_summary_change_not_computable"
 
-        // The M15 overlines, stored upper-case (`TrendsScreen.kt:549-560`).
+        // The M15 overlines, stored upper-case (`TrendsCards.kt:549-560`).
         case metricBloodPressureOverline = "trends_metric_blood_pressure_overline"
         case metricGlucoseOverline = "trends_metric_glucose_overline"
         case metricWeightOverline = "trends_metric_weight_overline"

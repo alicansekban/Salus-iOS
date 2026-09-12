@@ -185,7 +185,7 @@ extension Trend {
 }
 
 extension VitalType {
-    /// `VitalType.overlineLabelRes()` (`TrendsScreen.kt:556-560`) — the same metric name stored
+    /// `VitalType.overlineLabelRes()` (`TrendsCards.kt:556-560`) — the same metric name stored
     /// upper-case for the places it is drawn as an overline.
     var overlineLabel: String {
         switch self {

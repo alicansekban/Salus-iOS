@@ -129,6 +129,7 @@ notification permission can only be asked for once per install.
 | 2.1 | Launch a fresh install | the Welcome cover, never a flash of Home behind it; header reads "ADIM 1/3" with the first of three segments filled and **no** back button | ☐ |
 | 2.2 | Read the cover | shield tile, "Salus'a Hoş Geldiniz", the paragraph, and three chips — "Yalnızca cihazınızda", "Hesap gerektirmez", "Reklamsız"; the chips are plain, not pressable-looking, and none of them claims encryption | ☐ |
 | 2.3 | Tap "Gizlilik ve Güvenlik İlkelerimiz" | a bottom sheet titled "Gizlilik ve Güvenlik" with the full privacy paragraph; drag it down, tap the close button and tap the scrim — all three dismiss it and leave the cover exactly where it was | ☐ |
+| 2.3a | On that sheet, look at the paragraph's left and right edges | it is inset from both, lining up under the sheet title — never running edge to edge while the title above it sits indented. At the largest text size the paragraph **scrolls inside the sheet**; no line is cut off at the bottom | ☐ |
 | 2.4 | Tap "Başla" | page 2 slides in **from the right** while the cover slides left; header reads "ADIM 2/3", two segments filled, and a back button has appeared | ☐ |
 | 2.5 | Page 2 without choosing a sex | "Devam Et" **and** "Şimdilik Atla" are both dimmed and do nothing; typing a name does not enable them | ☐ |
 | 2.6 | Choose "Kadın", then "Diğer", then "Erkek" | exactly one tile is selected at a time, with the primary edge and the check disc; the cycle note ("Regl ve döngü takibi…") shows for Kadın and Diğer and disappears for Erkek | ☐ |
@@ -174,7 +175,11 @@ profile with no cycle.
 | 3.1.6 | VoiceOver, swipe between pages | each page announces its own label ("Bugünün dozları kartı", "Ölçümler kartı", "Döngü kartı") and its contents stay individually reachable; the dots are not announced | ☐ |
 | 3.1.7 | Cold start on Home, watching the five blocks | hero, readiness card (when shown), pager, AI card and appointments fade and settle **in that order**, one short step apart — never all at once and never out of order | ☐ |
 | 3.1.8 | Switch to another tab and come back to Home | Home is already settled — the entrance does **not** replay (spec §3.5). If it does replay, note it: that is the `@SceneStorage` escalation the spec records | ☐ |
-| 3.1.9 | Reduce Motion on (Ayarlar → Erişilebilirlik → Hareket), open Home | the five blocks arrive together on one short curve — no staggered ladder down the screen; note anything that still slides a visible distance | ☐ |
+| 3.1.9 | Reduce Motion on (Ayarlar → Erişilebilirlik → Hareket), open Home | the five blocks arrive together on one short curve — no staggered ladder down the screen — and **nothing travels**: each block fades in exactly where it will sit, with no upward slide at all. A visible slide is a regression (spec §11, opacity only) | ☐ |
+| 3.1.10 | Home: tap an appointment card in "YAKLAŞAN RANDEVULAR" | **that appointment's own detail opens, pushed onto Home** — the full-screen detail of the appointment on the card, with a system back button and no tab bar. The Appointments tab does **not** become selected; back returns to Home with Home's scroll position intact (parity row A58) | ☐ |
+| 3.1.11 | Home: tap "Tümünü Gör" beside "YAKLAŞAN RANDEVULAR" | the **Appointments tab** opens at its root (tab bar visible, Upcoming selected) — the header action switches tabs where a card opens one appointment | ☐ |
+| 3.1.12 | From 3.1.10's detail, tap "Düzenle", then back twice | the editor opens on the same stack, back returns to the detail, and back again to Home — the pushed screens are Home's, not the Appointments tab's | ☐ |
+| 3.1.13 | Home: tap a card's row anywhere along its full height, and tap "Tümünü Gör" at the very top and very bottom of its text | both respond everywhere inside their rows — the header action is a ≥44 pt target, not just the glyph height of its label | ☐ |
 
 ### 3.2 Medications — the dose on offer, the count and the day boundary (Task 7)
 
@@ -197,6 +202,7 @@ one row that checks Android's M15 critical fix, so it is worth the clock change.
 | 3.2.10 | Medication editor: tap through all eight form tiles | each has its own glyph, only one is selected at a time, and the four-column grid does not clip a label at the default text size | ☐ |
 | 3.2.11 | Medication editor: switch the plan tabs Her gün → Belirli günler → Aralıklı → Gerektiğinde | the pill slides between segments; the weekday chips appear only under "Belirli günler" and the day stepper only under "Aralıklı"; "Gerektiğinde" hides the dose-times card entirely | ☐ |
 | 3.2.12 | Medication editor: tap − and + on a dose amount, then type a number into it | the nudges move by 0.5 and stop at 0.5 and 99; a typed number is accepted on the keyboard's Done or on leaving the field, and a non-number reverts to what was there | ☐ |
+| 3.2.12a | Medication editor: choose "Aralıklı", then tap into the day-interval field | the keyboard that opens is the **number pad** — no letters, no QWERTY. Same for every dose-amount and stock field: a field that only accepts digits never opens an alphabetic keyboard | ☐ |
 | 3.2.13 | Medication editor: turn "Stok takibi" off | the two stock fields disappear and saving stores no stock; turning it back on leaves them empty rather than restoring the old numbers | ☐ |
 
 ### 3.3 Vitals — the suggestion, the tabs and the chart card (Task 8)
@@ -210,6 +216,7 @@ the editors, and 3.3.6 is the row the whole "suggestion, not a value" design res
 | 3.3.1 | Vitals root: tap Tansiyon, then Şeker, then Kilo | one pill slides between the three segments — it never fades out and back in, and never jumps two segments at once. The chart, the statistics row and the history rows all follow the selected type | ☐ |
 | 3.3.2 | Look at the top of the Vitals root | the navigation bar carries **only** the shell's brand tile, title, bell and avatar — no chart icon. The trends link is "Analizler" beside the "GRAFİK" overline, inside the content | ☐ |
 | 3.3.3 | Tap "Analizler" | Trends opens (a free user meets Trends' own lock there, which is correct — the link is deliberately ungated) | ☐ |
+| 3.3.3a | Tap "Analizler" at the very top and the very bottom of its row, beside the "GRAFİK" overline | it responds from both — the whole ≥44 pt row height is tappable, not only the text's own glyph box | ☐ |
 | 3.3.4 | Tap 7G / 30G / 90G / 1Y inside the chart card | exactly one chip is filled at a time, the chart and the statistics row re-read, and the card's header keeps showing the newest reading with its measured-at chip | ☐ |
 | 3.3.5 | Read a history row whose value rose, then one that fell | the rise is `+` with the up arrow, the fall is `−` (a typographic minus, not a hyphen) with the down arrow, and the two are different colours; the oldest row in the window carries no delta at all. Neither colour is red-for-bad: this screen passes no verdict | ☐ |
 | 3.3.6 | Tap the + FAB with Kilo selected: look at the value field **before touching anything** | the number is dimmed — it is a suggestion, not a weight the app is claiming — the keyboard is already open on that field, and both "Kaydet" (bar) and "Ölçümü Kaydet" (bottom) are disabled | ☐ |
@@ -249,6 +256,7 @@ days in a week, more for a month), and on a free account for the paywall rows.
 | 3.5.3 | AI summary: the two pinned actions under the text | "PDF olarak paylaş" (primary) and "Analizi güncelle" (secondary); tapping refresh re-requests a summary and keeps the selected period | ☐ |
 | 3.5.4 | AI summary: with too few records / a daily limit / an error | the empty, error and limit blocks render **centred** in the body (a short message sits mid-screen, a long one scrolls); the top bar's share icon (accessibility label "Doktor raporunu aç") opens the doctor report | ☐ |
 | 3.5.5 | Doctor report: open it; select a period and "Rapor oluştur" | the ready body shows the accent "Raporun hazır" card with a "PDF" chip and the three metric tiles; the "BELGE ÖNİZLEME" section with a tappable preview card and its "Büyüt" trailing action; the "RAPORA DAHİL EDİLENLER" checklist with a count per section (zero counts unchecked) and the narrative row when included | ☐ |
+| 3.5.5a | Doctor report: tap "Büyüt" at the very top and the very bottom of its row, beside the "BELGE ÖNİZLEME" overline | it responds from both — the whole ≥44 pt row height is tappable, not only the text's own glyph box | ☐ |
 | 3.5.6 | Doctor report: preview and sharing | tapping the preview card or "Önizle" opens the in-app PDF reader; the primary "Paylaş" hands the file to the system share sheet; "Yeniden oluştur" replaces it | ☐ |
 | 3.5.7 | Doctor report: with no records / no entitlement | the "Bu dönemde kayıt yok" and "Premium'a özel" blocks are centred like the summary's; only the paywall button opens the sheet | ☐ |
 | 3.5.8 | Trends: open it (free) | the range tabs (1 ay / 3 ay / 6 ay / 1 yıl) are **disabled** — dimmed, not selectable, announced unavailable; the locked blur + paywall card unchanged | ☐ |
@@ -266,6 +274,7 @@ Run with cycle tracking on and at least two recorded periods, so the prediction 
 | 3.6.2 | Cycle calendar: tap the left/right chevrons | the month title and the grid move one month at a time; the chevrons are reachable (≥44 pt), each announced with its own label | ☐ |
 | 3.6.3 | Cycle calendar: tap a cell | the **day editor opens pushed** — a system back button, an inline date title, and the tab bar slides away. It is NOT a sheet. Back returns to the same calendar month | ☐ |
 | 3.6.4 | Cycle calendar: tap "Tümünü Gör" beside "BUGÜNÜN BELİRTİLERİ" | today's day editor opens pushed; the chips above are read-only (nothing on the calendar is a picker) | ☐ |
+| 3.6.4a | Tap "Tümünü Gör" at the very top and the very bottom of its row, beside the "BUGÜNÜN BELİRTİLERİ" overline | it responds from both — the whole ≥44 pt row height is tappable, not only the text's own glyph box | ☐ |
 | 3.6.5 | Cycle day editor: save with one symptom, a flow and a mood | editing today through the editor updates the "BUGÜNÜN BELİRTİLERİ" chips on the way back (the calendar observes the day log) | ☐ |
 | 3.6.6 | Cycle day editor at a large system font | the SYMPTOMS / AKIŞ / RUH HALİ overline headers, the chip rows and the optional note all wrap without clipping | ☐ |
 
@@ -328,22 +337,32 @@ theme change.
 
 ### 5.3 The theme and language sheets (Task 10)
 
-The two setting pickers are `.medium` sheets over the More hub (spec §2.3). Each row is a
-`SalusSelectableRow`; the mode row opens the three-mode sheet and the colour-theme row opens the
-same sheet, so mode and palette share one popup. Both sheets apply their pick live and stay open.
+The two setting pickers open over the More hub (spec §2.3). Each row is a `SalusSelectableRow`;
+the mode row opens the three-mode sheet and the colour-theme row opens the same sheet, so mode and
+palette share one popup. Both sheets apply their pick live and stay open.
+
+**Run 5.3.1–5.3.10 in PORTRAIT at the DEFAULT text size first** — that is the configuration most
+of the install base is in, and the one the sheet heights were wrong in. The appearance sheet's
+content (three mode tiles, a section header and four palette rows) is taller than the `.medium`
+detent on every iPhone, so it opens at `.medium`, scrolls inside it and drags up to `.large`. Only
+after that pass, repeat 5.3.1 and 5.3.6 at the largest text size and in landscape.
 
 | # | Step | Expect | ☐ |
 |---|---|---|---|
-| 5.3.1 | More hub → Görünüm & Tema | the appearance sheet slides up at the medium detent, with a drag handle, a close button and the subtitle "Seçimler anında uygulanır"; the mode tiles (Sistem / Açık / Koyu) fill the top row and the four palette rows sit under "VURGU & RENK PALETİ", each leading with its colour swatch and the CLASSIC row carrying a "Varsayılan" badge | ☐ |
+| 5.3.1 | More hub → Görünüm & Tema *(portrait, default text size)* | the appearance sheet slides up at the medium detent, with a drag handle, a close button and the subtitle "Seçimler anında uygulanır"; the mode tiles (Sistem / Açık / Koyu) fill the top row and the four palette rows sit under "VURGU & RENK PALETİ", each leading with its colour swatch and the CLASSIC row carrying a "Varsayılan" badge | ☐ |
+| 5.3.1a | On that medium sheet, scroll the content with a drag that starts on a palette row | **every row is reachable without resizing the sheet** — the FOREST row and the gap under it can be scrolled to, and the sheet itself does not move while the content still has somewhere to go | ☐ |
+| 5.3.1b | Drag the sheet's handle upwards | it snaps to full height and the whole list is visible at once; drag it back down and it returns to the medium detent, still open, with the selection unchanged | ☐ |
+| 5.3.1c | Repeat 5.3.1a at the largest text size, then on the smallest device you have (SE) and in landscape | the same: the content scrolls and nothing — least of all the last palette row or the close button — is cut off or unreachable at any of them | ☐ |
 | 5.3.2 | Tap the CLASSIC palette row as a free user | it selects immediately — the stored palette is persisted and the sheet stays open; **no** paywall ever (A60) | ☐ |
 | 5.3.3 | Tap OCEAN / SUNSET / FOREST as a free user | the paywall opens on top and nothing is written; the stored palette is unchanged and the theme sheet is gone (the paywall is a sheet of its own) | ☐ |
 | 5.3.4 | Switch Renk Teması between palettes with premium on | each tap paints the whole app under the open sheet and the row's swatch updates; the sheet stays open until the close button, the swipe or the scrim | ☐ |
 | 5.3.5 | Swipe the appearance sheet down, then reopen | nothing is written on the way out — the stored mode and palette are exactly what they were before the sheet opened | ☐ |
-| 5.3.6 | More hub → Uygulama dili | the language sheet slides up at the medium detent with three `SalusSelectableRow`s (Sistem dili / Türkçe / English) and the subtitle "Seçim anında uygulanır" | ☐ |
+| 5.3.6 | More hub → Uygulama dili | the language sheet slides up at the medium detent with three `SalusSelectableRow`s (Sistem dili / Türkçe / English) and the subtitle "Seçim anında uygulanır"; the three rows fit without scrolling, and the sheet has gained no scroll bounce it did not have before | ☐ |
 | 5.3.7 | Tap Türkçe, then English, then back to Sistem dili | each tap repaints the whole app (the More hub and its labels included) in the chosen language while the sheet stays open; the row's selection follows the pick | ☐ |
 | 5.3.8 | Swipe the language sheet down | the app has already repainted in the last picked language and stays that way; nothing else is written on the way out | ☐ |
 | 5.3.9 | Open both sheets one after the other | only one is ever up at a time; the More hub behind shows the drawn palette (a lapsed subscriber sees CLASSIC here while the sheet still draws their stored OCEAN as selected) | ☐ |
 | 5.3.10 | VoiceOver on the appearance sheet | each palette row announces "selected" for the stored pick; the lock glyph on a free user's locked rows is announced by its row's label, not as a separate control | ☐ |
+| 5.3.11 | VoiceOver on the mode tiles (Sistem / Açık / Koyu), then on the language sheet's three rows | each group reads as **one radio set** — swiping moves within it and the chosen one announces "selected" — while each tile and each row stays individually reachable; neither group is read as three unrelated buttons | ☐ |
 
 ### 5.4 The paywall full-screen cover (Task 12)
 

@@ -30,8 +30,11 @@ extension View {
     /// dismissible by dragging and by the scrim, and `isPresented` is the one exit all three take
     /// (`SalusBottomSheet.kt:37-38`).
     ///
-    /// - Parameter detents: the heights the sheet may rest at; `.medium` is what the theme and
-    ///   language pickers use (spec §9 (d)).
+    /// - Parameter detents: the heights the sheet may rest at (spec §9 (d)). `.medium` alone is
+    ///   the default and what the language picker uses; a sheet whose content is taller than a
+    ///   medium sheet passes `[.medium, .large]` so it can be dragged up, as the theme picker
+    ///   does. Either way the body scrolls, so a detent is never the reason something is
+    ///   unreachable.
     public func salusBottomSheet(
         isPresented: Binding<Bool>,
         title: String,

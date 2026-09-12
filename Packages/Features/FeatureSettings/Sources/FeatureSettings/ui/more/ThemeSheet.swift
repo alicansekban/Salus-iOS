@@ -8,8 +8,9 @@
 //
 // Material → SwiftUI:
 //   `SalusBottomSheet(title:subtitle:onDismiss:)` → the `salusBottomSheet(isPresented:)` modifier
-//     with `detents: [.medium]`; `onDismissRequest` (the scrim / swipe) is the binding's `false`
-//     edge, which sends `themeSheetDismissed`.
+//     with `detents: [.medium, .large]` — this sheet's content is taller than a medium sheet, so
+//     it opens at medium and drags up; `onDismissRequest` (the scrim / swipe) is the binding's
+//     `false` edge, which sends `themeSheetDismissed`.
 //   `SalusChoiceTile` × theme mode → the same `SalusChoiceTile` (spec §3.3); the three modes
 //     share one `HStack` with `.equalSpacing`.
 //   `SalusSelectableRow(badge:locked:leading:swatch)` → the same row with its M15 `badge`/`locked`
@@ -40,7 +41,7 @@ struct ThemeSheet: View {
     var body: some View {
         // An invisible anchor: the presentation is attached here and shown whenever the state flag
         // flips, exactly as Kotlin's `if (state.isThemeSheetOpen) { ThemeSheet(…) }` draws it
-        // (`ThemeSheet.kt:377-379`).
+        // (`MoreScreen.kt:181-183`).
         Color.clear
             .frame(width: 0, height: 0)
             .salusBottomSheet(
@@ -169,7 +170,7 @@ extension PremiumTheme {
 
 #Preview("Theme sheet content") {
     // Kotlin previews `ThemeSheetContent` (not the sheet) so the preview pane can draw it
-    // (`ThemeSheet.kt:209-235`); the same trick here.
+    // (`ThemeSheet.kt:165-203`); the same trick here.
     SalusPreviewPalettes {
         ThemeSheetContent(
             state: MoreUiState(

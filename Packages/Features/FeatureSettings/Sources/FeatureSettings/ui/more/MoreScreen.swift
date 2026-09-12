@@ -219,7 +219,7 @@ struct MoreScreen: View {
     var body: some View {
         // No `Scaffold` twin and no inset modifiers: the shell owns the one `NavigationStack` and
         // its insets, and this is a tab root — so the title is the system navigation bar's, drawn
-        // by the shell's root toolbar. The §1 draw order is `MoreScreen.kt:193-339`; the scroll
+        // by the shell's root toolbar. The §1 draw order is `MoreScreen.kt:150-177`; the scroll
         // column carries the screen's horizontal inset for everything in it.
         VStack(spacing: 0) {
             ScrollView {
@@ -243,7 +243,7 @@ struct MoreScreen: View {
                         onOpenNotificationSettings: onOpenNotificationSettings
                     )
 
-                    // 4. `SalusDisclaimer(more_footer)` (`MoreScreen.kt:328-338`).
+                    // 4. `SalusDisclaimer(more_footer)` (`MoreScreen.kt:170-176`).
                     SalusDisclaimer(SettingsStrings.moreFooter)
                         .padding(.bottom, SalusSpacing.lg)
                 }

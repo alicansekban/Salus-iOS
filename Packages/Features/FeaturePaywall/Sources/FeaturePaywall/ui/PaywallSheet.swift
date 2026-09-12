@@ -1,5 +1,6 @@
 // Ported 1:1 from `feature/paywall/src/main/kotlin/com/alicansekban/salus/feature/paywall/
-// ui/PaywallSheet.kt` (482 lines).
+// ui/PaywallScreen.kt` (486 lines). The file's name is the one place the two platforms differ:
+// iOS presents it as a sheet, Android as a destination.
 //
 // The paywall is a full-screen sheet rather than a destination, which is why it applies its own
 // safe-area padding — it is drawn above the shell's tab bar, outside its insets. The Android
@@ -385,9 +386,13 @@ private struct PlanCard: View {
             .accessibilityHidden(true)
     }
 
-    /// The radio ring, matching `SalusSelectableRow`'s indicator dimensions.
-    /// `SelectedBorderWidth = 2.dp` / `UnselectedBorderWidth = 1.dp` (`PaywallSheet.kt:440-441`)
-    /// are the card's own; the radio ring here keeps the indicator sizes.
+    /// The radio ring, matching ``SalusSelectableRow``'s indicator dimensions. Kotlin draws
+    /// Material's own `RadioButton` here (`PaywallScreen.kt:381`), which carries no Salus
+    /// constants to port — the ring is hand-drawn on iOS, so it borrows the one shape the app
+    /// already has for a radio.
+    ///
+    /// The card's selected outline is NOT these: `SalusCard(selected:)` draws it at
+    /// `SalusCardDefaults.SelectedBorderWidth` (`SalusCard.kt:157`).
     private static let indicatorSize: CGFloat = 24
     private static let indicatorBorder: CGFloat = 2
     private static let indicatorDotSize: CGFloat = 12
@@ -395,7 +400,7 @@ private struct PlanCard: View {
 
 // MARK: - Previews
 
-/// The three plans the Android preview hardcodes (`PaywallSheet.kt:443-447`).
+/// The three plans the Android preview hardcodes (`PaywallScreen.kt:428-432`).
 private func previewPlans() -> [PremiumPlan] {
     [
         PremiumPlan(

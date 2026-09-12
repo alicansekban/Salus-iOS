@@ -73,7 +73,7 @@ private struct LanguageSheetContent: View {
     }
 }
 
-/// `AppLanguage.labelRes()` (`MoreScreen.kt:430-438` in the Kotlin MoreScreen) — the row label.
+/// `AppLanguage.labelRes()` (`MoreScreen.kt:214-218`) — the row label.
 extension AppLanguage {
     fileprivate var label: String {
         switch self {
