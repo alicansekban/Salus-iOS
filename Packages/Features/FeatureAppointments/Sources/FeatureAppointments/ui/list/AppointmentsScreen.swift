@@ -260,7 +260,7 @@ private struct Agenda: View {
             title: AppointmentsStrings.noUpcoming,
             accent: theme.extendedColors.appointments
         )
-        .frame(maxWidth: .infinity, minHeight: 240)
+        .frame(maxWidth: .infinity, minHeight: AppointmentsScreenDefaults.emptyStateMinHeight)
     }
 
     /// `AppointmentsScreen.kt:214-221`, per tab.
@@ -270,7 +270,7 @@ private struct Agenda: View {
             title: AppointmentsStrings.noPast,
             accent: theme.extendedColors.appointments
         )
-        .frame(maxWidth: .infinity, minHeight: 240)
+        .frame(maxWidth: .infinity, minHeight: AppointmentsScreenDefaults.emptyStateMinHeight)
     }
 }
 
@@ -289,6 +289,16 @@ func appointmentsDayHeaderLabel(epochDay: Int, todayEpochDay: Int, locale: Local
     case todayEpochDay + 1: AppointmentsStrings.dayTomorrow
     default: LocalDate(epochDay: epochDay).formatted(pattern: dayHeaderPattern, locale: locale)
     }
+}
+
+/// The screen's own component dimensions, named rather than spelled in a view body — the shape
+/// `SalusFabDefaults` and `HomePagerDefaults` set.
+private enum AppointmentsScreenDefaults {
+    /// How much room an empty tab keeps for its `SalusEmptyState`. iOS-only, with no line in
+    /// `AppointmentsScreen.kt:185-193` behind it: Compose's `LazyColumn` item sizes itself inside
+    /// a column that already fills the screen, while a `ScrollView` hugs its content — so without
+    /// a floor the empty state sits squashed under the tabs instead of centred in the tab's area.
+    static let emptyStateMinHeight: CGFloat = 240
 }
 
 /// `AppointmentsScreen.kt:260`.

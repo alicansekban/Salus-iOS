@@ -50,13 +50,6 @@ struct MedicationDetailViewModelTests {
     private let scheduler = FakeReminderScheduler()
     private let deletes = TestDeletes()
 
-    /// `MedicationDetailViewModelTest.kt:51-52` — the next calendar day, 09:00, past the 08:00 dose
-    /// the screen is built around.
-    private static let tomorrow = LocalDate(year: 2026, month: 3, day: 9)
-    private var tomorrowMorning: Date {
-        LocalDateTime(date: Self.tomorrow, minuteOfDay: 9 * 60).instant(in: Self.zone)
-    }
-
     /// `MedicationDetailViewModelTest.kt:52-60`.
     private func viewModel() -> MedicationDetailViewModel {
         MedicationDetailViewModel(

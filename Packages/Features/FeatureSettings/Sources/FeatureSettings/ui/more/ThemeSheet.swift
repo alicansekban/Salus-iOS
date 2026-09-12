@@ -78,8 +78,8 @@ private struct ThemeSheetContent: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             SalusSectionHeader(title: SettingsStrings.themeSectionMode)
-            // `Row(fillMaxWidth, spacedBy(md), Modifier.selectableGroup())` (`ThemeSheet.kt:79-92`)
-            // — three equal tiles for system / light / dark.
+            // `Row(fillMaxWidth, padding(horizontal = lg), Modifier.selectableGroup())`
+            // (`ThemeSheet.kt:83-89`) — three equal tiles for system / light / dark.
             HStack(spacing: SalusSpacing.md) {
                 ForEach(ThemeMode.allCases, id: \.self) { mode in
                     SalusChoiceTile(
@@ -93,6 +93,11 @@ private struct ThemeSheetContent: View {
             }
             .padding(.horizontal, SalusSpacing.lg)
             .frame(maxWidth: .infinity)
+            // `Modifier.selectableGroup()` (`ThemeSheet.kt:87`) — the iOS twin, so VoiceOver reads
+            // the three tiles as one radio set rather than as three unrelated buttons.
+            // `children: .contain` keeps each tile individually reachable, where `.combine` would
+            // flatten the row into one string (the shape `OnboardingPersonalPage.swift:119` set).
+            .accessibilityElement(children: .contain)
 
             SalusSectionHeader(
                 title: SettingsStrings.themeSectionPalette,

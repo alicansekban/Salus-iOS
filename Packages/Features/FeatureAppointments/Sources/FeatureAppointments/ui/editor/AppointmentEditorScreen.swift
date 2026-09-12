@@ -160,19 +160,10 @@ struct AppointmentEditorScreen: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(theme.colorScheme.background)
         .navigationTitle(state.isNew ? AppointmentsStrings.newTitle : AppointmentsStrings.editTitle)
-        .toolbar {
-            // `AppointmentEditorScreen.kt:128-137` — the delete action exists only for an
-            // appointment that has been saved.
-            if !state.isNew {
-                ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        onEvent(.deleteClicked)
-                    } label: {
-                        Label(AppointmentsStrings.delete, systemImage: "trash")
-                    }
-                }
-            }
-        }
+        // No toolbar delete: the editor's one delete is the destructive footer button
+        // (``deleteButton``), which is where `AppointmentEditorScreen.kt:192-197` puts it — the
+        // twin's top bar carries a save action and nothing else (`:100-110`). A second, plain
+        // trash glyph in the bar was two ways to reach one dialog, and the undestructive one.
         .salusConfirmDialog(
             isPresented: Binding(
                 get: { state.showDeleteConfirm },

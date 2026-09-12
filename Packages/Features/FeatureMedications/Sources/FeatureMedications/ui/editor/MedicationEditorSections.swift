@@ -136,7 +136,9 @@ struct MedicationEditorPlanCard: View {
             label: MedicationsStrings.editorIntervalDays,
             value: state.intervalDaysInput,
             rangeHint: "",
-            keyboard: .standard,
+            // The default `.decimal`: `SalusStepperField.kt:214-216` gives every stepper
+            // `KeyboardType.Decimal`, and a field that only accepts digits has no business
+            // opening an alphabetic keyboard.
             parse: { Int($0) != nil },
             onValueChange: { onEvent(.intervalDaysChanged($0)) },
             onDecrement: { nudgeInterval(by: -MedicationEditorDefaults.intervalStep) },

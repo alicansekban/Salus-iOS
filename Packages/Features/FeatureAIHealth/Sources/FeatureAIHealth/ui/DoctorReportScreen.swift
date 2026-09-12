@@ -106,18 +106,24 @@ struct DoctorReportScreen: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(theme.colorScheme.background)
-        // LAST in the chain, and `#if os(iOS)` because the modifier is iOS-only API while every
-        // feature package also builds for the macOS test host (`AppointmentDetailScreen.swift`).
+        // `#if os(iOS)` because `fullScreenCover` and the inline title are both iOS-only API
+        // while every feature package also builds for the macOS test host
+        // (`AppointmentDetailScreen.swift`).
         #if os(iOS)
-            .navigationBarTitleDisplayMode(.inline)
+            // The cover is presented only while a finished report is on screen: the URL says
+            // where the PDF is, and `.ready` on the result is what says there is one. The file
+            // itself is the preview screen's business, so it is not bound here.
             .fullScreenCover(isPresented: previewBinding) {
-                if case let .ready(url) = state.preview, case let .ready(pdfFile, _) = state.result {
+                if case let .ready(url) = state.preview, case .ready = state.result {
                     DoctorReportPreviewScreen(
                         url: url,
                         onClose: { onEvent(.previewDismissed) }
                     )
                 }
             }
+            // LAST in the chain, the house rule for a pushed screen (CLAUDE.md, Design system
+            // rules): SwiftFormat indents whatever follows an `#endif` one level deeper.
+            .navigationBarTitleDisplayMode(.inline)
         #endif
     }
 

@@ -52,14 +52,20 @@ private struct LanguageSheetContent: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            ForEach(AppLanguage.allCases, id: \.self) { language in
-                SalusSelectableRow(
-                    title: language.label,
-                    systemImage: "globe",
-                    isSelected: state.language == language,
-                    action: { onEvent(.selectLanguage(language)) }
-                )
+            // `Column(modifier = Modifier.selectableGroup())` (`LanguageSheet.kt:64`) — the iOS
+            // twin is `children: .contain`, so VoiceOver reads the three rows as one radio set
+            // while each stays individually reachable.
+            VStack(spacing: 0) {
+                ForEach(AppLanguage.allCases, id: \.self) { language in
+                    SalusSelectableRow(
+                        title: language.label,
+                        systemImage: "globe",
+                        isSelected: state.language == language,
+                        action: { onEvent(.selectLanguage(language)) }
+                    )
+                }
             }
+            .accessibilityElement(children: .contain)
             // The sheet's own content stops at the last row; the gesture bar needs the room
             // (`LanguageSheet.kt:81-82`).
             Spacer().frame(height: SalusSpacing.xl)
