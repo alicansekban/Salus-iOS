@@ -90,9 +90,18 @@ struct MedicationsScreen: View {
         // list is empty (an empty state owns the screen), exactly as Kotlin's header had it. M15
         // moved the count into the list's own metric tiles (`MedicationsScreen.kt:270`, `:306`) —
         // that is Task 7's restyle; until it lands the chip keeps the place it had.
+        //
+        // The `ToolbarItem` is CONSTANT and the emptiness test lives inside its `ViewBuilder`, not
+        // around it. `ToolbarContentBuilder` identifies items by position, and toolbar content that
+        // appears and disappears has a history of not being inserted or removed on a live state
+        // change — the chip would then be a frame (or a screen visit) behind the list. An item that
+        // always exists and draws nothing when there is nothing to say has no identity to lose.
+        // The retired in-content header had the same `if` and no such problem, because a `VStack`
+        // child is re-evaluated like any other view; this is the one thing the migration had to
+        // re-spell rather than move.
         .toolbar {
-            if !state.medications.isEmpty {
-                ToolbarItem(placement: .primaryAction) {
+            ToolbarItem(placement: .primaryAction) {
+                if !state.medications.isEmpty {
                     SalusStatusChip(label: MedicationsStrings.medicationCount(state.medications.count))
                 }
             }

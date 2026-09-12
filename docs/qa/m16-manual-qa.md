@@ -132,7 +132,7 @@ theme change.
 | 5.2.5 | Push from a tab root and look at the back button's label | it reads the root's title ("İlaçlar", "Ölçümler", …) or "Geri" when the title is too long — never blank | ☐ |
 | 5.2.6 | Push anything from any tab | the tab bar slides away and comes back on Back, exactly as before (the rule is unchanged) | ☐ |
 | 5.2.7 | Vitals root: the trends action | still reachable, now as the chart icon in the navigation bar beside the bell and avatar; three trailing controls plus the title must not clip on the narrowest device | ☐ |
-| 5.2.8 | Medications root with at least one medication | the count chip sits in the navigation bar beside the bell and avatar, and disappears when the list is empty | ☐ |
+| 5.2.8 | Medications root: add a medication to an empty list, then delete the last one, without leaving the screen | the count chip appears and disappears with the list, in the same interaction — it sits in the navigation bar beside the bell and avatar, and its number tracks the list | ☐ |
 | 5.2.9 | VoiceOver on any root | the bell announces "Hatırlatıcı sağlığı", the avatar "Profil"; the brand tile is skipped | ☐ |
 | 5.2.10 | Cycle calendar (pushed from Home's card and from the More row) | inline title "Döngü" with a back button, no root toolbar | ☐ |
 
