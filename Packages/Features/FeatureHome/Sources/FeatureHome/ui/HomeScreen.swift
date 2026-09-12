@@ -40,12 +40,14 @@ import SwiftUI
 ///
 /// The template's Route: the module comes from the environment, the ViewModel is built once and
 /// owned for the route's lifetime, and the stateless `HomeScreen` gets `state`, `onEvent` and the
-/// six shell callbacks. `onOpenAiSummary`, Kotlin's fifth, arrives with the AI card (iOS-M10);
+/// seven shell callbacks. `onOpenAiSummary`, Kotlin's fifth, arrives with the AI card (iOS-M10);
 /// `onOpenReminderHealth` is the readiness card's, and pushes a `FeatureSettings` key, so the
-/// shell is what names it.
+/// shell is what names it; `onOpenAppointment` is the appointment card's, and pushes a
+/// `FeatureAppointments` key for the same reason.
 public struct HomeRoute: View {
     private let onOpenMedications: () -> Void
     private let onOpenAppointments: () -> Void
+    private let onOpenAppointment: (String) -> Void
     private let onOpenCycle: () -> Void
     private let onOpenVitals: () -> Void
     private let onOpenAiSummary: () -> Void
@@ -59,7 +61,9 @@ public struct HomeRoute: View {
 
     /// - Parameters:
     ///   - onOpenMedications: switches to the Medications tab (`HomeNavigation.kt`, spec §4).
-    ///   - onOpenAppointments: switches to the Appointments tab.
+    ///   - onOpenAppointments: switches to the Appointments tab (the section header's action).
+    ///   - onOpenAppointment: pushes that appointment's detail onto Home's own stack — Kotlin's
+    ///     `onOpenAppointment: (String) -> Unit` (`HomeScreen.kt:59`, `SalusApp.kt:223`).
     ///   - onOpenCycle: pushes the cycle calendar onto Home's own stack.
     ///   - onOpenVitals: switches to the Vitals tab.
     ///   - onOpenAiSummary: pushes the AI health summary onto Home's own stack.
@@ -67,6 +71,7 @@ public struct HomeRoute: View {
     public init(
         onOpenMedications: @escaping () -> Void,
         onOpenAppointments: @escaping () -> Void,
+        onOpenAppointment: @escaping (String) -> Void,
         onOpenCycle: @escaping () -> Void,
         onOpenVitals: @escaping () -> Void,
         onOpenAiSummary: @escaping () -> Void,
@@ -74,6 +79,7 @@ public struct HomeRoute: View {
     ) {
         self.onOpenMedications = onOpenMedications
         self.onOpenAppointments = onOpenAppointments
+        self.onOpenAppointment = onOpenAppointment
         self.onOpenCycle = onOpenCycle
         self.onOpenVitals = onOpenVitals
         self.onOpenAiSummary = onOpenAiSummary
@@ -88,6 +94,7 @@ public struct HomeRoute: View {
                     onEvent: viewModel.onEvent,
                     onOpenMedications: onOpenMedications,
                     onOpenAppointments: onOpenAppointments,
+                    onOpenAppointment: onOpenAppointment,
                     onOpenCycle: onOpenCycle,
                     onOpenVitals: onOpenVitals,
                     onOpenAiSummary: onOpenAiSummary,
@@ -155,6 +162,7 @@ struct HomeScreen: View {
     let onEvent: (HomeEvent) -> Void
     let onOpenMedications: () -> Void
     let onOpenAppointments: () -> Void
+    let onOpenAppointment: (String) -> Void
     let onOpenCycle: () -> Void
     let onOpenVitals: () -> Void
     let onOpenAiSummary: () -> Void
@@ -208,7 +216,8 @@ struct HomeScreen: View {
 
                 HomeAppointmentsSection(
                     appointments: state.appointments,
-                    onOpenAppointments: onOpenAppointments
+                    onOpenAppointments: onOpenAppointments,
+                    onOpenAppointment: onOpenAppointment
                 )
                 .salusEntrance(index: 4)
             }
@@ -402,6 +411,7 @@ private enum PreviewData {
             onEvent: { _ in },
             onOpenMedications: {},
             onOpenAppointments: {},
+            onOpenAppointment: { _ in },
             onOpenCycle: {},
             onOpenVitals: {},
             onOpenAiSummary: {},
@@ -417,6 +427,7 @@ private enum PreviewData {
             onEvent: { _ in },
             onOpenMedications: {},
             onOpenAppointments: {},
+            onOpenAppointment: { _ in },
             onOpenCycle: {},
             onOpenVitals: {},
             onOpenAiSummary: {},
@@ -432,6 +443,7 @@ private enum PreviewData {
             onEvent: { _ in },
             onOpenMedications: {},
             onOpenAppointments: {},
+            onOpenAppointment: { _ in },
             onOpenCycle: {},
             onOpenVitals: {},
             onOpenAiSummary: {},
@@ -447,6 +459,7 @@ private enum PreviewData {
             onEvent: { _ in },
             onOpenMedications: {},
             onOpenAppointments: {},
+            onOpenAppointment: { _ in },
             onOpenCycle: {},
             onOpenVitals: {},
             onOpenAiSummary: {},
@@ -463,6 +476,7 @@ private enum PreviewData {
         onEvent: { _ in },
         onOpenMedications: {},
         onOpenAppointments: {},
+        onOpenAppointment: { _ in },
         onOpenCycle: {},
         onOpenVitals: {},
         onOpenAiSummary: {},

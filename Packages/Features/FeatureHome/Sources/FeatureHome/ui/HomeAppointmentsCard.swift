@@ -10,12 +10,13 @@
 // ``HomeAppointmentsSection`` is the header plus the list, and the card itself is `private` here
 // the way Kotlin keeps `AppointmentCard` private inside `HomeCards.kt`.
 //
-// DIVERGENCE (e), WHERE A CARD GOES. Kotlin takes `onOpenAppointment: (String) -> Unit` and opens
-// that appointment's own detail screen (`HomeCards.kt:144`); Home does not own that key, so on
-// Android it is a shell callback. iOS's shell hands Home five callbacks and `onOpenAppointments` is
-// the one for this section (spec §4.1 leaves the callback contract alone in this task), so a card
-// opens the Appointments tab rather than the appointment. The per-id jump needs a shell change and
-// is not this task's.
+// A CARD OPENS ITS OWN APPOINTMENT, the header opens the tab. Both callbacks are the shell's,
+// exactly as on Android: `onOpenAppointment: (String) -> Unit` reaches the appointment's detail
+// screen (`HomeCards.kt:120, 144`) while `onOpenAppointments` switches to the tab
+// (`HomeCards.kt:119, 130`). `AppointmentDetailKey` belongs to `FeatureAppointments` and features
+// never depend on each other, so the shell is what names it — it pushes the key onto Home's own
+// stack and registers `appointmentsDestinations()` there (`App/RootNavigationStack.swift`), the
+// same shape `CycleKey` already has.
 //
 // Material → SwiftUI:
 //   `Column(verticalArrangement = spacedBy(sm))`  → `VStack(spacing: SalusSpacing.sm)`.
@@ -31,7 +32,10 @@ import SwiftUI
 /// (`AppointmentsSection`, `HomeCards.kt:108-150`).
 struct HomeAppointmentsSection: View {
     let appointments: [UpcomingAppointment]
+    /// Switches to the Appointments tab — the header's "Tümünü Gör" (`HomeCards.kt:130`).
     let onOpenAppointments: () -> Void
+    /// Opens one appointment's detail screen — a card's tap (`HomeCards.kt:144`).
+    let onOpenAppointment: (String) -> Void
 
     @Environment(\.salusTheme) private var theme
 
@@ -54,7 +58,10 @@ struct HomeAppointmentsSection: View {
                 }
             } else {
                 ForEach(appointments, id: \.id) { appointment in
-                    HomeAppointmentCard(appointment: appointment, onTap: onOpenAppointments)
+                    HomeAppointmentCard(
+                        appointment: appointment,
+                        onTap: { onOpenAppointment(appointment.id) }
+                    )
                 }
             }
         }

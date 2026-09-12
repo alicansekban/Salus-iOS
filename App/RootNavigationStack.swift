@@ -25,9 +25,12 @@ import SwiftUI
 ///
 /// Which registrars go on which stack is not cosmetic: SwiftUI resolves `navigationDestination(for:)`
 /// per stack, so a key pushed onto a stack that does not register it draws nothing. That is why
-/// `cycleDestinations()` appears twice and why `settingsDestinations()` is on all five stacks since
-/// iOS-M16: the root toolbar's bell and avatar push `ReminderHealthKey` and `ProfileKey` from every
-/// tab, so every stack has to be able to draw them.
+/// `cycleDestinations()` appears twice, why `appointmentsDestinations()` appears on Home as well as
+/// on its own tab — a Home appointment card opens that appointment's detail (parity row A58) — and
+/// why `settingsDestinations()` is on all five stacks since iOS-M16: the root toolbar's bell and
+/// avatar push `ReminderHealthKey` and `ProfileKey` from every tab, so every stack has to be able
+/// to draw them. A registrar is a feature's whole set of keys, so the ones a given stack cannot
+/// actually reach ride along with the ones it can.
 ///
 /// **The root toolbar is the shell's** (spec §2.2, decision Q2): `salusRootToolbar` is applied here
 /// to each of the five tab ROOTS and nowhere else, the twin of `SalusApp.kt:281-287` drawing
@@ -140,7 +143,15 @@ struct RootNavigationStack: View {
             NavigationStack(path: backStacks.binding(for: tab)) {
                 HomeRoute(
                     onOpenMedications: { backStacks.switchTopLevel(.medications) },
+                    // The section header's "Tümünü Gör" — the tab, not one appointment
+                    // (`SalusApp.kt:220`).
                     onOpenAppointments: { backStacks.switchTopLevel(.appointments) },
+                    // A card names one appointment, so it opens that appointment
+                    // (`SalusApp.kt:223`, parity row A58). `AppointmentDetailKey` is
+                    // `FeatureAppointments`' to name and features never depend on each other, so
+                    // the shell pushes it — onto THIS stack, which is why
+                    // `appointmentsDestinations()` and the appointments module appear below.
+                    onOpenAppointment: { id in root.navigator.navigate(AppointmentDetailKey(id: id)) },
                     // Cycle is the one card that pushes instead of switching tabs: it has no tab of
                     // its own (iOS-M6 ruling 1), so it opens on Home's own stack. Through the
                     // navigator rather than `backStacks.push`, because the shell is the only thing
@@ -178,6 +189,11 @@ struct RootNavigationStack: View {
                 // The AI summary card pushes `AiSummaryKey` onto this stack, so the destination is
                 // registered here.
                 .aiHealthDestinations()
+                // Registered here as well as on the appointments stack, because an appointment
+                // card now pushes `AppointmentDetailKey` onto this one. `AppointmentEditorKey`
+                // rides along — the modifier is that feature's whole registrar — and the detail
+                // screen's "Düzenle" is exactly what reaches it from here.
+                .appointmentsDestinations()
                 // Registered here as well as on the More and medications stacks, because the
                 // readiness card can now push `ReminderHealthKey` onto this one and SwiftUI
                 // resolves `navigationDestination(for:)` per stack. `ProfileKey` and `AboutKey`
@@ -185,12 +201,14 @@ struct RootNavigationStack: View {
                 // reachable from here.
                 .settingsDestinations()
             }
-            // On the stack, not inside its root — the pushed `CycleKey` and `AiSummaryKey`
-            // destinations are rendered by the stack, so an environment value set on the root view
-            // would not reach either.
+            // On the stack, not inside its root — the pushed `CycleKey`, `AiSummaryKey` and
+            // `AppointmentDetailKey` destinations are rendered by the stack, so an environment
+            // value set on the root view would not reach any of them.
             .environment(\.homeModule, root.homeModule)
             .environment(\.cycleModule, root.cycleModule)
             .environment(\.aiHealthModule, root.aiHealthModule)
+            // What a pushed `AppointmentDetailRoute` (and the editor behind its "Düzenle") reads.
+            .environment(\.appointmentsModule, root.appointmentsModule)
             // What a pushed `ReminderHealthRoute` reads, for the same reason the three lines above
             // exist.
             .environment(\.settingsModule, root.settingsModule)
