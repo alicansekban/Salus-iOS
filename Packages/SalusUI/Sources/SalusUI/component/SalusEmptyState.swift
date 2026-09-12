@@ -108,10 +108,13 @@ public struct SalusEmptyState: View {
     private static let badgeIconSize: CGFloat = 32
 }
 
-#Preview("Empty state") {
-    let theme = SalusTheme.resolve(systemIsDark: false)
-    ZStack {
-        theme.colorScheme.background
+/// The sample the palette fan-out renders — a view of its own for the reason
+/// `SalusDateTilePreviewSamples` is: the accent is palette-dependent, so it has to be read from the
+/// environment each panel writes rather than named once at the `#Preview` level.
+private struct SalusEmptyStatePreviewSample: View {
+    @Environment(\.salusTheme) private var theme
+
+    var body: some View {
         SalusEmptyState(
             systemImage: "heart.fill",
             title: "No measurements yet",
@@ -121,21 +124,10 @@ public struct SalusEmptyState: View {
             onAction: {}
         )
     }
-    .salusTheme(theme)
 }
 
-#Preview("Empty state — dark") {
-    let theme = SalusTheme.resolve(systemIsDark: true)
-    ZStack {
-        theme.colorScheme.background
-        SalusEmptyState(
-            systemImage: "heart.fill",
-            title: "No measurements yet",
-            message: "Add your first measurement to start tracking trends.",
-            accent: theme.extendedColors.vitals,
-            actionLabel: "Add measurement",
-            onAction: {}
-        )
+#Preview("Empty state") {
+    SalusPreviewPalettes {
+        SalusEmptyStatePreviewSample()
     }
-    .salusTheme(theme)
 }

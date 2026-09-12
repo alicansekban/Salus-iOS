@@ -171,7 +171,7 @@ enum SalusTimeFieldBinding {
 }
 
 #Preview("Editor time field") {
-    Form {
+    SalusPreviewPalettes {
         SalusTimeField(
             title: "Time",
             minuteOfDay: 14 * 60 + 30,

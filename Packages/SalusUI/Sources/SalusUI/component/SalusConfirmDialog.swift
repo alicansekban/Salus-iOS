@@ -96,21 +96,16 @@ private struct SalusConfirmDialogPreview: View {
 }
 
 #Preview("Confirm dialog") {
-    SalusConfirmDialogPreview(
-        title: "Kilo kaydı silinsin mi?",
-        message: "Bu kayıt kalıcı olarak silinir.",
-        confirmLabel: SalusUIStrings.delete,
-        dismissLabel: SalusUIStrings.cancel,
-        confirmIsDestructive: true
-    )
-}
-
-#Preview("Confirm dialog — not destructive") {
-    SalusConfirmDialogPreview(
-        title: "Kaydedildi, ama alarmlar çalışmayabilir",
-        message: "Salus için bildirimler kapalı, bu yüzden doz saati sessiz kalır.",
-        confirmLabel: "Düzelt",
-        dismissLabel: "Şimdi değil",
-        confirmIsDestructive: false
-    )
+    // The alert itself is the system's and is drawn outside the panels, so the palettes below show
+    // the host row rather than eight dialogs. Kept in the fan-out shape all the same: what this
+    // preview is for is that the host and its ground stay legible in every palette.
+    SalusPreviewPalettes {
+        SalusConfirmDialogPreview(
+            title: "Kilo kaydı silinsin mi?",
+            message: "Bu kayıt kalıcı olarak silinir.",
+            confirmLabel: SalusUIStrings.delete,
+            dismissLabel: SalusUIStrings.cancel,
+            confirmIsDestructive: true
+        )
+    }
 }

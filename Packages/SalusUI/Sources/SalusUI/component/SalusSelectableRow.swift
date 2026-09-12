@@ -185,10 +185,13 @@ enum SalusSelectableRowStyle {
     }
 }
 
-#Preview("Selectable rows") {
-    let theme = SalusTheme.resolve(systemIsDark: false)
-    ZStack {
-        theme.colorScheme.background
+/// The samples the palette fan-out renders — a view of its own for the reason
+/// `SalusDateTilePreviewSamples` is: the swatch and the accent are palette-dependent, and the
+/// swatch is the whole point of the theme sheet's row.
+private struct SalusSelectableRowPreviewSamples: View {
+    @Environment(\.salusTheme) private var theme
+
+    var body: some View {
         VStack(spacing: SalusSpacing.lg) {
             SalusSelectableRow(
                 title: "Classic",
@@ -208,32 +211,11 @@ enum SalusSelectableRowStyle {
                 isSelected: false
             ) {}
         }
-        .padding(SalusSpacing.lg)
     }
-    .frame(height: 340)
-    .salusTheme(theme)
 }
 
-#Preview("Selectable rows — dark") {
-    let theme = SalusTheme.resolve(systemIsDark: true)
-    ZStack {
-        theme.colorScheme.background
-        VStack(spacing: SalusSpacing.lg) {
-            SalusSelectableRow(
-                title: "Classic",
-                subtitle: "The Salus emerald",
-                swatch: theme.colorScheme.primary,
-                isSelected: true
-            ) {}
-            SalusSelectableRow(
-                title: "Kadın",
-                systemImage: "person",
-                accent: theme.extendedColors.cycle,
-                isSelected: false
-            ) {}
-        }
-        .padding(SalusSpacing.lg)
+#Preview("Selectable rows") {
+    SalusPreviewPalettes {
+        SalusSelectableRowPreviewSamples()
     }
-    .frame(height: 200)
-    .salusTheme(theme)
 }

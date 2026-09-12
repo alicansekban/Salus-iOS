@@ -110,10 +110,13 @@ public enum SalusIconBadgeDefaults {
     public static let largeIconSize: CGFloat = 32
 }
 
-#Preview("Icon badges") {
-    let theme = SalusTheme.resolve(systemIsDark: false)
-    ZStack {
-        theme.colorScheme.surfaceContainerLow
+/// The samples the palette fan-out renders — a view of its own for the reason
+/// `SalusDateTilePreviewSamples` is: the accents are palette-dependent, so they have to be read
+/// from the environment each panel writes.
+private struct SalusIconBadgePreviewSamples: View {
+    @Environment(\.salusTheme) private var theme
+
+    var body: some View {
         HStack(spacing: SalusSpacing.sm) {
             SalusIconBadge(systemImage: "pills.fill", size: .small)
             SalusIconBadge(systemImage: "heart.fill", accent: theme.extendedColors.vitals)
@@ -130,27 +133,11 @@ public enum SalusIconBadgeDefaults {
                 iconSize: SalusIconBadgeDefaults.largeIconSize
             )
         }
-        .padding(SalusSpacing.lg)
     }
-    .frame(height: 120)
-    .salusTheme(theme)
 }
 
-#Preview("Icon badges — dark") {
-    let theme = SalusTheme.resolve(systemIsDark: true)
-    ZStack {
-        theme.colorScheme.surfaceContainerLow
-        HStack(spacing: SalusSpacing.sm) {
-            SalusIconBadge(systemImage: "pills.fill", size: .small)
-            SalusIconBadge(systemImage: "heart.fill", accent: theme.extendedColors.vitals)
-            SalusIconBadge(
-                systemImage: "calendar",
-                accent: theme.extendedColors.appointments,
-                size: .large
-            )
-        }
-        .padding(SalusSpacing.lg)
+#Preview("Icon badges") {
+    SalusPreviewPalettes {
+        SalusIconBadgePreviewSamples()
     }
-    .frame(height: 120)
-    .salusTheme(theme)
 }

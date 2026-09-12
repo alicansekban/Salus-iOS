@@ -198,9 +198,7 @@ private enum SalusButtonGlowDefaults {
 }
 
 #Preview("Buttons") {
-    let theme = SalusTheme.resolve(systemIsDark: false)
-    ZStack {
-        theme.colorScheme.background
+    SalusPreviewPalettes {
         VStack(spacing: SalusSpacing.md) {
             SalusButton("Save", systemImage: "checkmark", action: {})
             SalusButton("Disabled", enabled: false, action: {})
@@ -209,24 +207,5 @@ private enum SalusButtonGlowDefaults {
             SalusButton("Delete", variant: .destructive, action: {})
             SalusButton("Edit — medium", size: .medium, action: {})
         }
-        .padding(SalusSpacing.lg)
     }
-    .frame(height: 420)
-    .salusTheme(theme)
-}
-
-#Preview("Buttons — dark") {
-    let theme = SalusTheme.resolve(systemIsDark: true)
-    ZStack {
-        theme.colorScheme.background
-        VStack(spacing: SalusSpacing.md) {
-            SalusButton("Save", action: {})
-            SalusButton("Disabled", enabled: false, action: {})
-            SalusButton("Later", variant: .secondary, action: {})
-            SalusButton("Delete", variant: .destructive, action: {})
-        }
-        .padding(SalusSpacing.lg)
-    }
-    .frame(height: 360)
-    .salusTheme(theme)
 }

@@ -101,30 +101,11 @@ public struct SalusChoiceChip: View {
 }
 
 #Preview("Choice chips") {
-    let theme = SalusTheme.resolve(systemIsDark: false)
-    ZStack {
-        theme.colorScheme.background
+    SalusPreviewPalettes {
         HStack(spacing: SalusSpacing.sm) {
             SalusChoiceChip(label: "Cramps", isSelected: true, action: {})
             SalusChoiceChip(label: "Headache", isSelected: false, action: {})
             SalusChoiceChip(label: "Mood", isSelected: true, systemImage: "face.smiling", action: {})
         }
-        .padding(SalusSpacing.lg)
     }
-    .frame(height: 120)
-    .salusTheme(theme)
-}
-
-#Preview("Choice chips — dark") {
-    let theme = SalusTheme.resolve(systemIsDark: true)
-    ZStack {
-        theme.colorScheme.background
-        HStack(spacing: SalusSpacing.sm) {
-            SalusChoiceChip(label: "Cramps", isSelected: true, action: {})
-            SalusChoiceChip(label: "Headache", isSelected: false, action: {})
-        }
-        .padding(SalusSpacing.lg)
-    }
-    .frame(height: 100)
-    .salusTheme(theme)
 }

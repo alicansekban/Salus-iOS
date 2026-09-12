@@ -182,9 +182,7 @@ enum SalusCardAccessibility {
 }
 
 #Preview("Cards") {
-    let theme = SalusTheme.resolve(systemIsDark: false)
-    ZStack {
-        theme.colorScheme.background
+    SalusPreviewPalettes {
         VStack(spacing: SalusSpacing.lg) {
             SalusCard {
                 Text(verbatim: "Standard card")
@@ -207,26 +205,5 @@ enum SalusCardAccessibility {
                 }
             )
         }
-        .padding(SalusSpacing.lg)
     }
-    .salusTheme(theme)
-}
-
-#Preview("Cards — dark") {
-    let theme = SalusTheme.resolve(systemIsDark: true)
-    ZStack {
-        theme.colorScheme.background
-        VStack(spacing: SalusSpacing.lg) {
-            SalusCard {
-                Text(verbatim: "Standard card")
-                    .font(SalusTypography.titleMedium.font)
-            }
-            SalusCard(tone: .accent) {
-                Text(verbatim: "Accent card")
-                    .font(SalusTypography.titleMedium.font)
-            }
-        }
-        .padding(SalusSpacing.lg)
-    }
-    .salusTheme(theme)
 }

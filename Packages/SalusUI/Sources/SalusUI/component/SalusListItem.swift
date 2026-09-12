@@ -146,10 +146,12 @@ public struct SalusListItemChevron: View {
     }
 }
 
-#Preview("List items") {
-    let theme = SalusTheme.resolve(systemIsDark: false)
-    ZStack {
-        theme.colorScheme.background
+/// The samples the palette fan-out renders — a view of its own for the reason
+/// `SalusDateTilePreviewSamples` is: the accent is palette-dependent.
+private struct SalusListItemPreviewSamples: View {
+    @Environment(\.salusTheme) private var theme
+
+    var body: some View {
         VStack(spacing: 0) {
             SalusListItem(
                 title: "Blood pressure",
@@ -167,25 +169,10 @@ public struct SalusListItemChevron: View {
             SalusListItem(title: "No subtitle", systemImage: "list.bullet")
         }
     }
-    .frame(height: 220)
-    .salusTheme(theme)
 }
 
-#Preview("List items — dark") {
-    let theme = SalusTheme.resolve(systemIsDark: true)
-    ZStack {
-        theme.colorScheme.background
-        VStack(spacing: 0) {
-            SalusListItem(
-                title: "Blood pressure",
-                subtitle: "120/80 · today 09:41",
-                systemImage: "heart.fill",
-                accent: theme.extendedColors.vitals,
-                onTap: {}
-            )
-            SalusListItem(title: "No subtitle", systemImage: "list.bullet")
-        }
+#Preview("List items") {
+    SalusPreviewPalettes {
+        SalusListItemPreviewSamples()
     }
-    .frame(height: 140)
-    .salusTheme(theme)
 }

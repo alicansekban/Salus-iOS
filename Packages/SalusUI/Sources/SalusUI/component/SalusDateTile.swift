@@ -79,30 +79,23 @@ public enum SalusDateTileDefaults {
     public static let height: CGFloat = 60
 }
 
-#Preview("Date tiles") {
-    let theme = SalusTheme.resolve(systemIsDark: false)
-    ZStack {
-        theme.colorScheme.surfaceContainerLow
+/// The samples the palette fan-out renders. A view of its own because the accent it draws is
+/// `FeatureAccent`-valued and therefore palette-dependent: `SalusPreviewPalettes` builds its content
+/// once and re-themes each panel, so a sample that named a theme at the `#Preview` level would draw
+/// CLASSIC's appointment accent in all eight.
+private struct SalusDateTilePreviewSamples: View {
+    @Environment(\.salusTheme) private var theme
+
+    var body: some View {
         HStack(spacing: SalusSpacing.sm) {
             SalusDateTile(dayOfMonth: 18, monthShort: "Ağu", accent: theme.extendedColors.appointments)
             SalusDateTile(dayOfMonth: 18, monthShort: "Ağu")
         }
-        .padding(SalusSpacing.lg)
     }
-    .frame(height: 120)
-    .salusTheme(theme)
 }
 
-#Preview("Date tiles — dark") {
-    let theme = SalusTheme.resolve(systemIsDark: true)
-    ZStack {
-        theme.colorScheme.surfaceContainerLow
-        HStack(spacing: SalusSpacing.sm) {
-            SalusDateTile(dayOfMonth: 3, monthShort: "Eyl", accent: theme.extendedColors.appointments)
-            SalusDateTile(dayOfMonth: 3, monthShort: "Eyl")
-        }
-        .padding(SalusSpacing.lg)
+#Preview("Date tiles") {
+    SalusPreviewPalettes {
+        SalusDateTilePreviewSamples()
     }
-    .frame(height: 120)
-    .salusTheme(theme)
 }

@@ -258,9 +258,7 @@ enum SalusTextFieldStyle {
     @Previewable @State var height = "170"
     @Previewable @State var rejected = "999"
 
-    let theme = SalusTheme.resolve(systemIsDark: false)
-    ZStack {
-        theme.colorScheme.background
+    SalusPreviewPalettes {
         VStack(spacing: SalusSpacing.md) {
             // The fields of `SalusTextFieldPreview` (`SalusTextField.kt:180-244`), the overline
             // label and its error stroke drawn in.
@@ -276,32 +274,5 @@ enum SalusTextFieldStyle {
                 keyboard: .decimal
             )
         }
-        .padding(SalusSpacing.lg)
     }
-    .frame(height: 260)
-    .salusTheme(theme)
-}
-
-#Preview("Text fields — dark") {
-    @Previewable @State var empty = ""
-    @Previewable @State var rejected = "999"
-
-    let theme = SalusTheme.resolve(systemIsDark: true)
-    ZStack {
-        theme.colorScheme.background
-        VStack(spacing: SalusSpacing.md) {
-            SalusTextField(text: $empty, label: "NAME", placeholder: "Örn: Ayşe", capitalization: .words)
-            SalusTextField(
-                text: $rejected,
-                placeholder: "Örn: 170",
-                suffix: "cm",
-                isError: true,
-                supportingText: "50 ile 250 cm arasında bir değer girin.",
-                keyboard: .decimal
-            )
-        }
-        .padding(SalusSpacing.lg)
-    }
-    .frame(height: 180)
-    .salusTheme(theme)
 }

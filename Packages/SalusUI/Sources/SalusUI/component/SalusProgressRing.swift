@@ -115,23 +115,7 @@ public enum SalusProgressRingDefaults {
 }
 
 #Preview("Progress ring") {
-    let theme = SalusTheme.resolve(systemIsDark: false)
-    ZStack {
-        theme.colorScheme.surfaceContainerLow
+    SalusPreviewPalettes {
         SalusProgressRing(progress: 0.6, label: "3/5")
-            .padding(SalusSpacing.lg)
     }
-    .frame(height: 120)
-    .salusTheme(theme)
-}
-
-#Preview("Progress ring — dark") {
-    let theme = SalusTheme.resolve(systemIsDark: true)
-    ZStack {
-        theme.colorScheme.surfaceContainerLow
-        SalusProgressRing(progress: 0.6, label: "3/5")
-            .padding(SalusSpacing.lg)
-    }
-    .frame(height: 120)
-    .salusTheme(theme)
 }

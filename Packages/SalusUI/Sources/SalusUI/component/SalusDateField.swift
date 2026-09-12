@@ -205,7 +205,7 @@ enum SalusDateFieldDefaults {
 }
 
 #Preview("Editor date field") {
-    Form {
+    SalusPreviewPalettes {
         SalusDateField(
             title: "Date",
             epochDay: LocalDate(year: 2026, month: 8, day: 17).epochDay,
@@ -221,25 +221,4 @@ enum SalusDateFieldDefaults {
             onChange: { _ in }
         )
     }
-}
-
-#Preview("Editor date field — dark") {
-    let theme = SalusTheme.resolve(systemIsDark: true)
-    Form {
-        SalusDateField(
-            title: "Date",
-            epochDay: LocalDate(year: 2026, month: 8, day: 17).epochDay,
-            placeholder: "Select date",
-            seedEpochDay: LocalDate(year: 2026, month: 8, day: 17).epochDay,
-            onChange: { _ in }
-        )
-        SalusDateField(
-            title: "Date",
-            epochDay: nil,
-            placeholder: "Select date",
-            seedEpochDay: LocalDate(year: 2026, month: 8, day: 17).epochDay,
-            onChange: { _ in }
-        )
-    }
-    .salusTheme(theme)
 }

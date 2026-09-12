@@ -106,10 +106,12 @@ public struct SalusStatusChip: View {
     private static let dotSize: CGFloat = 6
 }
 
-#Preview("Status chips") {
-    let theme = SalusTheme.resolve(systemIsDark: false)
-    ZStack {
-        theme.colorScheme.surfaceContainerLow
+/// The samples the palette fan-out renders — a view of its own for the reason
+/// `SalusDateTilePreviewSamples` is: the accent-tinted chip is palette-dependent.
+private struct SalusStatusChipPreviewSamples: View {
+    @Environment(\.salusTheme) private var theme
+
+    var body: some View {
         VStack(spacing: SalusSpacing.sm) {
             HStack(spacing: SalusSpacing.sm) {
                 SalusStatusChip(label: "Taken", status: .success, dot: true)
@@ -119,32 +121,15 @@ public struct SalusStatusChip: View {
             HStack(spacing: SalusSpacing.sm) {
                 SalusStatusChip(label: "Reminders off", status: .neutral, systemImage: "bell.slash")
                 SalusStatusChip(label: "Premium", status: .accent)
-                SalusStatusChip(label: "Tomorrow")
-            }
-        }
-        .padding(SalusSpacing.lg)
-    }
-    .frame(height: 160)
-    .salusTheme(theme)
-}
-
-#Preview("Status chips — dark") {
-    let theme = SalusTheme.resolve(systemIsDark: true)
-    ZStack {
-        theme.colorScheme.surfaceContainerLow
-        VStack(spacing: SalusSpacing.sm) {
-            HStack(spacing: SalusSpacing.sm) {
-                SalusStatusChip(label: "Taken", status: .success, dot: true)
-                SalusStatusChip(label: "Premium", status: .accent)
-                SalusStatusChip(label: "Missed", status: .error)
-            }
-            HStack(spacing: SalusSpacing.sm) {
                 SalusStatusChip(label: "1 hour before", accent: theme.extendedColors.appointments)
                 SalusStatusChip(label: "Tomorrow")
             }
         }
-        .padding(SalusSpacing.lg)
     }
-    .frame(height: 130)
-    .salusTheme(theme)
+}
+
+#Preview("Status chips") {
+    SalusPreviewPalettes {
+        SalusStatusChipPreviewSamples()
+    }
 }

@@ -98,31 +98,11 @@ public enum SalusAvatarDefaults {
 }
 
 #Preview("Avatars") {
-    let theme = SalusTheme.resolve(systemIsDark: false)
-    ZStack {
-        theme.colorScheme.surfaceContainerLow
+    SalusPreviewPalettes {
         HStack(spacing: SalusSpacing.sm) {
             SalusAvatar(name: "Alican Sekban")
             SalusAvatar(name: "Ayşe", size: SalusAvatarDefaults.largeSize)
             SalusAvatar(name: nil)
         }
-        .padding(SalusSpacing.lg)
     }
-    .frame(height: 120)
-    .salusTheme(theme)
-}
-
-#Preview("Avatars — dark") {
-    let theme = SalusTheme.resolve(systemIsDark: true)
-    ZStack {
-        theme.colorScheme.surfaceContainerLow
-        HStack(spacing: SalusSpacing.sm) {
-            SalusAvatar(name: "Alican Sekban")
-            SalusAvatar(name: "Ayşe", size: SalusAvatarDefaults.largeSize)
-            SalusAvatar(name: nil)
-        }
-        .padding(SalusSpacing.lg)
-    }
-    .frame(height: 120)
-    .salusTheme(theme)
 }

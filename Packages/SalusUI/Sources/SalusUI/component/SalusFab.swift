@@ -69,21 +69,7 @@ public struct SalusFab: View {
 }
 
 #Preview("FAB") {
-    ZStack(alignment: .bottomTrailing) {
-        SalusTheme.resolve(systemIsDark: false).colorScheme.background
+    SalusPreviewPalettes {
         SalusFab(systemImage: "plus", contentDescription: "Add", action: {})
-            .padding(SalusSpacing.lg)
     }
-    .frame(width: 240, height: 200)
-    .salusTheme(SalusTheme.resolve(systemIsDark: false))
-}
-
-#Preview("FAB — dark") {
-    ZStack(alignment: .bottomTrailing) {
-        SalusTheme.resolve(systemIsDark: true).colorScheme.background
-        SalusFab(systemImage: "plus", contentDescription: "Add", action: {})
-            .padding(SalusSpacing.lg)
-    }
-    .frame(width: 240, height: 200)
-    .salusTheme(SalusTheme.resolve(systemIsDark: true))
 }

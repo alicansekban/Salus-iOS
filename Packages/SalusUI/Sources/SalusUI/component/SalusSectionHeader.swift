@@ -80,10 +80,12 @@ extension SalusSectionHeader where Actions == EmptyView {
     }
 }
 
-#Preview("Section header") {
-    let theme = SalusTheme.resolve(systemIsDark: false)
-    ZStack(alignment: .top) {
-        theme.colorScheme.background
+/// The samples the palette fan-out renders — a view of its own because the trailing action is
+/// tinted `primary`, which every palette re-values.
+private struct SalusSectionHeaderPreviewSamples: View {
+    @Environment(\.salusTheme) private var theme
+
+    var body: some View {
         VStack(spacing: 0) {
             SalusSectionHeader(title: "Upcoming") {
                 Button("See all") {}
@@ -96,23 +98,10 @@ extension SalusSectionHeader where Actions == EmptyView {
             SalusSectionHeader(title: "Flush", contentPadding: SalusSectionHeaderDefaults.topOnly)
         }
     }
-    .frame(height: 140)
-    .salusTheme(theme)
 }
 
-#Preview("Section header — dark") {
-    let theme = SalusTheme.resolve(systemIsDark: true)
-    ZStack(alignment: .top) {
-        theme.colorScheme.background
-        VStack(spacing: 0) {
-            SalusSectionHeader(title: "Upcoming") {
-                Button("See all") {}
-                    .buttonStyle(.plain)
-                    .foregroundStyle(theme.colorScheme.primary)
-            }
-            SalusSectionHeader(title: "Notes")
-        }
+#Preview("Section header") {
+    SalusPreviewPalettes {
+        SalusSectionHeaderPreviewSamples()
     }
-    .frame(height: 100)
-    .salusTheme(theme)
 }
