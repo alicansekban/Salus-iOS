@@ -89,8 +89,12 @@ struct OnboardingHealthPage: View {
     /// `FieldGroup(notes_label) { SalusTextField; SalusStatusChip }` (`OnboardingPages.kt:246-262`).
     /// The overline is the field's own `label:` here; the chip states where the text ends up, which
     /// is the question a free-text health field raises.
+    ///
+    /// `.leading`, because `FieldGroup` is a plain `Column(fillMaxWidth, spacedBy(sm))` and
+    /// Compose's default is `Alignment.Start` (`OnboardingPages.kt:323-335`) — the chip sits under
+    /// the field's left edge, not against the right one.
     private var notesGroup: some View {
-        VStack(alignment: .trailing, spacing: SalusSpacing.sm) {
+        VStack(alignment: .leading, spacing: SalusSpacing.sm) {
             SalusTextField(
                 text: Binding(get: { state.healthNotes }, set: { onEvent(.healthNotesChanged($0)) }),
                 label: OnboardingStrings.onboardingNotesLabel,

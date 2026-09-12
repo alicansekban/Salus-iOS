@@ -125,7 +125,7 @@ notification permission can only be asked for once per install.
 | 2.9 | Fill name, birth date, height and weight, then tap "Şimdilik Atla" | page 3 arrives; go **back** to page 2 — the name, the birth date, the height and the weight are all cleared and the **sex is still selected** | ☐ |
 | 2.10 | On page 2, tap back | page 1 slides in **from the left** while page 2 slides right; header is back to "ADIM 1/3" with no back button. Tapping back again (there is none) is impossible — the flow cannot be escaped | ☐ |
 | 2.11 | Page 3 | document tile, "Son Birkaç Detay", the notes field under its "SAĞLIK NOTLARI & ALERJİLER (İSTEĞE BAĞLI)" overline with the "Yalnızca bu cihazda" chip under it, the privacy note, and the "Zamanında Hatırlatıcılar" row with its switch **on** | ☐ |
-| 2.12 | Type several lines of notes | the field grows with the text and the page scrolls; the chip stays below the text rather than under it | ☐ |
+| 2.12 | Type several lines of notes | the field grows with the text and the page scrolls; the lock chip sits under the notes field, left-aligned with it — never pushed to the right edge | ☐ |
 | 2.13 | Leave the switch **on** and tap "Kurulumu Tamamla ve Başla" | the system notification prompt appears; whichever answer you give, the app lands on Home — the prompt never blocks the finish | ☐ |
 | 2.14 | *(second fresh install)* Turn the switch **off**, then tap "Kurulumu Tamamla ve Başla" | **no** system prompt at all, and the app still lands on Home | ☐ |
 | 2.15 | *(third fresh install)* On page 3 type some notes, then tap "Daha Sonra Ayarla" | no system prompt, the app lands on Home, and Daha Fazla › Profil shows **no** health notes — the typed text was discarded | ☐ |
