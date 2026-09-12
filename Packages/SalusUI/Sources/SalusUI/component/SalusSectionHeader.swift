@@ -7,6 +7,11 @@
 // twin of Kotlin's `PaddingValues(top = SalusSpacing.sm)` (`MoreScreen.kt:363-366`). Compose's
 // `PaddingValues` is spelled `EdgeInsets`; the default is Kotlin's default, so every existing
 // caller draws exactly what it drew before.
+//
+// The trailing action is rendered inside a `SalusTouchTarget.min`-high frame, the twin of
+// Kotlin's `defaultMinSize(minHeight = SalusTouchTarget.min)` (`SalusSectionHeader.kt:64`) —
+// enforced at the component slot so every caller's "See all" meets the ≥44 pt tap-target
+// binding, never at the call site.
 
 import SalusDesignSystem
 import SwiftUI
@@ -53,7 +58,8 @@ public struct SalusSectionHeader<Actions: View>: View {
 
     public var body: some View {
         // Zero, matching Compose's `Arrangement.Start` default — the same reasoning as
-        // the shell's inline titles: a trailing button carries its own touch-target padding.
+        // the shell's inline titles: the `minHeight` below sizes the touch target, and the
+        // action slot's caller styles the label.
         HStack(spacing: 0) {
             // `Text(verbatim:)` because the caller hands over a resolved `String` — the plain
             // initializer would read it back as a `LocalizedStringKey` against the main bundle
@@ -65,6 +71,11 @@ public struct SalusSectionHeader<Actions: View>: View {
                 // `Modifier.weight(1f)` (`SalusSectionHeader.kt:43`).
                 .frame(maxWidth: .infinity, alignment: .leading)
             actions
+                // `Modifier.defaultMinSize(minHeight = SalusTouchTarget.min)`
+                // (`SalusSectionHeader.kt:64`) — the trailing action meets the
+                // `SalusTouchTarget.min` touch-target floor no matter what the caller puts in
+                // the slot, so the "See all" button is never a bare text hit target.
+                .frame(minHeight: SalusTouchTarget.min)
         }
         .frame(maxWidth: .infinity)
         // `Modifier.padding(contentPadding)` (`SalusSectionHeader.kt:35`).
@@ -90,6 +101,10 @@ private struct SalusSectionHeaderPreviewSamples: View {
             SalusSectionHeader(title: "Upcoming") {
                 Button("See all") {}
                     .buttonStyle(.plain)
+                    // `labelLarge` in `primary`, the twin's action label (`SalusSectionHeader.kt:70`),
+                    // rendered inside the slot's `SalusTouchTarget.min`-high frame.
+                    .font(SalusTypography.labelLarge.font)
+                    .tracking(SalusTypography.labelLarge.tracking)
                     .foregroundStyle(theme.colorScheme.primary)
             }
             SalusSectionHeader(title: "Notes")

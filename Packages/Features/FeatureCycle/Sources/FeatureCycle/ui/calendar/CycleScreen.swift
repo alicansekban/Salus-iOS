@@ -158,8 +158,10 @@ private struct CycleTodaySymptomsSection: View {
             ) {
                 Button(CycleStrings.seeAll, action: onSeeAll)
                     .buttonStyle(.plain)
-                    .font(SalusTypography.labelMedium.font)
-                    .tracking(SalusTypography.labelMedium.tracking)
+                    // `labelLarge` — the action label the twin applies inside its
+                    // `SalusTouchTarget.min`-high frame (`SalusSectionHeader.kt:64,70`).
+                    .font(SalusTypography.labelLarge.font)
+                    .tracking(SalusTypography.labelLarge.tracking)
                     .foregroundStyle(theme.colorScheme.primary)
             }
             if state.todaySymptoms.isEmpty {
