@@ -22,6 +22,7 @@ public final class AiSummaryViewModel {
     private let repository: any AiSummaryRepository
     private let paywallController: PaywallController
     private let languageProvider: any AiLanguageProvider
+    private let periodReader: any HealthPeriodReader
     private let clock: any SalusClock
 
     /// Held so a period switch cancels the request it replaces and can never overwrite it late.
@@ -40,11 +41,13 @@ public final class AiSummaryViewModel {
         premiumRepository: any PremiumRepository,
         paywallController: PaywallController,
         languageProvider: any AiLanguageProvider,
+        periodReader: any HealthPeriodReader,
         clock: any SalusClock
     ) {
         self.repository = repository
         self.paywallController = paywallController
         self.languageProvider = languageProvider
+        self.periodReader = periodReader
         self.clock = clock
         state = AiSummaryUiState()
 
@@ -110,8 +113,34 @@ public final class AiSummaryViewModel {
                 language: languageProvider.current()
             )
             guard !Task.isCancelled else { return }
-            state = AiSummaryUiState(period: period, result: outcome.toResult())
+            let result = outcome.toResult()
+            state = await AiSummaryUiState(period: period, result: withMetrics(result, period: period))
         })
+    }
+
+    /// The period's headline figures for the tiles above the text.
+    ///
+    /// Read here rather than taken from the summary, because `AiSummaryRepository` aggregates
+    /// privately and answers with prose — the snapshot it built for the prompt never leaves it.
+    /// That costs this screen one extra pair of indexed reads per successful load, which is the
+    /// price of keeping the repository's contract to the model-facing half of the feature
+    /// (`AiSummaryViewModel.kt:110-129`).
+    ///
+    /// Never fatal: a snapshot that cannot be read costs the user three tiles, and turning a
+    /// summary they are already looking at into an error would be the worse trade.
+    private func withMetrics(_ result: AiSummaryResult, period: SummaryPeriod) async -> AiSummaryResult {
+        guard case let .content(text, fromCache, _) = result else { return result }
+        // A `try?` guards the read; a cancellation that lands mid-read simply leaves the tiles
+        // off, and the `Task.isCancelled` check the caller runs after this covers a switch that
+        // arrived while the aggregate was in flight — the twin of Kotlin rethrowing
+        // `CancellationException` out of `runCatching` (`AiSummaryViewModel.kt:125-129`).
+        let metrics = try? await periodReader.aggregate(
+            period: period,
+            todayEpochDay: clock.todayEpochDay(),
+            timeZone: clock.timeZone()
+        )
+        guard !Task.isCancelled else { return result }
+        return .content(text: text, fromCache: fromCache, metrics: metrics.flatMap(AiSummaryMetrics.of))
     }
 }
 

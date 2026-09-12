@@ -165,7 +165,9 @@ extension AppCompositionRoot {
             premiumRepository: premium.premiumRepository,
             paywallController: premium.paywallController,
             languageProvider: ResourceAiLanguageProvider(),
-            clock: infrastructure.clock
+            periodReader: aggregator,
+            clock: infrastructure.clock,
+            navigator: infrastructure.navigator
         )
     }
 

@@ -11,9 +11,15 @@
 //   implementation reads `Bundle.main.preferredLocalizations` and lives in the app target.
 //   `viewModelOf(::AiSummaryViewModel)` → `makeAiSummaryViewModel`.
 //   `viewModelOf(::DoctorReportViewModel)` → `makeDoctorReportViewModel` (Task 6 of iOS-M10).
+//
+// The `navigator` is exposed alongside the factories for the same reason `SettingsModule` exposes
+// its own: `AiSummaryRoute`'s same-feature push of `DoctorReportKey` goes through it the way
+// Kotlin's `AiSummaryRoute` reaches `koinInject<Navigator>()` (`AiSummaryScreen.kt:44,53`). The
+// shell still owns the stack; the feature only asks it to push.
 
 import SalusAI
 import SalusCommon
+import SalusNavigation
 import SalusPremium
 import SwiftUI
 
@@ -28,7 +34,16 @@ public struct AiHealthModule {
 
     /// Koin's `viewModelOf(::DoctorReportViewModel)` (`AiHealthModule.kt:41`).
     public let makeDoctorReportViewModel: @MainActor () -> DoctorReportViewModel
+
+    /// The shell's `Navigator`, exposed so the summary's "PDF olarak paylaş" button and the toolbar
+    /// share icon can push this feature's `DoctorReportKey` (`AiSummaryScreen.kt:44,53`). Read-only;
+    /// the shell is still the only stack mutator.
+    public let navigator: Navigator
 }
+
+// The factory builds the whole feature's graph; seven dependencies is the shape of that graph,
+// not a function that does too much (`AppointmentsModule.swift` counts the same).
+// swiftlint:disable function_parameter_count
 
 /// Builds the feature's graph — the twin of `val aiHealthModule = module { … }`.
 ///
@@ -41,7 +56,9 @@ public func makeAiHealthModule(
     premiumRepository: any PremiumRepository,
     paywallController: PaywallController,
     languageProvider: any AiLanguageProvider,
-    clock: any SalusClock
+    periodReader: any HealthPeriodReader,
+    clock: any SalusClock,
+    navigator: Navigator
 ) -> AiHealthModule {
     AiHealthModule(
         makeAiSummaryViewModel: {
@@ -50,6 +67,7 @@ public func makeAiHealthModule(
                 premiumRepository: premiumRepository,
                 paywallController: paywallController,
                 languageProvider: languageProvider,
+                periodReader: periodReader,
                 clock: clock
             )
         },
@@ -59,12 +77,14 @@ public func makeAiHealthModule(
                 premiumRepository: premiumRepository,
                 paywallController: paywallController,
                 languageProvider: languageProvider,
+                periodReader: periodReader,
                 clock: clock
             )
-        }
+        },
+        navigator: navigator
     )
 }
-
+// swiftlint:enable function_parameter_count
 extension EnvironmentValues {
     /// How the module reaches this feature's Routes.
     ///

@@ -25,6 +25,7 @@ public final class DoctorReportViewModel {
     private let repository: any DoctorReportRepository
     private let paywallController: PaywallController
     private let languageProvider: any AiLanguageProvider
+    private let periodReader: any HealthPeriodReader
     private let clock: any SalusClock
 
     /// Held so a period switch cancels the request it replaces and can never overwrite it late.
@@ -43,11 +44,13 @@ public final class DoctorReportViewModel {
         premiumRepository: any PremiumRepository,
         paywallController: PaywallController,
         languageProvider: any AiLanguageProvider,
+        periodReader: any HealthPeriodReader,
         clock: any SalusClock
     ) {
         self.repository = repository
         self.paywallController = paywallController
         self.languageProvider = languageProvider
+        self.periodReader = periodReader
         self.clock = clock
         state = DoctorReportUiState()
 
@@ -87,7 +90,6 @@ public final class DoctorReportViewModel {
         generateBox.cancel()
         state = DoctorReportUiState(period: period, result: .idle, preview: .hidden)
     }
-
     /// Opens the report that is on screen, and only that one.
     ///
     /// The guard is the point: a preview of a file the screen is not currently offering would be a
@@ -139,8 +141,35 @@ public final class DoctorReportViewModel {
                 language: languageProvider.current()
             )
             guard !Task.isCancelled else { return }
-            state = DoctorReportUiState(period: period, result: outcome.toResult(), preview: .hidden)
+            let result = outcome.toResult()
+            let content: ReportContent? = if case .ready = result {
+                await contentFor(period)
+            } else {
+                nil
+            }
+            state = DoctorReportUiState(period: period, result: result, preview: .hidden, content: content)
         })
+    }
+
+    /// What the finished document contains, for the card and the checklist above the actions
+    /// (`DoctorReportViewModel.kt:226-244`).
+    ///
+    /// Read here rather than returned by the repository, which answers with a file: the numbers on
+    /// this screen describe the same period the document covers, and the aggregate is two indexed
+    /// reads the user has already waited through a model call for.
+    ///
+    /// Never fatal: a snapshot that cannot be read costs the screen its tiles and its counts, and
+    /// turning a report the user can share into an error would be the worse trade.
+    private func contentFor(_ period: SummaryPeriod) async -> ReportContent? {
+        guard let stats = try? await periodReader.aggregate(
+            period: period,
+            todayEpochDay: clock.todayEpochDay(),
+            timeZone: clock.timeZone()
+        ) else {
+            return nil
+        }
+        guard !Task.isCancelled else { return nil }
+        return ReportContent.of(stats)
     }
 }
 

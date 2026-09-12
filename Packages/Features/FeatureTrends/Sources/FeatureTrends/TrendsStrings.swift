@@ -25,7 +25,6 @@ import SalusCommon
 /// The strings `:feature:trends` owns.
 public enum TrendsStrings {
     public static var title: String { localized(.title) }
-    public static var back: String { localized(.back) }
 
     public static var rangeMonth: String { localized(.rangeMonth) }
     public static var rangeQuarter: String { localized(.rangeQuarter) }
@@ -55,6 +54,13 @@ public enum TrendsStrings {
     public static var metricBloodPressure: String { localized(.metricBloodPressure) }
     public static var metricGlucose: String { localized(.metricGlucose) }
     public static var metricWeight: String { localized(.metricWeight) }
+
+    /// The same metric names, stored upper-case for the places they are drawn as an overline
+    /// (`TrendsScreen.kt:549-560`). A second key rather than `uppercase()`: Turkish folds `i` to
+    /// `İ` and a runtime fold depends on the device's locale, not on the resource.
+    public static var metricBloodPressureOverline: String { localized(.metricBloodPressureOverline) }
+    public static var metricGlucoseOverline: String { localized(.metricGlucoseOverline) }
+    public static var metricWeightOverline: String { localized(.metricWeightOverline) }
 
     /// `%1$s (%2$s)` — a metric name followed by the unit its numbers are written in.
     public static func metricWithUnit(_ metric: String, _ unit: String) -> String {
@@ -132,13 +138,13 @@ public enum TrendsStrings {
     public static var summaryTitle: String { localized(.summaryTitle) }
     public static var summarySubtitle: String { localized(.summarySubtitle) }
 
-    /// `%1$d · Ortalama: %2$s %3$s` — one metric's counts: how many readings the period holds,
+    /// `%1$lld · Ortalama: %2$@ %3$@` — one metric's counts: how many readings the period holds,
     /// then their mean and its unit.
-    public static func summaryStats(_ count: Int, _ average: String, _ unit: String) -> String {
-        String(format: localized(.summaryStats), count, average, unit)
+    public static func summaryCount(_ count: Int) -> String {
+        String(format: localized(.summaryCount), count)
     }
 
-    /// `%1$s–%2$s %3$s` — the lowest and the highest reading of the period, in the unit they are
+    /// `%1$@–%2$@ %3$@` — the lowest and the highest reading of the period, in the unit they are
     /// written in.
     public static func summaryMinMax(_ min: String, _ max: String, _ unit: String) -> String {
         String(format: localized(.summaryMinMax), min, max, unit)
@@ -169,8 +175,6 @@ public enum TrendsStrings {
     /// a key the catalog really carries — a typo here would otherwise ship the key as the label.
     enum Key: String, CaseIterable {
         case title = "trends_title"
-        case back = "trends_back"
-
         case rangeMonth = "trends_range_month"
         case rangeQuarter = "trends_range_quarter"
         case rangeHalfYear = "trends_range_half_year"
@@ -224,7 +228,7 @@ public enum TrendsStrings {
 
         case summaryTitle = "trends_summary_title"
         case summarySubtitle = "trends_summary_subtitle"
-        case summaryStats = "trends_summary_stats"
+        case summaryCount = "trends_summary_count"
         case summaryMinMax = "trends_summary_min_max"
         case summaryDirectionRising = "trends_summary_direction_rising"
         case summaryDirectionFalling = "trends_summary_direction_falling"
@@ -234,6 +238,11 @@ public enum TrendsStrings {
         case summaryChangeFlat = "trends_summary_change_flat"
         case summaryChangeNoPrevious = "trends_summary_change_no_previous"
         case summaryChangeNotComputable = "trends_summary_change_not_computable"
+
+        // The M15 overlines, stored upper-case (`TrendsScreen.kt:549-560`).
+        case metricBloodPressureOverline = "trends_metric_blood_pressure_overline"
+        case metricGlucoseOverline = "trends_metric_glucose_overline"
+        case metricWeightOverline = "trends_metric_weight_overline"
     }
 
     private static func localized(_ key: Key) -> String {

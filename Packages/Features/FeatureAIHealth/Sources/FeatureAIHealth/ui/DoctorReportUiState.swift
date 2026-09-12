@@ -4,6 +4,7 @@
 
 import Foundation
 import SalusAI
+import SalusModel
 
 /// Everything the doctor report screen can be showing below the period selector.
 ///
@@ -70,16 +71,73 @@ public struct DoctorReportUiState: Equatable, Sendable {
     public var period: SummaryPeriod
     public var result: DoctorReportResult
     public var preview: DoctorReportPreview
+    /// What the finished document holds, for the card above it and the list of what went in
+    /// (`DoctorReportUiState.kt:79-110`). `nil` until a document exists, and cleared with every
+    /// state that replaces one.
+    public var content: ReportContent?
 
     public init(
         period: SummaryPeriod = .weekly,
         result: DoctorReportResult = .idle,
-        preview: DoctorReportPreview = .hidden
+        preview: DoctorReportPreview = .hidden,
+        content: ReportContent? = nil
     ) {
         self.period = period
         self.result = result
         self.preview = preview
+        self.content = content
     }
+}
+
+/// What the finished document holds, for the card above it and the list of what went in
+/// (`DoctorReportUiState.kt:79-110`).
+///
+/// Read from the period's aggregated snapshot rather than from the file: the PDF is bytes by the
+/// time the screen sees it, and re-parsing a document the app has just written to find out what
+/// it says would be the wrong direction of dependency.
+public struct ReportContent: Equatable, Sendable {
+    public let metrics: AiSummaryMetrics?
+    public let sections: [ReportSectionSummary]
+
+    public init(metrics: AiSummaryMetrics?, sections: [ReportSectionSummary]) {
+        self.metrics = metrics
+        self.sections = sections
+    }
+
+    /// The snapshot as the screen reads it: three headline figures and four row counts
+    /// (`DoctorReportUiState.kt:100-109`).
+    static func of(_ stats: HealthPeriodStats) -> ReportContent {
+        ReportContent(
+            metrics: AiSummaryMetrics.of(stats),
+            sections: [
+                ReportSectionSummary(section: .bloodPressure, recordCount: stats.systolic?.count ?? 0),
+                ReportSectionSummary(section: .glucose, recordCount: stats.glucoseMgDl?.count ?? 0),
+                ReportSectionSummary(section: .weight, recordCount: stats.weightKg?.count ?? 0),
+                ReportSectionSummary(section: .medications, recordCount: stats.loggedDoses)
+            ]
+        )
+    }
+}
+
+/// One tabulated section of the document; `recordCount` zero prints an unchecked row
+/// (`DoctorReportUiState.kt:113`).
+public struct ReportSectionSummary: Equatable, Sendable {
+    public let section: ReportSection
+    public let recordCount: Int
+
+    public init(section: ReportSection, recordCount: Int) {
+        self.section = section
+        self.recordCount = recordCount
+    }
+}
+
+/// The document's tabulated sections, in the order the generator prints them
+/// (`DoctorReportUiState.kt:116`).
+public enum ReportSection: CaseIterable, Equatable, Sendable {
+    case bloodPressure
+    case glucose
+    case weight
+    case medications
 }
 
 /// User intents on the doctor report screen.

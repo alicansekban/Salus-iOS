@@ -4,8 +4,9 @@
 // Material → SwiftUI, per the mapping table iOS-M2 Task 3 recorded:
 //   `TopAppBar` + `navigationIcon` (back) → `.navigationTitle(_:)` + the stack's own back button
 //     (see `AiSummaryScreen.swift:4-9` for the settled reasoning — `onBack` has no parameter
-//     here, and `trends_back` stays in the catalog for Android parity).
-//   `FilterChip` row (ranges) → segmented `Picker` with an empty label; Vitals does the same.
+//     here).
+//   `FilterChip` row (ranges) → `SalusSegmentedTabs` over `TrendsRange` (M15 divergence (b),
+//     spec §9); disabled while the body is locked.
 //   `CircularProgressIndicator` → `ProgressView()`.
 //   `SalusEmptyState` → the same component, with the SF Symbol twin of each Material icon.
 //
@@ -54,7 +55,13 @@ struct TrendsScreen: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            RangeFilter(selected: state.range) { onEvent(.rangeSelected($0)) }
+            // `data != .locked` is the disabled condition: a free user's every range answers the
+            // same locked body, so a tab that reacted would be pretending to do something
+            // (`TrendsScreen.kt:88-92`).
+            RangeFilter(
+                selected: state.range,
+                enabled: state.data != .locked
+            ) { onEvent(.rangeSelected($0)) }
 
             // Only the first load gets the whole body: until it answers there is nothing on
             // screen worth keeping, and `data` still holds the locked default that an entitled
@@ -73,6 +80,11 @@ struct TrendsScreen: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(theme.colorScheme.background)
+        // LAST in the chain, and `#if os(iOS)` because the modifier is iOS-only API while every
+        // feature package also builds for the macOS test host (`AppointmentDetailScreen.swift`).
+        #if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+        #endif
     }
 
     private var bodySpacer: some View {
@@ -165,228 +177,6 @@ struct ReadyBody: View {
     }
 }
 
-/// The time-of-day card: one metric's day, one column per bucket it was measured in
-/// (`TrendsScreen.kt:264-326`).
-///
-/// `TimeOfDayBreakdown` carries plain numbers so that the analysis stays portable; resolving the
-/// labels, converting to the reader's unit and handing the pair to `barChartModelOf` is the UI's
-/// job, and this is the only place it happens.
-///
-/// The averages arrive in canonical mg/dL and the reader may have chosen mmol/L, so the bars, the
-/// axis they are measured against and the spoken summary all take their numbers from one
-/// conversion — and the unit is named once, next to the metric, rather than repeated on every
-/// bar.
-private struct TimeOfDayCard: View {
-    let breakdown: TimeOfDayBreakdown
-    let glucoseUnit: GlucoseUnit
-
-    @Environment(\.salusTheme) private var theme
-    /// The in-app language pick (`RootView+Locale.swift`), not `Locale.current`, which on iOS
-    /// stays on the device's language whatever the in-app setting says.
-    @Environment(\.locale) private var locale
-
-    var body: some View {
-        // Bound here so the `@Sendable` axis closure captures the value and not the view.
-        let locale = locale
-        let type = breakdown.type
-        let metricName = TrendsStrings.metricWithUnit(
-            type.metricLabel,
-            type.unitLabel(glucoseUnit)
-        )
-        let decimals = MetricDisplay.decimals(type: type, glucoseUnit: glucoseUnit)
-
-        // The mapping itself lives in `barChartModelOf`, where it is unit-tested; nil means the
-        // breakdown held nothing worth drawing, which the analysis makes unreachable today but
-        // which is answered here rather than assumed away.
-        if let model = barChartModelOf(
-            breakdown: breakdown,
-            partLabel: { $0.label },
-            displayValue: { MetricDisplay.value(type: type, stored: $0, glucoseUnit: glucoseUnit) },
-            // An axis tick is a number, not a sentence: no unit on it, and only as many
-            // decimals as the metric is written with.
-            axisLabel: { MetricDisplay.write(converted: Double($0), decimals: decimals, locale: locale) }
-        ) {
-            // The chart itself is silent to VoiceOver, so the numbers are spoken here instead —
-            // read off the bars rather than off the breakdown, so what is described is exactly
-            // what is drawn. Buckets with no measurement produced no bar and are simply not
-            // mentioned: an unmeasured evening is not a reading of zero.
-            let spokenParts = model.bars.map { bar in
-                TrendsStrings.timeOfDayPartSummary(bar.label, bar.valueText(decimals: decimals, locale: locale))
-            }
-
-            SalusCard {
-                Text(verbatim: TrendsStrings.timeOfDayTitle)
-                    .font(SalusTypography.titleMedium.font)
-                    .tracking(SalusTypography.titleMedium.tracking)
-                    .foregroundStyle(theme.colorScheme.onSurface)
-                Spacer().frame(height: SalusSpacing.xs)
-                Text(verbatim: metricName)
-                    .font(SalusTypography.bodyMedium.font)
-                    .tracking(SalusTypography.bodyMedium.tracking)
-                    .foregroundStyle(theme.colorScheme.onSurfaceVariant)
-                Spacer().frame(height: SalusSpacing.md)
-                SalusBarChart(
-                    model: model,
-                    contentDescription: TrendsStrings.timeOfDayChartDescription(
-                        metricName,
-                        spokenParts.joined(separator: ", ")
-                    )
-                )
-                .frame(height: TimeOfDayCard.chartHeight)
-            }
-            .frame(maxWidth: .infinity)
-        }
-    }
-
-    /// `BarChartHeight` (`SalusBarChart.kt:156`) — tall enough for four labelled columns to be
-    /// readable without dominating a card.
-    private static let chartHeight: CGFloat = 200
-}
-
-/// The multi-metric overlay card: several metrics on one shared, unit-less axis
-/// (`TrendsScreen.kt:330-390`).
-///
-/// The analysis normalizes every series onto its own 0...1 span and carries the real numbers
-/// alongside, because the two belong together: this chart shows no numbers at all (a value on it
-/// could not belong to any of the series), so the legend below is the only place a line is
-/// attributed to a metric *and* a real range.
-///
-/// The subtitle names which average a point is, because "weekly average" and "daily average" are
-/// different claims about the same line (`Overlay.kt` — `bucket` travels with the overlay for
-/// exactly this reason).
-private struct MetricOverlayCard: View {
-    let overlay: MetricOverlay
-    let glucoseUnit: GlucoseUnit
-
-    @Environment(\.salusTheme) private var theme
-    /// The in-app language pick (`RootView+Locale.swift`); the legend's ranges are written in it.
-    @Environment(\.locale) private var locale
-
-    var body: some View {
-        // The mapping from series to a chart is tested on its own (`OverlayChartModelTests`);
-        // nil here means fewer than two series remain, which the analysis makes unreachable
-        // today but which is answered rather than assumed away.
-        if let model = overlayChartModelOf(
-            overlay: overlay,
-            xLabel: { String($0) }
-        ) {
-            // The chart is silent to VoiceOver, so the legend is spoken as one summary — each
-            // line named with the metric and its real range, exactly as it is drawn.
-            let spokenLegend = model.legend.map { legendLine(for: $0) }
-
-            SalusCard {
-                Text(verbatim: TrendsStrings.overlayTitle)
-                    .font(SalusTypography.titleMedium.font)
-                    .tracking(SalusTypography.titleMedium.tracking)
-                    .foregroundStyle(theme.colorScheme.onSurface)
-                Spacer().frame(height: SalusSpacing.xs)
-                Text(verbatim: overlay.bucket.subtitle)
-                    .font(SalusTypography.bodyMedium.font)
-                    .tracking(SalusTypography.bodyMedium.tracking)
-                    .foregroundStyle(theme.colorScheme.onSurfaceVariant)
-                Spacer().frame(height: SalusSpacing.md)
-                SalusMultiSeriesChart(
-                    model: model.chart,
-                    contentDescription: TrendsStrings.overlayChartDescription(
-                        spokenLegend.joined(separator: ", ")
-                    )
-                )
-                Spacer().frame(height: SalusSpacing.md)
-                ForEach(model.legend, id: \.type) { item in
-                    legendRow(for: item)
-                        .foregroundStyle(item.role.swatchColor(theme.colorScheme))
-                }
-            }
-            .frame(maxWidth: .infinity)
-        }
-    }
-
-    /// One legend row: the line's colour swatch, then the metric name and its real range with the
-    /// unit (`trends_overlay_legend_entry`).
-    private func legendRow(for item: OverlayLegendItem) -> some View {
-        HStack(spacing: SalusSpacing.sm) {
-            Circle()
-                .fill(item.role.swatchColor(theme.colorScheme))
-                .frame(width: Self.swatchSize, height: Self.swatchSize)
-            Text(verbatim: legendLine(for: item))
-                .font(SalusTypography.bodySmall.font)
-                .tracking(SalusTypography.bodySmall.tracking)
-                .foregroundStyle(theme.colorScheme.onSurface)
-            Spacer()
-        }
-        .frame(maxWidth: .infinity)
-    }
-
-    /// The line's text: `%1$s · %2$s–%3$s %4$s` — metric, then the real range it covered, with
-    /// its unit. The min and max are written in the reader's unit (`MetricDisplay`), the way
-    /// every other number on this screen is.
-    private func legendLine(for item: OverlayLegendItem) -> String {
-        func written(_ stored: Double) -> String {
-            MetricDisplay.format(type: item.type, stored: stored, glucoseUnit: glucoseUnit, locale: locale)
-        }
-        return TrendsStrings.overlayLegendEntry(
-            item.type.metricLabel,
-            written(item.min),
-            written(item.max),
-            item.type.unitLabel(glucoseUnit)
-        )
-    }
-
-    /// A colour swatch has to stay small — bigger than the marker on the line and it dominates
-    /// the row instead of keying it.
-    private static let swatchSize: CGFloat = 10
-}
-
-extension OverlayBucket {
-    /// The card's subtitle: the sentence that has to say which average a point is (`TrendsScreen.kt`).
-    fileprivate var subtitle: String {
-        switch self {
-        case .daily: TrendsStrings.overlaySubtitle
-        case .weekly: TrendsStrings.overlaySubtitleWeekly
-        }
-    }
-}
-
-extension SeriesRole {
-    /// The colour the legend swatch is drawn in, the same mapping the chart uses so a swatch can
-    /// never drift away from the line it stands for (`SeriesRole.chartColor()`).
-    fileprivate func swatchColor(_ scheme: SalusColorScheme) -> Color {
-        switch self {
-        case .primary: scheme.primary
-        case .secondary: scheme.tertiary
-        case .tertiary: scheme.secondary
-        }
-    }
-}
-
-/// A bar's value, written the way the metric is normally written (`TrendsScreen.kt:717-726`).
-///
-/// The bar already holds a converted number — `barChartModelOf` applied the conversion when it
-/// built the chart — so this only writes it out. Converting here as well would apply the glucose
-/// factor twice.
-extension BarEntry {
-    fileprivate func valueText(decimals: Int, locale: Locale) -> String {
-        // A second value only ever comes from a systolic/diastolic pair, which is written as one
-        // reading rather than as two numbers — and never in a unit the reader can change.
-        guard let secondaryValue else {
-            return MetricDisplay.write(converted: Double(value), decimals: decimals, locale: locale)
-        }
-        return TrendsStrings.valueBloodPressure(Int(value.rounded()), Int(secondaryValue.rounded()))
-    }
-}
-
-extension DayPart {
-    /// `DayPart.labelRes()` (`TrendsScreen.kt:889-894`).
-    fileprivate var label: String {
-        switch self {
-        case .morning: TrendsStrings.dayPartMorning
-        case .midday: TrendsStrings.dayPartMidday
-        case .evening: TrendsStrings.dayPartEvening
-        case .night: TrendsStrings.dayPartNight
-        }
-    }
-}
-
 extension VitalType {
     /// `VitalType.metricLabelRes()` (`TrendsScreen.kt:896-902`).
     var metricLabel: String {
@@ -476,25 +266,51 @@ struct LockedBody: View {
     private static let scrimOpacity = 0.6
 }
 
-/// The range-selector segmented control (`TrendsScreen.kt:729-750`, Android's
-/// `TrendsRangeFilter`).
+/// The window selector (`TrendsScreen.kt:189-203`).
+///
+/// On the locked body `enabled` is false, which is a real disabled state — dimmed, not selectable,
+/// announced as unavailable. It used to swallow the touches instead, so the tabs looked exactly as
+/// live as they will once the subscription is: that reads as broken rather than as locked, because a
+/// control that looks tappable and answers nothing is a bug to everyone who tries it. The paywall
+/// card under the tabs is what explains the state; the selector only has to stop claiming it is
+/// live (`SalusSegmentedTabs.kt:65-70`).
 private struct RangeFilter: View {
     let selected: TrendsRange
+    let enabled: Bool
     let onSelect: (TrendsRange) -> Void
 
     var body: some View {
-        Picker(
-            selection: Binding(get: { selected }, set: { onSelect($0) }),
-            content: {
-                Text(verbatim: TrendsStrings.rangeMonth).tag(TrendsRange.month)
-                Text(verbatim: TrendsStrings.rangeQuarter).tag(TrendsRange.quarter)
-                Text(verbatim: TrendsStrings.rangeHalfYear).tag(TrendsRange.halfYear)
-                Text(verbatim: TrendsStrings.rangeYear).tag(TrendsRange.year)
+        SalusSegmentedTabs(
+            options: TrendsRange.allCases,
+            selected: selected,
+            enabled: enabled,
+            label: { range in
+                switch range {
+                case .month: TrendsStrings.rangeMonth
+                case .quarter: TrendsStrings.rangeQuarter
+                case .halfYear: TrendsStrings.rangeHalfYear
+                case .year: TrendsStrings.rangeYear
+                }
             },
-            label: EmptyView.init // not `Picker("", …)` — see `AiSummaryScreen.swift` for why
+            onSelected: onSelect
         )
-        .pickerStyle(.segmented)
         .padding(.horizontal, SalusSpacing.lg)
         .padding(.vertical, SalusSpacing.sm)
+    }
+}
+
+// MARK: - Preview
+
+// The 8-palette fan-out over the ready body (`TrendsScreen.kt:408-424`).
+#Preview("Ready") {
+    SalusPreviewPalettes {
+        TrendsScreen(
+            state: TrendsUiState(
+                isLoading: false,
+                hasLoaded: true,
+                data: .ready(sampleTrendsReady())
+            ),
+            onEvent: { _ in }
+        )
     }
 }

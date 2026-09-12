@@ -28,17 +28,41 @@ import SalusCommon
 
 /// The strings `:feature:aihealth` owns.
 public enum AiHealthStrings {
-    // MARK: - The summary screen (19)
+    // MARK: - The summary screen (19 → 21 with the M15 additions and removals)
 
     public static var summaryTitle: String { localized(.summaryTitle) }
-    public static var summaryBack: String { localized(.summaryBack) }
 
     public static var periodWeekly: String { localized(.periodWeekly) }
     public static var periodMonthly: String { localized(.periodMonthly) }
 
+    /// `ai_summary_banner_title` — the accent banner over the three metric tiles.
+    public static var bannerTitle: String { localized(.bannerTitle) }
+    /// `ai_summary_state_fresh` / `ai_summary_state_cached` — where the text came from.
+    public static var stateFresh: String { localized(.stateFresh) }
+    public static var stateCached: String { localized(.stateCached) }
+
     public static var loading: String { localized(.loading) }
-    public static var fromCache: String { localized(.fromCache) }
     public static var disclaimer: String { localized(.disclaimer) }
+
+    /// `ai_summary_open_report` — the toolbar share button's accessibility label, which opens the
+    /// doctor report.
+    public static var openReport: String { localized(.openReport) }
+
+    /// `ai_summary_metric_bp` — overline "ORT. TANSİYON".
+    public static var metricBloodPressure: String { localized(.metricBloodPressure) }
+    /// `ai_summary_metric_doses` — overline "KAYDEDİLEN DOZ".
+    public static var metricDoses: String { localized(.metricDoses) }
+    /// `ai_summary_metric_doses_value` — the recorded-dose share as `%` + number.
+    public static func metricDosesValue(_ percent: Int) -> String {
+        String(format: localized(.metricDosesValue), percent)
+    }
+    /// `ai_summary_metric_pulse` — overline "ORT. NABIZ".
+    public static var metricPulse: String { localized(.metricPulse) }
+
+    /// `ai_summary_share_pdf` — the primary action under a finished summary.
+    public static var sharePdf: String { localized(.sharePdf) }
+    /// `ai_summary_refresh` — the secondary action that asks for a new summary.
+    public static var refresh: String { localized(.refresh) }
 
     public static var insufficientTitle: String { localized(.insufficientTitle) }
     public static var insufficientMessage: String { localized(.insufficientMessage) }
@@ -57,10 +81,9 @@ public enum AiHealthStrings {
     public static var unavailableTitle: String { localized(.unavailableTitle) }
     public static var unavailableMessage: String { localized(.unavailableMessage) }
 
-    // MARK: - The doctor report screen (24)
+    // MARK: - The doctor report screen (24 → 28 with the M15 additions and removals)
 
     public static var doctorReportTitle: String { localized(.doctorReportTitle) }
-    public static var doctorReportBack: String { localized(.doctorReportBack) }
 
     public static var doctorReportIdleTitle: String { localized(.doctorReportIdleTitle) }
     public static var doctorReportIdleMessage: String { localized(.doctorReportIdleMessage) }
@@ -76,8 +99,26 @@ public enum AiHealthStrings {
     public static var doctorReportRegenerate: String { localized(.doctorReportRegenerate) }
     public static var doctorReportDisclaimer: String { localized(.doctorReportDisclaimer) }
 
+    /// `doctor_report_pdf_chip` — the neutral chip on the ready card.
+    public static var doctorReportPdfChip: String { localized(.doctorReportPdfChip) }
+    /// `doctor_report_preview_section` — the overline above the BELGE ÖNİZLEME section.
+    public static var doctorReportPreviewSection: String { localized(.doctorReportPreviewSection) }
+    /// `doctor_report_preview_expand` — the section's trailing "Büyüt" action.
+    public static var doctorReportPreviewExpand: String { localized(.doctorReportPreviewExpand) }
+    /// `doctor_report_preview_hint` — the preview card's supporting line.
+    public static var doctorReportPreviewHint: String { localized(.doctorReportPreviewHint) }
+
+    /// `doctor_report_includes_title` — the overline above the RAPORA DAHİL EDİLENLER list.
+    public static var doctorReportIncludesTitle: String { localized(.doctorReportIncludesTitle) }
+
+    /// `doctor_report_section_*` — the checklist row labels.
+    public static var doctorReportSectionBloodPressure: String { localized(.sectionBloodPressure) }
+    public static var doctorReportSectionGlucose: String { localized(.sectionGlucose) }
+    public static var doctorReportSectionWeight: String { localized(.sectionWeight) }
+    public static var doctorReportSectionMedications: String { localized(.sectionMedications) }
+    public static var doctorReportSectionNarrative: String { localized(.sectionNarrative) }
+
     public static var doctorReportPreviewTitle: String { localized(.doctorReportPreviewTitle) }
-    public static var doctorReportPreviewClose: String { localized(.doctorReportPreviewClose) }
     public static var doctorReportPreviewLoading: String { localized(.doctorReportPreviewLoading) }
     public static var doctorReportPreviewPage: String { localized(.doctorReportPreviewPage) }
     public static var doctorReportPreviewErrorTitle: String { localized(.doctorReportPreviewErrorTitle) }
@@ -105,14 +146,22 @@ public enum AiHealthStrings {
     /// The catalog keys, named once. Internal so the parity test can prove every accessor asks for
     /// a key the catalog really carries — a typo here would otherwise ship the key as the label.
     enum Key: String, CaseIterable {
-        // The summary screen (19).
+        // The summary screen (21).
         case summaryTitle = "ai_summary_title"
-        case summaryBack = "ai_summary_back"
         case periodWeekly = "ai_summary_period_weekly"
         case periodMonthly = "ai_summary_period_monthly"
+        case bannerTitle = "ai_summary_banner_title"
+        case stateFresh = "ai_summary_state_fresh"
+        case stateCached = "ai_summary_state_cached"
         case loading = "ai_summary_loading"
-        case fromCache = "ai_summary_from_cache"
         case disclaimer = "ai_summary_disclaimer"
+        case openReport = "ai_summary_open_report"
+        case metricBloodPressure = "ai_summary_metric_bp"
+        case metricDoses = "ai_summary_metric_doses"
+        case metricDosesValue = "ai_summary_metric_doses_value"
+        case metricPulse = "ai_summary_metric_pulse"
+        case sharePdf = "ai_summary_share_pdf"
+        case refresh = "ai_summary_refresh"
         case insufficientTitle = "ai_summary_insufficient_title"
         case insufficientMessage = "ai_summary_insufficient_message"
         case premiumTitle = "ai_summary_premium_title"
@@ -126,9 +175,8 @@ public enum AiHealthStrings {
         case unavailableTitle = "ai_summary_unavailable_title"
         case unavailableMessage = "ai_summary_unavailable_message"
 
-        // The doctor report screen (24).
+        // The doctor report screen (28).
         case doctorReportTitle = "doctor_report_title"
-        case doctorReportBack = "doctor_report_back"
         case doctorReportIdleTitle = "doctor_report_idle_title"
         case doctorReportIdleMessage = "doctor_report_idle_message"
         case doctorReportGenerate = "doctor_report_generate"
@@ -140,8 +188,17 @@ public enum AiHealthStrings {
         case doctorReportPreview = "doctor_report_preview"
         case doctorReportRegenerate = "doctor_report_regenerate"
         case doctorReportDisclaimer = "doctor_report_disclaimer"
+        case doctorReportPdfChip = "doctor_report_pdf_chip"
+        case doctorReportPreviewSection = "doctor_report_preview_section"
+        case doctorReportPreviewExpand = "doctor_report_preview_expand"
+        case doctorReportPreviewHint = "doctor_report_preview_hint"
+        case doctorReportIncludesTitle = "doctor_report_includes_title"
+        case sectionBloodPressure = "doctor_report_section_blood_pressure"
+        case sectionGlucose = "doctor_report_section_glucose"
+        case sectionWeight = "doctor_report_section_weight"
+        case sectionMedications = "doctor_report_section_medications"
+        case sectionNarrative = "doctor_report_section_narrative"
         case doctorReportPreviewTitle = "doctor_report_preview_title"
-        case doctorReportPreviewClose = "doctor_report_preview_close"
         case doctorReportPreviewLoading = "doctor_report_preview_loading"
         case doctorReportPreviewPage = "doctor_report_preview_page"
         case doctorReportPreviewErrorTitle = "doctor_report_preview_error_title"

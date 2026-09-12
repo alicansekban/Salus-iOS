@@ -1,907 +1,941 @@
 {
-  "sourceLanguage" : "tr",
-  "strings" : {
-    "trends_back" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Back"
+  "sourceLanguage": "tr",
+  "strings": {
+    "trends_day_part_evening": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Evening"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Geri"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Akşam"
           }
         }
       }
     },
-    "trends_day_part_evening" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Evening"
+    "trends_day_part_midday": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Midday"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Akşam"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öğlen"
           }
         }
       }
     },
-    "trends_day_part_midday" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Midday"
+    "trends_day_part_morning": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Morning"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Öğlen"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sabah"
           }
         }
       }
     },
-    "trends_day_part_morning" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Morning"
+    "trends_day_part_night": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Night"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sabah"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gece"
           }
         }
       }
     },
-    "trends_day_part_night" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Night"
+    "trends_dose_weeks_average": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ %2$@ %3$@"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Gece"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ %2$@ %3$@"
           }
         }
       }
     },
-    "trends_dose_weeks_average" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$@ %2$@ %3$@"
+    "trends_dose_weeks_chart_description": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chart: share of recorded doses marked as taken, by week, from %1$@ to %2$@. Each week is listed below."
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$@ %2$@ %3$@"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grafik: kaydedilen dozların alındı olarak işaretlenen oranı, %1$@ ile %2$@ arası haftalar. Haftalar aşağıda tek tek listelenmiştir."
           }
         }
       }
     },
-    "trends_dose_weeks_chart_description" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Chart: share of recorded doses marked as taken, by week, from %1$@ to %2$@. Each week is listed below."
+    "trends_dose_weeks_subtitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Each bar shows what share of that week's recorded doses were marked as taken. Doses that were never recorded are outside this ratio. Under the bars are the same weeks' measurement averages."
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Grafik: kaydedilen dozların alındı olarak işaretlenen oranı, %1$@ ile %2$@ arası haftalar. Haftalar aşağıda tek tek listelenmiştir."
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Her çubuk, o hafta kaydedilen dozların ne kadarının alındı olarak işaretlendiğini gösterir. Hiç kaydedilmemiş dozlar bu oranın dışındadır. Çubukların altında aynı haftaların ölçüm ortalamaları yer alır."
           }
         }
       }
     },
-    "trends_dose_weeks_subtitle" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Each bar shows what share of that week's recorded doses were marked as taken. Doses that were never recorded are outside this ratio. Under the bars are the same weeks' measurement averages."
+    "trends_dose_weeks_taken_ratio": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld%% of recorded doses were taken"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Her çubuk, o hafta kaydedilen dozların ne kadarının alındı olarak işaretlendiğini gösterir. Hiç kaydedilmemiş dozlar bu oranın dışındadır. Çubukların altında aynı haftaların ölçüm ortalamaları yer alır."
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kaydedilen dozların alınma oranı: %%%1$lld"
           }
         }
       }
     },
-    "trends_dose_weeks_taken_ratio" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$lld%% of recorded doses were taken"
+    "trends_dose_weeks_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doses and measurements"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kaydedilen dozların alınma oranı: %%%1$lld"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doz kaydı ve ölçümler"
           }
         }
       }
     },
-    "trends_dose_weeks_title" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Doses and measurements"
+    "trends_dose_weeks_week_ratio": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ · %2$@"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Doz kaydı ve ölçümler"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ · %2$@"
           }
         }
       }
     },
-    "trends_dose_weeks_week_ratio" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$@ · %2$@"
+    "trends_empty_message": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "There are no measurements or doses in this period. Once you log a few, your trends appear here."
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$@ · %2$@"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu dönemde ölçüm ya da ilaç kaydın bulunmuyor. Birkaç kayıt girdikten sonra analizler burada görünür."
           }
         }
       }
     },
-    "trends_empty_message" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "There are no measurements or doses in this period. Once you log a few, your trends appear here."
+    "trends_empty_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nothing to analyse yet"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bu dönemde ölçüm ya da ilaç kaydın bulunmuyor. Birkaç kayıt girdikten sonra analizler burada görünür."
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analiz için kayıt yok"
           }
         }
       }
     },
-    "trends_empty_title" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nothing to analyse yet"
+    "trends_error_action": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try again"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Analiz için kayıt yok"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tekrar dene"
           }
         }
       }
     },
-    "trends_error_action" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Try again"
+    "trends_error_message": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your records could not be read just now. Trying again usually sorts it out."
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tekrar dene"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kayıtlarına şu anda ulaşılamadı. Tekrar denemek sorunu genellikle çözer."
           }
         }
       }
     },
-    "trends_error_message" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Your records could not be read just now. Trying again usually sorts it out."
+    "trends_error_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trends could not be loaded"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kayıtlarına şu anda ulaşılamadı. Tekrar denemek sorunu genellikle çözer."
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analizler yüklenemedi"
           }
         }
       }
     },
-    "trends_error_title" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Trends could not be loaded"
+    "trends_locked_action": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unlock with Premium"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Analizler yüklenemedi"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Premium ile aç"
           }
         }
       }
     },
-    "trends_locked_action" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Unlock with Premium"
+    "trends_locked_message": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "See the patterns in your records: time-of-day spread, your metrics side by side, the share of recorded doses that were marked as taken, and how each metric changed from the previous period."
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Premium ile aç"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kayıtlarındaki örüntüleri gör: gün içi dağılım, metriklerin bir arada seyri, kaydedilen dozların alınma oranı ve her metriğin önceki döneme göre değişimi."
           }
         }
       }
     },
-    "trends_locked_message" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "See the patterns in your records: time-of-day spread, your metrics side by side, the share of recorded doses that were marked as taken, and how each metric changed from the previous period."
+    "trends_locked_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trends are a Premium feature"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kayıtlarındaki örüntüleri gör: gün içi dağılım, metriklerin bir arada seyri, kaydedilen dozların alınma oranı ve her metriğin önceki döneme göre değişimi."
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analizler Premium'a özel"
           }
         }
       }
     },
-    "trends_locked_title" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Trends are a Premium feature"
+    "trends_metric_blood_pressure": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Blood pressure"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Analizler Premium'a özel"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tansiyon"
           }
         }
       }
     },
-    "trends_metric_blood_pressure" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Blood pressure"
+    "trends_metric_glucose": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Blood glucose"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tansiyon"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kan şekeri"
           }
         }
       }
     },
-    "trends_metric_glucose" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Blood glucose"
+    "trends_metric_weight": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weight"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kan şekeri"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kilo"
           }
         }
       }
     },
-    "trends_metric_weight" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Weight"
+    "trends_metric_with_unit": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ (%2$@)"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kilo"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ (%2$@)"
           }
         }
       }
     },
-    "trends_metric_with_unit" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$@ (%2$@)"
+    "trends_overlay_chart_description": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Metrics shown together: %1$@"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$@ (%2$@)"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bir arada gösterilen metrikler: %1$@"
           }
         }
       }
     },
-    "trends_overlay_chart_description" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Metrics shown together: %1$@"
+    "trends_overlay_legend_entry": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ · %2$@–%3$@ %4$@"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bir arada gösterilen metrikler: %1$@"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ · %2$@–%3$@ %4$@"
           }
         }
       }
     },
-    "trends_overlay_legend_entry" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$@ · %2$@–%3$@ %4$@"
+    "trends_overlay_subtitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The units differ, so each metric is placed on a shared scale between its own lowest and highest value. The shapes of the lines can be compared; their heights cannot."
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$@ · %2$@–%3$@ %4$@"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Birimleri farklı olduğu için her metrik kendi en düşük ve en yüksek değerine göre ortak bir ölçeğe yerleştirildi. Çizgilerin biçimi karşılaştırılabilir; yükseklikleri karşılaştırılamaz."
           }
         }
       }
     },
-    "trends_overlay_subtitle" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The units differ, so each metric is placed on a shared scale between its own lowest and highest value. The shapes of the lines can be compared; their heights cannot."
+    "trends_overlay_subtitle_weekly": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Over long periods each point is one week's average. The units differ, so each metric is placed on a shared scale between its own lowest and highest weekly average. The shapes of the lines can be compared; their heights cannot."
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Birimleri farklı olduğu için her metrik kendi en düşük ve en yüksek değerine göre ortak bir ölçeğe yerleştirildi. Çizgilerin biçimi karşılaştırılabilir; yükseklikleri karşılaştırılamaz."
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uzun dönemlerde her nokta bir haftanın ortalamasıdır. Birimleri farklı olduğu için her metrik kendi en düşük ve en yüksek haftalık ortalamasına göre ortak bir ölçeğe yerleştirildi. Çizgilerin biçimi karşılaştırılabilir; yükseklikleri karşılaştırılamaz."
           }
         }
       }
     },
-    "trends_overlay_subtitle_weekly" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Over long periods each point is one week's average. The units differ, so each metric is placed on a shared scale between its own lowest and highest weekly average. The shapes of the lines can be compared; their heights cannot."
+    "trends_overlay_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Metrics together"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Uzun dönemlerde her nokta bir haftanın ortalamasıdır. Birimleri farklı olduğu için her metrik kendi en düşük ve en yüksek haftalık ortalamasına göre ortak bir ölçeğe yerleştirildi. Çizgilerin biçimi karşılaştırılabilir; yükseklikleri karşılaştırılamaz."
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Metrikler bir arada"
           }
         }
       }
     },
-    "trends_overlay_title" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Metrics together"
+    "trends_range_half_year": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "6 months"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Metrikler bir arada"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "6 ay"
           }
         }
       }
     },
-    "trends_range_half_year" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "6 months"
+    "trends_range_month": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 month"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "6 ay"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 ay"
           }
         }
       }
     },
-    "trends_range_month" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "1 month"
+    "trends_range_quarter": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3 months"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "1 ay"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "3 ay"
           }
         }
       }
     },
-    "trends_range_quarter" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "3 months"
+    "trends_range_year": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 year"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "3 ay"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1 yıl"
           }
         }
       }
     },
-    "trends_range_year" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "1 year"
+    "trends_summary_change_down": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Average is %1$@%% down on the previous period"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "1 yıl"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ortalama, önceki döneme göre %%%1$@ azaldı"
           }
         }
       }
     },
-    "trends_summary_change_down" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Average is %1$@%% down on the previous period"
+    "trends_summary_change_flat": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Average is nearly the same as in the previous period"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ortalama, önceki döneme göre %%%1$@ azaldı"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ortalama, önceki döneme göre neredeyse aynı"
           }
         }
       }
     },
-    "trends_summary_change_flat" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Average is nearly the same as in the previous period"
+    "trends_summary_change_no_previous": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This metric has no records in the previous period"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ortalama, önceki döneme göre neredeyse aynı"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Önceki dönemde bu metriğin kaydı yok"
           }
         }
       }
     },
-    "trends_summary_change_no_previous" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "This metric has no records in the previous period"
+    "trends_summary_change_not_computable": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Change from the previous period cannot be computed"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Önceki dönemde bu metriğin kaydı yok"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Önceki döneme göre değişim hesaplanamıyor"
           }
         }
       }
     },
-    "trends_summary_change_not_computable" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Change from the previous period cannot be computed"
+    "trends_summary_change_up": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Average is %1$@%% up on the previous period"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Önceki döneme göre değişim hesaplanamıyor"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ortalama, önceki döneme göre %%%1$@ arttı"
           }
         }
       }
     },
-    "trends_summary_change_up" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Average is %1$@%% up on the previous period"
+    "trends_summary_direction_falling": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Moving down"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ortalama, önceki döneme göre %%%1$@ arttı"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Düşme yönünde"
           }
         }
       }
     },
-    "trends_summary_direction_falling" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Moving down"
+    "trends_summary_direction_rising": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Moving up"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Düşme yönünde"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yükselme yönünde"
           }
         }
       }
     },
-    "trends_summary_direction_rising" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Moving up"
+    "trends_summary_direction_stable": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No clear direction"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Yükselme yönünde"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Belirgin bir yön yok"
           }
         }
       }
     },
-    "trends_summary_direction_stable" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No clear direction"
+    "trends_summary_min_max": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lowest–highest: %1$@–%2$@ %3$@"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Belirgin bir yön yok"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En düşük–en yüksek: %1$@–%2$@ %3$@"
           }
         }
       }
     },
-    "trends_summary_min_max" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lowest–highest: %1$@–%2$@ %3$@"
+    "trends_summary_subtitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "For each metric, this period's number of readings, its average, and its lowest and highest value. The change compares that average against the previous period of the same length. For blood pressure, the systolic number is used."
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "En düşük–en yüksek: %1$@–%2$@ %3$@"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Her metrik için bu dönemdeki ölçüm sayısı, ortalaması ve en düşük–en yüksek değeri. Değişim, bu ortalamayı aynı uzunluktaki bir önceki dönemin ortalamasıyla karşılaştırır. Tansiyonda büyük tansiyon (sistolik) değeri kullanılır."
           }
         }
       }
     },
-    "trends_summary_stats" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Readings: %1$lld · Average: %2$@ %3$@"
+    "trends_summary_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Metric summary"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ölçüm: %1$lld · Ortalama: %2$@ %3$@"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İstatistik özeti"
           }
         }
       }
     },
-    "trends_summary_subtitle" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "For each metric, this period's number of readings, its average, and its lowest and highest value. The change compares that average against the previous period of the same length. For blood pressure, the systolic number is used."
+    "trends_time_of_day_chart_description": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@, averages by part of day: %2$@"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Her metrik için bu dönemdeki ölçüm sayısı, ortalaması ve en düşük–en yüksek değeri. Değişim, bu ortalamayı aynı uzunluktaki bir önceki dönemin ortalamasıyla karşılaştırır. Tansiyonda büyük tansiyon (sistolik) değeri kullanılır."
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@, gün içi ortalamalar: %2$@"
           }
         }
       }
     },
-    "trends_summary_title" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Metric summary"
+    "trends_time_of_day_part_summary": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ %2$@"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "İstatistik özeti"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$@ %2$@"
           }
         }
       }
     },
-    "trends_time_of_day_chart_description" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$@, averages by part of day: %2$@"
+    "trends_time_of_day_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Time of day"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$@, gün içi ortalamalar: %2$@"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gün içi dağılım"
           }
         }
       }
     },
-    "trends_time_of_day_part_summary" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$@ %2$@"
+    "trends_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trends"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$@ %2$@"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Analizler"
           }
         }
       }
     },
-    "trends_time_of_day_title" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Time of day"
+    "trends_unit_blood_pressure": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "mmHg"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Gün içi dağılım"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "mmHg"
           }
         }
       }
     },
-    "trends_title" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Trends"
+    "trends_unit_glucose": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "mg/dL"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Analizler"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "mg/dL"
           }
         }
       }
     },
-    "trends_unit_blood_pressure" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "mmHg"
+    "trends_unit_glucose_mmol": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "mmol/L"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "mmHg"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "mmol/L"
           }
         }
       }
     },
-    "trends_unit_glucose" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "mg/dL"
+    "trends_unit_weight": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "kg"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "mg/dL"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "kg"
           }
         }
       }
     },
-    "trends_unit_glucose_mmol" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "mmol/L"
+    "trends_value_blood_pressure": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld/%2$lld"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "mmol/L"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%1$lld/%2$lld"
           }
         }
       }
     },
-    "trends_unit_weight" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "kg"
+    "trends_metric_blood_pressure_overline": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "BLOOD PRESSURE"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "kg"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TANSİYON"
           }
         }
       }
     },
-    "trends_value_blood_pressure" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$lld/%2$lld"
+    "trends_metric_glucose_overline": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "BLOOD GLUCOSE"
           }
         },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$lld/%2$lld"
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "KAN ŞEKERİ"
+          }
+        }
+      }
+    },
+    "trends_metric_weight_overline": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "WEIGHT"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "KİLO"
+          }
+        }
+      }
+    },
+    "trends_summary_count": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Readings: %1$lld"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ölçüm: %1$lld"
           }
         }
       }
     }
   },
-  "version" : "1.0"
+  "version": "1.0"
 }

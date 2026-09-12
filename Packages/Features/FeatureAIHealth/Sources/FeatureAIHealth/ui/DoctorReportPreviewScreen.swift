@@ -13,6 +13,8 @@
 #if canImport(UIKit)
 
     import PDFKit
+    import SalusDesignSystem
+    import SalusUI
     import SwiftUI
 
     /// The full-screen in-app preview of a finished doctor report.
@@ -44,7 +46,7 @@
                         Image(systemName: "xmark")
                             .font(.system(size: 18))
                     }
-                    .accessibilityLabel(AiHealthStrings.doctorReportPreviewClose)
+                    .accessibilityLabel(SalusUIStrings.sheetClose)
                 }
                 .padding()
 

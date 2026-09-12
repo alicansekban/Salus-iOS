@@ -39,6 +39,7 @@ struct DoctorReportViewModelPreviewTests {
             premiumRepository: premium,
             paywallController: paywall,
             languageProvider: language,
+            periodReader: PreviewFakeHealthPeriodReader(),
             clock: clock
         )
     }
@@ -144,5 +145,36 @@ private final class PreviewFakePremiumRepository: PremiumRepository, @unchecked 
 private struct PreviewFakeAiLanguageProvider: AiLanguageProvider {
     func current() -> AiLanguage {
         .tr
+    }
+}
+
+/// An empty `HealthPeriodReader` — the preview lifecycle never reads content.
+private struct PreviewFakeHealthPeriodReader: HealthPeriodReader {
+    func aggregate(
+        period: SummaryPeriod,
+        todayEpochDay: Int,
+        timeZone: TimeZone
+    ) async throws -> HealthPeriodStats {
+        HealthPeriodStats(
+            periodType: period,
+            startEpochDay: todayEpochDay,
+            endEpochDay: todayEpochDay,
+            distinctRecordDays: 0,
+            systolic: nil,
+            diastolic: nil,
+            pulse: nil,
+            glucoseMgDl: nil,
+            weightKg: nil,
+            loggedDoses: 0,
+            takenDoses: 0
+        )
+    }
+
+    func periodRows(
+        period: SummaryPeriod,
+        todayEpochDay: Int,
+        timeZone: TimeZone
+    ) async throws -> HealthPeriodRows {
+        .empty
     }
 }

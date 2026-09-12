@@ -31,7 +31,6 @@ struct TrendsStringsTests {
     /// there means a new row here, in the same commit — that is the whole job of this table.
     static let samples: [TrendsStringSample] = [
         TrendsStringSample(key: "trends_title", turkish: "Analizler", english: "Trends"),
-        TrendsStringSample(key: "trends_back", turkish: "Geri", english: "Back"),
         TrendsStringSample(key: "trends_range_month", turkish: "1 ay", english: "1 month"),
         TrendsStringSample(key: "trends_range_quarter", turkish: "3 ay", english: "3 months"),
         TrendsStringSample(key: "trends_range_half_year", turkish: "6 ay", english: "6 months"),
@@ -167,9 +166,24 @@ struct TrendsStringsTests {
                 + "the same length. For blood pressure, the systolic number is used."
         ),
         TrendsStringSample(
-            key: "trends_summary_stats",
-            turkish: "Ölçüm: %1$lld · Ortalama: %2$@ %3$@",
-            english: "Readings: %1$lld · Average: %2$@ %3$@"
+            key: "trends_summary_count",
+            turkish: "Ölçüm: %1$lld",
+            english: "Readings: %1$lld"
+        ),
+        TrendsStringSample(
+            key: "trends_metric_blood_pressure_overline",
+            turkish: "TANSİYON",
+            english: "BLOOD PRESSURE"
+        ),
+        TrendsStringSample(
+            key: "trends_metric_glucose_overline",
+            turkish: "KAN ŞEKERİ",
+            english: "BLOOD GLUCOSE"
+        ),
+        TrendsStringSample(
+            key: "trends_metric_weight_overline",
+            turkish: "KİLO",
+            english: "WEIGHT"
         ),
         TrendsStringSample(
             key: "trends_summary_min_max",
@@ -220,17 +234,14 @@ struct TrendsStringsTests {
 
     static let expectedKeys = Set(samples.map(\.key))
 
-    @Test("the catalog holds exactly the 53 keys :feature:trends owns")
-    func catalogHoldsExactlyTheFiftyThreeKeys() throws {
+    @Test("the catalog holds exactly the 55 keys :feature:trends owns")
+    func catalogHoldsExactlyTheFiftyFiveKeys() throws {
         // Pinned as a number as well as a set: a row deleted from the table together with its key
-        // from the catalog would otherwise agree with itself and pass. 53 = 14 Task-1 keys
-        // (title + back + 4 ranges + 3 locked + 2 empty + 3 error) + 16 Task-2 time-of-day keys
-        // + 5 Task-3 overlay keys (title, subtitle, subtitle_weekly, legend_entry, chart_description)
-        // + 6 Task-4 dose-weeks keys (title, subtitle, taken_ratio, week_ratio, average,
-        // chart_description) + 12 Task-5 summary keys (title, subtitle, stats, min_max,
-        // direction_rising, direction_falling, direction_stable, change_up, change_down,
-        // change_flat, change_no_previous, change_not_computable).
-        #expect(Self.samples.count == 53)
+        // from the catalog would otherwise agree with itself and pass. 55 = the 52 keys that
+        // survived (`trends_back`, `trends_summary_stats`, `trends_value_number` were removed in
+        // M15) plus the 4 additions: `trends_summary_count` and the three `trends_metric_*_overline`
+        // keys.
+        #expect(Self.samples.count == 55)
 
         try StringCatalogParity.assertKeys(of: Self.loadCatalog(), are: Self.expectedKeys)
     }

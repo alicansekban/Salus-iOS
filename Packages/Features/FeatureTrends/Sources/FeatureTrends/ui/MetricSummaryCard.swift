@@ -57,11 +57,16 @@ struct MetricSummaryCard: View {
     }
 }
 
-/// One metric's block: its name and direction on one line, its numbers under them
-/// (`TrendsScreen.kt:574-630`).
+/// One metric's block: the period's average as the tile's value, the change under it, the
+/// direction beside it, and the readings behind both below (`TrendsScreen.kt:394-436`).
 ///
-/// The direction arrow carries no description of its own — the label beside it is the same fact in
-/// words, and describing both would have a screen reader say it twice.
+/// The tile's `delta` carries no direction verdict. The `Delta` type tints a movement as the
+/// welcome or the unwelcome one, and this screen has no basis for either: a rise in one metric and
+/// a fall in another can both be what a person's doctor asked for. The direction chip is
+/// `Neutral` for the same reason — an accent on "moving up" would read as approval.
+///
+/// The direction icon carries no description of its own — the chip's label beside it is the same
+/// fact in words, and describing both would have a screen reader say it twice.
 private struct MetricSummaryRowBody: View {
     let row: MetricSummaryRow
     let glucoseUnit: GlucoseUnit
@@ -74,50 +79,60 @@ private struct MetricSummaryRowBody: View {
     var body: some View {
         let unit = row.type.unitLabel(glucoseUnit)
 
-        VStack(alignment: .leading, spacing: 0) {
-            HStack {
-                Text(verbatim: row.type.metricLabel)
-                    .font(SalusTypography.titleSmall.font)
-                    .tracking(SalusTypography.titleSmall.tracking)
-                    .foregroundStyle(theme.colorScheme.onSurface)
-                Spacer()
-                HStack(spacing: SalusSpacing.xs) {
-                    Image(systemName: row.trend.symbol)
-                        .foregroundStyle(theme.colorScheme.onSurfaceVariant)
-                    Text(verbatim: row.trend.label)
-                        .font(SalusTypography.labelLarge.font)
-                        .tracking(SalusTypography.labelLarge.tracking)
-                        .foregroundStyle(theme.colorScheme.onSurfaceVariant)
-                }
+        VStack(spacing: 0) {
+            HStack(spacing: SalusSpacing.md) {
+                // The period average is the tile's value; the direction chip sits beside it.
+                // The change sentence is written as a neutral line under the tile rather than as
+                // the tile's `delta`, because iOS's `Delta` tints a move as welcome or unwelcome
+                // and this screen has no basis for either — Android's neutral `deltaPositive =
+                // null` (`TrendsCards.kt:407`) has no iOS case.
+                SalusMetricTile(
+                    overline: row.type.overlineLabel,
+                    value: MetricDisplay.format(
+                        type: row.type,
+                        stored: row.average,
+                        glucoseUnit: glucoseUnit,
+                        locale: locale
+                    ),
+                    unit: unit
+                )
+                .frame(maxWidth: .infinity)
+                Spacer().frame(width: SalusSpacing.sm)
+                SalusStatusChip(
+                    label: row.trend.label,
+                    status: .neutral,
+                    systemImage: row.trend.symbol
+                )
             }
             .frame(maxWidth: .infinity)
             Spacer().frame(height: SalusSpacing.xs)
-            Text(verbatim: TrendsStrings.summaryStats(
-                row.count,
-                MetricDisplay.format(type: row.type, stored: row.average, glucoseUnit: glucoseUnit, locale: locale),
-                unit
-            ))
-            .font(SalusTypography.bodyMedium.font)
-            .tracking(SalusTypography.bodyMedium.tracking)
-            .foregroundStyle(theme.colorScheme.onSurface)
+            Text(verbatim: TrendsStrings.summaryCount(row.count))
+                .font(SalusTypography.bodySmall.font)
+                .tracking(SalusTypography.bodySmall.tracking)
+                .foregroundStyle(theme.colorScheme.onSurfaceVariant)
+                .frame(maxWidth: .infinity, alignment: .leading)
             Text(verbatim: TrendsStrings.summaryMinMax(
                 MetricDisplay.format(type: row.type, stored: row.min, glucoseUnit: glucoseUnit, locale: locale),
                 MetricDisplay.format(type: row.type, stored: row.max, glucoseUnit: glucoseUnit, locale: locale),
                 unit
             ))
-            .font(SalusTypography.bodyMedium.font)
-            .tracking(SalusTypography.bodyMedium.tracking)
-            .foregroundStyle(theme.colorScheme.onSurface)
+            .font(SalusTypography.bodySmall.font)
+            .tracking(SalusTypography.bodySmall.tracking)
+            .foregroundStyle(theme.colorScheme.onSurfaceVariant)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            // The change, written plainly — the sentence the tile would have carried if iOS had a
+            // neutral delta (`TrendsScreen.kt:446-468`).
             Text(verbatim: row.change.sentence(locale: locale))
                 .font(SalusTypography.bodySmall.font)
                 .tracking(SalusTypography.bodySmall.tracking)
                 .foregroundStyle(theme.colorScheme.onSurfaceVariant)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
-/// The one sentence a row's change is written as (`TrendsScreen.kt:640-662`).
+/// The one sentence a row's change is written as (`TrendsScreen.kt:438-468`).
 ///
 /// The magnitude arrives unsigned and already rounded to `changeDecimals`, so this only writes it
 /// out: the direction is carried by the wording, which is what keeps a minus sign from being read
@@ -128,10 +143,8 @@ extension SummaryChange {
         switch self {
         case .noPreviousRecords:
             return TrendsStrings.summaryChangeNoPrevious
-
         case .notComputable:
             return TrendsStrings.summaryChangeNotComputable
-
         case let .moved(direction, magnitudePercent):
             let percent = MetricDisplay.write(
                 converted: magnitudePercent,
@@ -148,7 +161,7 @@ extension SummaryChange {
 }
 
 extension Trend {
-    /// The arrow a direction is drawn with (`TrendsScreen.kt:670-674`).
+    /// The arrow a direction is drawn with (`TrendsScreen.kt:476-480`).
     fileprivate var symbol: String {
         switch self {
         case .rising: "arrow.up.right"
@@ -157,7 +170,7 @@ extension Trend {
         }
     }
 
-    /// What a direction is called (`TrendsScreen.kt:683-687`).
+    /// What a direction is called (`TrendsScreen.kt:489-493`).
     ///
     /// `.stable` is also the answer for a series too short to tell a direction from day-to-day
     /// variation, so its label says only that no direction stands out — a wording that stays true
@@ -167,6 +180,18 @@ extension Trend {
         case .rising: TrendsStrings.summaryDirectionRising
         case .falling: TrendsStrings.summaryDirectionFalling
         case .stable: TrendsStrings.summaryDirectionStable
+        }
+    }
+}
+
+extension VitalType {
+    /// `VitalType.overlineLabelRes()` (`TrendsScreen.kt:556-560`) — the same metric name stored
+    /// upper-case for the places it is drawn as an overline.
+    var overlineLabel: String {
+        switch self {
+        case .bloodPressure: TrendsStrings.metricBloodPressureOverline
+        case .bloodGlucose: TrendsStrings.metricGlucoseOverline
+        case .weight: TrendsStrings.metricWeightOverline
         }
     }
 }

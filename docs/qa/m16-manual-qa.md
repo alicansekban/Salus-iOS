@@ -192,6 +192,23 @@ full-screen detail of the M15 shape that spec §4.9 describes.
 | 3.4.7 | VoiceOver on a list card: swipe through it | the card is announced as one button (title, doctor, location, time chip, reminder chips), the trash as its own destructive control, and the extended pill "Yeni Randevu Oluştur" is a single button | ☐ |
 | 3.4.8 | Appointments root: tap the extended "Yeni Randevu Oluştur" | the editor opens; tapping a reminder offset chip selects/deselects it and the "HATIRLATICILAR" overline stays put | ☐ |
 
+### 3.5 AI summary, doctor report and Trends — the M15 bodies (Task 11)
+
+Run with enough logged records for the summary and the report to generate (at least three recorded
+days in a week, more for a month), and on a free account for the paywall rows.
+
+| # | Step | Expect | ☐ |
+|---|---|---|---|
+| 3.5.1 | AI summary: open it; switch Haftalık / Aylık | `SalusSegmentedTabs` — the pill slides between the two labels, the selection survives a reload (the spinner shows while the next summary loads), and the new summary replaces the old | ☐ |
+| 3.5.2 | AI summary: with a finished summary on screen | the accent banner "Yapay zekâ analizi" with a generated-at `SalusStatusChip` ("Yeni oluşturuldu" when fresh, "Önceki özet" when read from cache); below it the three metric tiles (ORT. TANSİYON, KAYDEDİLEN DOZ, ORT. NABIZ), each dropped when its figure is absent; the prose as a mint-dotted paragraph list; the disclaimer under it | ☐ |
+| 3.5.3 | AI summary: the two pinned actions under the text | "PDF olarak paylaş" (primary) and "Analizi güncelle" (secondary); tapping refresh re-requests a summary and keeps the selected period | ☐ |
+| 3.5.4 | AI summary: with too few records / a daily limit / an error | the empty, error and limit blocks render **centred** in the body (a short message sits mid-screen, a long one scrolls); the top bar's share icon (accessibility label "Doktor raporunu aç") opens the doctor report | ☐ |
+| 3.5.5 | Doctor report: open it; select a period and "Rapor oluştur" | the ready body shows the accent "Raporun hazır" card with a "PDF" chip and the three metric tiles; the "BELGE ÖNİZLEME" section with a tappable preview card and its "Büyüt" trailing action; the "RAPORA DAHİL EDİLENLER" checklist with a count per section (zero counts unchecked) and the narrative row when included | ☐ |
+| 3.5.6 | Doctor report: preview and sharing | tapping the preview card or "Önizle" opens the in-app PDF reader; the primary "Paylaş" hands the file to the system share sheet; "Yeniden oluştur" replaces it | ☐ |
+| 3.5.7 | Doctor report: with no records / no entitlement | the "Bu dönemde kayıt yok" and "Premium'a özel" blocks are centred like the summary's; only the paywall button opens the sheet | ☐ |
+| 3.5.8 | Trends: open it (free) | the range tabs (1 ay / 3 ay / 6 ay / 1 yıl) are **disabled** — dimmed, not selectable, announced unavailable; the locked blur + paywall card unchanged | ☐ |
+| 3.5.9 | Trends: unlock with Premium | the tabs become selectable; each metric card shows its upper-case overline (TANSİYON / KAN ŞEKERİ / KİLO), its chart, and a summary tile with the period average, the count line and the change sentence | ☐ |
+
 ---
 
 ---
