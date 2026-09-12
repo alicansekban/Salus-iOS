@@ -101,28 +101,32 @@ struct BloodPressureEditorScreen: View {
     /// `BloodPressureEditorScreen.kt:60-71`.
     private var systolicStepper: some View {
         wholeNumberStepper(
-            label: VitalsStrings.systolicLabel,
-            text: state.systolicText,
-            suggestion: state.suggestedSystolic,
-            range: VitalsLimits.systolicMmHg,
-            rangeHint: VitalsStrings.kpiChip(VitalsUnits.mmHg, VitalsStrings.bpHintSys),
-            placeholder: !state.hasSystolic,
-            autoFocus: state.isNew,
-            write: { onEvent(.systolicChanged($0)) }
+            Spec(
+                label: VitalsStrings.systolicLabel,
+                text: state.systolicText,
+                suggestion: state.suggestedSystolic,
+                range: VitalsLimits.systolicMmHg,
+                rangeHint: VitalsStrings.kpiChip(VitalsUnits.mmHg, VitalsStrings.bpHintSys),
+                placeholder: !state.hasSystolic,
+                autoFocus: state.isNew,
+                write: { onEvent(.systolicChanged($0)) }
+            )
         )
     }
 
     /// `BloodPressureEditorScreen.kt:73-83`.
     private var diastolicStepper: some View {
         wholeNumberStepper(
-            label: VitalsStrings.diastolicLabel,
-            text: state.diastolicText,
-            suggestion: state.suggestedDiastolic,
-            range: VitalsLimits.diastolicMmHg,
-            rangeHint: VitalsStrings.kpiChip(VitalsUnits.mmHg, VitalsStrings.bpHintDia),
-            placeholder: !state.hasDiastolic,
-            autoFocus: false,
-            write: { onEvent(.diastolicChanged($0)) }
+            Spec(
+                label: VitalsStrings.diastolicLabel,
+                text: state.diastolicText,
+                suggestion: state.suggestedDiastolic,
+                range: VitalsLimits.diastolicMmHg,
+                rangeHint: VitalsStrings.kpiChip(VitalsUnits.mmHg, VitalsStrings.bpHintDia),
+                placeholder: !state.hasDiastolic,
+                autoFocus: false,
+                write: { onEvent(.diastolicChanged($0)) }
+            )
         )
     }
 
@@ -130,60 +134,72 @@ struct BloodPressureEditorScreen: View {
     /// of the form.
     private var pulseStepper: some View {
         wholeNumberStepper(
-            label: VitalsStrings.pulseLabel,
-            text: state.pulseText,
-            suggestion: state.suggestedPulse,
-            range: VitalsLimits.pulseBpm,
-            rangeHint: VitalsUnits.bpm,
-            placeholder: state.pulseText.isEmpty,
-            autoFocus: false,
-            write: { onEvent(.pulseChanged($0)) }
+            Spec(
+                label: VitalsStrings.pulseLabel,
+                text: state.pulseText,
+                suggestion: state.suggestedPulse,
+                range: VitalsLimits.pulseBpm,
+                rangeHint: VitalsUnits.bpm,
+                placeholder: state.pulseText.isEmpty,
+                autoFocus: false,
+                write: { onEvent(.pulseChanged($0)) }
+            )
         )
     }
 
-    // The parameters are the stepper's own, one for one.
-    // swiftlint:disable function_parameter_count
-
     /// The three fields are one shape with three bounds — Kotlin repeats the call three times
     /// because a `@Composable` cannot be curried; Swift can say it once.
-    private func wholeNumberStepper(
-        label: String,
-        text: String,
-        suggestion: Double,
-        range: ClosedRange<Double>,
-        rangeHint: String,
-        placeholder: Bool,
-        autoFocus: Bool,
-        write: @escaping (String) -> Void
-    ) -> some View {
+    private func wholeNumberStepper(_ spec: Spec) -> some View {
         SalusStepperField(
-            label: label,
-            value: editorWholeText(stepperValue(of: text, fallback: suggestion)),
-            placeholder: placeholder,
-            rangeHint: rangeHint,
-            autoFocus: autoFocus,
-            keyboard: .standard,
-            parse: { clampedStepperText($0, in: range) != nil },
+            label: spec.label,
+            value: editorWholeText(stepperValue(of: spec.text, fallback: spec.suggestion)),
+            placeholder: spec.placeholder,
+            rangeHint: spec.rangeHint,
+            autoFocus: spec.autoFocus,
+            keyboard: .decimal,
+            parse: { clampedStepperText($0, in: spec.range) != nil },
             onValueChange: { typed in
                 // Answered, accepted or clamped, never dropped — the caller contract
                 // `SalusStepperField.swift` writes down.
-                guard let clamped = clampedStepperText(typed, in: range) else { return }
-                write(editorWholeText(clamped))
+                guard let clamped = clampedStepperText(typed, in: spec.range) else { return }
+                spec.write(editorWholeText(clamped))
             },
             onDecrement: {
-                write(editorWholeText(
-                    nudgedStepperValue(from: text, fallback: suggestion, by: -Self.step, in: range)
+                spec.write(editorWholeText(
+                    nudgedStepperValue(
+                        from: spec.text,
+                        fallback: spec.suggestion,
+                        by: -Self.step,
+                        in: spec.range
+                    )
                 ))
             },
             onIncrement: {
-                write(editorWholeText(
-                    nudgedStepperValue(from: text, fallback: suggestion, by: Self.step, in: range)
+                spec.write(editorWholeText(
+                    nudgedStepperValue(
+                        from: spec.text,
+                        fallback: spec.suggestion,
+                        by: Self.step,
+                        in: spec.range
+                    )
                 ))
             }
         )
     }
 
-    // swiftlint:enable function_parameter_count
+    /// One stepper's parameter set, gathered so the shared shape above takes a single argument
+    /// (`WholeNumberStepper`'s own parameters — there are eight, one for one with the stepper's
+    /// call, which is past the lint limit only until they travel as one struct).
+    private struct Spec {
+        let label: String
+        let text: String
+        let suggestion: Double
+        let range: ClosedRange<Double>
+        let rangeHint: String
+        let placeholder: Bool
+        let autoFocus: Bool
+        let write: (String) -> Void
+    }
 
     /// `BloodPressureEditorScreen.kt:107-117`.
     private var noteField: some View {

@@ -40,9 +40,8 @@ public struct BloodPressureEditorUiState: Equatable, Sendable {
     public var error: BloodPressureError?
     public var showDeleteConfirm: Bool
 
-    // The twelve properties are Kotlin's twelve (`BloodPressureEditorUiState.kt:17-30`); the
-    // memberwise initializer mirrors them one for one, which is what puts it past the limit.
-    // swiftlint:disable:next function_default_parameter_at_end
+    /// The twelve properties are Kotlin's twelve (`BloodPressureEditorUiState.kt:17-30`); the
+    /// memberwise initializer mirrors them one for one.
     public init(
         isNew: Bool = true,
         systolicText: String = "",
