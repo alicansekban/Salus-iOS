@@ -122,11 +122,9 @@ struct VitalsListContent: View {
             title: VitalsStrings.chartSection,
             contentPadding: SalusSectionHeaderDefaults.topOnly
         ) {
-            Button(action: onOpenTrends) {
-                Text(verbatim: VitalsStrings.openTrends)
-                    .font(SalusTypography.labelLarge.font)
-            }
-            .tint(theme.colorScheme.primary)
+            // The shared header action, so "Trendleri aç" is a 44 pt target rather than a
+            // bare-`Text` hit shape inside the slot's frame.
+            SalusSectionHeaderAction(title: VitalsStrings.openTrends, action: onOpenTrends)
         }
     }
 

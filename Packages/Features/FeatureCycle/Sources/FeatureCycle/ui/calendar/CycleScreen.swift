@@ -156,13 +156,9 @@ private struct CycleTodaySymptomsSection: View {
                 title: CycleStrings.todaySymptoms,
                 contentPadding: .init(top: SalusSpacing.xs, leading: 0, bottom: SalusSpacing.xs, trailing: 0)
             ) {
-                Button(CycleStrings.seeAll, action: onSeeAll)
-                    .buttonStyle(.plain)
-                    // `labelLarge` — the action label the twin applies inside its
-                    // `SalusTouchTarget.min`-high frame (`SalusSectionHeader.kt:64,70`).
-                    .font(SalusTypography.labelLarge.font)
-                    .tracking(SalusTypography.labelLarge.tracking)
-                    .foregroundStyle(theme.colorScheme.primary)
+                // The shared header action, so "Tümünü gör" is a 44 pt target rather than a
+                // bare-`Text` hit shape inside the slot's frame.
+                SalusSectionHeaderAction(title: CycleStrings.seeAll, action: onSeeAll)
             }
             if state.todaySymptoms.isEmpty {
                 Text(verbatim: CycleStrings.noSymptomsToday)

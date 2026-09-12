@@ -27,6 +27,19 @@ public enum SalusEntrance {
     /// `EnterTravel = 24.dp` (`SalusEnter.kt:57`); pt ≡ dp between the twins.
     static let travel: CGFloat = 24
 
+    /// How far above its resting place the content is drawn at `progress`.
+    ///
+    /// **Zero whenever Reduce Motion is on**, at every progress: the reduced entrance is opacity
+    /// only, which is what `SalusMotion.entranceReducedMotionAnimation` documents (§11 behavior
+    /// contract). Driving the offset from `progress` in both branches still animated the 24 pt
+    /// slide, just on the shorter curve.
+    ///
+    /// Pure, so the promise is table-testable without rendering — the same reason
+    /// ``progress(for:played:)`` is.
+    nonisolated static func offset(progress: CGFloat, reduceMotion: Bool) -> CGFloat {
+        reduceMotion ? 0 : (1 - progress) * travel
+    }
+
     /// What one appearance of ``SwiftUI/View/salusEntrance(index:)`` does.
     public struct Progress: Equatable, Sendable {
         /// The progress the content is drawn at once the appearance is handled. Always `1` — an
@@ -83,7 +96,7 @@ private struct SalusEntranceModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .opacity(Double(progress))
-            .offset(y: (1 - progress) * SalusEntrance.travel)
+            .offset(y: SalusEntrance.offset(progress: progress, reduceMotion: reduceMotion))
             .onAppear {
                 let step = SalusEntrance.progress(for: index, played: played)
                 guard let delay = step.delay else {

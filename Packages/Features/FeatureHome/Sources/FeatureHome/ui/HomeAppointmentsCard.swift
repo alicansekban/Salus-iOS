@@ -61,20 +61,10 @@ struct HomeAppointmentsSection: View {
     }
 
     /// The header's trailing text action: `labelLarge` in `primary`, on a full-height touch target
-    /// (`SalusSectionHeader.kt:59-73`).
+    /// (`SalusSectionHeader.kt:59-73`). The shape this section used to spell out itself now lives
+    /// in ``SalusSectionHeaderAction``, so every header action in the tree is the same view.
     private var seeAllAction: some View {
-        Button(action: onOpenAppointments) {
-            // `verbatim:` because the string is already resolved; the plain initializer would
-            // treat it as a `LocalizedStringKey` and look it up in the *main* bundle.
-            Text(verbatim: HomeStrings.seeAll)
-                .font(SalusTypography.labelLarge.font)
-                .tracking(SalusTypography.labelLarge.tracking)
-                .foregroundStyle(theme.colorScheme.primary)
-                .padding(.horizontal, SalusSpacing.sm)
-                .frame(minHeight: SalusTouchTarget.min)
-        }
-        // `.plain`, or the label would take the system tint over the token colour above it.
-        .buttonStyle(.plain)
+        SalusSectionHeaderAction(title: HomeStrings.seeAll, action: onOpenAppointments)
     }
 }
 

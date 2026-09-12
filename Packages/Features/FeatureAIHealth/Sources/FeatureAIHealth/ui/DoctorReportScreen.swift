@@ -251,8 +251,6 @@ private struct ReadyBody: View {
     let onPreview: () -> Void
     let onRegenerate: () -> Void
 
-    @Environment(\.salusTheme) private var theme
-
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: SalusSpacing.lg) {
@@ -263,11 +261,12 @@ private struct ReadyBody: View {
 
                 VStack(alignment: .leading, spacing: 0) {
                     SalusSectionHeader(title: AiHealthStrings.doctorReportPreviewSection) {
-                        Button(action: onPreview) {
-                            Text(verbatim: AiHealthStrings.doctorReportPreviewExpand)
-                                .foregroundStyle(theme.colorScheme.primary)
-                        }
-                        .buttonStyle(.plain)
+                        // The shared header action, so "Büyüt" is a 44 pt target rather than a
+                        // bare-`Text` hit shape inside the slot's frame.
+                        SalusSectionHeaderAction(
+                            title: AiHealthStrings.doctorReportPreviewExpand,
+                            action: onPreview
+                        )
                     }
                     PreviewCard(onPreview: onPreview)
                 }

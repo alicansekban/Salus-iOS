@@ -8,10 +8,15 @@
 // `PaddingValues` is spelled `EdgeInsets`; the default is Kotlin's default, so every existing
 // caller draws exactly what it drew before.
 //
-// The trailing action is rendered inside a `SalusTouchTarget.min`-high frame, the twin of
-// Kotlin's `defaultMinSize(minHeight = SalusTouchTarget.min)` (`SalusSectionHeader.kt:64`) —
-// enforced at the component slot so every caller's "See all" meets the ≥44 pt tap-target
-// binding, never at the call site.
+// The trailing action's slot is `SalusTouchTarget.min` high, the twin of Kotlin's
+// `defaultMinSize(minHeight = SalusTouchTarget.min)` (`SalusSectionHeader.kt:64`). That frame
+// sizes the ROW and nothing else: a `Button`'s hit area is its label's, so a bare-`Text` label
+// inside the slot keeps its own ~20 pt shape however tall the box around it is — which is the
+// finding the whole-branch review raised against three call sites.
+//
+// ``SalusSectionHeaderAction`` is where the hit shape actually lives — the `minHeight` frame and
+// the `contentShape` INSIDE the `Button` — and it is what every caller puts in the slot, so the
+// next one cannot miss it.
 
 import SalusDesignSystem
 import SwiftUI
@@ -72,14 +77,56 @@ public struct SalusSectionHeader<Actions: View>: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             actions
                 // `Modifier.defaultMinSize(minHeight = SalusTouchTarget.min)`
-                // (`SalusSectionHeader.kt:64`) — the trailing action meets the
-                // `SalusTouchTarget.min` touch-target floor no matter what the caller puts in
-                // the slot, so the "See all" button is never a bare text hit target.
+                // (`SalusSectionHeader.kt:64`) — the row is at least as tall as the touch-target
+                // floor whatever the caller puts in the slot. The tappable shape is
+                // ``SalusSectionHeaderAction``'s, for the reason this file's header records.
                 .frame(minHeight: SalusTouchTarget.min)
         }
         .frame(maxWidth: .infinity)
         // `Modifier.padding(contentPadding)` (`SalusSectionHeader.kt:35`).
         .padding(contentPadding)
+    }
+}
+
+/// The header's trailing text action: `labelLarge` in `primary`, on a hit shape that is the full
+/// `SalusTouchTarget.min` (`SalusSectionHeader.kt:59-73` — Kotlin's `Box(clickable)` carries
+/// `defaultMinSize(minHeight = SalusTouchTarget.min)` and `padding(horizontal = SalusSpacing.sm)`
+/// around a `labelLarge`/`primary` `Text`).
+///
+/// The frame and the `contentShape` sit INSIDE the `Button`, which is the only place they buy a
+/// 44 pt tap target: ``SalusSectionHeader``'s own slot frame sizes the row, not the label's hit
+/// area. Every header action in the tree is this view rather than a `Button` styled at the call
+/// site, so the shape is derived once.
+public struct SalusSectionHeaderAction: View {
+    private let title: String
+    private let action: () -> Void
+
+    @Environment(\.salusTheme) private var theme
+
+    /// - Parameters:
+    ///   - title: the already-resolved action label (`SalusSectionHeader.kt:69`).
+    ///   - action: what the tap runs (`SalusSectionHeader.kt:63`).
+    public init(title: String, action: @escaping () -> Void) {
+        self.title = title
+        self.action = action
+    }
+
+    public var body: some View {
+        Button(action: action) {
+            // `Text(verbatim:)` because the caller hands over a resolved `String` — the plain
+            // initializer would read it back as a `LocalizedStringKey` against the main bundle.
+            Text(verbatim: title)
+                .font(SalusTypography.labelLarge.font)
+                .tracking(SalusTypography.labelLarge.tracking)
+                .foregroundStyle(theme.colorScheme.primary)
+                // `padding(horizontal = SalusSpacing.sm)` (`SalusSectionHeader.kt:65`).
+                .padding(.horizontal, SalusSpacing.sm)
+                .frame(minHeight: SalusTouchTarget.min)
+                // Without this the hit area is the glyph box the text draws in, not the frame.
+                .contentShape(.rect)
+        }
+        // `.plain`, or the label would take the system tint over the token colour above it.
+        .buttonStyle(.plain)
     }
 }
 
@@ -91,21 +138,13 @@ extension SalusSectionHeader where Actions == EmptyView {
     }
 }
 
-/// The samples the palette fan-out renders — a view of its own because the trailing action is
-/// tinted `primary`, which every palette re-values.
+/// The samples the palette fan-out renders — a view of its own so each palette re-evaluates the
+/// trailing action, which draws itself in that palette's `primary`.
 private struct SalusSectionHeaderPreviewSamples: View {
-    @Environment(\.salusTheme) private var theme
-
     var body: some View {
         VStack(spacing: 0) {
             SalusSectionHeader(title: "Upcoming") {
-                Button("See all") {}
-                    .buttonStyle(.plain)
-                    // `labelLarge` in `primary`, the twin's action label (`SalusSectionHeader.kt:70`),
-                    // rendered inside the slot's `SalusTouchTarget.min`-high frame.
-                    .font(SalusTypography.labelLarge.font)
-                    .tracking(SalusTypography.labelLarge.tracking)
-                    .foregroundStyle(theme.colorScheme.primary)
+                SalusSectionHeaderAction(title: "See all") {}
             }
             SalusSectionHeader(title: "Notes")
             // The parent-inset variant: no horizontal padding of its own, so it lines up with

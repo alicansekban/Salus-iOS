@@ -142,7 +142,7 @@ public struct SalusTextField: View {
                     .foregroundStyle(
                         SalusTextFieldStyle.supportingTextColor(isError: isError, colors: colors)
                     )
-                    .padding(.horizontal, Self.contentInset)
+                    .padding(.horizontal, SalusTextFieldDefaults.contentPadding.leading)
                     .padding(.top, SalusSpacing.xs)
             }
         }
@@ -159,18 +159,21 @@ public struct SalusTextField: View {
                     .foregroundStyle(colors.onSurfaceVariant)
             }
         }
-        .padding(.horizontal, Self.contentInset)
-        .padding(.vertical, SalusSpacing.md)
-        .frame(maxWidth: .infinity, minHeight: Self.height, alignment: .leading)
+        // `Modifier.padding(SalusTextFieldDefaults.ContentPadding)` (`SalusTextField.kt:111`).
+        .padding(SalusTextFieldDefaults.contentPadding)
+        .frame(maxWidth: .infinity, minHeight: SalusTextFieldDefaults.height, alignment: .leading)
         // `MaterialTheme.shapes.medium` with a `surfaceContainerHigh` fill (`SalusTextField.kt:102-110`).
         .background(SalusShapes.mediumShape.fill(colors.surfaceContainerHigh))
         .overlay {
             if let stroke = SalusTextFieldStyle.stroke(isError: isError, colors: colors) {
-                SalusShapes.mediumShape.strokeBorder(stroke, lineWidth: Self.errorStroke)
+                SalusShapes.mediumShape.strokeBorder(
+                    stroke,
+                    lineWidth: SalusTextFieldDefaults.borderWidth
+                )
             } else {
                 SalusShapes.mediumShape.strokeBorder(
                     colors.outlineVariant,
-                    lineWidth: Self.errorStroke
+                    lineWidth: SalusTextFieldDefaults.borderWidth
                 )
             }
         }
@@ -214,14 +217,30 @@ public struct SalusTextField: View {
     #endif
 
     private var colors: SalusColorScheme { theme.colorScheme }
+}
 
-    /// `SalusTextFieldDefaults` (`SalusTextField.kt:109-120`). Component dimensions, not
-    /// design tokens — Android keeps them in `:core:ui` too. `ContentPadding` is not ported: it
-    /// exists there for the birth-date trigger, which on iOS is `SalusDateField` and draws its own.
-    private static let height: CGFloat = 64
-    private static let contentInset: CGFloat = 24
-    /// The stroke width `VitalsEditorField` draws its error outline at.
-    private static let errorStroke: CGFloat = 1
+/// `object SalusTextFieldDefaults` (`SalusTextField.kt:164-178`) — the field's component
+/// dimensions, not design tokens; Android keeps them in `:core:ui` too, out of
+/// `:core:designsystem`.
+public enum SalusTextFieldDefaults {
+    /// `Height = 56.dp` (`SalusTextField.kt:166`) — the resting height of a single-line field,
+    /// above the minimum touch target on its own. It was 64 until the whole-branch review: an
+    /// eyeballed number that made every form on iOS a row taller than the twin's.
+    public static let height: CGFloat = 56
+
+    /// `ContentPadding = PaddingValues(horizontal = SalusSpacing.lg, vertical = SalusSpacing.md)`
+    /// (`SalusTextField.kt:173-176`) — the inner padding of the field box. Ported rather than
+    /// eyeballed: the 24 pt horizontal inset that stood here was the other half of the 64 pt row.
+    public static let contentPadding = EdgeInsets(
+        top: SalusSpacing.md,
+        leading: SalusSpacing.lg,
+        bottom: SalusSpacing.md,
+        trailing: SalusSpacing.lg
+    )
+
+    /// `BorderWidth = 1.dp` (`SalusTextField.kt:167`) — the box's outline, and the error outline
+    /// `VitalsEditorField` draws over it.
+    public static let borderWidth: CGFloat = 1
 }
 
 /// The decisions ``SalusTextField`` makes, lifted out of the view so they can be tested without

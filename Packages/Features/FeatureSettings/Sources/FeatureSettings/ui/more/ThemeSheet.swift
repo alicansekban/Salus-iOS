@@ -57,7 +57,11 @@ struct ThemeSheet: View {
                 ),
                 title: SettingsStrings.themeSheetTitle,
                 subtitle: SettingsStrings.themeSheetSubtitle,
-                detents: [.medium]
+                // Two detents, not the house `.medium` alone: mode tiles + section header + four
+                // palette rows run past a medium sheet on every iPhone, and further still at a
+                // large Dynamic Type. It opens at `.medium` and drags up to `.large`; the body's
+                // own `ScrollView` (`SalusBottomSheet.swift`) reaches the rest at either height.
+                detents: [.medium, .large]
             ) {
                 ThemeSheetContent(state: state, onEvent: onEvent)
             }

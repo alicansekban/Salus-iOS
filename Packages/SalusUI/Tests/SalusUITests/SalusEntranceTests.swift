@@ -45,4 +45,22 @@ struct SalusEntranceTests {
         // Still settled, not hidden: a view that has played is drawn where it landed.
         #expect(step.target == 1)
     }
+
+    /// §11's behaviour contract: a reduced entrance is opacity only. The offset is the half a
+    /// renderless test can hold, and the half that was wrong — the modifier drove the travel
+    /// from `progress` in both branches, so Reduce Motion still slid 24 pt.
+    @Test(
+        "Reduce Motion removes the travel at every progress",
+        arguments: [0, 0.25, 0.5, 1] as [CGFloat]
+    )
+    func reducedMotionNeverTravels(_ progress: CGFloat) {
+        #expect(SalusEntrance.offset(progress: progress, reduceMotion: true) == 0)
+    }
+
+    @Test("the full entrance starts one travel up and settles at zero")
+    func fullEntranceTravels() {
+        #expect(SalusEntrance.offset(progress: 0, reduceMotion: false) == SalusEntrance.travel)
+        #expect(SalusEntrance.offset(progress: 0.5, reduceMotion: false) == SalusEntrance.travel / 2)
+        #expect(SalusEntrance.offset(progress: 1, reduceMotion: false) == 0)
+    }
 }

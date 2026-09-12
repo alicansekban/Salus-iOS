@@ -76,6 +76,11 @@ struct OnboardingWelcomePage: View {
                 .tracking(SalusTypography.bodyMedium.tracking)
                 .foregroundStyle(theme.colorScheme.onSurfaceVariant)
                 .lineLimit(nil)
+                // The sheet body pads its header only, because every other caller's content is
+                // rows that carry their own inset (`SalusSelectableRow`). A bare paragraph has
+                // none, so it applies the screen inset itself rather than the body gaining a
+                // default every row would then have to undo.
+                .padding(.horizontal, SalusSpacing.lg)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
     }

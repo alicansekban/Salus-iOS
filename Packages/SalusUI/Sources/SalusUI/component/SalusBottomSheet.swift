@@ -94,7 +94,18 @@ private struct SalusBottomSheetBody<C: View>: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             header
-            content()
+            // The caller's content scrolls, the header does not. Compose's `ModalBottomSheet`
+            // column is scrollable by construction; a SwiftUI sheet clips instead, so content
+            // taller than the detent it opened at — the theme sheet's mode tiles plus four
+            // palette rows at a large Dynamic Type, say — was simply unreachable. The
+            // `ScrollView` bounces on content that already fits, and the detent still sizes the
+            // sheet, so nothing that fitted before moves.
+            ScrollView {
+                content()
+            }
+            // The content decides the sheet's height up to the detent; without this a `ScrollView`
+            // greedily takes the whole sheet and a short body's ground stretches under it.
+            .scrollBounceBehavior(.basedOnSize)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
