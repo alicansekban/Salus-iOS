@@ -1,6 +1,11 @@
 // The twin of `feature/onboarding/src/main/kotlin/com/alicansekban/salus/feature/onboarding/ui/OnboardingUiState.kt`,
-// ported 1:1. The flow is linear and disposable, so the steps are an index into a list rather
-// than a nav stack — nothing here should end up on the app's back stack.
+// ported 1:1 (M15/M16: `OnboardingUiState.kt:13-105`).
+//
+// Three pages rather than one question per screen: a cover, everything the profile needs, and the
+// notes plus the one permission (`OnboardingUiState.kt:8-12`). The flow is linear and disposable,
+// so the pages are an index into a list rather than a nav stack — nothing here should end up on
+// the app's back stack. `OnboardingSection` and the eight per-field steps are deleted with the
+// flow change; the field state and the field events are untouched.
 //
 // `OnboardingUiState` lives under `ui/` but does NOT import SwiftUI: it is the UDF state type,
 // and the domain-layer rule keeps UI frameworks out of model-shaped types even when they sit
@@ -11,49 +16,25 @@
 import SalusCommon
 import SalusModel
 
-/// The steps the onboarding flow walks, in order. The twin of Kotlin's `OnboardingStep`.
+/// The three pages the onboarding flow walks, in order (`OnboardingUiState.kt:13-17`).
 public enum OnboardingStep: String, CaseIterable, Sendable {
     case welcome
-    case name
-    case sex
-    case birthDate
-    case height
-    case weight
-    case healthNotes
-    case notifications
-}
-
-/// The heading the step sits under. Welcome has none: it is the cover, not a question, so it
-/// carries no header at all. The twin of Kotlin's `OnboardingSection`.
-public enum OnboardingSection: String, Sendable {
     case personalDetails
-    case healthNotes
-    case privacy
+    case healthAndPermissions
 }
 
-extension OnboardingStep {
-    /// The heading the step sits under; `nil` on Welcome, which has no header.
-    var section: OnboardingSection? {
-        switch self {
-        case .welcome: nil
-        case .birthDate, .height, .name, .sex, .weight: .personalDetails
-        case .healthNotes: .healthNotes
-        case .notifications: .privacy
-        }
-    }
-}
-
-/// The direction of a step change — iOS-only, no Kotlin twin. Android's `AnimatedContent`
+/// The direction of a page change — iOS-only, no Kotlin twin. Android's `AnimatedContent`
 /// derives `forward = targetState >= initialState` inside the `transitionSpec` lambda where both
 /// values are known at transition time; SwiftUI has no equivalent, so the direction must travel in
-/// the state instead. Set by the ViewModel's `NextClicked`/`BackClicked`/`SkipClicked` events so the
+/// the state instead. Set by the ViewModel's `nextClicked`/`backClicked`/`skipClicked` events so the
 /// transition reads the correct direction on the FIRST body evaluation after the change.
 public enum StepDirection: Sendable, Equatable {
     case forward
     case backward
 }
 
-/// The onboarding flow's UDF state. The twin of Kotlin's `OnboardingUiState`.
+/// The onboarding flow's UDF state. The twin of Kotlin's `OnboardingUiState`
+/// (`OnboardingUiState.kt:19-74`).
 ///
 /// `steps` is a plain `[OnboardingStep]` array rather than Kotlin's `ImmutableList` — the M2+
 /// precedent is that Swift has no immutable-list wrapper, and a value-type array on a struct is
@@ -76,8 +57,16 @@ public struct OnboardingUiState: Sendable, Equatable {
     public var heightText: String
     public var weightText: String
     public var healthNotes: String
+    /// The switch on the last page; only ever acted on when ``remindersAvailable``
+    /// (`OnboardingUiState.kt:28-29`).
+    public var remindersEnabled: Bool
+    /// Whether the reminder row is offered at all (`OnboardingUiState.kt:30-34`). Android turns it
+    /// off below API 33, where `POST_NOTIFICATIONS` does not exist; iOS has no such gate, so the
+    /// composition root leaves it on and only a test turns it off. The page itself stays either
+    /// way, so the page list cannot carry this.
+    public var remindersAvailable: Bool
     public var isSaving: Bool
-    /// The direction of the last step change, set by the ViewModel so the step transition reads
+    /// The direction of the last page change, set by the ViewModel so the page transition reads
     /// it on the first body eval (iOS-only — see the type-level doc comment above).
     public var lastStepDirection: StepDirection
 
@@ -90,6 +79,8 @@ public struct OnboardingUiState: Sendable, Equatable {
         heightText: String = "",
         weightText: String = "",
         healthNotes: String = "",
+        remindersEnabled: Bool = true,
+        remindersAvailable: Bool = true,
         isSaving: Bool = false,
         lastStepDirection: StepDirection = .forward
     ) {
@@ -101,70 +92,74 @@ public struct OnboardingUiState: Sendable, Equatable {
         self.heightText = heightText
         self.weightText = weightText
         self.healthNotes = healthNotes
+        self.remindersEnabled = remindersEnabled
+        self.remindersAvailable = remindersAvailable
         self.isSaving = isSaving
         self.lastStepDirection = lastStepDirection
     }
 
+    /// `OnboardingUiState.kt:37`.
     public var step: OnboardingStep {
         steps.indices.contains(stepIndex) ? steps[stepIndex] : .welcome
     }
 
+    /// `OnboardingUiState.kt:39`.
     public var isLastStep: Bool { stepIndex >= steps.count - 1 }
 
-    /// Heading the header shows; `nil` on Welcome, which has no header.
-    public var section: OnboardingSection? { step.section }
+    /// `OnboardingUiState.kt:41`.
+    public var stepCount: Int { steps.count }
 
-    /// How many steps actually ask the user something. Derived from `steps` rather than from
-    /// the enum so a shortened flow still counts to its own end.
-    public var stepCount: Int { steps.filter { $0 != .welcome }.count }
+    /// Position in the flow, 1-based: the cover is page one of three, not a prologue
+    /// (`OnboardingUiState.kt:43-44`).
+    public var stepNumber: Int { stepIndex + 1 }
 
-    /// Position among the collecting steps, 1-based; 0 while Welcome is showing.
-    public var stepNumber: Int {
-        if step == .welcome {
-            return 0
-        }
-        return steps.prefix(stepIndex + 1).filter { $0 != .welcome }.count
-    }
-
-    /// Overall, not per-section: a bar that reset at each heading would read as going back.
-    public var progress: Float {
-        stepCount == 0 ? 0 : Float(stepNumber) / Float(stepCount)
-    }
-
-    /// Step 1 has nothing behind it: the flow can be stepped through, never escaped.
+    /// Page 1 has nothing behind it: the flow can be stepped through, never escaped
+    /// (`OnboardingUiState.kt:46-47`).
     public var canGoBack: Bool { stepIndex > 0 }
 
-    public var isSkippable: Bool { step != .welcome && step != .sex }
+    /// The cover asks nothing, so there is nothing on it to pass over (`OnboardingUiState.kt:49-50`).
+    public var isSkippable: Bool { step != .welcome }
 
+    /// `OnboardingUiState.kt:52-53`.
     public var showInvalidHeight: Bool {
         !heightText.trimmingCharacters(in: .whitespaces).isEmpty && MeasurementInput.parseHeightCm(heightText) == nil
     }
 
+    /// `OnboardingUiState.kt:55-56`.
     public var showInvalidWeight: Bool {
         !weightText.trimmingCharacters(in: .whitespaces).isEmpty && MeasurementInput.parseWeightKg(weightText) == nil
     }
 
-    /// Sex is the one hard gate; the numeric steps only block on a value that is present but
-    /// unusable.
+    /// Cycle tracking turns itself on for these profiles, so the page says so while it is chosen
+    /// (`OnboardingUiState.kt:58-59`).
+    public var showCycleNote: Bool { sex == .female || sex == .other }
+
+    /// Sex is the one hard gate; the measurements only block on a value that is present but
+    /// unusable, so a blank field is still a way forward (`OnboardingUiState.kt:61-69`).
     public var canContinue: Bool {
         if isSaving {
             return false
         }
         switch step {
-        case .sex: return sex != nil
-        case .height: return !showInvalidHeight
-        case .weight: return !showInvalidWeight
-        default: return true
+        case .personalDetails: return sex != nil && !showInvalidHeight && !showInvalidWeight
+        case .healthAndPermissions, .welcome: return true
         }
+    }
+
+    /// Skipping is leaving the answers blank, which the mandatory one cannot be
+    /// (`OnboardingUiState.kt:71-73`).
+    public var canSkip: Bool {
+        isSkippable && !isSaving && (step != .personalDetails || sex != nil)
     }
 }
 
 /// The events the onboarding screen emits. The twin of Kotlin's `OnboardingEvent` sealed
-/// interface, ported to a Swift enum with associated values (the UDF event shape).
+/// interface (`OnboardingUiState.kt:76-97`), ported to a Swift enum with associated values (the
+/// UDF event shape).
 public enum OnboardingEvent: Sendable, Equatable {
     case nextClicked
     case backClicked
-    /// Clears whatever the current step collects and moves on.
+    /// Clears whatever the current page collects and moves on.
     case skipClicked
     case nameChanged(String)
     case sexSelected(Sex)
@@ -172,4 +167,14 @@ public enum OnboardingEvent: Sendable, Equatable {
     case heightChanged(String)
     case weightChanged(String)
     case healthNotesChanged(String)
+    case remindersToggled(Bool)
+}
+
+/// The one-shot outcome the screen has to carry out, because only it can reach the system
+/// (`OnboardingUiState.kt:99-105`).
+public enum OnboardingEffect: Sendable, Equatable {
+    /// Ask the system for notification authorization — Android's `POST_NOTIFICATIONS`. The answer
+    /// is not a gate: the setup finishes either way, and Reminder health stays the place to fix a
+    /// denial later.
+    case requestNotificationPermission
 }

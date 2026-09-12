@@ -1,74 +1,116 @@
+// Ported 1:1 from
+// `feature/onboarding/src/test/kotlin/com/alicansekban/salus/feature/onboarding/ui/
+// OnboardingUiStateTest.kt`, all nine cases by name (backtick → camelCase).
+//
+// The header's counter and its three segments, and both footer buttons, are read off derived
+// state — these are the tests that keep them honest (`OnboardingUiStateTest.kt:10-13`).
+
+import SalusModel
 import Testing
 
 @testable import FeatureOnboarding
 
-/// The twin of Android's
-/// `feature/onboarding/src/test/kotlin/com/alicansekban/salus/feature/onboarding/ui/OnboardingUiStateTest.kt`,
-/// ported 1:1 by name. The header's title, counter and bar are all read off derived state, so
-/// these are the tests that keep the header honest when the step list changes.
 @Suite("OnboardingUiState")
 struct OnboardingUiStateTests {
-    /// The Kotlin twin's `stateAt(step)` helper: a state whose step list is every step and whose
+    /// `OnboardingUiStateTest.kt:16-20` — a state whose page list is every page and whose
     /// `stepIndex` points at the given one.
-    private func stateAt(_ step: OnboardingStep) -> OnboardingUiState {
+    private func stateAt(_ step: OnboardingStep, sex: Sex? = nil) -> OnboardingUiState {
         OnboardingUiState(
             steps: OnboardingStep.allCases,
-            stepIndex: OnboardingStep.allCases.firstIndex(of: step) ?? 0
+            stepIndex: OnboardingStep.allCases.firstIndex(of: step) ?? 0,
+            sex: sex
         )
     }
 
-    @Test("welcome has no section")
-    func welcomeHasNoSection() {
-        #expect(stateAt(.welcome).section == nil)
+    /// `OnboardingUiStateTest.kt:22-28`.
+    @Test("the counter runs one to three with welcome as the first page")
+    func theCounterRunsOneToThreeWithWelcomeAsTheFirstPage() {
+        #expect(stateAt(.welcome).stepCount == 3)
+        #expect(stateAt(.welcome).stepNumber == 1)
+        #expect(stateAt(.personalDetails).stepNumber == 2)
+        #expect(stateAt(.healthAndPermissions).stepNumber == 3)
     }
 
-    @Test("every step maps to its section")
-    func everyStepMapsToItsSection() {
-        let expected: [OnboardingStep: OnboardingSection] = [
-            .name: .personalDetails,
-            .sex: .personalDetails,
-            .birthDate: .personalDetails,
-            .height: .personalDetails,
-            .weight: .personalDetails,
-            .healthNotes: .healthNotes,
-            .notifications: .privacy
-        ]
-        for (step, section) in expected {
-            #expect(stateAt(step).section == section, "section of \(step)")
-        }
+    /// `OnboardingUiStateTest.kt:30-35`.
+    @Test("only the last page finishes")
+    func onlyTheLastPageFinishes() {
+        #expect(stateAt(.welcome).isLastStep == false)
+        #expect(stateAt(.personalDetails).isLastStep == false)
+        #expect(stateAt(.healthAndPermissions).isLastStep)
     }
 
-    @Test("welcome is outside the counter")
-    func welcomeIsOutsideTheCounter() {
-        let welcome = stateAt(.welcome)
-        #expect(welcome.stepNumber == 0)
-        #expect(welcome.progress == 0)
+    /// `OnboardingUiStateTest.kt:37-42`.
+    @Test("the flow can be stepped through but never escaped")
+    func theFlowCanBeSteppedThroughButNeverEscaped() {
+        #expect(stateAt(.welcome).canGoBack == false)
+        #expect(stateAt(.personalDetails).canGoBack)
+        #expect(stateAt(.healthAndPermissions).canGoBack)
     }
 
-    @Test("the counter runs one to seven over the collecting steps")
-    func theCounterRunsOneToSevenOverTheCollectingSteps() {
-        #expect(stateAt(.name).stepCount == 7)
-        #expect(stateAt(.name).stepNumber == 1)
-        #expect(stateAt(.notifications).stepNumber == 7)
-        #expect(stateAt(.notifications).progress == 1)
+    /// `OnboardingUiStateTest.kt:44-49`.
+    @Test("the cover has nothing to skip")
+    func theCoverHasNothingToSkip() {
+        #expect(stateAt(.welcome).isSkippable == false)
+        #expect(stateAt(.personalDetails, sex: .female).isSkippable)
+        #expect(stateAt(.healthAndPermissions).isSkippable)
     }
 
-    @Test("progress never goes backwards across the flow")
-    func progressNeverGoesBackwardsAcrossTheFlow() {
-        let progresses = OnboardingStep.allCases.map { stateAt($0).progress }
-        for pair in zip(progresses, progresses.dropFirst()) {
-            #expect(pair.1 > pair.0, "\(pair.0) -> \(pair.1)")
-        }
+    /// `OnboardingUiStateTest.kt:51-60`.
+    @Test("sex gates both ways out of the personal page")
+    func sexGatesBothWaysOutOfThePersonalPage() {
+        let blocked = stateAt(.personalDetails)
+        #expect(blocked.canContinue == false)
+        #expect(blocked.canSkip == false)
+
+        let answered = stateAt(.personalDetails, sex: .other)
+        #expect(answered.canContinue)
+        #expect(answered.canSkip)
     }
 
-    @Test("a shortened step list still counts to its own end")
-    func aShortenedStepListStillCountsToItsOwnEnd() {
-        let shortened = OnboardingUiState(
-            steps: [.welcome, .name, .sex],
-            stepIndex: 2
-        )
-        #expect(shortened.stepCount == 2)
-        #expect(shortened.stepNumber == 2)
-        #expect(shortened.progress == 1)
+    /// `OnboardingUiStateTest.kt:62-76`.
+    @Test("a measurement that cannot be read blocks the page, a blank one does not")
+    func aMeasurementThatCannotBeReadBlocksThePageABlankOneDoesNot() {
+        var base = stateAt(.personalDetails, sex: .male)
+        #expect(base.canContinue)
+
+        var tooShort = base
+        tooShort.heightText = "7"
+        #expect(tooShort.showInvalidHeight)
+        #expect(tooShort.canContinue == false)
+
+        var tooLight = base
+        tooLight.weightText = "3"
+        #expect(tooLight.showInvalidWeight)
+        #expect(tooLight.canContinue == false)
+
+        // A Turkish keyboard produces a comma, and `MeasurementInput` reads it.
+        base.heightText = "170,5"
+        #expect(base.showInvalidHeight == false)
+    }
+
+    /// `OnboardingUiStateTest.kt:78-82`.
+    @Test("an unreadable measurement is the personal page's problem alone")
+    func anUnreadableMeasurementIsThePersonalPagesProblemAlone() {
+        var last = stateAt(.healthAndPermissions)
+        last.heightText = "7"
+        #expect(last.canContinue)
+    }
+
+    /// `OnboardingUiStateTest.kt:84-89`.
+    @Test("saving closes every door")
+    func savingClosesEveryDoor() {
+        var saving = stateAt(.healthAndPermissions)
+        saving.isSaving = true
+        #expect(saving.canContinue == false)
+        #expect(saving.canSkip == false)
+    }
+
+    /// `OnboardingUiStateTest.kt:91-97`.
+    @Test("the cycle note is offered to everyone the cycle feature is for")
+    func theCycleNoteIsOfferedToEveryoneTheCycleFeatureIsFor() {
+        #expect(stateAt(.personalDetails, sex: .female).showCycleNote)
+        #expect(stateAt(.personalDetails, sex: .other).showCycleNote)
+        #expect(stateAt(.personalDetails, sex: .male).showCycleNote == false)
+        #expect(stateAt(.personalDetails).showCycleNote == false)
     }
 }

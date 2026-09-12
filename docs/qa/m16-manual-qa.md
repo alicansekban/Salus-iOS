@@ -103,8 +103,40 @@ check light first, matching the mockups.
 
 ## 2. Onboarding flow
 
-_To be filled by Task 13 — the three-step machine: Welcome → Personal details → Health notes and
-permissions._
+The one flow change of the milestone (Task 13): eight single-field steps became Android's three
+pages — Welcome → Personal details → Health notes and permissions. The gate is drawn **above** the
+shell's `TabView`, so it has no navigation bar and no tab bar; every page carries the same header
+("ADIM n/3" over three bar segments) and its own two buttons.
+
+Run the whole section on a **fresh install** (delete the app first — the flow only shows while
+`onboarding_completed` is unset), and run 2.13–2.14 on a second fresh install, because the
+notification permission can only be asked for once per install.
+
+| # | Step | Expect | ☐ |
+|---|---|---|---|
+| 2.1 | Launch a fresh install | the Welcome cover, never a flash of Home behind it; header reads "ADIM 1/3" with the first of three segments filled and **no** back button | ☐ |
+| 2.2 | Read the cover | shield tile, "Salus'a Hoş Geldiniz", the paragraph, and three chips — "Yalnızca cihazınızda", "Hesap gerektirmez", "Reklamsız"; the chips are plain, not pressable-looking, and none of them claims encryption | ☐ |
+| 2.3 | Tap "Gizlilik ve Güvenlik İlkelerimiz" | a bottom sheet titled "Gizlilik ve Güvenlik" with the full privacy paragraph; drag it down, tap the close button and tap the scrim — all three dismiss it and leave the cover exactly where it was | ☐ |
+| 2.4 | Tap "Başla" | page 2 slides in **from the right** while the cover slides left; header reads "ADIM 2/3", two segments filled, and a back button has appeared | ☐ |
+| 2.5 | Page 2 without choosing a sex | "Devam Et" **and** "Şimdilik Atla" are both dimmed and do nothing; typing a name does not enable them | ☐ |
+| 2.6 | Choose "Kadın", then "Diğer", then "Erkek" | exactly one tile is selected at a time, with the primary edge and the check disc; the cycle note ("Regl ve döngü takibi…") shows for Kadın and Diğer and disappears for Erkek | ☐ |
+| 2.7 | Choose a sex, then type "7" in BOY | the field turns red with "50 ile 250 cm arasında bir değer girin." and "Devam Et" dims; clearing the field re-enables it. Same for KİLO with "3" | ☐ |
+| 2.8 | Type "170,5" in BOY (Turkish keyboard comma) | no error — the comma is read as a decimal point | ☐ |
+| 2.9 | Fill name, birth date, height and weight, then tap "Şimdilik Atla" | page 3 arrives; go **back** to page 2 — the name, the birth date, the height and the weight are all cleared and the **sex is still selected** | ☐ |
+| 2.10 | On page 2, tap back | page 1 slides in **from the left** while page 2 slides right; header is back to "ADIM 1/3" with no back button. Tapping back again (there is none) is impossible — the flow cannot be escaped | ☐ |
+| 2.11 | Page 3 | document tile, "Son Birkaç Detay", the notes field under its "SAĞLIK NOTLARI & ALERJİLER (İSTEĞE BAĞLI)" overline with the "Yalnızca bu cihazda" chip under it, the privacy note, and the "Zamanında Hatırlatıcılar" row with its switch **on** | ☐ |
+| 2.12 | Type several lines of notes | the field grows with the text and the page scrolls; the chip stays below the text rather than under it | ☐ |
+| 2.13 | Leave the switch **on** and tap "Kurulumu Tamamla ve Başla" | the system notification prompt appears; whichever answer you give, the app lands on Home — the prompt never blocks the finish | ☐ |
+| 2.14 | *(second fresh install)* Turn the switch **off**, then tap "Kurulumu Tamamla ve Başla" | **no** system prompt at all, and the app still lands on Home | ☐ |
+| 2.15 | *(third fresh install)* On page 3 type some notes, then tap "Daha Sonra Ayarla" | no system prompt, the app lands on Home, and Daha Fazla › Profil shows **no** health notes — the typed text was discarded | ☐ |
+| 2.16 | After any of 2.13–2.15, open Daha Fazla › Profil | the name (trimmed), sex, birth date and height are the ones you entered, and Ölçümler holds one weight entry dated today | ☐ |
+| 2.17 | Force-quit and relaunch after finishing | Home, never the onboarding gate again | ☐ |
+| 2.18 | *(fresh install)* Kill the app while page 3 is saving (rapid tap then swipe up) | the gate is still there on relaunch and the flow replays — never a half-filled profile behind a closed gate | ☐ |
+| 2.19 | Settings › Accessibility › Larger Text at the largest size, walk all three pages | nothing clips: the trust chips stack instead of running off the edge, BOY and KİLO stay readable side by side, and every button label fits inside its pill | ☐ |
+| 2.20 | Settings › Accessibility › Motion › Reduce Motion on, walk all three pages | the pages swap instantly with no slide and no fade; back still returns to the right page | ☐ |
+| 2.21 | VoiceOver, page 1 | the header announces "ADIM 1/3" and the three bar segments are **not** announced; the shield tile is not announced; the trust chips read as plain text | ☐ |
+| 2.22 | VoiceOver, page 2 | each sex tile announces its label and reads as selected/not selected; the back button announces "Geri" | ☐ |
+| 2.23 | VoiceOver, page 3 | the reminder row reads as one control — title, subtitle and switch state together — and a double-tap flips it | ☐ |
 
 ---
 

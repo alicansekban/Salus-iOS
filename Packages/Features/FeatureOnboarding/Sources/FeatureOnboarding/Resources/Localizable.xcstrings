@@ -18,172 +18,19 @@
         }
       }
     },
-    "onboarding_skip" : {
+    "onboarding_step_of" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Skip for now"
+            "value" : "STEP %1$lld / %2$lld"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Şimdilik Atla"
-          }
-        }
-      }
-    },
-    "onboarding_start" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Get started"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Başla"
-          }
-        }
-      }
-    },
-    "onboarding_next" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Continue"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Devam Et"
-          }
-        }
-      }
-    },
-    "onboarding_finish" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Finish"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bitir"
-          }
-        }
-      }
-    },
-    "onboarding_allow_notifications" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Allow"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "İzin Ver"
-          }
-        }
-      }
-    },
-    "onboarding_progress" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Step %1$lld of %2$lld"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Adım %1$lld / %2$lld"
-          }
-        }
-      }
-    },
-    "onboarding_step_counter" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$lld/%2$lld"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$lld/%2$lld"
-          }
-        }
-      }
-    },
-    "onboarding_section_personal" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Personal Details"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kişisel Bilgiler"
-          }
-        }
-      }
-    },
-    "onboarding_section_notes" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Health Notes"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sağlık Notları"
-          }
-        }
-      }
-    },
-    "onboarding_section_privacy" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Privacy Preferences"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Gizlilik Tercihleri"
+            "value" : "ADIM %1$lld / %2$lld"
           }
         }
       }
@@ -222,36 +69,155 @@
         }
       }
     },
-    "onboarding_name_title" : {
+    "onboarding_trust_local" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "What is your name?"
+            "value" : "On your device only"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Adınız Nedir?"
+            "value" : "Yalnızca cihazınızda"
           }
         }
       }
     },
-    "onboarding_name_body" : {
+    "onboarding_trust_no_account" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "How would you like us to address you?"
+            "value" : "No account needed"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Size nasıl hitap etmemizi istersiniz?"
+            "value" : "Hesap gerektirmez"
+          }
+        }
+      }
+    },
+    "onboarding_trust_no_ads" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No ads"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reklamsız"
+          }
+        }
+      }
+    },
+    "onboarding_start" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Get started"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Başla"
+          }
+        }
+      }
+    },
+    "onboarding_privacy_link" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Our privacy and security principles"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gizlilik ve Güvenlik İlkelerimiz"
+          }
+        }
+      }
+    },
+    "onboarding_privacy_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Privacy and security"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gizlilik ve Güvenlik"
+          }
+        }
+      }
+    },
+    "onboarding_privacy_body" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The health data you enter is stored in a database on this device only. You do not need an account; there is no sign-up, no sign-in and no profile matching. We use no analytics tool and no ad network to watch how you use the app. Your health records never leave your phone; the network is used only to verify your subscription and — if you use them — for the AI features, which receive anonymous statistical summaries. Reminders run locally, through your device's own notifications."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Girdiğiniz sağlık verileri yalnızca bu cihazdaki veritabanında saklanır. Hesap açmanız gerekmez; kayıt, giriş ya da profil eşleştirmesi yoktur. Kullanımınızı izleyen bir analiz aracı veya reklam ağı kullanmıyoruz. Sağlık kayıtlarınız telefonunuzdan çıkmaz; ağ yalnızca aboneliğinizi doğrulamak ve — kullanırsanız — yapay zekâ özellikleri için, anonim istatistik özetleriyle kullanılır. Hatırlatıcılar cihazınızın kendi bildirimleriyle, yerel olarak çalışır."
+          }
+        }
+      }
+    },
+    "onboarding_personal_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Let us get to know you"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sizi Tanıyalım"
+          }
+        }
+      }
+    },
+    "onboarding_personal_body" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "These details put your measurements in context and open the sections that apply to you. All of them stay on your device."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bu bilgiler ölçümlerinizi yorumlamak ve size uygun bölümleri açmak için kullanılır. Hepsi cihazınızda kalır."
           }
         }
       }
@@ -262,13 +228,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Name"
+            "value" : "PREFERRED NAME"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ad"
+            "value" : "HİTAP ŞEKLİ / ADINIZ"
           }
         }
       }
@@ -290,36 +256,19 @@
         }
       }
     },
-    "onboarding_sex_title" : {
+    "onboarding_sex_label" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Select your sex"
+            "value" : "BIOLOGICAL SEX"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cinsiyetinizi Seçin"
-          }
-        }
-      }
-    },
-    "onboarding_sex_body" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "We need this to tailor your health experience and cycle tracking. Your data is stored on this device only."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Size en uygun sağlık deneyimini ve döngü takibini sunabilmemiz için bu bilgiye ihtiyacımız var. Verileriniz yalnızca bu cihazda saklanır."
+            "value" : "BİYOLOJİK CİNSİYET"
           }
         }
       }
@@ -375,36 +324,36 @@
         }
       }
     },
-    "onboarding_birth_title" : {
+    "onboarding_cycle_note" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Your date of birth"
+            "value" : "Period and cycle tracking is turned on for you automatically"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Doğum Tarihiniz"
+            "value" : "Regl ve döngü takibi uygulamada sizin için otomatik olarak aktifleşir"
           }
         }
       }
     },
-    "onboarding_birth_body" : {
+    "onboarding_birth_label" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Your age is derived from this date, never stored separately."
+            "value" : "DATE OF BIRTH"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Yaşınız bu tarihten hesaplanır; ayrıca saklanmaz."
+            "value" : "DOĞUM TARİHİ"
           }
         }
       }
@@ -426,36 +375,19 @@
         }
       }
     },
-    "onboarding_height_title" : {
+    "onboarding_age_caption" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "How tall are you?"
+            "value" : "Your age is calculated from this date"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Boyunuz Kaç cm?"
-          }
-        }
-      }
-    },
-    "onboarding_height_body" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Used when putting your measurements in context."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ölçümlerinizi yorumlarken kullanılır."
+            "value" : "Yaş dinamik hesaplanır"
           }
         }
       }
@@ -466,13 +398,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Height"
+            "value" : "HEIGHT"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Boy"
+            "value" : "BOY"
           }
         }
       }
@@ -511,53 +443,19 @@
         }
       }
     },
-    "onboarding_weight_title" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "What do you weigh?"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kilonuz Kaç kg?"
-          }
-        }
-      }
-    },
-    "onboarding_weight_body" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Saved as your first measurement, so your weight chart starts today."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "İlk ölçümünüz olarak kaydedilir ve kilo grafiğinizin başlangıcı olur."
-          }
-        }
-      }
-    },
     "onboarding_weight_label" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Weight"
+            "value" : "WEIGHT"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Kilo"
+            "value" : "KİLO"
           }
         }
       }
@@ -596,36 +494,70 @@
         }
       }
     },
-    "onboarding_notes_title" : {
+    "onboarding_next" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Extra health notes"
+            "value" : "Continue"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ek Sağlık Notları"
+            "value" : "Devam Et"
           }
         }
       }
     },
-    "onboarding_notes_body" : {
+    "onboarding_skip" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Add past conditions, allergies or anything else about your health that you want your doctor to know."
+            "value" : "Skip for now"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Doktorunuzun bilmesini istediğiniz geçmiş rahatsızlıklar, alerjiler veya genel sağlık durumunuzla ilgili özel notlarınızı buraya ekleyebilirsiniz."
+            "value" : "Şimdilik Atla"
+          }
+        }
+      }
+    },
+    "onboarding_health_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A few last details"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Son Birkaç Detay"
+          }
+        }
+      }
+    },
+    "onboarding_health_body" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Add anything you want your doctor to know and turn on reminders. You can change both later."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Doktorunuzun bilmesini istediğiniz notları ekleyin ve hatırlatıcıları açın. İkisini de sonradan değiştirebilirsiniz."
           }
         }
       }
@@ -636,13 +568,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Notes"
+            "value" : "HEALTH NOTES & ALLERGIES (OPTIONAL)"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Notlar"
+            "value" : "SAĞLIK NOTLARI & ALERJİLER (İSTEĞE BAĞLI)"
           }
         }
       }
@@ -664,7 +596,7 @@
         }
       }
     },
-    "onboarding_notes_private" : {
+    "onboarding_only_device" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -698,41 +630,7 @@
         }
       }
     },
-    "onboarding_notifications_title" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Notification permission"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bildirim İzinleri"
-          }
-        }
-      }
-    },
-    "onboarding_notifications_body" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Let us send you gentle reminders so you do not forget your medications and health check-ups. If you decline, the app keeps working — you can grant it later under More › Reminders."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "İlaçlarınızı ve sağlık kontrollerinizi unutmamanız için size nazik hatırlatıcılar gönderelim. İzin vermezseniz uygulama çalışmaya devam eder; izni sonradan Daha Fazla › Hatırlatıcılar bölümünden verebilirsiniz."
-          }
-        }
-      }
-    },
-    "onboarding_notifications_benefit_title" : {
+    "onboarding_reminders_title" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
@@ -744,41 +642,75 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Zamanında Hatırlatma"
+            "value" : "Zamanında Hatırlatıcılar"
           }
         }
       }
     },
-    "onboarding_notifications_benefit_body" : {
+    "onboarding_reminders_subtitle" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Never miss a dose."
+            "value" : "Get a notification at your medication and appointment times"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Asla bir dozu kaçırmayın."
+            "value" : "İlaç ve randevu saatlerinizde bildirim alın"
           }
         }
       }
     },
-    "onboarding_notifications_later" : {
+    "onboarding_finish" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Later"
+            "value" : "Finish setup and start"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Daha Sonra"
+            "value" : "Kurulumu Tamamla ve Başla"
+          }
+        }
+      }
+    },
+    "onboarding_later" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Set up later"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Daha Sonra Ayarla"
+          }
+        }
+      }
+    },
+    "onboarding_later_caption" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can update your preferences any time under More > Settings"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dilediğiniz zaman Daha Fazla > Ayarlar bölümünden tercihlerinizi güncelleyebilirsiniz"
           }
         }
       }
