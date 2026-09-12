@@ -232,7 +232,6 @@ theme change.
 | 5.1.5 | Switch mode to Sistem, then flip iOS's own appearance from Control Centre | both bars repaint on return to the app | ☐ |
 
 ### 5.2 The root toolbar (Task 5)
-
 | # | Step | Expect | ☐ |
 |---|---|---|---|
 | 5.2.1 | Open each of the five tabs in turn | every root shows the same bar: heart tile left, the tab's own title centred ("Ana Sayfa", "İlaçlar", "Ölçümler", "Randevular", "Daha Fazla"), bell + avatar right. No in-content header above the content anywhere | ☐ |
@@ -245,6 +244,26 @@ theme change.
 | 5.2.8 | Medications root: add a medication to an empty list, then delete the last one, without leaving the screen | the count is the "Aktif ilaç" metric tile in the list's own header and its number tracks the list in the same interaction. The navigation bar carries **only** the brand tile, the title, the bell and the avatar — no count chip (Task 7 retired it; 3.2.3 checks the same thing from the other side) | ☐ |
 | 5.2.9 | VoiceOver on any root | the bell announces "Hatırlatıcı sağlığı", the avatar "Profil"; the brand tile is skipped | ☐ |
 | 5.2.10 | Cycle calendar (pushed from Home's card and from the More row) | inline title "Döngü" with a back button, no root toolbar | ☐ |
+
+### 5.3 The theme and language sheets (Task 10)
+
+The two setting pickers are `.medium` sheets over the More hub (spec §2.3). Each row is a
+`SalusSelectableRow`; the mode row opens the three-mode sheet and the colour-theme row opens the
+same sheet, so mode and palette share one popup. Both sheets apply their pick live and stay open.
+
+| # | Step | Expect | ☐ |
+|---|---|---|---|
+| 5.3.1 | More hub → Görünüm & Tema | the appearance sheet slides up at the medium detent, with a drag handle, a close button and the subtitle "Seçimler anında uygulanır"; the mode tiles (Sistem / Açık / Koyu) fill the top row and the four palette rows sit under "VURGU & RENK PALETİ", each leading with its colour swatch and the CLASSIC row carrying a "Varsayılan" badge | ☐ |
+| 5.3.2 | Tap the CLASSIC palette row as a free user | it selects immediately — the stored palette is persisted and the sheet stays open; **no** paywall ever (A60) | ☐ |
+| 5.3.3 | Tap OCEAN / SUNSET / FOREST as a free user | the paywall opens on top and nothing is written; the stored palette is unchanged and the theme sheet is gone (the paywall is a sheet of its own) | ☐ |
+| 5.3.4 | Switch Renk Teması between palettes with premium on | each tap paints the whole app under the open sheet and the row's swatch updates; the sheet stays open until the close button, the swipe or the scrim | ☐ |
+| 5.3.5 | Swipe the appearance sheet down, then reopen | nothing is written on the way out — the stored mode and palette are exactly what they were before the sheet opened | ☐ |
+| 5.3.6 | More hub → Uygulama dili | the language sheet slides up at the medium detent with three `SalusSelectableRow`s (Sistem dili / Türkçe / English) and the subtitle "Seçim anında uygulanır" | ☐ |
+| 5.3.7 | Tap Türkçe, then English, then back to Sistem dili | each tap repaints the whole app (the More hub and its labels included) in the chosen language while the sheet stays open; the row's selection follows the pick | ☐ |
+| 5.3.8 | Swipe the language sheet down | the app has already repainted in the last picked language and stays that way; nothing else is written on the way out | ☐ |
+| 5.3.9 | Open both sheets one after the other | only one is ever up at a time; the More hub behind shows the drawn palette (a lapsed subscriber sees CLASSIC here while the sheet still draws their stored OCEAN as selected) | ☐ |
+| 5.3.10 | VoiceOver on the appearance sheet | each palette row announces "selected" for the stored pick; the lock glyph on a free user's locked rows is announced by its row's label, not as a separate control | ☐ |
+
 
 ---
 

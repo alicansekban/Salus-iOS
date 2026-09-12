@@ -9,6 +9,11 @@
 //   `leading` (a `@Composable` slot: a colour swatch or an icon) → `swatch: Color?` /
 //     `systemImage: String?` + `accent`. The two leading shapes the M15 preview draws.
 //   `ImageVector` → an SF Symbol name, the same mapping `SalusIconBadge` makes.
+//   `badge` → `badge: String?` — the qualifying label drawn as an accent `SalusStatusChip`
+//     ("Varsayılan" on the Classic palette row of the theme sheet, `SalusSelectableRow.kt:84-86`).
+//   `locked` → `locked: Bool` — draws a 20 pt lock glyph in place of the radio mark, exactly as
+//     Kotlin swaps `Icon(Lock)` for the `RadioButton` (`SalusSelectableRow.kt:87-99`). A locked
+//     row stays clickable; what the tap does is the caller's decision.
 //
 // The component dimensions come from `SalusSelectableRowDefaults` (`SalusSelectableRow.kt:109-114`).
 // They are component values that live in `:core:ui` on Android too — not `design-tokens.md` tokens
@@ -17,8 +22,8 @@
 import SalusDesignSystem
 import SwiftUI
 
-/// Single-choice row: a leading swatch or icon, a title (+ subtitle), and a radio indicator at the
-/// trailing edge (`SalusSelectableRow.kt:56-68`).
+/// Single-choice row: a leading swatch or icon, a title (+ subtitle), an optional badge, and a
+/// radio indicator at the trailing edge (`SalusSelectableRow.kt:56-68`).
 ///
 /// The whole row is the touch target — a separate radio control would give the user a second,
 /// smaller thing to aim at for the same action. Pass the feature's `accent` to tint the icon
@@ -31,6 +36,8 @@ public struct SalusSelectableRow: View {
     let swatch: Color?
     let systemImage: String?
     let accent: FeatureAccent?
+    let badge: String?
+    let locked: Bool
     let isSelected: Bool
     let action: () -> Void
 
@@ -44,12 +51,18 @@ public struct SalusSelectableRow: View {
     ///   - systemImage: SF Symbol name for an icon leading — the iOS twin of Kotlin's `ImageVector`.
     ///   - accent: the feature accent that tints the icon circle, or nil for the primary role
     ///     (`SalusSelectableRow.kt:51-52`).
+    ///   - badge: a qualifying label drawn as an accent `SalusStatusChip` ("Varsayılan").
+    ///   - locked: `true` draws a 20 pt lock glyph in place of the radio mark
+    ///     (`SalusSelectableRow.kt:87-99`). Independent of `isSelected`: a locked row still reports
+    ///     its selection state and stays clickable.
     public init(
         title: String,
         subtitle: String? = nil,
         swatch: Color? = nil,
         systemImage: String? = nil,
         accent: FeatureAccent? = nil,
+        badge: String? = nil,
+        locked: Bool = false,
         isSelected: Bool,
         action: @escaping () -> Void
     ) {
@@ -58,6 +71,8 @@ public struct SalusSelectableRow: View {
         self.swatch = swatch
         self.systemImage = systemImage
         self.accent = accent
+        self.badge = badge
+        self.locked = locked
         self.isSelected = isSelected
         self.action = action
     }
@@ -80,6 +95,11 @@ public struct SalusSelectableRow: View {
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
+                // A qualified option carries its badge between the label and the control
+                // (`SalusSelectableRow.kt:84-86`).
+                if let badge {
+                    SalusStatusChip(label: badge, status: .accent)
+                }
                 indicator
             }
             .padding(.horizontal, SalusSpacing.lg)
@@ -123,23 +143,33 @@ public struct SalusSelectableRow: View {
         }
     }
 
-    /// `SalusSelectableRow.kt:104-125` — the radio mark, drawn rather than composed so it stays purely
-    /// visual.
+    /// `SalusSelectableRow.kt:87-99` — a locked row swaps the radio mark for a 20 pt lock glyph, so
+    /// it reads as "the thing the row offers is behind a subscription" rather than as a plain
+    /// unselected option. The row stays tappable; opening the paywall is the caller's job.
+    @ViewBuilder
     private var indicator: some View {
-        SalusShapes.pill
-            .stroke(
-                SalusSelectableRowStyle.indicatorRing(selected: isSelected, colors: colors),
-                lineWidth: Self.indicatorBorder
-            )
-            .frame(width: Self.indicatorSize, height: Self.indicatorSize)
-            .overlay {
-                if isSelected {
-                    SalusShapes.pill
-                        .fill(colors.primary)
-                        .frame(width: Self.indicatorDotSize, height: Self.indicatorDotSize)
+        if locked {
+            Image(systemName: "lock.fill")
+                .font(.system(size: Self.lockSize))
+                .foregroundStyle(colors.onSurfaceVariant)
+                .accessibilityHidden(true)
+        } else {
+            // The radio mark (`SalusSelectableRow.kt:104-125`).
+            SalusShapes.pill
+                .stroke(
+                    SalusSelectableRowStyle.indicatorRing(selected: isSelected, colors: colors),
+                    lineWidth: Self.indicatorBorder
+                )
+                .frame(width: Self.indicatorSize, height: Self.indicatorSize)
+                .overlay {
+                    if isSelected {
+                        SalusShapes.pill
+                            .fill(colors.primary)
+                            .frame(width: Self.indicatorDotSize, height: Self.indicatorDotSize)
+                    }
                 }
-            }
-            .accessibilityHidden(true)
+                .accessibilityHidden(true)
+        }
     }
 
     private var colors: SalusColorScheme { theme.colorScheme }
@@ -153,6 +183,8 @@ public struct SalusSelectableRow: View {
     private static let indicatorBorder: CGFloat = 2
     private static let indicatorDotSize: CGFloat = 12
     private static let selectedBorder: CGFloat = 2
+    /// `SalusSelectableRowDefaults.LockSize` (`SalusSelectableRow.kt:111`).
+    private static let lockSize: CGFloat = 20
 }
 
 /// The four colour decisions ``SalusSelectableRow`` makes, lifted out of the view so they can be

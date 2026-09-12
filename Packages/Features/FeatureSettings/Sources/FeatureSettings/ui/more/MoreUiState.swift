@@ -1,31 +1,25 @@
 // Ported 1:1 from
-// `feature/settings/src/main/kotlin/com/alicansekban/salus/feature/settings/ui/more/MoreUiState.kt`.
+// `feature/settings/src/main/kotlin/com/alicansekban/salus/feature/settings/ui/more/MoreUiState.kt`
+// in its M15 shape.
 //
-// The three UDF types keep their Kotlin names and their Kotlin job. One divergence is visible in
-// the types themselves, recorded in `MoreViewModel.swift`'s header and restated here so a reader of
-// the state alone sees it:
-//
-//   * The `MoreEffect` cases carry the same names as the Kotlin sealed interface; only the URL they
-//     hand the screen is platform-mapped — recorded divergence (3), `appStoreSubscriptionsUrl` in
-//     `MoreViewModel.swift`.
+// The three UDF types keep their Kotlin names and their Kotlin job. Two divergences are recorded in
+// `MoreViewModel.swift`'s header (`appStoreSubscriptionsUrl`, the buffered-effects queue); the
+// state itself follows the M15 twin exactly — the theme and language sheets are two `Bool` flags on
+// the state, driven by their own open/dismiss events, replacing the M14 era single
+// `activeDialog: MoreDialog?`.
 
 import SalusModel
 import SalusPremium
 
-/// Which selection popup is open (`MoreUiState.kt:9-13`).
-public enum MoreDialog: Sendable, Equatable {
-    case theme
-    case colorTheme
-    case language
-}
-
 /// The More tab is the app's settings hub: the four data tabs cover everything else, so splitting a
 /// near-empty "More" list from a separate Settings screen only added a hop
-/// (`MoreUiState.kt:15-33`).
+/// (`MoreUiState.kt:15-40`).
 public struct MoreUiState: Sendable, Equatable {
     public var isLoading: Bool
     /// The stored display name; blank when onboarding skipped it, which the row points out.
     public var profileName: String
+    /// Chipped next to the name on the profile card; nil while it has never been answered.
+    public var profileSex: Sex?
     /// Cycle tracking is hidden for male profiles; see docs/architecture/m9-plan.md item 1.
     public var showCycle: Bool
     public var themeMode: ThemeMode
@@ -37,11 +31,17 @@ public struct MoreUiState: Sendable, Equatable {
     public var premiumStatus: PremiumStatus
     public var appLockEnabled: Bool
     public var secureScreenEnabled: Bool
-    public var activeDialog: MoreDialog?
+    /// The appearance sheet — opened by both the mode row and the palette row. It outlives a
+    /// selection on purpose: mode and palette live in the same sheet (`MoreUiState.kt:33-37`).
+    public var isThemeSheetOpen: Bool
+    /// The language sheet — behaves exactly like the appearance sheet: the pick applies live and
+    /// the sheet stays open (`MoreUiState.kt:42-47`).
+    public var isLanguageSheetOpen: Bool
 
     public init(
         isLoading: Bool = true,
         profileName: String = "",
+        profileSex: Sex? = nil,
         showCycle: Bool = false,
         themeMode: ThemeMode = .system,
         premiumTheme: PremiumTheme = .classic,
@@ -49,10 +49,12 @@ public struct MoreUiState: Sendable, Equatable {
         premiumStatus: PremiumStatus = .free,
         appLockEnabled: Bool = false,
         secureScreenEnabled: Bool = false,
-        activeDialog: MoreDialog? = nil
+        isThemeSheetOpen: Bool = false,
+        isLanguageSheetOpen: Bool = false
     ) {
         self.isLoading = isLoading
         self.profileName = profileName
+        self.profileSex = profileSex
         self.showCycle = showCycle
         self.themeMode = themeMode
         self.premiumTheme = premiumTheme
@@ -60,18 +62,26 @@ public struct MoreUiState: Sendable, Equatable {
         self.premiumStatus = premiumStatus
         self.appLockEnabled = appLockEnabled
         self.secureScreenEnabled = secureScreenEnabled
-        self.activeDialog = activeDialog
+        self.isThemeSheetOpen = isThemeSheetOpen
+        self.isLanguageSheetOpen = isLanguageSheetOpen
     }
 }
 
-/// User intents (`MoreUiState.kt:35-73`).
+/// User intents (`MoreUiState.kt:50-86`).
 public enum MoreEvent: Sendable, Equatable {
-    case dialogRequested(MoreDialog)
-    case dialogDismissed
+    /// Either appearance row was tapped; both open the one theme sheet.
+    case themeSheetOpened
+    /// The sheet was swiped away, closed or dismissed by its scrim. Nothing is written.
+    case themeSheetDismissed
     case selectTheme(ThemeMode)
-    /// A colour picked in the premium palette dialog. Free users may open the dialog and tap an
-    /// option; the entitlement check lives in the ViewModel, not in the screen.
+    /// A colour picked in the theme sheet's palette list. Free users may open the sheet and tap a
+    /// locked row; the entitlement check lives in the ViewModel, not in the screen.
     case colorThemeSelected(PremiumTheme)
+    /// The "app language" row was tapped.
+    case languageSheetOpened
+    /// The language sheet was swiped away, closed or dismissed by its scrim.
+    case languageSheetDismissed
+    /// A language picked in the language sheet. Applied immediately and the sheet stays open.
     case selectLanguage(AppLanguage)
     /// Sent only after a successful authentication when enabling.
     case setAppLock(Bool)

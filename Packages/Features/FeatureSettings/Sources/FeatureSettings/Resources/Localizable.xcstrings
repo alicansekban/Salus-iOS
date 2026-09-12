@@ -344,16 +344,16 @@
     "about_features_title": {
       "extractionState": "manual",
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "What Salus does"
-          }
-        },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Salus ne yapar?"
+            "value": "SALUS NE YAPAR"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "WHAT SALUS DOES"
           }
         }
       }
@@ -473,23 +473,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Abonelik"
-          }
-        }
-      }
-    },
-    "support_title": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Support"
-          }
-        },
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Destek"
           }
         }
       }
@@ -664,23 +647,6 @@
         }
       }
     },
-    "more_profile": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Profile"
-          }
-        },
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Profil"
-          }
-        }
-      }
-    },
     "more_profile_incomplete": {
       "extractionState": "manual",
       "localizations": {
@@ -701,16 +667,16 @@
     "more_section_tracking": {
       "extractionState": "manual",
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tracking"
-          }
-        },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Takip"
+            "value": "TAKİP"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "TRACKING"
           }
         }
       }
@@ -735,16 +701,16 @@
     "more_trends": {
       "extractionState": "manual",
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Trends"
-          }
-        },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Analizler"
+            "value": "Analizler & Trendler"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Insights & trends"
           }
         }
       }
@@ -769,16 +735,16 @@
     "profile_birth_date": {
       "extractionState": "manual",
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Date of birth"
-          }
-        },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Doğum Tarihi"
+            "value": "DOĞUM TARİHİ"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "BIRTH DATE"
           }
         }
       }
@@ -803,16 +769,16 @@
     "profile_health_notes": {
       "extractionState": "manual",
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Health notes"
-          }
-        },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Sağlık Notları"
+            "value": "SAĞLIK NOTLARI"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HEALTH NOTES"
           }
         }
       }
@@ -837,16 +803,16 @@
     "profile_height": {
       "extractionState": "manual",
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Height"
-          }
-        },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Boy"
+            "value": "BOY"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HEIGHT"
           }
         }
       }
@@ -888,16 +854,16 @@
     "profile_name": {
       "extractionState": "manual",
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Name"
-          }
-        },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ad"
+            "value": "AD"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "NAME"
           }
         }
       }
@@ -939,16 +905,16 @@
     "profile_sex": {
       "extractionState": "manual",
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sex"
-          }
-        },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Cinsiyet"
+            "value": "CİNSİYET"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SEX"
           }
         }
       }
@@ -1480,23 +1446,6 @@
         }
       }
     },
-    "settings_cancel": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cancel"
-          }
-        },
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vazgeç"
-          }
-        }
-      }
-    },
     "settings_color_theme": {
       "extractionState": "manual",
       "localizations": {
@@ -1544,23 +1493,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Kayıtlarını PDF olarak dışa aktar ve paylaş"
-          }
-        }
-      }
-    },
-    "settings_language": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Language"
-          }
-        },
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dil"
           }
         }
       }
@@ -1684,23 +1616,6 @@
         }
       }
     },
-    "settings_reminders": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Reminders"
-          }
-        },
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Hatırlatıcılar"
-          }
-        }
-      }
-    },
     "settings_reminders_desc": {
       "extractionState": "manual",
       "localizations": {
@@ -1714,74 +1629,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Hatırlatıcıların çalışma durumunu incele"
-          }
-        }
-      }
-    },
-    "settings_section_app": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "App"
-          }
-        },
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Uygulama"
-          }
-        }
-      }
-    },
-    "settings_section_appearance": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Appearance"
-          }
-        },
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Görünüm"
-          }
-        }
-      }
-    },
-    "settings_section_notifications": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Notifications"
-          }
-        },
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bildirimler"
-          }
-        }
-      }
-    },
-    "settings_section_security": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Security"
-          }
-        },
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Güvenlik"
           }
         }
       }
@@ -1816,23 +1663,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ekran görüntülerini ve son uygulamalar önizlemesini gizler"
-          }
-        }
-      }
-    },
-    "settings_theme": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Theme"
-          }
-        },
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tema"
           }
         }
       }
@@ -1874,33 +1704,390 @@
     "theme_system": {
       "extractionState": "manual",
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "System default"
-          }
-        },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Sistem varsayılanı"
+            "value": "Sistem"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "System"
           }
         }
       }
     },
-    "theme_title": {
+    "more_section_health": {
       "extractionState": "manual",
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Theme"
-          }
-        },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tema"
+            "value": "SAĞLIK & ARAÇLAR"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HEALTH & TOOLS"
+          }
+        }
+      }
+    },
+    "more_section_appearance": {
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GÖRÜNÜM & TEMA"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "APPEARANCE & THEME"
+          }
+        }
+      }
+    },
+    "more_section_notifications": {
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "BİLDİRİMLER"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "NOTIFICATIONS"
+          }
+        }
+      }
+    },
+    "more_section_security": {
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "GÜVENLİK & GİZLİLİK"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "SECURITY & PRIVACY"
+          }
+        }
+      }
+    },
+    "more_section_app": {
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "UYGULAMA & BİLGİ"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "APP & INFO"
+          }
+        }
+      }
+    },
+    "more_theme_mode": {
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tema modu"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Theme mode"
+          }
+        }
+      }
+    },
+    "more_language": {
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uygulama dili"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App language"
+          }
+        }
+      }
+    },
+    "more_pro_badge": {
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PRO"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "PRO"
+          }
+        }
+      }
+    },
+    "more_premium_cta": {
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Premium'a geç"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Go Premium"
+          }
+        }
+      }
+    },
+    "more_footer": {
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sağlık kayıtların yalnızca bu cihazda saklanır."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your health records stay on this device."
+          }
+        }
+      }
+    },
+    "theme_sheet_title": {
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Görünüm ve Renk Teması"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Appearance & color theme"
+          }
+        }
+      }
+    },
+    "theme_sheet_subtitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seçimler anında uygulanır"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choices apply right away"
+          }
+        }
+      }
+    },
+    "theme_section_mode": {
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ARAYÜZ MODU"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "INTERFACE MODE"
+          }
+        }
+      }
+    },
+    "theme_section_palette": {
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "VURGU & RENK PALETİ"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ACCENT & COLOR PALETTE"
+          }
+        }
+      }
+    },
+    "theme_default_badge": {
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Varsayılan"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Default"
+          }
+        }
+      }
+    },
+    "language_sheet_subtitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seçim anında uygulanır"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your choice applies right away"
+          }
+        }
+      }
+    },
+    "profile_height_unit": {
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "cm"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "cm"
+          }
+        }
+      }
+    },
+    "profile_caption_report": {
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu bilgiler hekim raporunda gösterilir"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "These details appear in the doctor report"
+          }
+        }
+      }
+    },
+    "profile_save_changes": {
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Değişiklikleri Kaydet"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save changes"
+          }
+        }
+      }
+    },
+    "reminder_health_status_ok": {
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tamam"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OK"
+          }
+        }
+      }
+    },
+    "reminder_health_status_warning": {
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sınırlı"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Limited"
+          }
+        }
+      }
+    },
+    "reminder_health_status_error": {
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Engelli"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Blocked"
           }
         }
       }

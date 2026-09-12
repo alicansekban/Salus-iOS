@@ -231,6 +231,9 @@ struct HomeScreen: View {
             overline: HomeFormatting.todayDate(epochDay: state.todayEpochDay, locale: locale),
             title: greetingText
         ) {
+            // The Home band has no leading avatar — M16 Task 10 added the slot for Profile.
+            EmptyView()
+        } chip: {
             // `chip = state.doseProgress?.let { (taken, total) -> { SalusStatusChip(…, Accent) } }`
             // (`HomeScreen.kt:200-209`). A SwiftUI slot has no null, so an absent chip is the
             // `ViewBuilder`'s own empty branch.

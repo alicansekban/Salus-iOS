@@ -1,7 +1,8 @@
 // Ported 1:1 from
-// `feature/settings/src/main/kotlin/com/alicansekban/salus/feature/settings/ui/more/MoreViewModel.kt`.
+// `feature/settings/src/main/kotlin/com/alicansekban/salus/feature/settings/ui/more/MoreViewModel.kt`
+// in its M15 shape.
 //
-// The hub state, the five event gates and the buffered effects. Four divergences from the Kotlin
+// The hub state, the seven event gates and the buffered effects. Four divergences from the Kotlin
 // twin, all forced by the platform and recorded here so a reader sees them without leaving the file:
 //
 //   1. **`appStoreSubscriptionsUrl`.** Kotlin sends an entitled user to Play's account-level
@@ -24,14 +25,15 @@
 //      so a returning screen re-reads rather than drawing a stale snapshot. Divergence: Android
 //      re-captures after a five-second unsubscribed grace, iOS on every appearance.
 //   4. **Stream combine.** Kotlin `combine(profile, themeMode, appLock, secureScreen, secondaryState)`
-//      where `secondaryState = combine(language, activeDialog, premiumRepository.status,
-//      preferences.premiumTheme)`. `combine`'s typed overloads stop at five, so the four "secondary"
-//      values are folded into one before joining the rest. iOS spells each combine as a `latestOf*`
-//      fold from `SalusCommon`, and the two mutable holders (`language`, `activeDialog`) — Kotlin's
-//      `MutableStateFlow`s — are ``CurrentValueStream``s: `AsyncStream`s with a stored continuation
-//      the ViewModel yields into, the same shape `FakePremiumRepository` uses for its test fake.
-//      `throwingStream(over:)` re-types the non-throwing `AsyncStream`s so they can join the
-//      throwing `profileRepository.observeProfile()` in `latestOfFive`.
+//      where `secondaryState = combine(language, languageSheetOpen, premiumRepository.status,
+//      preferences.premiumTheme, themeSheetOpen)` — `combine`'s typed overloads stop at five, so the
+//      five "secondary" values are folded into one before joining the rest. iOS spells each combine
+//      as a `latestOf*` fold from `SalusCommon`, and the three mutable holders (`language`,
+//      `languageSheetOpen`, `themeSheetOpen`) — Kotlin's `MutableStateFlow`s — are
+//      ``CurrentValueStream``s: `AsyncStream`s with a stored continuation the ViewModel yields into,
+//      the same shape `FakePremiumRepository` uses for its test fake. `throwingStream(over:)`
+//      re-types the non-throwing `AsyncStream`s so they can join the throwing
+//      `profileRepository.observeProfile()` in `latestOfFive`.
 
 import Foundation
 import Observation
@@ -51,17 +53,20 @@ public final class MoreViewModel {
     /// waiting for ``consumeEffects()`` to drain them in order. Nothing is dropped.
     public private(set) var pendingEffects: [MoreEffect] = []
 
-    // The two mutable holders the Kotlin spells as `MutableStateFlow` (divergence 4). Each is a
+    // The three mutable holders the Kotlin spells as `MutableStateFlow` (divergence 4). Each is a
     // `CurrentValueStream` the ViewModel yields into from `onEvent`, and the observation folds them
-    // into the `secondaryState` bundle exactly as the Kotlin `combine(language, activeDialog, …)`
-    // does. Re-created on every `restartObservation()`, so a re-subscribe re-seeds them from the
-    // current values held on the VM. Implicitly-unwrapped because they are set in
-    // `restartObservation()` (called from `init`) before any access — the same shape
+    // into the `secondaryState` bundle exactly as the Kotlin
+    // `combine(language, languageSheetOpen, premiumRepository.status, preferences.premiumTheme,
+    // themeSheetOpen)` does. Re-created on every `restartObservation()`, so a re-subscribe
+    // re-seeds them from the current values held on the VM. Implicitly-unwrapped because they are
+    // set in `restartObservation()` (called from `init`) before any access — the same shape
     // `HomeViewModel`'s `observation` would take if it were re-created on restart.
     // swiftlint:disable:next implicitly_unwrapped_optional
     private var languageHolder: CurrentValueStream<AppLanguage>!
     // swiftlint:disable:next implicitly_unwrapped_optional
-    private var activeDialogHolder: CurrentValueStream<MoreDialog?>!
+    private var languageSheetOpenHolder: CurrentValueStream<Bool>!
+    // swiftlint:disable:next implicitly_unwrapped_optional
+    private var themeSheetOpenHolder: CurrentValueStream<Bool>!
     /// The freshest entitlement the stream has produced, read by `onEvent`'s gates exactly as the
     /// Kotlin reads `premiumRepository.status.value`. Updated atomically inside the
     /// fold so a gate between two emissions reads the latest value, not the one state last showed.
@@ -100,49 +105,63 @@ public final class MoreViewModel {
     // `MoreViewModel.kt:80-145`.
     // swiftlint:disable:next cyclomatic_complexity
     public func onEvent(_ event: MoreEvent) {
-        // The two holders are implicitly-unwrapped optionals (set in `restartObservation`), so a
+        // The three holders are implicitly-unwrapped optionals (set in `restartObservation`), so a
         // capture list sees them as optional. Bind them to non-optional locals once per call so the
         // bodies below read the same way the Kotlin reads its `MutableStateFlow`s.
         let language: CurrentValueStream<AppLanguage> = languageHolder
-        let activeDialog: CurrentValueStream<MoreDialog?> = activeDialogHolder
+        let languageSheetOpen: CurrentValueStream<Bool> = languageSheetOpenHolder
+        let themeSheetOpen: CurrentValueStream<Bool> = themeSheetOpenHolder
 
         switch event {
-        case let .dialogRequested(dialog):
-            activeDialog.send(dialog)
+        case .themeSheetOpened:
+            themeSheetOpen.send(true)
 
-        case .dialogDismissed:
-            activeDialog.send(nil)
+        case .themeSheetDismissed:
+            themeSheetOpen.send(false)
 
         case let .selectTheme(mode):
-            Task { [preferences, activeDialog] in
+            // The sheet stays open: it carries the palette list as well, and the mode applies
+            // live behind it, so the choice is visible without leaving the sheet.
+            Task { [preferences] in
                 await preferences.setThemeMode(mode)
-                activeDialog.send(nil)
             }
 
         case let .colorThemeSelected(theme):
-            // Spec section 3: the gate is here, not in the screen. A free user may open the picker
-            // and tap any palette — the tap opens the paywall and nothing is written, so an
-            // unentitled selection can never reach the store and be restored on next launch. The
-            // gate reads the held entitlement, not `state.premiumStatus`, which is
-            // only current while the observation is mid-emission — the same reason the Kotlin reads
+            // Spec section 3 (A60): the gate is here, not in the screen. A free user may open the
+            // sheet and tap a locked palette — the tap opens the paywall and nothing is written, so
+            // an unentitled selection can never reach the store and be restored on next launch.
+            // Classic is the exception because it is the free palette the sheet never locks:
+            // selecting it must apply, or the lapsed subscriber whose stored palette is a premium
+            // one would be sold a subscription for going back to the default. The gate reads the
+            // held entitlement, not `state.premiumStatus`, which is only current while the
+            // observation is mid-emission — the same reason the Kotlin reads
             // `premiumRepository.status.value`.
-            if latestPremiumStatus.isEntitled {
-                Task { [preferences, activeDialog] in
+            if theme == .classic || latestPremiumStatus.isEntitled {
+                // Applied live under the open sheet, like the mode above it.
+                Task { [preferences] in
                     await preferences.setPremiumTheme(theme)
-                    activeDialog.send(nil)
                 }
             } else {
-                activeDialog.send(nil)
+                // The paywall is a sheet of its own: this one has to go first, or it would open
+                // behind it.
+                themeSheetOpen.send(false)
                 paywallController.show(.themes)
             }
+
+        case .languageSheetOpened:
+            languageSheetOpen.send(true)
+
+        case .languageSheetDismissed:
+            languageSheetOpen.send(false)
 
         case let .selectLanguage(languageEvent):
             // The locale lives with appcompat/UIApplication rather than in the DataStore, so it is
             // read once and tracked in the `languageHolder` rather than observed — the same comment
-            // the Kotlin makes (`MoreViewModel.kt:34-35`). `apply` is called exactly once.
+            // the Kotlin makes (`MoreViewModel.kt:34-35`). `apply` is called exactly once, and the
+            // sheet stays open: the whole app repaints in the new language underneath, which is
+            // the preview a staged sheet would have to fake.
             localeController.apply(languageEvent)
             language.send(languageEvent)
-            activeDialog.send(nil)
 
         case let .setAppLock(enabled):
             Task { [preferences] in
@@ -207,31 +226,34 @@ public final class MoreViewModel {
     public func restartObservation() {
         observation.cancel()
 
-        // Re-seed the two mutable holders from the values the VM is currently holding. The Kotlin
+        // Re-seed the three mutable holders from the values the VM is currently holding. The Kotlin
         // `MutableStateFlow`s survive a re-subscribe because they live on the ViewModel, not the
         // stream; the `CurrentValueStream`s are per-observation, so they are rebuilt here with the
         // last values the previous holders saw — `language` from the locale controller's current
-        // answer (the holder only ever mirrors `apply`), `activeDialog` from the last event.
+        // answer (the holder only ever mirrors `apply`), the two sheet flags from their last event.
         let previousLanguage = languageHolder?.current ?? localeController.current()
-        let previousDialog: MoreDialog? = activeDialogHolder?.current
+        let previousLanguageSheetOpen = languageSheetOpenHolder?.current ?? false
+        let previousThemeSheetOpen = themeSheetOpenHolder?.current ?? false
         languageHolder = CurrentValueStream(previousLanguage)
-        activeDialogHolder = CurrentValueStream(previousDialog)
+        languageSheetOpenHolder = CurrentValueStream(previousLanguageSheetOpen)
+        themeSheetOpenHolder = CurrentValueStream(previousThemeSheetOpen)
 
-        // `MoreViewModel.kt:46-51` — the four values the top-level combine has no argument slots
+        // `MoreViewModel.kt:52-60` — the five values the top-level combine has no argument slots
         // for, folded into one `SecondaryState` before joining the rest. `throwingStream(over:)`
         // re-types the non-throwing `AsyncStream`s so they can join the throwing premium stream in
-        // `latestOfFour`. The combinator takes no transform, so the Kotlin lambda that builds the
+        // `latestOfFive`. The combinator takes no transform, so the Kotlin lambda that builds the
         // `SecondaryState` becomes a `mapped` step here.
         let secondaryState = mapped(
-            latestOfFour(
+            latestOfFive(
                 throwingStream(over: languageHolder.stream),
-                throwingStream(over: activeDialogHolder.stream),
+                throwingStream(over: languageSheetOpenHolder.stream),
                 throwingStream(over: premiumRepository.status),
-                throwingStream(over: preferences.premiumTheme)
+                throwingStream(over: preferences.premiumTheme),
+                throwingStream(over: themeSheetOpenHolder.stream)
             )
-        ) { SecondaryState($0, $1, $2, $3) }
+        ) { SecondaryState($0, $1, $2, $3, $4) }
 
-        // `MoreViewModel.kt:53-73` — the top-level combine. `profileRepository.observeProfile()`
+        // `MoreViewModel.kt:60-81` — the top-level combine. `profileRepository.observeProfile()`
         // is already throwing; the three preference streams are re-typed.
         let combined = latestOfFive(
             profileRepository.observeProfile(),
@@ -263,7 +285,7 @@ public final class MoreViewModel {
         })
     }
 
-    /// `combine`'s lambda (`MoreViewModel.kt:60-73`). The secondary bundle is destructured here so
+    /// `combine`'s lambda (`MoreViewModel.kt:68-81`). The secondary bundle is destructured here so
     /// the top-level fold stays the one place the state is assembled.
     private func publish(
         profile: Profile?,
@@ -276,8 +298,10 @@ public final class MoreViewModel {
         state = MoreUiState(
             isLoading: false,
             profileName: profile?.displayName ?? "",
+            // Chipped next to the name on the profile card (`MoreViewModel.kt:66`).
+            profileSex: profile?.sex,
             // Only an explicit MALE hides cycle tracking: a profile that skipped the question keeps
-            // the feature visible rather than losing it silently (`MoreViewModel.kt:64-65`).
+            // the feature visible rather than losing it silently (`MoreViewModel.kt:67-68`).
             showCycle: profile != nil && profile?.sex != .male,
             themeMode: themeMode,
             premiumTheme: secondary.premiumTheme,
@@ -285,7 +309,8 @@ public final class MoreViewModel {
             premiumStatus: secondary.premiumStatus,
             appLockEnabled: appLock,
             secureScreenEnabled: secureScreen,
-            activeDialog: secondary.activeDialog
+            isThemeSheetOpen: secondary.isThemeSheetOpen,
+            isLanguageSheetOpen: secondary.isLanguageSheetOpen
         )
     }
 
@@ -304,20 +329,23 @@ public final class MoreViewModel {
 /// Swift 6 strict concurrency.
 private struct SecondaryState: Sendable, Equatable {
     let language: AppLanguage
-    let activeDialog: MoreDialog?
+    let isLanguageSheetOpen: Bool
     let premiumStatus: PremiumStatus
     let premiumTheme: PremiumTheme
+    let isThemeSheetOpen: Bool
 
     init(
         _ language: AppLanguage,
-        _ activeDialog: MoreDialog?,
+        _ isLanguageSheetOpen: Bool,
         _ premiumStatus: PremiumStatus,
-        _ premiumTheme: PremiumTheme
+        _ premiumTheme: PremiumTheme,
+        _ isThemeSheetOpen: Bool
     ) {
         self.language = language
-        self.activeDialog = activeDialog
+        self.isLanguageSheetOpen = isLanguageSheetOpen
         self.premiumStatus = premiumStatus
         self.premiumTheme = premiumTheme
+        self.isThemeSheetOpen = isThemeSheetOpen
     }
 }
 

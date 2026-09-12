@@ -112,13 +112,25 @@ struct AboutScreen: View {
                     contentPadding: SalusSectionHeaderDefaults.topOnly
                 )
 
-                // The feature-overview rows, informational only (`AboutScreen.kt:92-98`).
-                ForEach(AboutFeatureRows.all, id: \.systemImage) { row in
-                    FeatureRow(
-                        systemImage: row.systemImage,
-                        title: row.title,
-                        description: row.description
-                    )
+                // The feature-overview rows in one card (`AboutScreen.kt:92-122`): each line keeps
+                // the glyph and the accent its feature wears everywhere else in the app, so the
+                // list reads as the features themselves (spec §4.17, A61). The card carries no
+                // horizontal padding of its own — the rows bring theirs, like every
+                // `SalusListItem` list.
+                SalusCard(contentPadding: EdgeInsets(
+                    top: SalusSpacing.sm,
+                    leading: 0,
+                    bottom: SalusSpacing.sm,
+                    trailing: 0
+                )) {
+                    ForEach(AboutFeatureRows.all(accentedBy: theme), id: \.systemImage) { row in
+                        SalusListItem(
+                            title: row.title,
+                            subtitle: row.description,
+                            systemImage: row.systemImage,
+                            accent: row.accent
+                        )
+                    }
                 }
 
                 // The privacy card (`AboutScreen.kt:99-111`).
@@ -255,91 +267,70 @@ private struct PremiumStatusCard: View {
     }
 }
 
-/// One non-interactive feature row: an icon badge, the feature name and a one-line description
-/// (`AboutScreen.kt:215-249`). These are informational only — the `SalusCard` gets no `onTap`
-/// (the twin of Kotlin's `SalusCard` without `onClick`), so there is no chevron and nothing
-/// responds to a tap.
-private struct FeatureRow: View {
-    let systemImage: String
-    let title: String
-    let description: String
-
-    @Environment(\.salusTheme) private var theme
-
-    private var colors: SalusColorScheme { theme.colorScheme }
-
-    var body: some View {
-        SalusCard(contentPadding: EdgeInsets(
-            top: SalusSpacing.lg,
-            leading: SalusSpacing.lg,
-            bottom: SalusSpacing.lg,
-            trailing: SalusSpacing.lg
-        )) {
-            HStack(spacing: SalusSpacing.md) {
-                SalusIconBadge(systemImage: systemImage)
-                VStack(alignment: .leading, spacing: SalusSpacing.xs) {
-                    Text(verbatim: title)
-                        .font(SalusTypography.titleMedium.font)
-                        .tracking(SalusTypography.titleMedium.tracking)
-                        .foregroundStyle(colors.onSurface)
-                    Text(verbatim: description)
-                        .font(SalusTypography.bodySmall.font)
-                        .tracking(SalusTypography.bodySmall.tracking)
-                        .foregroundStyle(colors.onSurfaceVariant)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-            }
-        }
-    }
-}
-
-/// The feature-overview rows, in the order they are presented (`AboutScreen.kt:252-290`). The
-/// Material icons map to SF Symbols exactly as the More screen's rows do (a recorded divergence);
-/// each symbol is the established one for that feature's rows elsewhere in the port.
+/// One line of the feature overview: the glyph, the name, the one clause that says what it does,
+/// and the feature's own accent (nil → the primary role, which is what `SalusIconBadge` does with
+/// a null accent) (`AboutScreen.kt:252-290`).
 private struct AboutFeatureRow {
     let systemImage: String
     let title: String
     let description: String
+    /// The feature's accent, resolved from the environment (the accents are theme values, only
+    /// readable from a composition). Features with no accent of their own take the primary role.
+    let accent: FeatureAccent?
 }
 
 private enum AboutFeatureRows {
-    static let all: [AboutFeatureRow] = [
-        AboutFeatureRow(
-            systemImage: "pills",
-            title: SettingsStrings.aboutFeatureMedications,
-            description: SettingsStrings.aboutFeatureMedicationsDesc
-        ),
-        AboutFeatureRow(
-            systemImage: "calendar",
-            title: SettingsStrings.aboutFeatureAppointments,
-            description: SettingsStrings.aboutFeatureAppointmentsDesc
-        ),
-        AboutFeatureRow(
-            systemImage: "heart.text.square",
-            title: SettingsStrings.aboutFeatureVitals,
-            description: SettingsStrings.aboutFeatureVitalsDesc
-        ),
-        AboutFeatureRow(
-            systemImage: "drop.fill",
-            title: SettingsStrings.aboutFeatureCycle,
-            description: SettingsStrings.aboutFeatureCycleDesc
-        ),
-        AboutFeatureRow(
-            systemImage: "sparkles",
-            title: SettingsStrings.aboutFeatureAI,
-            description: SettingsStrings.aboutFeatureAIDesc
-        ),
-        AboutFeatureRow(
-            systemImage: "chart.line.uptrend.xyaxis",
-            title: SettingsStrings.aboutFeatureTrends,
-            description: SettingsStrings.aboutFeatureTrendsDesc
-        ),
-        AboutFeatureRow(
-            systemImage: "bell",
-            title: SettingsStrings.aboutFeatureReminders,
-            description: SettingsStrings.aboutFeatureRemindersDesc
-        )
-    ]
+    /// The rows, in the order they are presented (`AboutScreen.kt:252-290`). The accents are theme
+    /// values — only readable from a composition — so the list is built per render, exactly as
+    /// Kotlin's `accentOf = { MaterialTheme.salusColors.medications }` resolves in composition.
+    /// Features with no accent of their own (the AI pair, reminders) return nil and take the
+    /// primary role, which is what `SalusIconBadge` does with a null accent.
+    static func all(accentedBy theme: SalusResolvedTheme) -> [AboutFeatureRow] {
+        [
+            AboutFeatureRow(
+                systemImage: "pills",
+                title: SettingsStrings.aboutFeatureMedications,
+                description: SettingsStrings.aboutFeatureMedicationsDesc,
+                accent: theme.extendedColors.medications
+            ),
+            AboutFeatureRow(
+                systemImage: "calendar",
+                title: SettingsStrings.aboutFeatureAppointments,
+                description: SettingsStrings.aboutFeatureAppointmentsDesc,
+                accent: theme.extendedColors.appointments
+            ),
+            AboutFeatureRow(
+                systemImage: "heart.text.square",
+                title: SettingsStrings.aboutFeatureVitals,
+                description: SettingsStrings.aboutFeatureVitalsDesc,
+                accent: theme.extendedColors.vitals
+            ),
+            AboutFeatureRow(
+                systemImage: "drop.fill",
+                title: SettingsStrings.aboutFeatureCycle,
+                description: SettingsStrings.aboutFeatureCycleDesc,
+                accent: theme.extendedColors.cycle
+            ),
+            AboutFeatureRow(
+                systemImage: "sparkles",
+                title: SettingsStrings.aboutFeatureAI,
+                description: SettingsStrings.aboutFeatureAIDesc,
+                accent: nil
+            ),
+            AboutFeatureRow(
+                systemImage: "chart.line.uptrend.xyaxis",
+                title: SettingsStrings.aboutFeatureTrends,
+                description: SettingsStrings.aboutFeatureTrendsDesc,
+                accent: theme.extendedColors.trends
+            ),
+            AboutFeatureRow(
+                systemImage: "bell",
+                title: SettingsStrings.aboutFeatureReminders,
+                description: SettingsStrings.aboutFeatureRemindersDesc,
+                accent: nil
+            )
+        ]
+    }
 }
 
 #Preview("About") {

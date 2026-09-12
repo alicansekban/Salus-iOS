@@ -92,6 +92,8 @@ struct ProfileScreen: View {
         .navigationTitle(SettingsStrings.profileTitle)
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
+                // `actions = { TextButton(onClick = SaveClicked) { Text(profile_save) } }`
+                // (`ProfileScreen.kt:88`). A text action in the bar stays a Material TextButton.
                 Button { onEvent(.saveClicked) } label: {
                     Text(verbatim: SettingsStrings.profileSave)
                 }
@@ -122,35 +124,34 @@ struct ProfileScreen: View {
         )
     }
 
-    /// `ProfileScreen.kt:109-136` — the identity band: fixed below the app bar, outside the scroll
-    /// chain so it stays put. The avatar and the name live-update as the user types.
+    /// `ProfileScreen.kt:109-136` — the identity band: `SalusHeroBand` with the avatar leading,
+    /// the name live-updating as the user types, and the sex chipped when it has been answered.
     private var identityBand: some View {
         let resolvedName = state.name.isBlank ? nil : state.name
-        return HStack(spacing: SalusSpacing.lg) {
+        return SalusHeroBand(
+            overline: nil,
+            title: resolvedName ?? SettingsStrings.profileNamePlaceholder
+        ) {
             SalusAvatar(name: resolvedName)
-            VStack(alignment: .leading, spacing: 0) {
-                Text(verbatim: resolvedName ?? SettingsStrings.profileNamePlaceholder)
-                    .font(SalusTypography.titleLarge.font)
-                    .foregroundStyle(.white)
-                if let sex = state.sex {
-                    Text(verbatim: sex.profileLabel)
-                        .font(SalusTypography.bodyMedium.font)
-                        .foregroundStyle(.white.opacity(0.9))
-                }
+        } chip: {
+            // `chip = state.sex?.let { sex -> { SalusStatusChip(…, Neutral) } }`
+            // (`ProfileScreen.kt:120-126`). A SwiftUI slot has no null, so an absent chip is the
+            // `ViewBuilder`'s own empty branch.
+            if let sex = state.sex {
+                SalusStatusChip(label: sex.profileLabel, status: .neutral)
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, SalusSpacing.lg)
-        .padding(.vertical, SalusSpacing.md)
-        .background(theme.extendedColors.hero.vertical)
     }
 
-    /// `ProfileScreen.kt:98-174` — the five fields, in onboarding's order.
+    /// `ProfileScreen.kt:98-174` — the five fields, in onboarding's order. The three typed fields
+    /// carry their own overline `label` (Android's `SalusTextField(label = …)`); sex and the birth
+    /// date, which have no field label of their own, keep the `SalusSectionHeader` (`FieldLabel`).
     private var form: some View {
         VStack(alignment: .leading, spacing: SalusSpacing.md) {
-            SalusSectionHeader(title: SettingsStrings.profileName)
             SalusTextField(
                 text: Binding(get: { state.name }, set: { onEvent(.nameChanged($0)) }),
+                // `label = stringResource(R.string.profile_name)` (`ProfileScreen.kt:107`).
+                label: SettingsStrings.profileName,
                 placeholder: SettingsStrings.profileNamePlaceholder,
                 capitalization: .words,
                 // `autoCorrectEnabled = false` (`ProfileScreen.kt:113`) — a name is not a word the
@@ -163,9 +164,11 @@ struct ProfileScreen: View {
             #endif
             .padding(.horizontal, SalusSpacing.lg)
 
+            // `FieldLabel(profile_sex)` (`ProfileScreen.kt:114`).
             SalusSectionHeader(title: SettingsStrings.profileSex)
             sexOptions
 
+            // `FieldLabel(profile_birth_date)` (`ProfileScreen.kt:122-123`).
             SalusSectionHeader(title: SettingsStrings.profileBirthDate)
             SalusDateField(
                 title: SettingsStrings.profileBirthDate,
@@ -177,12 +180,13 @@ struct ProfileScreen: View {
             ) { onEvent(.birthDateSelected($0)) }
                 .padding(.horizontal, SalusSpacing.lg)
 
-            SalusSectionHeader(title: SettingsStrings.profileHeight)
             SalusTextField(
                 text: Binding(get: { state.heightText }, set: { onEvent(.heightChanged($0)) }),
+                // `label = stringResource(R.string.profile_height)` (`ProfileScreen.kt:144`).
+                label: SettingsStrings.profileHeight,
                 placeholder: SettingsStrings.profileHeightPlaceholder,
-                // The unit symbol is a literal on both platforms (`ProfileScreen.kt:150`).
-                suffix: "cm",
+                // `suffix = stringResource(R.string.profile_height_unit)` (`ProfileScreen.kt:150`).
+                suffix: SettingsStrings.profileHeightUnit,
                 isError: state.showInvalidHeight,
                 supportingText: state.showInvalidHeight ? SettingsStrings.profileHeightInvalid : nil,
                 keyboard: .decimal,
@@ -190,48 +194,67 @@ struct ProfileScreen: View {
             )
             .padding(.horizontal, SalusSpacing.lg)
 
-            SalusSectionHeader(title: SettingsStrings.profileHealthNotes)
             SalusTextField(
                 text: Binding(get: { state.healthNotes }, set: { onEvent(.healthNotesChanged($0)) }),
+                // `label = stringResource(R.string.profile_health_notes)` (`ProfileScreen.kt:158`).
+                label: SettingsStrings.profileHealthNotes,
                 placeholder: SettingsStrings.profileHealthNotesPlaceholder,
                 isSingleLine: false,
                 capitalization: .sentences
             )
             .padding(.horizontal, SalusSpacing.lg)
+
+            // `SalusDisclaimer(profile_caption_report)` (`ProfileScreen.kt:184-187`).
+            SalusDisclaimer(SettingsStrings.profileCaptionReport)
+                .padding(.horizontal, SalusSpacing.lg)
+
+            // `SalusButton(profile_save_changes)` (`ProfileScreen.kt:189-195`) — the full-width
+            // primary action; the toolbar "Kaydet" is its compact twin for the reachable thumb.
+            SalusButton(
+                SettingsStrings.profileSaveChanges,
+                size: .large,
+                enabled: canSave,
+                action: { onEvent(.saveClicked) }
+            )
         }
         .padding(.bottom, SalusSpacing.xl)
     }
 
-    /// `ProfileScreen.kt:160-185` — the three options as a segmented control, then the inline
-    /// warning that says what the pending pick does to the Cycle row.
+    /// `canSave` (`ProfileScreen.kt:88`): the button is disabled while loading/saving or when the
+    /// typed height is out of range.
+    private var canSave: Bool {
+        !state.isLoading && !state.isSaving && !state.showInvalidHeight
+    }
+
+    /// `ProfileScreen.kt:160-185` — the three choices as `SalusChoiceTile`s in one row, then the
+    /// `SalusInfoNote` that says what the pending pick does to the Cycle row (nothing is deleted
+    /// either way; the note prefixes the confirm dialog that asks about it).
     private var sexOptions: some View {
-        VStack(alignment: .leading, spacing: SalusSpacing.md) {
-            Picker(
-                selection: Binding(
-                    get: { state.sex },
-                    set: { newValue in
-                        if let sex = newValue {
-                            onEvent(.sexSelected(sex))
-                        }
-                    }
-                )
-            ) {
+        VStack(alignment: .leading, spacing: SalusSpacing.sm) {
+            // `Row(Modifier.selectableGroup(), spacedBy(md))` (`ProfileScreen.kt:163-173`).
+            HStack(spacing: SalusSpacing.md) {
                 ForEach(Sex.allCases, id: \.self) { option in
-                    Text(verbatim: option.profileLabel).tag(option as Sex?)
+                    SalusChoiceTile(
+                        label: option.profileLabel,
+                        systemImage: option.systemImage,
+                        isSelected: state.sex == option,
+                        action: { onEvent(.sexSelected(option)) }
+                    )
+                    .frame(maxWidth: .infinity)
                 }
-            } label: {
-                EmptyView()
             }
-            .pickerStyle(.segmented)
-            .labelsHidden()
+            .frame(maxWidth: .infinity)
+            // `state.cycleVisibilityChange?.let { SalusInfoNote(…) }` (`ProfileScreen.kt:175-181`).
             if let change = state.cycleVisibilityChange {
-                Text(verbatim: change.inlineMessage)
-                    .font(SalusTypography.bodySmall.font)
-                    .foregroundStyle(theme.colorScheme.onSurfaceVariant)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                SalusInfoNote(
+                    text: change.inlineMessage,
+                    systemImage: "drop.fill",
+                    tone: .warning
+                )
             }
         }
         .padding(.horizontal, SalusSpacing.lg)
+        .padding(.bottom, SalusSpacing.sm)
     }
 }
 
@@ -254,6 +277,13 @@ extension Sex {
         case .other: SettingsStrings.profileSexOther
         }
     }
+
+    /// `Sex.icon()` (`ProfileScreen.kt:211-216`) → a neutral shared glyph: SF Symbols ships no
+    /// female/male/transgender glyph that maps Material's `Female`/`Male`/`Transgender`, so the three
+    /// tiles are distinguished by their text label (exactly as the M14 era segmented control was).
+    fileprivate var systemImage: String {
+        "person.crop.circle"
+    }
 }
 
 extension String {
@@ -268,6 +298,24 @@ extension String {
     NavigationStack {
         ProfileScreen(
             // `ProfileScreenPreview` (`ProfileScreen.kt:225-243`).
+            state: ProfileUiState(
+                isLoading: false,
+                name: "Ayşe",
+                sex: .male,
+                birthDateEpochDay: 7441,
+                heightText: "165",
+                healthNotes: "Penicillin allergy",
+                storedSex: .female
+            ),
+            onEvent: { _ in }
+        )
+    }
+    .salusTheme(SalusTheme.resolve(systemIsDark: false))
+}
+
+#Preview("Profile editor, 8 palettes") {
+    SalusPreviewPalettes {
+        ProfileScreen(
             state: ProfileUiState(
                 isLoading: false,
                 name: "Ayşe",

@@ -131,31 +131,34 @@ public enum SettingsStrings {
     public static var moreCycle: String { localized(.moreCycle) }
     public static var moreCycleSubtitle: String { localized(.moreCycleSubtitle) }
     public static var moreSectionTracking: String { localized(.moreSectionTracking) }
-    public static var moreProfile: String { localized(.moreProfile) }
     public static var moreProfileIncomplete: String { localized(.moreProfileIncomplete) }
     public static var moreTrends: String { localized(.moreTrends) }
     public static var moreTrendsSubtitle: String { localized(.moreTrendsSubtitle) }
+    public static var moreSectionHealth: String { localized(.moreSectionHealth) }
+    public static var moreSectionAppearance: String { localized(.moreSectionAppearance) }
+    public static var moreSectionNotifications: String { localized(.moreSectionNotifications) }
+    public static var moreSectionSecurity: String { localized(.moreSectionSecurity) }
+    public static var moreSectionApp: String { localized(.moreSectionApp) }
+    public static var moreThemeMode: String { localized(.moreThemeMode) }
+    public static var moreLanguage: String { localized(.moreLanguage) }
+    public static var moreProBadge: String { localized(.moreProBadge) }
+    public static var morePremiumCta: String { localized(.morePremiumCta) }
+    public static var moreFooter: String { localized(.moreFooter) }
 
     // MARK: - Settings rows
 
-    public static var settingsTheme: String { localized(.settingsTheme) }
-    public static var settingsLanguage: String { localized(.settingsLanguage) }
     public static var settingsNotifications: String { localized(.settingsNotifications) }
     public static var settingsNotificationsDesc: String { localized(.settingsNotificationsDesc) }
-    public static var settingsReminders: String { localized(.settingsReminders) }
+    /// `settings_reminders_desc` survives the M15 sweep (only the `settings_reminders` title is
+    /// dropped — the Reminder Health row now titles itself with `reminder_health_title`).
     public static var settingsRemindersDesc: String { localized(.settingsRemindersDesc) }
     public static var settingsAbout: String { localized(.settingsAbout) }
     public static var settingsAboutDesc: String { localized(.settingsAboutDesc) }
     public static var settingsRateUs: String { localized(.settingsRateUs) }
     public static var settingsRateUsDesc: String { localized(.settingsRateUsDesc) }
-    public static var settingsCancel: String { localized(.settingsCancel) }
     public static var settingsPremium: String { localized(.settingsPremium) }
     public static var settingsPremiumActive: String { localized(.settingsPremiumActive) }
     public static var settingsPremiumPromo: String { localized(.settingsPremiumPromo) }
-    public static var settingsSectionAppearance: String { localized(.settingsSectionAppearance) }
-    public static var settingsSectionNotifications: String { localized(.settingsSectionNotifications) }
-    public static var settingsSectionApp: String { localized(.settingsSectionApp) }
-    public static var settingsSectionSecurity: String { localized(.settingsSectionSecurity) }
     public static var settingsAppLock: String { localized(.settingsAppLock) }
     public static var settingsAppLockDesc: String { localized(.settingsAppLockDesc) }
     public static var settingsAppLockUnavailable: String { localized(.settingsAppLockUnavailable) }
@@ -166,16 +169,21 @@ public enum SettingsStrings {
     public static var settingsDoctorReport: String { localized(.settingsDoctorReport) }
     public static var settingsDoctorReportDesc: String { localized(.settingsDoctorReportDesc) }
 
-    // MARK: - Theme dialog
+    // MARK: - Theme sheet
 
-    public static var themeTitle: String { localized(.themeTitle) }
+    public static var themeSheetTitle: String { localized(.themeSheetTitle) }
+    public static var themeSheetSubtitle: String { localized(.themeSheetSubtitle) }
+    public static var themeSectionMode: String { localized(.themeSectionMode) }
+    public static var themeSectionPalette: String { localized(.themeSectionPalette) }
+    public static var themeDefaultBadge: String { localized(.themeDefaultBadge) }
     public static var themeSystem: String { localized(.themeSystem) }
     public static var themeLight: String { localized(.themeLight) }
     public static var themeDark: String { localized(.themeDark) }
 
-    // MARK: - Language dialog
+    // MARK: - Language sheet
 
     public static var languageTitle: String { localized(.languageTitle) }
+    public static var languageSheetSubtitle: String { localized(.languageSheetSubtitle) }
     public static var languageSystem: String { localized(.languageSystem) }
     public static var languageTurkish: String { localized(.languageTurkish) }
     public static var languageEnglish: String { localized(.languageEnglish) }
@@ -212,7 +220,6 @@ public enum SettingsStrings {
 
     // MARK: - Support
 
-    public static var supportTitle: String { localized(.supportTitle) }
     public static var supportPremiumStatusTitle: String { localized(.supportPremiumStatusTitle) }
     public static var supportPremiumFree: String { localized(.supportPremiumFree) }
     public static var supportPremiumActive: String { localized(.supportPremiumActive) }
@@ -242,8 +249,17 @@ public enum SettingsStrings {
     public static var profileHeight: String { localized(.profileHeight) }
     public static var profileHeightPlaceholder: String { localized(.profileHeightPlaceholder) }
     public static var profileHeightInvalid: String { localized(.profileHeightInvalid) }
+    public static var profileHeightUnit: String { localized(.profileHeightUnit) }
     public static var profileHealthNotes: String { localized(.profileHealthNotes) }
     public static var profileHealthNotesPlaceholder: String { localized(.profileHealthNotesPlaceholder) }
+    public static var profileCaptionReport: String { localized(.profileCaptionReport) }
+    public static var profileSaveChanges: String { localized(.profileSaveChanges) }
+
+    // MARK: - Reminder health status
+
+    public static var reminderHealthStatusOk: String { localized(.reminderHealthStatusOk) }
+    public static var reminderHealthStatusWarning: String { localized(.reminderHealthStatusWarning) }
+    public static var reminderHealthStatusError: String { localized(.reminderHealthStatusError) }
 
     // MARK: - Formatted strings
 
@@ -325,22 +341,34 @@ public enum SettingsStrings {
         case languageTurkish = "language_turkish"
         case moreCycle = "more_cycle"
         case moreCycleSubtitle = "more_cycle_subtitle"
-        case moreProfile = "more_profile"
+        case moreFooter = "more_footer"
+        case moreLanguage = "more_language"
+        case moreProBadge = "more_pro_badge"
+        case morePremiumCta = "more_premium_cta"
         case moreProfileIncomplete = "more_profile_incomplete"
+        case moreSectionApp = "more_section_app"
+        case moreSectionAppearance = "more_section_appearance"
+        case moreSectionHealth = "more_section_health"
+        case moreSectionNotifications = "more_section_notifications"
+        case moreSectionSecurity = "more_section_security"
         case moreSectionTracking = "more_section_tracking"
+        case moreThemeMode = "more_theme_mode"
         case moreTitle = "more_title"
         case moreTrends = "more_trends"
         case moreTrendsSubtitle = "more_trends_subtitle"
         case profileBirthDate = "profile_birth_date"
         case profileBirthDateSelect = "profile_birth_date_select"
+        case profileCaptionReport = "profile_caption_report"
         case profileHealthNotes = "profile_health_notes"
         case profileHealthNotesPlaceholder = "profile_health_notes_placeholder"
         case profileHeight = "profile_height"
         case profileHeightInvalid = "profile_height_invalid"
         case profileHeightPlaceholder = "profile_height_placeholder"
+        case profileHeightUnit = "profile_height_unit"
         case profileName = "profile_name"
         case profileNamePlaceholder = "profile_name_placeholder"
         case profileSave = "profile_save"
+        case profileSaveChanges = "profile_save_changes"
         case profileSex = "profile_sex"
         case profileSexCycleAppears = "profile_sex_cycle_appears"
         case profileSexCycleDisappears = "profile_sex_cycle_disappears"
@@ -352,6 +380,9 @@ public enum SettingsStrings {
         case profileSexMale = "profile_sex_male"
         case profileSexOther = "profile_sex_other"
         case profileTitle = "profile_title"
+        case reminderHealthStatusError = "reminder_health_status_error"
+        case reminderHealthStatusOk = "reminder_health_status_ok"
+        case reminderHealthStatusWarning = "reminder_health_status_warning"
         case reminderHealthTitle = "reminder_health_title"
         case reminderHealthIntro = "reminder_health_intro"
         case reminderHealthAllOk = "reminder_health_all_ok"
@@ -373,31 +404,28 @@ public enum SettingsStrings {
         case settingsAppLockConfirmTitle = "settings_app_lock_confirm_title"
         case settingsAppLockDesc = "settings_app_lock_desc"
         case settingsAppLockUnavailable = "settings_app_lock_unavailable"
-        case settingsCancel = "settings_cancel"
         case settingsColorTheme = "settings_color_theme"
         case settingsDoctorReport = "settings_doctor_report"
         case settingsDoctorReportDesc = "settings_doctor_report_desc"
-        case settingsLanguage = "settings_language"
         case settingsNotifications = "settings_notifications"
         case settingsNotificationsDesc = "settings_notifications_desc"
+        case settingsRemindersDesc = "settings_reminders_desc"
         case settingsPremium = "settings_premium"
         case settingsPremiumActive = "settings_premium_active"
         case settingsPremiumPromo = "settings_premium_promo"
         case settingsRateUs = "settings_rate_us"
         case settingsRateUsDesc = "settings_rate_us_desc"
-        case settingsReminders = "settings_reminders"
-        case settingsRemindersDesc = "settings_reminders_desc"
-        case settingsSectionApp = "settings_section_app"
-        case settingsSectionAppearance = "settings_section_appearance"
-        case settingsSectionNotifications = "settings_section_notifications"
-        case settingsSectionSecurity = "settings_section_security"
         case settingsSecureScreen = "settings_secure_screen"
         case settingsSecureScreenDesc = "settings_secure_screen_desc"
-        case settingsTheme = "settings_theme"
         case themeDark = "theme_dark"
+        case themeDefaultBadge = "theme_default_badge"
         case themeLight = "theme_light"
+        case themeSectionMode = "theme_section_mode"
+        case themeSectionPalette = "theme_section_palette"
+        case themeSheetSubtitle = "theme_sheet_subtitle"
+        case themeSheetTitle = "theme_sheet_title"
         case themeSystem = "theme_system"
-        case themeTitle = "theme_title"
+        case languageSheetSubtitle = "language_sheet_subtitle"
         case supportCode = "support_code"
         case supportCodeUnavailable = "support_code_unavailable"
         case supportCopied = "support_copied"
@@ -405,7 +433,6 @@ public enum SettingsStrings {
         case supportPremiumActive = "support_premium_active"
         case supportPremiumFree = "support_premium_free"
         case supportPremiumStatusTitle = "support_premium_status_title"
-        case supportTitle = "support_title"
     }
 
     private static func localized(_ key: Key) -> String {

@@ -5,12 +5,11 @@
 // §2.2 — a native inline navigation bar, not a `TopAppBar`); `SalusSectionHeader(contentPadding
 // = top(sm))` → `SalusSectionHeader(title:contentPadding: .topOnly)`, the scroll column carrying the
 // screen's horizontal inset exactly as the Kotlin column does; `Card(onClick)` → `SalusCard`;
-// `Switch` → `Toggle`; `AlertDialog`+`RadioButton` → `salusDialog` over ``MoreSelectionDialog``;
+// `Switch` → `Toggle`; `AlertDialog`+`RadioButton` → the theme/language `.sheet`s (§2.3);
 // `Icons.Outlined.*` → SF Symbols (a recorded divergence, not byte-for-byte);
-// `stringResource(R.string.…)` → `SettingsStrings.…` in `Text(verbatim:)`; `profileName.ifBlank` →
-// `profileName.isEmpty ? … : profileName`.
+// `stringResource(R.string.…)` → `SettingsStrings.…` in `Text(verbatim:)`.
 //
-// Nine platform divergences from the Kotlin twin:
+// Eleven platform divergences from the Kotlin twin:
 //   1. **`MoreRoute` owns the LAContext availability check** — the twin of
 //      `.canEvaluatePolicy(.deviceOwnerAuthentication)` (`MoreScreen.kt:98-101`).
 //   2. **The enable-re-auth interception (ruling 4) is a shell-injected closure**, not a
@@ -21,17 +20,22 @@
 //   5. **Effect consumption drains a queue, not a `Channel`** (MoreViewModel div. 4) — the
 //      collector is `.onChange(of: viewModel.pendingEffects)` (`AppointmentEditorScreen.swift:79`).
 //   6. **`effectivePremiumTheme` reads the real three-state `PremiumStatus`** (`isEntitled`).
-//   7. **The selection dialogs are a `salusDialog` over ``MoreSelectionDialog``**, not an alert:
-//      SwiftUI holds plain buttons only and cannot draw Kotlin's `RadioButton` (`MoreScreen.kt:529`).
+//   7. **The theme/language popups are `salusBottomSheet`s (`.medium`), not a `salusDialog`** —
+//      `ThemeSheet`/`LanguageSheet` are their own files (plan ruling 1); `MoreSelectionDialog`
+//      is retired (M16 Task 10).
 //   8. **`SalusCard`'s content padding is uniform.** Kotlin's cards use
 //      `horizontal = lg, vertical = md` (`MoreScreen.kt:404-412`); `SalusCard` takes one value by
 //      house design, so every card here is `lg` on all four edges — the accepted limitation of the
 //      shared component, not a new one.
 //   9. **A language pick applies live through `SalusLocalization`**, the twin of appcompat's
 //      `recreate()`: `RootView` re-identifies the tabs on the change, so this screen is rebuilt in
-//      the new language while the stack and selection survive. (Until the release QA pass the pick
-//      landed on the next launch and the dialog carried an iOS-only footnote saying so.)
-//
+//      the new language while the stack and selection survive.
+//   10. **The two setting sheets present from the `MoreScreen` body**, not on the `Route`: they are
+//      tied to `state.isThemeSheetOpen` / `state.isLanguageSheetOpen`, which only the stateless
+//      screen's environment knows. Kotlin's `MoreScreen` draws them the same way (`MoreScreen.kt`).
+//   11. **The sex chip and PRO badge** (`MoreSections.kt:52-76`) live in the profile card, chipped
+//      exactly as Kotlin draws them — the neutral sex chip + the accent PRO badge when entitled.
+
 // The three same-feature pushes (`ReminderHealthKey`/`AboutKey`/`ProfileKey`) the Kotlin Route makes
 // through `koinInject<Navigator>()` (`MoreScreen.kt:149-152`) go through the `navigator` the
 // `SettingsModule` exposes — the same way `ProfileViewModel` reaches it. The shell owns the stack.
@@ -193,6 +197,10 @@ public struct MoreRoute: View {
 }
 
 /// The stateless More hub (`MoreScreen.kt:165-383`).
+///
+/// The profile card and premium band are built by the private row helpers in `MoreScreenSections.swift`
+/// (extracted so this file stays under the 500-line `file_length` gate — M16 Task 10 split). The two
+/// setting sheets present from this body's `.salusBottomSheet` modifiers, tied to the state flags.
 struct MoreScreen: View {
     let state: MoreUiState
     let versionName: String
@@ -211,151 +219,33 @@ struct MoreScreen: View {
     var body: some View {
         // No `Scaffold` twin and no inset modifiers: the shell owns the one `NavigationStack` and
         // its insets, and this is a tab root — so the title is the system navigation bar's, drawn
-        // by the shell's root toolbar (`MoreScreen.kt:180-181`'s `TopAppBar` has no iOS twin, spec
-        // §2.2). The §1 draw order is `MoreScreen.kt:193-339`; the scroll column carries the
-        // screen's horizontal inset for everything in it (`MoreScreen.kt:183-189`), which is why
-        // `SectionLabel` drops the header's own.
+        // by the shell's root toolbar. The §1 draw order is `MoreScreen.kt:193-339`; the scroll
+        // column carries the screen's horizontal inset for everything in it.
         VStack(spacing: 0) {
             ScrollView {
                 VStack(spacing: SalusSpacing.md) {
-                    // 1. Profile (`MoreScreen.kt:193-200`): blank name → onboarding skipped.
-                    MoreCard(
-                        icon: "person.fill",
-                        title: SettingsStrings.moreProfile,
-                        subtitle: state.profileName.isEmpty
-                            ? SettingsStrings.moreProfileIncomplete
-                            : state.profileName,
-                        onClick: onOpenProfile
+                    // 1. Profile card (`MoreSections.kt:28-60`): avatar, name, sex + PRO chips →
+                    //    Profile.
+                    MoreProfileCard(state: state, onClick: onOpenProfile)
+
+                    // 2. Premium band (`MoreSections.kt:63-88`): sells rather than settles.
+                    MorePremiumBand(state: state, onEvent: onEvent)
+
+                    // 3. The grouped rows (`MoreSections.kt:91-214`): health, tracking, appearance,
+                    //    notifications, security, app.
+                    MoreSections(
+                        state: state,
+                        appLockAvailable: appLockAvailable,
+                        onEvent: onEvent,
+                        onOpenCycle: onOpenCycle,
+                        onOpenReminderHealth: onOpenReminderHealth,
+                        onOpenAbout: onOpenAbout,
+                        onOpenNotificationSettings: onOpenNotificationSettings
                     )
 
-                    // 2. Premium (`MoreScreen.kt:204-215`): sits above every section.
-                    MoreCard(
-                        icon: "crown.fill",
-                        title: SettingsStrings.settingsPremium,
-                        subtitle: state.premiumStatus.isEntitled
-                            ? SettingsStrings.settingsPremiumActive
-                            : SettingsStrings.settingsPremiumPromo,
-                        onClick: { onEvent(.premiumClicked) }
-                    )
-
-                    // 3. Doctor report (`MoreScreen.kt:219-224`): the premium feature people leave
-                    //    with.
-                    MoreCard(
-                        icon: "doc.text",
-                        title: SettingsStrings.settingsDoctorReport,
-                        subtitle: SettingsStrings.settingsDoctorReportDesc,
-                        onClick: { onEvent(.doctorReportClicked) }
-                    )
-
-                    // 4. Trends (`MoreScreen.kt:228-233`): not gated — the screen shows its lock.
-                    MoreCard(
-                        icon: "chart.xyaxis.line",
-                        title: SettingsStrings.moreTrends,
-                        subtitle: SettingsStrings.moreTrendsSubtitle,
-                        onClick: { onEvent(.trendsClicked) }
-                    )
-
-                    // 5. [if showCycle] Tracking + Cycle (`MoreScreen.kt:236-244`): hidden for male
-                    //    profiles; the accent is the cycle one.
-                    if state.showCycle {
-                        SectionLabel(title: SettingsStrings.moreSectionTracking)
-                        MoreCard(
-                            icon: "drop.fill",
-                            title: SettingsStrings.moreCycle,
-                            subtitle: SettingsStrings.moreCycleSubtitle,
-                            onClick: onOpenCycle,
-                            accent: theme.extendedColors.cycle
-                        )
-                    }
-
-                    // 6-8. Appearance: theme, color theme, language (`MoreScreen.kt:246-269`).
-                    SectionLabel(title: SettingsStrings.settingsSectionAppearance)
-                    MoreCard(
-                        icon: "paintpalette.fill",
-                        title: SettingsStrings.settingsTheme,
-                        subtitle: SettingsStrings.theme(state.themeMode),
-                        onClick: { onEvent(.dialogRequested(.theme)) }
-                    )
-                    MoreCard(
-                        icon: "swatchpalette.fill",
-                        title: SettingsStrings.settingsColorTheme,
-                        // `effectivePremiumTheme(status, selected)` (div. 6): the palette actually
-                        // drawn, not the stored pick — a lapsed subscriber sees Classic here; the
-                        // dialog still shows their stored choice as selected.
-                        subtitle: SettingsStrings.colorTheme(SalusPremium.effectivePremiumTheme(
-                            state.premiumStatus,
-                            state.premiumTheme
-                        )),
-                        onClick: { onEvent(.dialogRequested(.colorTheme)) }
-                    )
-                    MoreCard(
-                        icon: "globe",
-                        title: SettingsStrings.settingsLanguage,
-                        subtitle: SettingsStrings.language(state.language),
-                        onClick: { onEvent(.dialogRequested(.language)) }
-                    )
-
-                    // 9-10. Security: app lock + secure screen (`MoreScreen.kt:271-292`).
-                    SectionLabel(title: SettingsStrings.settingsSectionSecurity)
-                    MoreToggleCard(
-                        icon: "lock.fill",
-                        title: SettingsStrings.settingsAppLock,
-                        subtitle: appLockAvailable
-                            ? SettingsStrings.settingsAppLockDesc
-                            : SettingsStrings.settingsAppLockUnavailable,
-                        checked: state.appLockEnabled && appLockAvailable,
-                        onCheckedChange: { onEvent(.setAppLock($0)) },
-                        enabled: appLockAvailable
-                    )
-                    MoreToggleCard(
-                        icon: "camera.viewfinder",
-                        title: SettingsStrings.settingsSecureScreen,
-                        subtitle: SettingsStrings.settingsSecureScreenDesc,
-                        checked: state.secureScreenEnabled,
-                        onCheckedChange: { onEvent(.setSecureScreen($0)) }
-                    )
-
-                    // 11-12. Notifications section (`MoreScreen.kt:294-306`).
-                    SectionLabel(title: SettingsStrings.settingsSectionNotifications)
-                    MoreCard(
-                        icon: "bell.fill",
-                        title: SettingsStrings.settingsNotifications,
-                        subtitle: SettingsStrings.settingsNotificationsDesc,
-                        onClick: onOpenNotificationSettings
-                    )
-                    MoreCard(
-                        icon: "alarm.fill",
-                        title: SettingsStrings.settingsReminders,
-                        subtitle: SettingsStrings.settingsRemindersDesc,
-                        onClick: onOpenReminderHealth
-                    )
-
-                    // 13. App section: about (`MoreScreen.kt:309-314`), then rate us below it.
-                    SectionLabel(title: SettingsStrings.settingsSectionApp)
-                    MoreCard(
-                        icon: "info.circle.fill",
-                        title: SettingsStrings.settingsAbout,
-                        subtitle: SettingsStrings.settingsAboutDesc,
-                        onClick: onOpenAbout
-                    )
-                    // 13b. Rate Salus — the store's write-review page (in-app review spec §4).
-                    MoreCard(
-                        icon: "star.fill",
-                        title: SettingsStrings.settingsRateUs,
-                        subtitle: SettingsStrings.settingsRateUsDesc,
-                        onClick: { onEvent(.rateUsClicked) }
-                    )
-
-                    // 14. Version footer (`MoreScreen.kt:328-338`).
-                    if !versionName.isEmpty {
-                        Text(verbatim: SettingsStrings.aboutVersion(versionName))
-                            .font(SalusTypography.bodySmall.font)
-                            .tracking(SalusTypography.bodySmall.tracking)
-                            .foregroundStyle(colors.onSurfaceVariant)
-                            .multilineTextAlignment(.center)
-                            .frame(maxWidth: .infinity)
-                            .padding(.top, SalusSpacing.md)
-                    }
+                    // 4. `SalusDisclaimer(more_footer)` (`MoreScreen.kt:328-338`).
+                    SalusDisclaimer(SettingsStrings.moreFooter)
+                        .padding(.bottom, SalusSpacing.lg)
                 }
                 .padding(.horizontal, SalusSpacing.lg)
                 .padding(.bottom, SalusSpacing.xl)
@@ -366,97 +256,64 @@ struct MoreScreen: View {
         // slot; `.navigationTitle` is still what names the back button of everything this root
         // pushes — Profile, About, Reminder health, Cycle — and what VoiceOver reads.
         .navigationTitle(Text(verbatim: SettingsStrings.moreTitle))
-        // The three selection dialogs (`MoreScreen.kt:342-383`), driven by `activeDialog` rather
-        // than three `@State` flags (matching Kotlin's `when (state.activeDialog)`) — one popup,
-        // so only one can be open at a time by construction. The binding's `false` edge is the
-        // twin of `onDismissRequest`: a tap on the scrim sends `DialogDismissed`, exactly as
-        // tapping outside the `AlertDialog` does.
-        .salusDialog(
-            isPresented: Binding(
-                get: { state.activeDialog != nil },
-                set: { presented in
-                    if !presented {
-                        onEvent(.dialogDismissed)
-                    }
-                }
-            )
-        ) {
-            if let dialog = state.activeDialog {
-                selectionDialog(for: dialog)
-            }
+        // The two setting sheets (plan ruling 1), driven by the state flags rather than two
+        // `@State` values. ThemeSheet and LanguageSheet attach their own `salusBottomSheet`
+        // (`.medium` detent); they sit in a zero-size background so neither presents over the
+        // other, exactly as Kotlin's two independent `if (state.isThemeSheetOpen) { ThemeSheet() }`
+        // blocks draw side by side.
+        .background {
+            ThemeSheet(state: state, onEvent: onEvent)
+            LanguageSheet(state: state, onEvent: onEvent)
         }
         // LAST in the chain, and `#if os(iOS)` because the modifier is iOS-only API while every
-        // feature package also builds for the macOS test host (CLAUDE.md's `.macOS(.v14)`
-        // concession). Last because SwiftFormat indents whatever follows an `#endif` one level
-        // deeper, which reads as if those modifiers were inside the guard — the shape
-        // `AboutScreen` has carried since M8.
+        // feature package also builds for the macOS test host. Last because SwiftFormat indents
+        // whatever follows an `#endif` one level deeper.
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
-    }
-
-    /// `when (state.activeDialog)` (`MoreScreen.kt:342-383`) — each branch maps its enum's cases to
-    /// options carrying `isSelected`, which is what draws the stored choice as selected.
-    @ViewBuilder
-    private func selectionDialog(for dialog: MoreDialog) -> some View {
-        switch dialog {
-        case .theme:
-            MoreSelectionDialog(
-                title: SettingsStrings.themeTitle,
-                options: ThemeMode.allCases.map { mode in
-                    MoreSelectionOption(
-                        id: mode.rawValue,
-                        label: SettingsStrings.theme(mode),
-                        isSelected: state.themeMode == mode,
-                        onSelect: { onEvent(.selectTheme(mode)) }
-                    )
-                },
-                onDismiss: { onEvent(.dialogDismissed) }
-            )
-
-        case .colorTheme:
-            MoreSelectionDialog(
-                title: SettingsStrings.settingsColorTheme,
-                // Free users see the full list — the entitlement check runs in the ViewModel on
-                // tap, so the palettes stay visible as something to subscribe for. The selection is
-                // the **stored** pick, not the effective one: a lapsed subscriber sees that their
-                // Ocean choice survived even while the app draws Classic.
-                options: PremiumTheme.allCases.map { premiumTheme in
-                    MoreSelectionOption(
-                        id: premiumTheme.rawValue,
-                        label: SettingsStrings.colorTheme(premiumTheme),
-                        isSelected: state.premiumTheme == premiumTheme,
-                        onSelect: { onEvent(.colorThemeSelected(premiumTheme)) }
-                    )
-                },
-                onDismiss: { onEvent(.dialogDismissed) }
-            )
-
-        case .language:
-            MoreSelectionDialog(
-                title: SettingsStrings.languageTitle,
-                options: AppLanguage.allCases.map { language in
-                    MoreSelectionOption(
-                        id: language.rawValue,
-                        label: SettingsStrings.language(language),
-                        isSelected: state.language == language,
-                        onSelect: { onEvent(.selectLanguage(language)) }
-                    )
-                },
-                onDismiss: { onEvent(.dialogDismissed) }
-            )
-        }
     }
 }
 
 // MARK: - Previews
 
-#Preview("More, with cycle") {
+// The 8-palette fan-out: `SalusPreviewPalettes` renders `content` once per premium palette in both
+// modes (spec §3, the iOS twin of Android's `@PreviewParameter(SalusPaletteProvider::class)`).
+// A preview cannot show a live sheet — the presentation belongs to a window of its own — so the
+// state flags are left closed here.
+#Preview("More, 8 palettes") {
+    SalusPreviewPalettes {
+        MoreScreen(
+            state: MoreUiState(
+                isLoading: false,
+                profileName: "Ada",
+                profileSex: .female,
+                showCycle: true,
+                themeMode: .system,
+                language: .turkish,
+                premiumStatus: .premium,
+                appLockEnabled: true
+            ),
+            versionName: "1.0.0",
+            appLockAvailable: true,
+            onEvent: { _ in },
+            onOpenCycle: {},
+            onOpenReminderHealth: {},
+            onOpenAbout: {},
+            onOpenProfile: {},
+            onOpenNotificationSettings: {}
+        )
+    }
+}
+
+// The system font scale is the one axis this list cannot control; a root has to survive it.
+// `.dynamicTypeSize(.xxxLarge)` is the accessibility range floor (spec §5, QA rows).
+#Preview("More, large dynamic type") {
     NavigationStack {
         MoreScreen(
             state: MoreUiState(
                 isLoading: false,
                 profileName: "Ada",
+                profileSex: .female,
                 showCycle: true,
                 themeMode: .system,
                 language: .turkish,
@@ -473,26 +330,5 @@ struct MoreScreen: View {
         )
     }
     .salusTheme(SalusTheme.resolve(systemIsDark: false))
-}
-
-#Preview("More, without cycle, premium") {
-    NavigationStack {
-        MoreScreen(
-            state: MoreUiState(
-                isLoading: false,
-                showCycle: false,
-                premiumTheme: .ocean,
-                premiumStatus: .premium
-            ),
-            versionName: "1.0.0",
-            appLockAvailable: false,
-            onEvent: { _ in },
-            onOpenCycle: {},
-            onOpenReminderHealth: {},
-            onOpenAbout: {},
-            onOpenProfile: {},
-            onOpenNotificationSettings: {}
-        )
-    }
-    .salusTheme(SalusTheme.resolve(systemIsDark: false))
+    .dynamicTypeSize(.xxxLarge)
 }

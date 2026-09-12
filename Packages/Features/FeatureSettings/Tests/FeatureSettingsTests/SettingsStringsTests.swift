@@ -5,7 +5,7 @@ import Testing
 @testable import FeatureSettings
 
 /// The twin of Android's `feature/settings/src/main/res/values/strings.xml` (`tr`, the source
-/// language) and `values-en/strings.xml`, and the drift detector between the two locales: all 111
+/// language) and `values-en/strings.xml`, and the drift detector between the two locales: all 123
 /// keys and both of their translations are pinned here.
 ///
 /// The 111 keys split four ways; two (`settings_rate_us*`) are the in-app review row, copied from
@@ -44,21 +44,30 @@ struct SettingsStringsTests {
     static let samples = SettingsSamples.all
     static let expectedKeys = Set(samples.map(\.key))
 
-    @Test("the catalog holds exactly the 115 keys :feature:settings owns")
+    @Test("the catalog holds exactly the 123 keys :feature:settings owns")
     func catalogHoldsExactlyTheKeys() throws {
         // Pinned as a number as well as a set: a row deleted from the table together with its key
         // from the catalog would otherwise agree with itself and pass.
         //
-        // The arithmetic behind 112, re-derived after the support_desc removal: Android's
-        // `feature/settings` XML holds 116 keys; ten are dropped here (the three
-        // `reminder_health_exact_*`, the four `reminder_health_battery_*` — `*_title`,
-        // `*_problem`, `*_restricted`, `*_ok` — `reminder_health_back`, `settings_back`,
-        // `profile_back`) → 106 carried over. Five are iOS-only: the `reminder_health_*`
-        // ones that shipped with iOS-M3 (three `*_background_refresh_*`, `*_last_sync`,
-        // `*_never_synced`). 116 − 10 + 5 = 111. The about-redesign fix then adds the iOS-only
-        // `support_code_unavailable` (the reveal's answer when RevenueCat has no `appUserID`),
-        // 111 + 1 = 112.
-        #expect(Self.samples.count == 112)
+        // The arithmetic behind 123, re-derived after the M16 Task 10 sweep: the pre-sweep catalog
+        // held 112 keys. The M15 hub deletes eleven keys that no longer ship (`more_profile`,
+        // `settings_cancel`, `settings_language`, `settings_reminders`, the four
+        // `settings_section_*`, `settings_theme`, `support_title`, `theme_title`) and adds
+        // twenty-two that the Android M15 delta names (`more_section_health/appearance/
+        // notifications/security/app`, `more_theme_mode`, `more_language`, `more_pro_badge`,
+        // `more_premium_cta`, `more_footer`, `theme_sheet_title/subtitle`,
+        // `theme_section_mode/palette`, `theme_default_badge`, `language_sheet_subtitle`,
+        // `profile_height_unit`, `profile_caption_report`, `profile_save_changes`,
+        // `reminder_health_status_ok/warning/error`). Of the Android M15 delta's "24 removed", only
+        // eleven existed on iOS: `more_profile`, `settings_cancel`, `settings_language`,
+        // `settings_reminders`, the four `settings_section_*`, `settings_theme`, `support_title`,
+        // `theme_title` — and `more_title` stays (the root-title ruling). The other thirteen named
+        // removals (`profile_back`, `reminder_health_back`, `settings_back`) had already left, and
+        // the `reminder_health_battery_*`/`exact_*` keys are the iOS-M3 record-keeping divergences.
+        // Of the Android "31 added", nine already existed here (the re-valued `about_features_title`,
+        // `more_section_tracking`, `more_trends`, `profile_birth_date/health_notes/height/name/sex`,
+        // `theme_system`), so twenty-two new keys join. 112 − 11 + 22 = 123.
+        #expect(Self.samples.count == 123)
 
         try StringCatalogParity.assertKeys(of: Self.loadCatalog(), are: Self.expectedKeys)
     }
@@ -131,351 +140,4 @@ struct SettingsStringsTests {
             at: packageRoot.appendingPathComponent("Sources/FeatureSettings/Resources/Localizable.xcstrings")
         )
     }
-}
-
-/// Every key `:feature:settings` owns today, with both translations. A new key means a new row
-/// here, in the same commit — that is the whole job of this table.
-///
-/// Held in two dedicated file-private enums so the 114-row table does not blow the suite's own body
-/// or either enum past the `type_body_length` gate.
-private enum SettingsSamples {
-    static let all: [SettingsStringSample] = SettingsSamplesFirst.all + SettingsSamplesSecond.all
-}
-
-private enum SettingsSamplesFirst {
-    static let all: [SettingsStringSample] = [
-        SettingsStringSample(key: "about_app_name", turkish: "Salus", english: "Salus"),
-        SettingsStringSample(
-            key: "about_description",
-            turkish: "Salus; randevularınızı, ilaçlarınızı, döngünüzü ve sağlık ölçümlerinizi tek bir yerden "
-                + "takip etmenize yardımcı olan cihaz öncelikli bir sağlık asistanıdır.",
-            english: "Salus is a device-first health companion that helps you track your appointments, "
-                + "medications, cycle, and health measurements in one place."
-        ),
-        SettingsStringSample(
-            key: "about_privacy_body",
-            turkish: "Sağlık kayıtlarınız yalnızca cihazınızda saklanır ve cihazınızdan asla çıkmaz. Hesap "
-                + "yoktur, analitik yoktur, veri toplanmaz. Salus ağı yalnızca iki şey için kullanır: "
-                + "aboneliğinizi doğrulamak (App Store ve abonelik altyapımız RevenueCat) ve — "
-                + "kullanırsanız — AI özellikleri. AI özelliklerine yalnızca anonim istatistik özetleri "
-                + "gönderilir; sağlık kayıtlarınız asla gönderilmez.",
-            english: "Your health records are stored only on your device and never leave it. No accounts, "
-                + "no analytics, no data collection. Salus uses the network for two things: verifying "
-                + "your subscription (App Store and our subscription provider, RevenueCat) and — if "
-                + "you use them — the AI features. The AI features only ever receive anonymous "
-                + "statistical summaries; your health records are never sent."
-        ),
-        SettingsStringSample(key: "about_privacy_title", turkish: "Gizlilik", english: "Privacy"),
-        SettingsStringSample(key: "about_title", turkish: "Uygulama hakkında", english: "About the app"),
-        SettingsStringSample(key: "about_version", turkish: "Sürüm %1$@", english: "Version %1$@"),
-        SettingsStringSample(key: "about_features_title", turkish: "Salus ne yapar?", english: "What Salus does"),
-        SettingsStringSample(key: "about_feature_medications", turkish: "İlaçlar", english: "Medications"),
-        SettingsStringSample(
-            key: "about_feature_medications_desc",
-            turkish: "Hatırlatıcılı ilaç takibi",
-            english: "Medication tracking with reminders"
-        ),
-        SettingsStringSample(key: "about_feature_appointments", turkish: "Randevular", english: "Appointments"),
-        SettingsStringSample(
-            key: "about_feature_appointments_desc",
-            turkish: "Doktor randevuları ve hatırlatıcılar",
-            english: "Doctor appointments and reminders"
-        ),
-        SettingsStringSample(key: "about_feature_vitals", turkish: "Sağlık ölçümleri", english: "Health measurements"),
-        SettingsStringSample(
-            key: "about_feature_vitals_desc",
-            turkish: "Tansiyon, glukoz, kilo kaydı",
-            english: "Blood pressure, glucose, weight logging"
-        ),
-        SettingsStringSample(key: "about_feature_cycle", turkish: "Regl takibi", english: "Cycle tracking"),
-        SettingsStringSample(
-            key: "about_feature_cycle_desc",
-            turkish: "Takvim, tahminler ve belirtiler",
-            english: "Calendar, predictions and symptoms"
-        ),
-        SettingsStringSample(key: "about_feature_ai", turkish: "AI Sağlık", english: "AI Health"),
-        SettingsStringSample(
-            key: "about_feature_ai_desc",
-            turkish: "Kayıtlarınıza dair AI özetleri",
-            english: "AI summaries of your records"
-        ),
-        SettingsStringSample(key: "about_feature_trends", turkish: "Analizler", english: "Trends"),
-        SettingsStringSample(
-            key: "about_feature_trends_desc",
-            turkish: "Kayıtlarınızdaki örüntüler",
-            english: "Patterns in your records"
-        ),
-        SettingsStringSample(key: "about_feature_reminders", turkish: "Hatırlatıcılar", english: "Reminders"),
-        SettingsStringSample(
-            key: "about_feature_reminders_desc",
-            turkish: "İlaç ve ölçüm hatırlatıcıları",
-            english: "Medication and measurement reminders"
-        ),
-        SettingsStringSample(key: "support_title", turkish: "Destek", english: "Support"),
-        SettingsStringSample(key: "support_premium_status_title", turkish: "Abonelik", english: "Subscription"),
-        SettingsStringSample(key: "support_premium_free", turkish: "Ücretsiz", english: "Free"),
-        SettingsStringSample(key: "support_premium_active", turkish: "Aktif Premium", english: "Active Premium"),
-        SettingsStringSample(key: "support_code", turkish: "Destek kodu", english: "Support code"),
-        SettingsStringSample(
-            key: "support_code_unavailable",
-            turkish: "Destek kodu şu anda kullanılamıyor.",
-            english: "Support code is currently unavailable."
-        ),
-        SettingsStringSample(key: "support_copy", turkish: "Kopyala", english: "Copy"),
-        SettingsStringSample(key: "support_copied", turkish: "Kopyalandı", english: "Copied"),
-        SettingsStringSample(key: "color_theme_classic", turkish: "Klasik", english: "Classic"),
-        SettingsStringSample(key: "color_theme_forest", turkish: "Orman", english: "Forest"),
-        SettingsStringSample(key: "color_theme_ocean", turkish: "Okyanus", english: "Ocean"),
-        SettingsStringSample(key: "color_theme_sunset", turkish: "Gün batımı", english: "Sunset"),
-        SettingsStringSample(key: "language_english", turkish: "English", english: "English"),
-        SettingsStringSample(key: "language_system", turkish: "Sistem dili", english: "System language"),
-        SettingsStringSample(key: "language_title", turkish: "Dil", english: "Language"),
-        SettingsStringSample(key: "language_turkish", turkish: "Türkçe", english: "Türkçe"),
-        SettingsStringSample(key: "more_cycle", turkish: "Regl Takibi", english: "Cycle tracking"),
-        SettingsStringSample(
-            key: "more_cycle_subtitle",
-            turkish: "Takvim, tahminler ve belirtiler",
-            english: "Calendar, predictions and symptoms"
-        ),
-        SettingsStringSample(key: "more_profile", turkish: "Profil", english: "Profile"),
-        SettingsStringSample(
-            key: "more_profile_incomplete",
-            turkish: "Profilini tamamla",
-            english: "Complete your profile"
-        ),
-        SettingsStringSample(key: "more_section_tracking", turkish: "Takip", english: "Tracking"),
-        SettingsStringSample(key: "more_title", turkish: "Daha Fazla", english: "More"),
-        SettingsStringSample(key: "more_trends", turkish: "Analizler", english: "Trends"),
-        SettingsStringSample(
-            key: "more_trends_subtitle",
-            turkish: "Kayıtlarındaki örüntüler ve dönem karşılaştırmaları",
-            english: "Patterns in your records and period comparisons"
-        ),
-        SettingsStringSample(key: "profile_birth_date", turkish: "Doğum Tarihi", english: "Date of birth"),
-        SettingsStringSample(key: "profile_birth_date_select", turkish: "Tarih seçin", english: "Pick a date"),
-        SettingsStringSample(key: "profile_health_notes", turkish: "Sağlık Notları", english: "Health notes"),
-        SettingsStringSample(
-            key: "profile_health_notes_placeholder",
-            turkish: "Kronik hastalıklar, alerjiler, kullandığın ilaçlar…",
-            english: "Chronic conditions, allergies, medications you take…"
-        ),
-        SettingsStringSample(key: "profile_height", turkish: "Boy", english: "Height"),
-        SettingsStringSample(
-            key: "profile_height_invalid",
-            turkish: "50 ile 250 cm arasında bir değer girin.",
-            english: "Enter a value between 50 and 250 cm."
-        ),
-        SettingsStringSample(key: "profile_height_placeholder", turkish: "Örn: 170", english: "e.g. 170"),
-        SettingsStringSample(key: "profile_name", turkish: "Ad", english: "Name"),
-        SettingsStringSample(key: "profile_name_placeholder", turkish: "Örn: Ayşe", english: "e.g. Ayşe"),
-        SettingsStringSample(key: "profile_save", turkish: "Kaydet", english: "Save"),
-        SettingsStringSample(key: "profile_sex", turkish: "Cinsiyet", english: "Sex"),
-        SettingsStringSample(
-            key: "profile_sex_cycle_appears",
-            turkish: "Regl Takibi, Daha Fazla sekmesine eklenir. Daha önce kaydettiğin regl verilerin "
-                + "olduğu gibi durur.",
-            english: "Cycle tracking is added to the More tab. Any cycle data you recorded before is "
-                + "still there."
-        )
-    ]
-}
-
-private enum SettingsSamplesSecond {
-    static let all: [SettingsStringSample] = [
-        SettingsStringSample(
-            key: "profile_sex_cycle_disappears",
-            turkish: "Regl Takibi, Daha Fazla sekmesinden kaldırılır. Kayıtlı regl verilerin silinmez; "
-                + "seçimi geri aldığında geri gelir.",
-            english: "Cycle tracking is removed from the More tab. Your recorded cycle data is not "
-                + "deleted and comes back if you change this again."
-        ),
-        SettingsStringSample(
-            key: "profile_sex_confirm_body",
-            turkish: "Bu seçimle Regl Takibi, Daha Fazla sekmesinden kaldırılır. Kayıtlı regl verilerin "
-                + "silinmez; seçimi geri aldığında geri gelir.",
-            english: "This removes Cycle tracking from the More tab. Your recorded cycle data is not "
-                + "deleted and comes back if you change this again."
-        ),
-        SettingsStringSample(key: "profile_sex_confirm_cancel", turkish: "Vazgeç", english: "Cancel"),
-        SettingsStringSample(key: "profile_sex_confirm_ok", turkish: "Kaydet", english: "Save"),
-        SettingsStringSample(
-            key: "profile_sex_confirm_title",
-            turkish: "Regl Takibi kaldırılsın mı?",
-            english: "Remove Cycle tracking?"
-        ),
-        SettingsStringSample(key: "profile_sex_female", turkish: "Kadın", english: "Female"),
-        SettingsStringSample(key: "profile_sex_male", turkish: "Erkek", english: "Male"),
-        SettingsStringSample(key: "profile_sex_other", turkish: "Diğer", english: "Other"),
-        SettingsStringSample(key: "profile_title", turkish: "Profil", english: "Profile"),
-        SettingsStringSample(key: "reminder_health_title", turkish: "Hatırlatıcı sağlığı", english: "Reminder health"),
-        SettingsStringSample(
-            key: "reminder_health_intro",
-            turkish: "Hatırlatıcıların zamanında gelmesi için Salus'un aşağıdaki ayarlara ihtiyacı var. "
-                + "Tüm kontroller yalnızca bu cihazda çalışır — hiçbir veri dışarı çıkmaz.",
-            english: "For reminders to arrive on time, Salus needs the settings below. "
-                + "All checks run on this device only — nothing leaves it."
-        ),
-        SettingsStringSample(
-            key: "reminder_health_all_ok",
-            turkish: "Her şey yolunda görünüyor — hatırlatıcılar zamanında gelecektir.",
-            english: "Everything looks good — reminders should arrive on time."
-        ),
-        SettingsStringSample(key: "reminder_health_fix", turkish: "Düzelt", english: "Fix"),
-        SettingsStringSample(
-            key: "reminder_health_notifications_title",
-            turkish: "Bildirimler",
-            english: "Notifications"
-        ),
-        SettingsStringSample(
-            key: "reminder_health_notifications_ok",
-            turkish: "Bildirimler açık.",
-            english: "Notifications are enabled."
-        ),
-        SettingsStringSample(
-            key: "reminder_health_notifications_problem",
-            turkish: "Bildirimler kapalı — hatırlatıcılar gösterilemez.",
-            english: "Notifications are off — reminders cannot be shown."
-        ),
-        SettingsStringSample(
-            key: "reminder_health_full_screen_title",
-            turkish: "Tam ekran ilaç alarmları",
-            english: "Full-screen medication alarms"
-        ),
-        SettingsStringSample(
-            key: "reminder_health_full_screen_ok",
-            turkish: "İlaç alarmları kilit ekranını kaplayarak çalacak.",
-            english: "Medication alarms will take over the lock screen."
-        ),
-        SettingsStringSample(
-            key: "reminder_health_full_screen_problem",
-            turkish: "İlaç alarmları ekranı kaplayamıyor — doz saati geldiğinde sesli bildirim gelir, "
-                + "ama kilit ekranında alarm açılmaz.",
-            english: "Medication alarms cannot take over the screen — a dose still arrives as a "
-                + "notification with sound, but no alarm opens on the lock screen."
-        ),
-        SettingsStringSample(
-            key: "reminder_health_background_refresh_title",
-            turkish: "Arka plan yenilemesi",
-            english: "Background App Refresh"
-        ),
-        SettingsStringSample(
-            key: "reminder_health_background_refresh_ok",
-            turkish: "Salus hatırlatıcı listesini arka planda tazeleyebiliyor.",
-            english: "Salus can refresh the reminder list in the background."
-        ),
-        SettingsStringSample(
-            key: "reminder_health_background_refresh_problem",
-            turkish: "Arka plan yenilemesi kapalı — hatırlatıcı listesi yalnızca uygulamayı "
-                + "açtığınızda tazelenir.",
-            english: "Background App Refresh is off — the reminder list is only refreshed while "
-                + "the app is open."
-        ),
-        SettingsStringSample(
-            key: "reminder_health_last_sync",
-            turkish: "Son hatırlatıcı taraması: %1$@",
-            english: "Last reminder pass: %1$@"
-        ),
-        SettingsStringSample(
-            key: "reminder_health_never_synced",
-            turkish: "Hatırlatıcı taraması bu cihazda henüz çalışmadı.",
-            english: "The reminder pass has not run on this device yet."
-        ),
-        SettingsStringSample(key: "settings_about", turkish: "Uygulama hakkında", english: "About the app"),
-        SettingsStringSample(
-            key: "settings_about_desc",
-            turkish: "Sürüm ve uygulama bilgileri",
-            english: "Version and app info"
-        ),
-        SettingsStringSample(key: "settings_app_lock", turkish: "Uygulama kilidi", english: "App lock"),
-        SettingsStringSample(
-            key: "settings_app_lock_confirm_title",
-            turkish: "Uygulama kilidini etkinleştir",
-            english: "Enable app lock"
-        ),
-        SettingsStringSample(
-            key: "settings_app_lock_desc",
-            turkish: "30 sn arka planda kaldıktan sonra biyometri veya cihaz kilidi iste",
-            english: "Require biometrics or device credential after 30 s in the background"
-        ),
-        SettingsStringSample(
-            key: "settings_app_lock_unavailable",
-            turkish: "Bu cihazda ekran kilidi tanımlı değil",
-            english: "No screen lock is set up on this device"
-        ),
-        SettingsStringSample(key: "settings_cancel", turkish: "Vazgeç", english: "Cancel"),
-        SettingsStringSample(key: "settings_color_theme", turkish: "Renk teması", english: "Color theme"),
-        SettingsStringSample(
-            key: "settings_doctor_report",
-            turkish: "Doktor Raporu (PDF)",
-            english: "Doctor report (PDF)"
-        ),
-        SettingsStringSample(
-            key: "settings_doctor_report_desc",
-            turkish: "Kayıtlarını PDF olarak dışa aktar ve paylaş",
-            english: "Export your records as a PDF and share them"
-        ),
-        SettingsStringSample(key: "settings_language", turkish: "Dil", english: "Language"),
-        SettingsStringSample(
-            key: "settings_notifications",
-            turkish: "Bildirim ayarları",
-            english: "Notification settings"
-        ),
-        SettingsStringSample(
-            key: "settings_notifications_desc",
-            turkish: "Kanal, ses ve titreşimi sistem ayarlarından yönet",
-            english: "Manage channels, sound and vibration in system settings"
-        ),
-        SettingsStringSample(key: "settings_premium", turkish: "Salus Premium", english: "Salus Premium"),
-        SettingsStringSample(
-            key: "settings_premium_active",
-            turkish: "Premium üyesin",
-            english: "You are a Premium member"
-        ),
-        SettingsStringSample(
-            key: "settings_premium_promo",
-            turkish: "AI özetleri, gelişmiş trendler ve daha fazlası",
-            english: "AI summaries, advanced trends and more"
-        ),
-        SettingsStringSample(key: "settings_rate_us", turkish: "Bizi değerlendirin", english: "Rate Salus"),
-        SettingsStringSample(
-            key: "settings_rate_us_desc",
-            turkish: "Görüşünüz Salus'un gelişmesine yardımcı olur",
-            english: "Your feedback helps Salus improve"
-        ),
-        SettingsStringSample(key: "settings_reminders", turkish: "Hatırlatıcılar", english: "Reminders"),
-        SettingsStringSample(
-            key: "settings_reminders_desc",
-            turkish: "Hatırlatıcıların çalışma durumunu incele",
-            english: "Review how reminders are running"
-        ),
-        SettingsStringSample(key: "settings_section_app", turkish: "Uygulama", english: "App"),
-        SettingsStringSample(key: "settings_section_appearance", turkish: "Görünüm", english: "Appearance"),
-        SettingsStringSample(key: "settings_section_notifications", turkish: "Bildirimler", english: "Notifications"),
-        SettingsStringSample(key: "settings_section_security", turkish: "Güvenlik", english: "Security"),
-        SettingsStringSample(
-            key: "settings_secure_screen",
-            turkish: "Ekran görüntüsünü engelle",
-            english: "Block screenshots"
-        ),
-        SettingsStringSample(
-            key: "settings_secure_screen_desc",
-            turkish: "Ekran görüntülerini ve son uygulamalar önizlemesini gizler",
-            english: "Hides screenshots and the recents preview"
-        ),
-        SettingsStringSample(key: "settings_theme", turkish: "Tema", english: "Theme"),
-        SettingsStringSample(key: "theme_dark", turkish: "Koyu", english: "Dark"),
-        SettingsStringSample(key: "theme_light", turkish: "Açık", english: "Light"),
-        SettingsStringSample(key: "theme_system", turkish: "Sistem varsayılanı", english: "System default"),
-        SettingsStringSample(key: "theme_title", turkish: "Tema", english: "Theme")
-    ]
-}
-
-/// One row of the ported string table: a key and the two translations the app ships for it.
-///
-/// Flat rather than nested in the suite so it can be a `@Test(arguments:)` table, which requires
-/// a `Sendable` element type.
-struct SettingsStringSample: Sendable {
-    let key: String
-    let turkish: String
-    let english: String
 }

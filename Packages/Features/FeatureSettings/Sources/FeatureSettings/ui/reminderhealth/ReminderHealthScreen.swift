@@ -128,39 +128,42 @@ struct ReminderHealthScreen: View {
             .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    /// `ReminderHealthScreen.kt:160-170`.
+    /// `ReminderHealthScreen.kt:160-170` — notifications off is the one setting that stops a
+    /// reminder from being shown at all, so it is an error rather than a warning.
     private var notificationsCard: some View {
         HealthCard(
             title: SettingsStrings.reminderHealthNotificationsTitle,
             description: state.notificationsEnabled
                 ? SettingsStrings.reminderHealthNotificationsOk
                 : SettingsStrings.reminderHealthNotificationsProblem,
-            isHealthy: state.notificationsEnabled,
+            status: state.notificationsEnabled ? .success : .error,
             onFix: { onEvent(.fixNotifications) }
         )
     }
 
     /// `ReminderHealthScreen.kt:180-193` — drawn only where AlarmKit exists, exactly as Android
-    /// draws its full-screen card only on API 34+ where the permission can be revoked.
+    /// draws its full-screen card only on API 34+ where the permission can be revoked. The dose
+    /// still rings as a notification; only the full-screen alarm is lost, so a warning.
     private var alarmKitCard: some View {
         HealthCard(
             title: SettingsStrings.reminderHealthAlarmKitTitle,
             description: state.alarmKitAuthorized
                 ? SettingsStrings.reminderHealthAlarmKitOk
                 : SettingsStrings.reminderHealthAlarmKitProblem,
-            isHealthy: state.alarmKitAuthorized,
+            status: state.alarmKitAuthorized ? .success : .warning,
             onFix: { onEvent(.requestAlarmKit) }
         )
     }
 
     /// The iOS replacement for the battery-optimization card (`ReminderHealthScreen.kt:195-206`).
+    /// Only a delay is at stake, so it is a warning, never an error.
     private var backgroundRefreshCard: some View {
         HealthCard(
             title: SettingsStrings.reminderHealthBackgroundRefreshTitle,
             description: state.backgroundRefreshAvailable
                 ? SettingsStrings.reminderHealthBackgroundRefreshOk
                 : SettingsStrings.reminderHealthBackgroundRefreshProblem,
-            isHealthy: state.backgroundRefreshAvailable,
+            status: state.backgroundRefreshAvailable ? .success : .warning,
             onFix: { onEvent(.fixBackgroundRefresh) }
         )
     }
@@ -180,46 +183,57 @@ struct ReminderHealthScreen: View {
 private struct HealthCard: View {
     let title: String
     let description: String
-    let isHealthy: Bool
+    /// The check's state: Success carries the ok chip; Warning / Error carry their own
+    /// ``SalusStatus`` chip (`ReminderHealthScreen.kt:235-243`).
+    let status: SalusStatus
     let onFix: () -> Void
 
     @Environment(\.salusTheme) private var theme
 
     private var colors: SalusColorScheme { theme.colorScheme }
 
+    /// The Fix button only appears while the check is not healthy (`ReminderHealthScreen.kt:252-256`).
+    private var needsFix: Bool {
+        status != .success
+    }
+
     var body: some View {
         SalusCard {
-            HStack(spacing: SalusSpacing.lg) {
-                icon
-                text
-                if !isHealthy {
+            VStack(alignment: .leading, spacing: SalusSpacing.sm) {
+                // `Row { Text(title).weight(1f); SalusStatusChip(status) }`
+                // (`ReminderHealthScreen.kt:226-234`) — the chip heads the card, title left.
+                HStack(spacing: SalusSpacing.sm) {
+                    Text(verbatim: title)
+                        .font(SalusTypography.titleMedium.font)
+                        .tracking(SalusTypography.titleMedium.tracking)
+                        .foregroundStyle(colors.onSurface)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    SalusStatusChip(label: label, status: status)
+                }
+                Text(verbatim: description)
+                    .font(SalusTypography.bodySmall.font)
+                    .tracking(SalusTypography.bodySmall.tracking)
+                    .foregroundStyle(colors.onSurfaceVariant)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                if needsFix {
+                    // Material's `FilledTonalButton`: a `secondaryContainer` fill under an
+                    // `onSecondaryContainer` label, which `.borderedProminent` draws once it is
+                    // tinted with the container role (`ReminderHealthScreen.kt:264-270`).
                     fixButton
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 
-    /// `contentDescription = null` (`ReminderHealthScreen.kt:236`): the state is already in the
-    /// description beside it, so the icon is decorative and reading it aloud would repeat the row.
-    private var icon: some View {
-        Image(systemName: isHealthy ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
-            .font(SalusTypography.titleMedium.font)
-            .foregroundStyle(isHealthy ? colors.primary : colors.error)
-            .accessibilityHidden(true)
-    }
-
-    private var text: some View {
-        VStack(alignment: .leading, spacing: SalusSpacing.xs) {
-            Text(verbatim: title)
-                .font(SalusTypography.titleMedium.font)
-                .tracking(SalusTypography.titleMedium.tracking)
-                .foregroundStyle(colors.onSurface)
-            Text(verbatim: description)
-                .font(SalusTypography.bodySmall.font)
-                .tracking(SalusTypography.bodySmall.tracking)
-                .foregroundStyle(colors.onSurfaceVariant)
+    /// `SalusStatus.labelRes()` (`ReminderHealthScreen.kt:272-280`): "Tamam" / "Sınırlı" / "Engelli".
+    private var label: String {
+        switch status {
+        case .success: SettingsStrings.reminderHealthStatusOk
+        case .warning: SettingsStrings.reminderHealthStatusWarning
+        case .error: SettingsStrings.reminderHealthStatusError
+        case .accent, .neutral: SettingsStrings.reminderHealthStatusOk
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     /// Material's `FilledTonalButton`: a `secondaryContainer` fill under an `onSecondaryContainer`

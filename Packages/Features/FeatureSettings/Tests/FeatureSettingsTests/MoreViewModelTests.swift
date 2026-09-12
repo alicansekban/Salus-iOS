@@ -2,14 +2,17 @@
 // `feature/settings/src/test/kotlin/com/alicansekban/salus/feature/settings/ui/more/
 // MoreViewModelTest.kt`.
 //
-// The 20 cases port by name, grouped exactly as the Kotlin test groups them (cycle visibility 4,
-// settings 5, premium 4, doctor report 3, colour themes 4). The two iOS-only cases that pin the
-// effect **queue** — divergence (4), which the Kotlin `Channel` + `LaunchedEffect` collector makes
+// The cases port by name, grouped exactly as the Kotlin test groups them (cycle visibility 4,
+// settings + sheets 7, premium 4, doctor report 3, colour themes 6). The three dialog-era cases
+// (`selectingAThemePersistsItAndClosesTheDialog`, `selectingALanguageAppliesTheLocaleAndClosesTheDialog`)
+// were renamed and re-specified by the M15 sheet model — the pick applies under the sheet and the
+// sheet stays open (plan ruling 1 / handover item 5). The two iOS-only cases that pin the effect
+// **queue** — divergence (4), which the Kotlin `Channel` + `LaunchedEffect` collector makes
 // unnecessary there — live in `MoreEffectQueueTests.swift`, so this suite stays the ported table
-// and nothing else. Turbine's `state.test { awaitItem() }`
-// becomes reading `viewModel.state` after `waitUntil`, and its `effects.test { awaitItem() }`
-// becomes reading `pendingEffects` / `consumeEffects()` — the same substitution the M7
-// `ReminderHealthViewModelTests` made for `@Observable`, generalised to the buffered array.
+// and nothing else. Turbine's `state.test { awaitItem() }` becomes reading `viewModel.state` after
+// `waitUntil`, and its `effects.test { awaitItem() }` becomes reading `pendingEffects` /
+// `consumeEffects()` — the same substitution the M7 `ReminderHealthViewModelTests` made for
+// `@Observable`, generalised to the buffered array.
 //
 // The `MainDispatcherRule` + `runTest` virtual scheduler becomes the cooperative pool: each
 // `advanceUntilIdle()` is a `waitUntil` that yields the main actor until the named condition holds.
@@ -128,7 +131,7 @@ struct MoreViewModelTests {
 
     // MARK: - Settings, merged in from the former Settings screen
 
-    /// `MoreViewModelTest.kt:179-195`.
+    /// `MoreViewModelTest.kt:194-209`.
     @Test("state carries the stored preferences")
     func stateCarriesTheStoredPreferences() async {
         let preferences = FakeSettingsPreferences(
@@ -150,61 +153,116 @@ struct MoreViewModelTests {
         #expect(fixture.vm.state.secureScreenEnabled)
     }
 
-    /// `MoreViewModelTest.kt:197-210`.
-    @Test("selecting a theme persists it and closes the dialog")
-    func selectingAThemePersistsItAndClosesTheDialog() async {
+    /// `MoreViewModelTest.kt:217-229` — both appearance rows open the one theme sheet, and it stays
+    /// open while the mode is applied: the palette list below shares the sheet, so closing on the
+    /// first tap would cost a second trip to change both.
+    @Test("selecting a theme persists it and keeps the sheet open")
+    func selectingAThemePersistsItAndKeepsTheSheetOpen() async {
         let fixture = makeViewModel()
         await waitUntil("the initial state to load") { !fixture.vm.state.isLoading }
 
-        fixture.vm.onEvent(.dialogRequested(.theme))
-        await waitUntil("the theme dialog to open") { fixture.vm.state.activeDialog == .theme }
-        #expect(fixture.vm.state.activeDialog == .theme)
+        fixture.vm.onEvent(.themeSheetOpened)
+        await waitUntil("the theme sheet to open") { fixture.vm.state.isThemeSheetOpen }
+        #expect(fixture.vm.state.isThemeSheetOpen)
 
         fixture.vm.onEvent(.selectTheme(.dark))
-        await waitUntil("the theme to persist and the dialog to close") {
-            fixture.preferences.themeModeValueSync == .dark && fixture.vm.state.activeDialog == nil
-        }
+        await waitUntil("the theme to persist") { fixture.preferences.themeModeValueSync == .dark }
 
         #expect(fixture.preferences.themeModeValueSync == .dark)
-        #expect(fixture.vm.state.activeDialog == nil)
+        #expect(fixture.vm.state.isThemeSheetOpen)
     }
 
-    /// `MoreViewModelTest.kt:212-225`.
-    @Test("selecting a language applies the locale and closes the dialog")
-    func selectingALanguageAppliesTheLocaleAndClosesTheDialog() async {
+    /// `MoreViewModelTest.kt:232-245`.
+    @Test("the theme sheet opens and closes")
+    func theThemeSheetOpensAndCloses() async {
+        let fixture = makeViewModel()
+        await waitUntil("the initial state to load") { !fixture.vm.state.isLoading }
+        #expect(fixture.vm.state.isThemeSheetOpen == false)
+
+        fixture.vm.onEvent(.themeSheetOpened)
+        await waitUntil("the theme sheet to open") { fixture.vm.state.isThemeSheetOpen }
+        #expect(fixture.vm.state.isThemeSheetOpen)
+
+        fixture.vm.onEvent(.themeSheetDismissed)
+        await waitUntil("the theme sheet to close") { !fixture.vm.state.isThemeSheetOpen }
+
+        #expect(fixture.vm.state.isThemeSheetOpen == false)
+    }
+
+    /// `MoreViewModelTest.kt:249-261` — dismissing the sheet is not a selection: nothing is written
+    /// on the way out.
+    @Test("dismissing the theme sheet leaves the appearance untouched")
+    func dismissingTheThemeSheetLeavesTheAppearanceUntouched() async {
         let fixture = makeViewModel()
         await waitUntil("the initial state to load") { !fixture.vm.state.isLoading }
 
-        fixture.vm.onEvent(.dialogRequested(.language))
-        await waitUntil("the language dialog to open") { fixture.vm.state.activeDialog == .language }
+        fixture.vm.onEvent(.themeSheetOpened)
+        await waitUntil("the theme sheet to open") { fixture.vm.state.isThemeSheetOpen }
+
+        fixture.vm.onEvent(.themeSheetDismissed)
+        await waitUntil("the theme sheet to close") { !fixture.vm.state.isThemeSheetOpen }
+
+        #expect(fixture.vm.state.isThemeSheetOpen == false)
+        #expect(fixture.preferences.themeModeValueSync == .system)
+        #expect(fixture.preferences.premiumThemeValueSync == .classic)
+    }
+
+    /// `MoreViewModelTest.kt:268-281` — the language sheet mirrors the theme sheet: the pick is
+    /// applied under it and the sheet stays open, because the app repainting in the new language is
+    /// the only preview there is.
+    @Test("selecting a language applies the locale and keeps the sheet open")
+    func selectingALanguageAppliesTheLocaleAndKeepsTheSheetOpen() async {
+        let fixture = makeViewModel()
+        await waitUntil("the initial state to load") { !fixture.vm.state.isLoading }
+
+        fixture.vm.onEvent(.languageSheetOpened)
+        await waitUntil("the language sheet to open") { fixture.vm.state.isLanguageSheetOpen }
+        #expect(fixture.vm.state.isLanguageSheetOpen)
 
         fixture.vm.onEvent(.selectLanguage(.turkish))
-        await waitUntil("the locale to apply and the dialog to close") {
-            fixture.locale.currentSync == .turkish && fixture.vm.state.activeDialog == nil
-        }
+        await waitUntil("the locale to apply") { fixture.locale.currentSync == .turkish }
 
         #expect(fixture.locale.currentSync == .turkish)
         #expect(fixture.locale.appliedSync == [.turkish])
-        #expect(fixture.vm.state.activeDialog == nil)
+        #expect(fixture.vm.state.isLanguageSheetOpen)
     }
 
-    /// `MoreViewModelTest.kt:227-239`.
-    @Test("dismissing a dialog leaves the setting untouched")
-    func dismissingADialogLeavesTheSettingUntouched() async {
+    /// `MoreViewModelTest.kt:284-297`.
+    @Test("the language sheet opens and closes")
+    func theLanguageSheetOpensAndCloses() async {
+        let fixture = makeViewModel()
+        await waitUntil("the initial state to load") { !fixture.vm.state.isLoading }
+        #expect(fixture.vm.state.isLanguageSheetOpen == false)
+
+        fixture.vm.onEvent(.languageSheetOpened)
+        await waitUntil("the language sheet to open") { fixture.vm.state.isLanguageSheetOpen }
+        #expect(fixture.vm.state.isLanguageSheetOpen)
+
+        fixture.vm.onEvent(.languageSheetDismissed)
+        await waitUntil("the language sheet to close") { !fixture.vm.state.isLanguageSheetOpen }
+
+        #expect(fixture.vm.state.isLanguageSheetOpen == false)
+    }
+
+    /// `MoreViewModelTest.kt:301-313` — dismissing the sheet is not a selection: nothing is applied
+    /// on the way out.
+    @Test("dismissing the language sheet leaves the locale untouched")
+    func dismissingTheLanguageSheetLeavesTheLocaleUntouched() async {
         let fixture = makeViewModel()
         await waitUntil("the initial state to load") { !fixture.vm.state.isLoading }
 
-        fixture.vm.onEvent(.dialogRequested(.theme))
-        await waitUntil("the theme dialog to open") { fixture.vm.state.activeDialog == .theme }
+        fixture.vm.onEvent(.languageSheetOpened)
+        await waitUntil("the language sheet to open") { fixture.vm.state.isLanguageSheetOpen }
 
-        fixture.vm.onEvent(.dialogDismissed)
-        await waitUntil("the dialog to close") { fixture.vm.state.activeDialog == nil }
+        fixture.vm.onEvent(.languageSheetDismissed)
+        await waitUntil("the language sheet to close") { !fixture.vm.state.isLanguageSheetOpen }
 
-        #expect(fixture.vm.state.activeDialog == nil)
-        #expect(fixture.preferences.themeModeValueSync == .system)
+        #expect(fixture.vm.state.isLanguageSheetOpen == false)
+        #expect(fixture.locale.currentSync == .system)
+        #expect(fixture.locale.appliedSync.isEmpty)
     }
 
-    /// `MoreViewModelTest.kt:241-252`.
+    /// `MoreViewModelTest.kt:316-326`.
     @Test("security toggles persist")
     func securityTogglesPersist() async {
         let fixture = makeViewModel()
@@ -222,7 +280,7 @@ struct MoreViewModelTests {
 
     // MARK: - Premium
 
-    /// `MoreViewModelTest.kt:258-268`.
+    /// `MoreViewModelTest.kt:333-342`.
     @Test("state follows the entitlement")
     func stateFollowsTheEntitlement() async {
         let fixture = makeViewModel()
@@ -231,8 +289,6 @@ struct MoreViewModelTests {
         }
         #expect(fixture.vm.state.premiumStatus == .free)
 
-        // The Kotlin flips `premium.status.value = PremiumStatus.GRACE_PERIOD`; the iOS fake flips
-        // to `.gracePeriod` — the real three-state value now.
         fixture.premium.setValue(.gracePeriod)
         await waitUntil("the grace-period state to propagate") {
             fixture.vm.state.premiumStatus == .gracePeriod
@@ -241,7 +297,7 @@ struct MoreViewModelTests {
         #expect(fixture.vm.state.premiumStatus == .gracePeriod)
     }
 
-    /// `MoreViewModelTest.kt:270-282`.
+    /// `MoreViewModelTest.kt:359-370`.
     @Test("a free user tapping premium opens the paywall from the settings source")
     func aFreeUserTappingPremiumOpensThePaywallFromTheSettingsSource() async {
         let fixture = makeViewModel()
@@ -254,7 +310,7 @@ struct MoreViewModelTests {
         #expect(fixture.vm.pendingEffects.isEmpty)
     }
 
-    /// `MoreViewModelTest.kt:288-304`.
+    /// `MoreViewModelTest.kt:377-392`.
     @Test("an entitled user tapping premium is sent to subscription management")
     func anEntitledUserTappingPremiumIsSentToSubscriptionManagement() async {
         let fixture = makeViewModel(premiumStatus: .premium)
@@ -283,7 +339,7 @@ struct MoreViewModelTests {
         #expect(fixture.paywall.request == nil)
     }
 
-    /// `MoreViewModelTest.kt:306-320`.
+    /// `MoreViewModelTest.kt:396-408`.
     @Test("a grace period user tapping premium is sent to subscription management")
     func aGracePeriodUserTappingPremiumIsSentToSubscriptionManagement() async {
         let fixture = makeViewModel(premiumStatus: .gracePeriod)
@@ -305,7 +361,7 @@ struct MoreViewModelTests {
 
     // MARK: - Doctor report
 
-    /// `MoreViewModelTest.kt:326-340`.
+    /// `MoreViewModelTest.kt:415-428`.
     @Test("a free user tapping the doctor report gets the paywall and never the screen")
     func aFreeUserTappingTheDoctorReportGetsThePaywallAndNeverTheScreen() async {
         let fixture = makeViewModel()
@@ -318,7 +374,7 @@ struct MoreViewModelTests {
         #expect(fixture.vm.pendingEffects.isEmpty)
     }
 
-    /// `MoreViewModelTest.kt:342-355`.
+    /// `MoreViewModelTest.kt:431-443`.
     @Test("an entitled user tapping the doctor report opens it")
     func anEntitledUserTappingTheDoctorReportOpensIt() async {
         let fixture = makeViewModel(premiumStatus: .premium)
@@ -334,7 +390,7 @@ struct MoreViewModelTests {
         #expect(fixture.paywall.request == nil)
     }
 
-    /// `MoreViewModelTest.kt:357-369`.
+    /// `MoreViewModelTest.kt:446-457`.
     @Test("a grace period user reaches the doctor report")
     func aGracePeriodUserReachesTheDoctorReport() async {
         let fixture = makeViewModel(premiumStatus: .gracePeriod)
@@ -347,84 +403,5 @@ struct MoreViewModelTests {
 
         let effects = fixture.vm.consumeEffects()
         #expect(effects == [.openDoctorReport])
-    }
-
-    // MARK: - Premium colour themes
-
-    /// `MoreViewModelTest.kt:375-384`.
-    @Test("state carries the stored colour theme")
-    func stateCarriesTheStoredColourTheme() async {
-        let preferences = FakeSettingsPreferences(premiumTheme: .sunset)
-        let fixture = makeViewModel(preferences: preferences)
-
-        await waitUntil("the stored colour theme to load") {
-            !fixture.vm.state.isLoading && fixture.vm.state.premiumTheme == .sunset
-        }
-
-        #expect(fixture.vm.state.premiumTheme == .sunset)
-    }
-
-    /// `MoreViewModelTest.kt:386-401`.
-    @Test("a premium user's colour theme is persisted and the dialog closes")
-    func aPremiumUsersColourThemeIsPersistedAndTheDialogCloses() async {
-        let fixture = makeViewModel(premiumStatus: .premium)
-        await waitUntil("the entitled state to load") {
-            !fixture.vm.state.isLoading && fixture.vm.state.premiumStatus == .premium
-        }
-
-        fixture.vm.onEvent(.dialogRequested(.colorTheme))
-        await waitUntil("the colorTheme dialog to open") {
-            fixture.vm.state.activeDialog == .colorTheme
-        }
-
-        fixture.vm.onEvent(.colorThemeSelected(.ocean))
-        await waitUntil("the colour theme to persist and the dialog to close") {
-            fixture.preferences.premiumThemeValueSync == .ocean && fixture.vm.state.activeDialog == nil
-        }
-
-        #expect(fixture.preferences.premiumThemeValueSync == .ocean)
-        #expect(fixture.vm.state.premiumTheme == .ocean)
-        #expect(fixture.vm.state.activeDialog == nil)
-        #expect(fixture.paywall.request == nil)
-    }
-
-    /// `MoreViewModelTest.kt:403-414`.
-    @Test("a grace period user may still change the colour theme")
-    func aGracePeriodUserMayStillChangeTheColourTheme() async {
-        let fixture = makeViewModel(premiumStatus: .gracePeriod)
-        await waitUntil("the entitled state to load") {
-            !fixture.vm.state.isLoading && fixture.vm.state.premiumStatus == .gracePeriod
-        }
-
-        fixture.vm.onEvent(.colorThemeSelected(.forest))
-        await waitUntil("the colour theme to persist") {
-            fixture.preferences.premiumThemeValueSync == .forest
-        }
-
-        #expect(fixture.preferences.premiumThemeValueSync == .forest)
-        #expect(fixture.paywall.request == nil)
-    }
-
-    /// `MoreViewModelTest.kt:416-431`.
-    @Test("a free user's pick opens the paywall and is not persisted")
-    func aFreeUsersPickOpensThePaywallAndIsNotPersisted() async {
-        let fixture = makeViewModel()
-        await waitUntil("the initial state to load") { !fixture.vm.state.isLoading }
-
-        fixture.vm.onEvent(.dialogRequested(.colorTheme))
-        await waitUntil("the colorTheme dialog to open") {
-            fixture.vm.state.activeDialog == .colorTheme
-        }
-        #expect(fixture.vm.state.activeDialog == .colorTheme)
-
-        fixture.vm.onEvent(.colorThemeSelected(.forest))
-        await waitUntil("the paywall to open from themes and the dialog to close") {
-            fixture.paywall.request?.source == .themes && fixture.vm.state.activeDialog == nil
-        }
-
-        #expect(fixture.paywall.request?.source == .themes)
-        #expect(fixture.preferences.premiumThemeValueSync == .classic)
-        #expect(fixture.vm.state.premiumTheme == .classic)
-        #expect(fixture.vm.state.activeDialog == nil)
     }
 }

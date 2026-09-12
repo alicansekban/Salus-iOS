@@ -69,4 +69,30 @@ struct SalusSelectableRowTests {
         // The default for the one optional argument.
         #expect(unselected.accent == nil)
     }
+
+    /// The M15 qualification pair (`SalusSelectableRow.kt:84-99`): a `badge` qualifies the option
+    /// next to its label ("Varsayılan" on the theme sheet's Classic row) and `locked` swaps the
+    /// radio mark for a lock glyph without touching the selection state. Both round-trip through the
+    /// stored properties so the theme sheet can decide the row's look from the state it built.
+    @Test("a badge and a lock round-trip, and locked is independent of selected")
+    @MainActor
+    func badgeAndLockRoundTrip() {
+        let classic = SalusSelectableRow(
+            title: "Klasik",
+            swatch: colors.primary,
+            badge: "Varsayılan",
+            isSelected: true
+        ) {}
+        let ocean = SalusSelectableRow(
+            title: "Okyanus",
+            swatch: colors.primary,
+            locked: true,
+            isSelected: false
+        ) {}
+
+        #expect(classic.badge == "Varsayılan")
+        #expect(classic.locked == false)
+        #expect(ocean.locked)
+        #expect(!ocean.isSelected)
+    }
 }
