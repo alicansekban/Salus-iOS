@@ -193,7 +193,7 @@ theme change.
 | 5.2.5 | Push from a tab root and look at the back button's label | it reads the root's title ("İlaçlar", "Ölçümler", …) or "Geri" when the title is too long — never blank | ☐ |
 | 5.2.6 | Push anything from any tab | the tab bar slides away and comes back on Back, exactly as before (the rule is unchanged) | ☐ |
 | 5.2.7 | Vitals root: the trends action | still reachable, now as the chart icon in the navigation bar beside the bell and avatar; three trailing controls plus the title must not clip on the narrowest device | ☐ |
-| 5.2.8 | Medications root: add a medication to an empty list, then delete the last one, without leaving the screen | the count chip appears and disappears with the list, in the same interaction — it sits in the navigation bar beside the bell and avatar, and its number tracks the list | ☐ |
+| 5.2.8 | Medications root: add a medication to an empty list, then delete the last one, without leaving the screen | the count is the "Aktif ilaç" metric tile in the list's own header and its number tracks the list in the same interaction. The navigation bar carries **only** the brand tile, the title, the bell and the avatar — no count chip (Task 7 retired it; 3.2.3 checks the same thing from the other side) | ☐ |
 | 5.2.9 | VoiceOver on any root | the bell announces "Hatırlatıcı sağlığı", the avatar "Profil"; the brand tile is skipped | ☐ |
 | 5.2.10 | Cycle calendar (pushed from Home's card and from the More row) | inline title "Döngü" with a back button, no root toolbar | ☐ |
 
@@ -214,10 +214,11 @@ which reach bars created after the call. Nothing automated can run a live theme 
 is the row that decides whether `.id(theme.isDark)` on the `TabView` has to be added. Note what
 actually happens — "repaints at once", "repaints after a tab switch", or "only after relaunch".
 
-**Task 5 — two trailing controls plus a screen action.** Vitals (chart icon) and Medications (count
-chip) put a third control in the bar beside the shell's bell and avatar (§5.2.7, §5.2.8). Android
-M15 moved both into the content, which Tasks 7 and 8 mirror; until then, check the narrowest
-supported device and the largest Dynamic Type size for clipping and note what truncates.
+**Task 5 — a third trailing control beside the shell's own two.** Vitals still puts its trends
+chart icon in the bar next to the bell and the avatar (§5.2.7): three trailing controls plus the
+title. Check the narrowest supported device and the largest Dynamic Type size for clipping and note
+what truncates. Medications is no longer on this list — Task 7 moved its count into the list's own
+"Aktif ilaç" metric tile, the Android M15 shape (§3.2.3, §5.2.8); Vitals is Task 8's to mirror.
 
 ---
 

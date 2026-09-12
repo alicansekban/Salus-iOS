@@ -146,6 +146,14 @@ struct MedicationEditorScreen: View {
                 },
                 confirmIsDestructive: false
             )
+        // LAST in the chain, and `#if os(iOS)` because the modifier is iOS-only API while every
+        // feature package also builds for the macOS test host (CLAUDE.md's `.macOS(.v14)`
+        // concession). Last because SwiftFormat indents whatever follows an `#endif` one level
+        // deeper, which reads as if those modifiers were inside the guard
+        // (`docs/ios-feature-template.md`, and the shape `AboutScreen` has carried since M8).
+        #if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+        #endif
     }
 
     /// The warning's binding, the same shape `isDeleteConfirmPresented` has: the setter reports the
