@@ -8,8 +8,9 @@ import SwiftUI
 /// `ZStack` aligned to `.bottomTrailing`, the twin of Compose's `Box` + `Modifier.align`, per the
 /// single-Scaffold rule (`SalusFab.kt:35-38`).
 ///
-/// In dark mode the disc gets the same `accentGlow` wash as `SalusButton`'s primary variant,
-/// which is what separates it from the near-black ground (`SalusFab.kt:68-69`).
+/// The disc is the one FAB that borrows plain Material elevation, gated by mode exactly as the twin
+/// does: raised in light, none in dark (`SalusFab.kt:48`). The raised step is the neutral black
+/// `salusShadow`, not an `accentGlow` wash — the accent wash belongs to the extended pill alone.
 public struct SalusFab: View {
     private let systemImage: String
     private let contentDescription: String?
@@ -42,19 +43,13 @@ public struct SalusFab: View {
         .accessibilityLabel(Text(verbatim: contentDescription ?? ""))
     }
 
-    /// `containerColor = primary`, `shape = CircleShape` (`SalusFab.kt:52-53`) with the
-    /// `accentGlow` wash underneath (`SalusFab.kt:66-69`). The glow is what separates the disc
-    /// from the ground in both modes — in dark from the near-black screen, in light from the
-    /// tinted background — so it is a `primary`-tinted shadow, not the neutral `salusShadow`.
+    /// `containerColor = primary`, `shape = CircleShape` (`SalusFab.kt:52-53`) with Material's
+    /// default FAB elevation (`SalusFab.kt:48`): in dark no lift at all, in light the neutral
+    /// raised step from §7.
     private var background: some View {
         Circle()
             .fill(theme.colorScheme.primary)
-            .shadow(
-                color: theme.extendedColors.accentGlow,
-                radius: Self.glowRadius,
-                x: 0,
-                y: Self.glowOffsetY
-            )
+            .salusShadow(.raised, isDark: theme.isDark)
     }
 
     /// Material's own `FloatingActionButton` container size, which Android inherits without naming
@@ -63,18 +58,15 @@ public struct SalusFab: View {
     /// above `SalusTouchTarget.min`.
     private static let containerSize: CGFloat = 56
     private static let iconSize: CGFloat = 24
-    /// `SalusFabDefaults.GlowElevation` (`SalusFab.kt:72`) — the spread of the accent wash.
-    private static let glowRadius: CGFloat = 12
-    private static let glowOffsetY: CGFloat = 4
 }
 
 /// The labelled FAB variant: a primary pill for the one action a list screen exists to offer
 /// ("Add medication", "New appointment"), the twin of `SalusExtendedFab.kt:71-109`.
 ///
 /// In dark it sits in the same `accentGlow` wash as `SalusButton`'s primary variant — the glow is
-/// what separates it from the near-black ground (`SalusExtendedFab.kt:78-94`). In light there is
-/// no shadow, exactly as Android draws a `tonalElevation.none` raised pill there
-/// (`SalusFab.kt:93-94`).
+/// what separates it from the near-black ground (`SalusExtendedFab.kt:78-94`, esp. `:84-85`). In
+/// light the wash is replaced by the neutral raised step (§7), the twin of
+/// `shadowElevation = SalusElevation.raised` (`SalusFab.kt:94`).
 public struct SalusExtendedFab: View {
     private let label: String
     private let systemImage: String
@@ -112,19 +104,22 @@ public struct SalusExtendedFab: View {
         .accessibilityLabel(Text(verbatim: label))
     }
 
-    /// `containerColor = primary`, `shape = CircleShape` (`SalusExtendedFab.kt:91-92`). The
-    /// `accentGlow` shadow is what separates the labelled pill from the ground in dark mode; in
-    /// light mode the wash under a saturated primary pill reads as a smudge, so it is dropped
-    /// (`SalusExtendedFab.kt:85-89, 94`).
+    /// `containerColor = primary`, `shape = CircleShape` (`SalusExtendedFab.kt:91-92`). The mode
+    /// split is exactly the twin's (`SalusFab.kt:84-94`): in dark the `accentGlow` wash — set via
+    /// `.shadow`'s `ambientColor`/`spotColor` — is what separates the pill from the near-black
+    /// ground; in light the wash under a saturated primary pill would read as a smudge, so it is
+    /// replaced by the neutral raised step (§7), the twin of `shadowElevation = SalusElevation.raised`.
+    @ViewBuilder
     private var background: some View {
-        SalusShapes.pill
-            .fill(theme.colorScheme.primary)
-            .shadow(
-                color: theme.extendedColors.accentGlow,
-                radius: SalusFabDefaults.glowElevation,
-                x: 0,
-                y: 0
-            )
+        if theme.isDark {
+            SalusShapes.pill
+                .fill(theme.colorScheme.primary)
+                .shadow(color: theme.extendedColors.accentGlow, radius: SalusFabDefaults.glowElevation, x: 0, y: 0)
+        } else {
+            SalusShapes.pill
+                .fill(theme.colorScheme.primary)
+                .salusShadow(.raised, isDark: false)
+        }
     }
 }
 
