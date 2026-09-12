@@ -1,6 +1,12 @@
 import SalusDesignSystem
 import SwiftUI
 
+// SwiftFormat's `modifierOrder` and SwiftLint's `modifier_order` disagree about where
+// `nonisolated` sits next to `public static`, and only one of them can win: the formatter runs
+// first in `scripts/lint.sh` and rewrites the file, so the linter is the one that yields. One
+// disabled region covers the whole type rather than one per declaration.
+// swiftlint:disable modifier_order
+
 /// Entrance for content that appears on first composition: a fade plus a short upward settle,
 /// delayed by one §11 stagger step per index so a column of sections arrives in order instead of
 /// all at once. The twin of Android's `Modifier.salusEnter(index)`
@@ -11,13 +17,11 @@ import SwiftUI
 /// `SparklineGeometry` set (`SalusSparkline.swift:71`); ``progress(for:played:)`` is the
 /// entrance-once rule beside it (spec §3.5, divergence (g)).
 public enum SalusEntrance {
-    // swiftlint:disable modifier_order
     /// `index.coerceIn(0, StaggerCapIndex) * StaggerStepMs` (`SalusEnter.kt:64-65`), in seconds.
     public nonisolated static func delaySeconds(index: Int) -> TimeInterval {
         let capped = min(max(index, 0), SalusMotion.entranceStaggerCapIndex)
         return TimeInterval(capped) * SalusMotion.entranceStaggerStepSeconds
     }
-    // swiftlint:enable modifier_order
 
     /// `(1f - progress) * EnterTravel.toPx()` (`SalusEnter.kt:53-54`) — the settle distance.
     /// `EnterTravel = 24.dp` (`SalusEnter.kt:57`); pt ≡ dp between the twins.
@@ -35,7 +39,6 @@ public enum SalusEntrance {
         public var animates: Bool { delay != nil }
     }
 
-    // swiftlint:disable modifier_order
     /// The entrance plays **once per view instance** (spec §3.5, divergence (g)).
     ///
     /// `TabView` keeps a tab's root alive, so returning to a tab re-runs `onAppear` on content
@@ -52,8 +55,9 @@ public enum SalusEntrance {
     public nonisolated static func progress(for index: Int, played: Bool) -> Progress {
         Progress(target: 1, delay: played ? nil : delaySeconds(index: index))
     }
-    // swiftlint:enable modifier_order
 }
+
+// swiftlint:enable modifier_order
 
 /// `Modifier.salusEnter(index)` (`SalusEnter.kt:36-54`): opacity 0→1 plus the upward settle.
 extension View {

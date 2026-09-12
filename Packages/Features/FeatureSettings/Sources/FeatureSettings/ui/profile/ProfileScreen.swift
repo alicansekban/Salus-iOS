@@ -19,11 +19,14 @@
 //                                      rather than chased.
 //   `SalusConfirmDialog`             → `.salusConfirmDialog(isPresented:…)`, the modifier the
 //                                      component became on iOS.
-//   `SingleChoiceSegmentedButtonRow` → `Picker(…).pickerStyle(.segmented)`, the house mapping
-//                                      (`VitalsScreen.swift`). Divergence (b): the segments carry
-//                                      text labels only — Kotlin's `SegmentedButton` also draws an
-//                                      `icon = { Icon(…, size = 18.dp) }` (`ProfileScreen.kt:167-173`),
-//                                      and the iOS segmented control has no per-segment icon slot.
+//   `SingleChoiceSegmentedButtonRow` → RETIRED as a mapping. M15's twin draws the three choices as
+//                                      `SalusChoiceTile`s and so does `sexOptions` below; the
+//                                      M14-era `Picker(…).pickerStyle(.segmented)` is gone from the
+//                                      app (iOS-M16 §8.3 — content tabs are `SalusSegmentedTabs`).
+//                                      Divergence (b) survives the move as the tiles' glyph:
+//                                      Kotlin picks a per-sex `ImageVector` (`sex.icon()`), SF
+//                                      Symbols has no twin for the three, so all three tiles share
+//                                      one neutral glyph — see `Sex.systemImage` below.
 //   `ContentType.PersonFullName`     → `.textContentType(.name)`, AutoFill's twin of Compose's
 //                                      autofill content type.
 //   `imeAction = ImeAction.Next`     → DROPPED, a recorded divergence. `SalusTextField.swift`'s

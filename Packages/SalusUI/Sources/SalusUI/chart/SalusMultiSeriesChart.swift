@@ -74,6 +74,12 @@ public struct SalusMultiSeriesChart: View {
         .chartYAxis(.hidden)
     }
 
+    /// **No glow layer here, and that is the twin's shape, not an omission.** M15 gave
+    /// `SalusLineChart` a halo under its line (A52) and left this chart token-styled only
+    /// (`SalusMultiSeriesChart.kt:103-117` draws one line per role with point markers and nothing
+    /// under them). Stacking translucent halos would also work against the rule this file's header
+    /// states: overlapping translucent paint turns into a colour none of the lines is, and telling
+    /// the lines apart is what the chart is for. Recorded as a spec §9 divergence.
     @ChartContentBuilder
     private var seriesMarks: some ChartContent {
         ForEach(model.series) { series in

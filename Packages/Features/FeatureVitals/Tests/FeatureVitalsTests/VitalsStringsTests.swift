@@ -86,7 +86,7 @@ struct VitalsStringsTests {
 
     /// Spec §6: overline strings are stored upper-case, so no call site ever calls
     /// `uppercased()` — Turkish has two dotted i's and a runtime fold cannot know which one a
-    /// label means. These are the eleven keys M15 draws as an overline.
+    /// label means. These are the twelve keys M15 draws as an overline.
     @Test("every overline is stored upper-case, in both languages")
     func overlinesAreStoredUpperCase() throws {
         let catalog = try Self.loadCatalog()

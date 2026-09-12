@@ -8,7 +8,7 @@
 import SalusModel
 
 /// One past dose, newest first; the detail screen shows the last 30 days
-/// (`MedicationDetailUiState.kt:9-15`).
+/// (`MedicationDetailUiState.kt:10-16`).
 public struct IntakeHistoryItem: Equatable, Hashable, Sendable {
     public let epochDay: Int
     public let minuteOfDay: Int
@@ -23,11 +23,11 @@ public struct IntakeHistoryItem: Equatable, Hashable, Sendable {
     }
 }
 
-/// What one medication's detail screen draws (`MedicationDetailUiState.kt:17-27`).
+/// What one medication's detail screen draws (`MedicationDetailUiState.kt:18-40`).
 public struct MedicationDetailUiState: Equatable, Sendable {
     public var isLoading: Bool
     /// Null once the medication is gone — the screen closes itself rather than showing a blank
-    /// (`MedicationDetailUiState.kt:19-20`).
+    /// (`MedicationDetailUiState.kt:20-21`).
     public var medication: Medication?
     public var schedules: [MedicationSchedule]
     public var history: [IntakeHistoryItem]
@@ -70,10 +70,10 @@ public struct MedicationDetailUiState: Equatable, Sendable {
     }
 }
 
-/// Everything the screen can ask the ViewModel to do (`MedicationDetailUiState.kt:29-42`).
+/// Everything the screen can ask the ViewModel to do (`MedicationDetailUiState.kt:42-61`).
 public enum MedicationDetailEvent: Equatable, Sendable {
     /// Opens the confirmation; nothing is deleted until it is confirmed
-    /// (`MedicationDetailUiState.kt:30-31`).
+    /// (`MedicationDetailUiState.kt:43-44`).
     case deleteClicked
 
     case deleteDismissed

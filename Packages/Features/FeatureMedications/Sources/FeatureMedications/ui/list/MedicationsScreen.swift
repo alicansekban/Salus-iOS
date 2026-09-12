@@ -21,11 +21,13 @@
 // navigation bar and tab bar live in the safe area, so scroll content clears them by itself
 // (spec §2.4). The one inset that survives is the FAB's, which does float.
 //
-// **THE EXTENDED FAB IS AN ICON FAB HERE.** Android draws `SalusExtendedFab(text, icon)` bottom
-// centre (`MedicationsScreen.kt:160-168`); `SalusUI.SalusFab` has no extended variant — Task 2's
-// brief did not ask for one and this task may not touch `SalusUI` — so the plus disc keeps the
-// bottom-trailing placement it has had since M5 and `medications_fab_add` becomes its
-// `accessibilityLabel`. Recorded as a deviation in `task-7-report.md`.
+// **THE EXTENDED FAB IS AN EXTENDED FAB, SINCE TASK 9.** Android draws `SalusExtendedFab(text,
+// icon)` bottom centre (`MedicationsScreen.kt:160-168`). Task 7 shipped the plus disc it had had
+// since M5, because `SalusUI` had no extended variant and that task could not touch the package;
+// Task 9 added `SalusExtendedFab` for Appointments and switched this list to it in the same
+// commit, so the label is `medications_add` in the pill rather than `medications_fab_add` on an
+// icon. `medications_fab_add` stays in the catalog — Android still ships the key — and is read by
+// nothing here. The placement is still bottom-trailing, iOS's own, not Kotlin's bottom centre.
 
 import SalusDesignSystem
 import SalusModel

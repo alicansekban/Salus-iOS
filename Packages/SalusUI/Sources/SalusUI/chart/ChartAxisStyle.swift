@@ -7,7 +7,7 @@
 // draws its grid, its ticks and its labels from it. Swift Charts has no theme to hand a scheme to:
 // each `AxisGridLine`, `AxisTick` and `AxisValueLabel` is styled where it is declared.
 //
-// So the single Kotlin call becomes eleven Swift call sites, and the thing a theme guaranteed for
+// So the single Kotlin call becomes fifteen Swift call sites, and the thing a theme guaranteed for
 // free — that three charts in one card cannot disagree about what a grid line looks like — has to
 // be guaranteed here instead. That is this file: the roles are named once, and a chart names the
 // helper rather than the role.

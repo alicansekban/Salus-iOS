@@ -81,6 +81,11 @@ public enum MedicationsStrings {
     public static var metricNext: String { localized(.metricNext) }
     public static var metricNone: String { localized(.metricNone) }
     public static var takeNow: String { localized(.takeNow) }
+    /// `medications_fab_add` — carried for key-set parity and read by nothing on iOS since Task 9
+    /// switched this list from the icon FAB to `SalusExtendedFab`, whose label is
+    /// `medications_add`. Android still declares the key at `529a30f`
+    /// (`feature/medications/src/main/res/values/strings.xml`), so the M16 orphan sweep kept it:
+    /// the key-set pin is Android's key set, not iOS's call sites.
     public static var fabAdd: String { localized(.fabAdd) }
     public static var statusAsNeeded: String { localized(.statusAsNeeded) }
 

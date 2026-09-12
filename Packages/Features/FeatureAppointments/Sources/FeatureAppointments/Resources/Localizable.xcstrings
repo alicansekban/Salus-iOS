@@ -864,22 +864,6 @@
           }
         }
       }
-    },
-    "appointments_upcoming_header": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Upcoming"
-          }
-        },
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Yaklaşan"
-          }
-        }
-      }
     }
   },
   "version": "1.0"

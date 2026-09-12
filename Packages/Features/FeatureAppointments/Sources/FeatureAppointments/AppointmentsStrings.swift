@@ -1,14 +1,19 @@
 // The twin of `feature/appointments/src/main/res/values/strings.xml` (Turkish, the source
-// language) and `feature/appointments/src/main/res/values-en/strings.xml` — the 55 keys
+// language) and `feature/appointments/src/main/res/values-en/strings.xml` — the 54 keys
 // `:feature:appointments` owns, name and text verbatim apart from the two recorded divergences
 // below, resolved against this package's own bundle exactly as `R.string` resolves against
 // `:feature:appointments`.
 //
-// Two keys are carried that no Android code reads: `appointments_upcoming_header` and the pair
-// `appointments_ok` / `appointments_cancel`. They stay because key-set parity is the drift
-// detector between the two modules — a key present on one platform and absent on the other is
-// precisely the difference worth failing on — and because the unread ones are the likeliest to be
-// wanted next, at which point a missing key reads as a port mistake rather than as a decision.
+// Two keys are carried that no Android code reads: `appointments_ok` and `appointments_cancel`.
+// They stay because key-set parity is the drift detector between the two modules — Android
+// declares both in its XML, so a key present on one platform and absent on the other is precisely
+// the difference worth failing on, and the unread ones are the likeliest to be wanted next, at
+// which point a missing key reads as a port mistake rather than as a decision.
+//
+// `appointments_upcoming_header` used to be the third of that group and is gone (iOS-M16 Task 14).
+// It was never an Android key: no `strings.xml` in `salus-android` declares it, at the M15 base
+// (`3391896`) or at M15's tip (`529a30f`), so it was iOS-only weight rather than a parity carry —
+// and nothing has read it since the list's sections became `SalusSegmentedTabs` tabs.
 //
 // NOTE ON THE STATUS DIVERGENCE (retired in M15): the old `appointment_status_scheduled` key is
 // gone. Android deleted all three status keys in M15 when the scheduled-status chip retired from
@@ -61,7 +66,6 @@ public enum AppointmentsStrings {
     public static var empty: String { localized(.empty) }
     public static var noUpcoming: String { localized(.noUpcoming) }
     public static var noPast: String { localized(.noPast) }
-    public static var upcomingHeader: String { localized(.upcomingHeader) }
     public static var new: String { localized(.new) }
     public static var newTitle: String { localized(.newTitle) }
     public static var editTitle: String { localized(.editTitle) }
@@ -143,7 +147,6 @@ public enum AppointmentsStrings {
         case empty = "appointments_empty"
         case noUpcoming = "appointments_no_upcoming"
         case noPast = "appointments_no_past"
-        case upcomingHeader = "appointments_upcoming_header"
         case new = "appointments_new"
         case tabUpcoming = "appointments_tab_upcoming"
         case tabPast = "appointments_tab_past"

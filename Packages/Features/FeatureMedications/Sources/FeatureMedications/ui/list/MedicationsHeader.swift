@@ -101,7 +101,8 @@ struct MedicationsMetrics: View {
         let shares = state.medications.compactMap(\.recordedDosePercent)
         guard !shares.isEmpty else { return nil }
         // Kotlin's `average()` is a `Double` and `toInt()` truncates toward zero; a share is never
-        // negative, so `rounded(.down)` is the same number and cannot trap the way `Int(_:)` can.
+        // negative, so `Int(_:)`'s truncation is the same number. It traps only on a NaN or an
+        // infinite value, and the `guard` above makes the divisor at least 1, so neither is reachable.
         return Int(Double(shares.reduce(0, +)) / Double(shares.count))
     }
 }

@@ -5,14 +5,15 @@ import Testing
 @testable import FeatureAppointments
 
 /// The twin of Android's `feature/appointments/src/main/res/values/strings.xml` (`tr`, the source
-/// language) and `values-en/strings.xml`, and the drift detector between them: all 55 keys and
+/// language) and `values-en/strings.xml`, and the drift detector between them: all 54 keys and
 /// both of their translations are pinned here, copied from the XML.
 ///
-/// Three of the keys — `appointments_upcoming_header`, `appointments_ok`, `appointments_cancel` —
-/// are carried even though no Android code reads them. Key-set parity is what makes this table a
-/// drift detector: a key that exists on one platform and not the other is exactly the difference
-/// worth failing on, and dropping the unread ones would make the two module surfaces disagree by
-/// design.
+/// Two of the keys — `appointments_ok` and `appointments_cancel` — are carried even though no
+/// Android code reads them. Key-set parity is what makes this table a drift detector: a key that
+/// exists on one platform and not the other is exactly the difference worth failing on, and
+/// dropping the unread ones — which Android's XML does declare — would make the two module
+/// surfaces disagree by design. `appointments_upcoming_header` was a third such carry until
+/// iOS-M16 Task 14 deleted it: Android never declared it, so it was iOS-only weight.
 ///
 /// `appointment_detail_relative_in_days` and its `_one` twin are the one deliberate shape
 /// difference: Android ships that `<plurals>` as a single resource, and this port splits it into
@@ -50,7 +51,6 @@ struct AppointmentsStringsTests {
             turkish: "Geçmiş randevu yok.",
             english: "No past appointments."
         ),
-        AppointmentStringSample(key: "appointments_upcoming_header", turkish: "Yaklaşan", english: "Upcoming"),
         AppointmentStringSample(key: "appointments_new", turkish: "Yeni Randevu Oluştur", english: "New Appointment"),
         AppointmentStringSample(
             key: "appointments_tab_upcoming",
@@ -193,11 +193,11 @@ struct AppointmentsStringsTests {
 
     static let expectedKeys = Set(samples.map(\.key))
 
-    @Test("the catalog holds exactly the 55 keys :feature:appointments owns")
-    func catalogHoldsExactlyTheFiftyFiveKeys() throws {
+    @Test("the catalog holds exactly the 54 keys :feature:appointments owns")
+    func catalogHoldsExactlyTheFiftyFourKeys() throws {
         // Pinned as a number as well as a set: a row deleted from the table together with its key
         // from the catalog would otherwise agree with itself and pass.
-        #expect(Self.samples.count == 55)
+        #expect(Self.samples.count == 54)
 
         try StringCatalogParity.assertKeys(of: Self.loadCatalog(), are: Self.expectedKeys)
     }
