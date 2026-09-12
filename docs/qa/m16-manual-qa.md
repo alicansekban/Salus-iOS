@@ -175,6 +175,23 @@ the editors, and 3.3.6 is the row the whole "suggestion, not a value" design res
 | 3.3.11 | Any editor: nudge a value to the very bottom or top of its range, then tap past it | the number stops at the bound rather than running past it, and saving a value at the bound is accepted | ☐ |
 | 3.3.12 | Editor: rotate the device part-way through typing | focus stays where the caret is — the opening focus does not drag back to the first field | ☐ |
 
+### 3.4 Appointments — the tabs, the maps row and delete/undo (Task 9)
+
+Run 3.4.1–3.4.3 on a profile with at least two upcoming appointments (one today and one later) and
+at least one past appointment. 3.4.3 needs a location text on one appointment; 3.4.5 is the
+full-screen detail of the M15 shape that spec §4.9 describes.
+
+| # | Step | Expect | ☐ |
+|---|---|---|---|
+| 3.4.1 | Appointments root: read the two segmented tabs | "Yaklaşan (n)" / "Geçmiş (n)" — the Upcoming count is the number of appointment **cards**, not of day headers; the pill slides between the two segments and only one half of the list is on screen at once | ☐ |
+| 3.4.2 | Tap "Geçmiş", then back to "Yaklaşan" | each tap moves the pill and switches the list under it; the day headers ("BUGÜN", "YARIN", a locale-spelled weekday) stay pinned per day in Upcoming; past rows show no day headers | ☐ |
+| 3.4.3 | On an upcoming card with a location, tap the whole card → detail; then tap the location row | the card opens the full-screen detail (centred hero, no card behind it), and the location row shows the address with "Haritalarda aç" as its subtitle and a chevron; tapping it opens the address in Apple Maps | ☐ |
+| 3.4.4 | On a detail without a location, doctor or notes | each is drawn as a dimmed placeholder row — "Konum ekle", "Doktor adı ekle", "Not ekle" — with a chevron, and tapping it opens the editor | ☐ |
+| 3.4.5 | On the detail: read the four "DETAYLAR" rows and below | date row (with a time chip trailing), doctor or its placeholder, location or its placeholder, reminders or "Hatırlatıcı ekle"; then "NOTLAR" (or "Not ekle"), then the profile's health-notes note; then "Takvime Ekle" (primary) and "Sil" (destructive) — **no bottom "Düzenle"**; "Düzenle" lives in the top bar alone | ☐ |
+| 3.4.6 | Tap the row's trash on a list card, confirm, then "Geri al" in the snackbar | the card leaves the list at once and comes back; nothing is written until a confirmed delete's snackbar times out | ☐ |
+| 3.4.7 | VoiceOver on a list card: swipe through it | the card is announced as one button (title, doctor, location, time chip, reminder chips), the trash as its own destructive control, and the extended pill "Yeni Randevu Oluştur" is a single button | ☐ |
+| 3.4.8 | Appointments root: tap the extended "Yeni Randevu Oluştur" | the editor opens; tapping a reminder offset chip selects/deselects it and the "HATIRLATICILAR" overline stays put | ☐ |
+
 ---
 
 ---
@@ -188,6 +205,7 @@ truncation. The remaining rows are filled by the other screen tasks._
 |---|---|---|---|
 | 4.1 | Vitals editors at xxxLarge (Task 8) | each stepper keeps its − and + reachable beside the number, the number itself is not clipped, and the range hint under it wraps instead of truncating. The three blood pressure steppers stack without overlapping | ☐ |
 | 4.2 | Vitals list at xxxLarge (Task 8) | the three type tabs still read (a label may shorten but must not be cut mid-word), the four range chips wrap onto a second line inside the chart card rather than overflowing it, and the three statistics tiles stay on one row or wrap cleanly | ☐ |
+| 4.3 | Appointments list at xxxLarge (Task 9) | the two segmented tabs still read, the "Yeni Randevu Oluştur" extended pill wraps or shortens without clipping its label, and a card's date tile and time/reminder chips stay readable and unwrapped | ☐ |
 
 ---
 

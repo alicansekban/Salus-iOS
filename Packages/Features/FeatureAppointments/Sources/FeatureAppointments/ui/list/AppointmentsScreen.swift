@@ -3,36 +3,31 @@
 //
 // Material → SwiftUI, per the mapping table in `docs/ios-feature-template.md`:
 //   `LazyColumn` + `contentPadding`      → `ScrollView` + `LazyVStack` + `.padding`.
-//   `stickyHeader`                       → `LazyVStack(pinnedViews: .sectionHeaders)` + `Section`.
 //   `CircularProgressIndicator`          → `ProgressView()`.
 //   `Icons.Filled.*`                     → SF Symbol names.
-//   `Modifier.weight(1f)` in a `Row`     → `.frame(maxWidth: .infinity, alignment: .leading)`.
 //   `DateTimeFormatter.ofPattern(p, l)`  → `LocalDateTime.formatted(pattern:locale:)`, which owns
 //                                          the fixed-pattern `DateFormatter`. Never a `Calendar`.
+//   `item(key: …)` in a LazyColumn       → `ForEach` over `state.upcoming` / `state.past`.
+//   `SalusSegmentedTabs`                 → one for one, the segmented tabs with the two halves.
+//   `SalusSectionHeader` (day labels)    → one for one; the "TODAY"/"TOMORROW" overlines stay
+//                                          upper-case resources, other days the locale's spelling.
+//   `SalusExtendedFab`                   → one for one (M15); the icon-only FAB left the list.
+//   `SalusEmptyState`                    → one for one, per tab.
 //
 // One shape the Kotlin does not need: the row's trash icon. `SalusCard(onTap:)` is a `Button`, so
 // a second `Button` inside its label is treated as decoration and the outer button swallows the
-// tap — `VitalsRow` (`VitalsScreen.swift:258-307`) settled this, and this row copies its answer: a
-// plain, non-interactive `SalusCard`, "open" as a tap gesture on the text column with the button
-// semantics added back by hand, and the trash as a real `Button` that is the column's **sibling**,
-// so the two targets are disjoint by layout rather than merely ordered by dispatch rules.
+// tap — `AppointmentCard.swift` records that answer in full.
 //
-// One reuse the Kotlin does not have: the past block's title row is Android's hand-rolled
-// `Row { Text(titleLarge); TextButton }` (`AppointmentsScreen.kt:181-205`), which is exactly what
-// `SalusSectionHeader(title:actions:)` already draws — same style, same trailing action. Using the
-// shared component instead of repeating the row costs one padding difference, recorded at the call
-// site below.
-//
-// The row itself lives in `AppointmentCard.swift`: this file is the screen's own shape — header,
-// the three content states, the agenda and the confirmation — and splitting the rows out is what M4
-// did for Medications once its screen passed 500 lines.
+// The row itself lives in `AppointmentCard.swift`: this file is the screen's own shape — the tabs,
+// the three content states, the per-tab agenda and the confirmation — and splitting the rows out is
+// what M4 did for Medications once its screen passed 500 lines.
 
 import SalusDesignSystem
 import SalusModel
 import SalusUI
 import SwiftUI
 
-/// Owns the ViewModel and wires it to the shell (`AppointmentsScreen.kt:64-76`).
+/// Owns the ViewModel and wires it to the shell (`AppointmentsScreen.kt:56-69`).
 ///
 /// No callback parameters, where `VitalsRoute` takes one: every destination this screen reaches is
 /// this feature's own, so there is no cross-feature move for the shell to fill in.
@@ -50,7 +45,7 @@ public struct AppointmentsRoute: View {
                     onEvent: viewModel.onEvent,
                     onAddAppointment: { navigate(AppointmentEditorKey(id: nil)) },
                     // Rows open the detail screen; editing is an action on it, not the row's job
-                    // (`AppointmentsScreen.kt:74`).
+                    // (`AppointmentsScreen.kt:67`).
                     onOpenAppointment: { id in navigate(AppointmentDetailKey(id: id)) }
                 )
             } else {
@@ -73,7 +68,7 @@ public struct AppointmentsRoute: View {
     }
 }
 
-/// The stateless agenda (`AppointmentsScreen.kt:79-137`).
+/// The stateless agenda (`AppointmentsScreen.kt:71-146`).
 struct AppointmentsScreen: View {
     let state: AppointmentsUiState
     let onEvent: (AppointmentsEvent) -> Void
@@ -81,9 +76,6 @@ struct AppointmentsScreen: View {
     let onOpenAppointment: (String) -> Void
 
     @Environment(\.salusTheme) private var theme
-
-    /// §10: reduce motion keeps the fade and drops the move, on both platforms.
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         // No `Scaffold` twin here: the app shell owns the one navigation stack and its insets.
@@ -93,16 +85,21 @@ struct AppointmentsScreen: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-            // `AppointmentsScreen.kt:116-124`.
-            SalusFab(systemImage: "plus", contentDescription: AppointmentsStrings.add, action: onAddAppointment)
-                .padding(SalusSpacing.lg)
+            // `AppointmentsScreen.kt:125-133`: the extended FAB is the list's one action, floated
+            // above the bottom bar.
+            SalusExtendedFab(
+                label: AppointmentsStrings.new,
+                systemImage: "plus",
+                action: onAddAppointment
+            )
+            .padding(SalusSpacing.lg)
         }
         .background(theme.colorScheme.background)
         // The screen title. The shell's root toolbar draws it in the navigation bar's principal
         // slot; `.navigationTitle` is still what names the back button of everything this root
         // pushes, and what VoiceOver reads for the screen.
         .navigationTitle(Text(verbatim: AppointmentsStrings.title))
-        // `AppointmentsScreen.kt:126-136`.
+        // `AppointmentsScreen.kt:136-145`.
         .salusConfirmDialog(
             isPresented: isDeleteConfirmPresented,
             title: AppointmentsStrings.deleteTitle(state.pendingDelete?.title ?? ""),
@@ -135,7 +132,7 @@ struct AppointmentsScreen: View {
         )
     }
 
-    /// `AppointmentsScreen.kt:86-114`.
+    /// `AppointmentsScreen.kt:86-123`.
     @ViewBuilder
     private var content: some View {
         if state.isLoading {
@@ -146,144 +143,138 @@ struct AppointmentsScreen: View {
                 systemImage: "calendar",
                 title: AppointmentsStrings.empty,
                 accent: theme.extendedColors.appointments,
-                actionLabel: AppointmentsStrings.add,
+                actionLabel: AppointmentsStrings.new,
                 onAction: onAddAppointment
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
-            agenda
+            tabs
         }
     }
 
-    /// `AppointmentsScreen.kt:140-218`.
-    private var agenda: some View {
-        ScrollView {
-            // `pinnedViews: .sectionHeaders` is `stickyHeader`: the day a card belongs to stays
-            // visible while that day scrolls past.
-            LazyVStack(alignment: .leading, spacing: SalusSpacing.sm, pinnedViews: .sectionHeaders) {
-                if state.upcoming.isEmpty {
-                    // `AppointmentsScreen.kt:152-160`.
-                    Text(verbatim: AppointmentsStrings.noUpcoming)
-                        .font(SalusTypography.titleMedium.font)
-                        .foregroundStyle(theme.colorScheme.onSurfaceVariant)
-                        .padding(.horizontal, SalusSpacing.lg)
-                }
+    /// The segmented tabs and the list they select between (`AppointmentsScreen.kt:105-121`).
+    private var tabs: some View {
+        VStack(spacing: 0) {
+            SalusSegmentedTabs(
+                options: AppointmentsTab.allCases,
+                selected: state.selectedTab,
+                label: { tabLabel($0) },
+                onSelected: { onEvent(.tabSelected($0)) }
+            )
+            .padding(.horizontal, SalusSpacing.lg)
+            .padding(.vertical, SalusSpacing.sm)
 
-                ForEach(state.upcoming) { section in
-                    Section {
-                        ForEach(section.items) { item in
+            Agenda(
+                state: state,
+                onOpenAppointment: onOpenAppointment,
+                onEvent: onEvent,
+                theme: theme
+            )
+        }
+    }
+
+    /// `AppointmentsTab.label` (`AppointmentsScreen.kt:148-162`) — the count each tab carries is
+    /// the number of appointments behind it, not of day headers.
+    private func tabLabel(_ tab: AppointmentsTab) -> String {
+        switch tab {
+        case .upcoming: AppointmentsStrings.tabUpcoming(count: state.upcomingCount)
+        case .past: AppointmentsStrings.tabPast(count: state.pastCount)
+        }
+    }
+}
+
+/// The per-tab list (`AppointmentsScreen.kt:164-253`).
+///
+/// A small struct rather than a `@ViewBuilder` property so the tab-switch animation can attach to
+/// the whole list without forcing a separate `state`-value comparison; the agenda below it reads
+/// `state.selectedTab` and is what `state` changes drive.
+private struct Agenda: View {
+    let state: AppointmentsUiState
+    let onOpenAppointment: (String) -> Void
+    let onEvent: (AppointmentsEvent) -> Void
+    let theme: SalusResolvedTheme
+
+    @Environment(\.locale) private var locale
+
+    var body: some View {
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: SalusSpacing.sm) {
+                switch state.selectedTab {
+                case .upcoming:
+                    if state.upcoming.isEmpty {
+                        emptyUpcoming
+                    } else {
+                        ForEach(state.upcoming) { section in
+                            Section {
+                                ForEach(section.items) { item in
+                                    AppointmentCard(
+                                        item: item,
+                                        onTap: { onOpenAppointment(item.id) },
+                                        onDelete: { onEvent(.deleteRequested(item.id)) }
+                                    )
+                                    .transition(SalusMotion.listMutationTransition)
+                                }
+                            } header: {
+                                SalusSectionHeader(
+                                    title: appointmentsDayHeaderLabel(
+                                        epochDay: section.epochDay,
+                                        todayEpochDay: state.todayEpochDay,
+                                        locale: locale
+                                    )
+                                )
+                            }
+                            .animation(
+                                SalusMotion.listMutationAnimation,
+                                value: state.upcoming
+                            )
+                        }
+                    }
+
+                case .past:
+                    if state.past.isEmpty {
+                        emptyPast
+                    } else {
+                        ForEach(state.past) { item in
                             AppointmentCard(
                                 item: item,
                                 onTap: { onOpenAppointment(item.id) },
                                 onDelete: { onEvent(.deleteRequested(item.id)) }
                             )
-                            // §10 list mutation: fade + vertical move on add, remove and undo's
-                            // return. Reduce motion keeps the fade and drops the move
-                            // (`AppointmentsScreen.kt:181-186`).
-                            .transition(
-                                reduceMotion
-                                    ? SalusMotion.listMutationReducedMotionTransition
-                                    : SalusMotion.listMutationTransition
-                            )
+                            .transition(SalusMotion.listMutationTransition)
                         }
-                    } header: {
-                        DayHeader(epochDay: section.epochDay, todayEpochDay: state.todayEpochDay)
+                        .animation(SalusMotion.listMutationAnimation, value: state.past)
                     }
-                    // Every mutation path — delete confirmed, undo's return, an editor save
-                    // landing — arrives as a state change the section observes, so the animation
-                    // rides with it wherever it came from. The header is not a row and carries no
-                    // transition, so it stays put while the cards around it move.
-                    .animation(
-                        reduceMotion
-                            ? SalusMotion.listMutationReducedMotionAnimation
-                            : SalusMotion.listMutationAnimation,
-                        value: state.upcoming
-                    )
-                }
-
-                if !state.past.isEmpty {
-                    pastSection
                 }
             }
             // Keeps the last card scrollable above the floating action button
-            // (`AppointmentsScreen.kt:148`, `:304`).
+            // (`AppointmentsScreen.kt:176-182`).
             .padding(.bottom, fabClearance)
         }
+        .animation(.default, value: state.selectedTab)
     }
 
-    /// `AppointmentsScreen.kt:180-216`.
-    ///
-    /// `SalusSectionHeader` pads `sm` vertically where Kotlin's hand-rolled row pads `lg` on top
-    /// only; the shared component is worth the two points, and the `LazyVStack`'s own `sm` spacing
-    /// already separates the block from the day above it.
-    @ViewBuilder
-    private var pastSection: some View {
-        SalusSectionHeader(title: AppointmentsStrings.pastHeader(count: state.past.count)) {
-            Button(state.isPastExpanded ? AppointmentsStrings.pastHide : AppointmentsStrings.pastShow) {
-                onEvent(.togglePastSection)
-            }
-            .buttonStyle(.plain)
-            .foregroundStyle(theme.colorScheme.primary)
-        }
+    /// `AppointmentsScreen.kt:185-192`, per tab.
+    private var emptyUpcoming: some View {
+        SalusEmptyState(
+            systemImage: "calendar",
+            title: AppointmentsStrings.noUpcoming,
+            accent: theme.extendedColors.appointments
+        )
+        .frame(maxWidth: .infinity, minHeight: 240)
+    }
 
-        if state.isPastExpanded {
-            ForEach(state.past) { item in
-                AppointmentCard(
-                    item: item,
-                    onTap: { onOpenAppointment(item.id) },
-                    onDelete: { onEvent(.deleteRequested(item.id)) }
-                )
-                // §10 list mutation: fade + vertical move on add, remove and undo's
-                // return. Reduce motion keeps the fade and drops the move
-                // (`AppointmentsScreen.kt:223-228`).
-                .transition(
-                    reduceMotion
-                        ? SalusMotion.listMutationReducedMotionTransition
-                        : SalusMotion.listMutationTransition
-                )
-            }
-            // Every mutation path — delete confirmed, undo's return, an editor save landing —
-            // arrives as a state change the block observes, so the animation rides with it
-            // wherever it came from. The section header above is not a row and carries no
-            // transition, so it stays put while the cards below it move.
-            .animation(
-                reduceMotion
-                    ? SalusMotion.listMutationReducedMotionAnimation
-                    : SalusMotion.listMutationAnimation,
-                value: state.past
-            )
-        }
+    /// `AppointmentsScreen.kt:214-221`, per tab.
+    private var emptyPast: some View {
+        SalusEmptyState(
+            systemImage: "calendar",
+            title: AppointmentsStrings.noPast,
+            accent: theme.extendedColors.appointments
+        )
+        .frame(maxWidth: .infinity, minHeight: 240)
     }
 }
 
-/// The pinned day label (`AppointmentsScreen.kt:221-238`).
-private struct DayHeader: View {
-    let epochDay: Int
-    let todayEpochDay: Int
-
-    @Environment(\.salusTheme) private var theme
-    /// The in-app language pick, which `Locale.current` does not follow on iOS — see the free
-    /// function below.
-    @Environment(\.locale) private var locale
-
-    var body: some View {
-        Text(verbatim: label)
-            .font(SalusTypography.titleSmall.font)
-            .foregroundStyle(theme.colorScheme.onSurfaceVariant)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, SalusSpacing.lg)
-            .padding(.vertical, SalusSpacing.sm)
-            // Opaque, or the cards would show through the pinned header as they scroll under it
-            // (`AppointmentsScreen.kt:235`).
-            .background(theme.colorScheme.background)
-    }
-
-    private var label: String {
-        appointmentsDayHeaderLabel(epochDay: epochDay, todayEpochDay: todayEpochDay, locale: locale)
-    }
-}
-
-/// `AppointmentsScreen.kt:224-228`.
+/// `AppointmentsScreen.kt:259-267`.
 ///
 /// `locale` is the **environment** locale — the twin of Android's `Locale.getDefault()` here, since
 /// `setApplicationLocales` moves that one and nothing moves iOS's `Locale.current`. The shell puts
@@ -300,18 +291,12 @@ func appointmentsDayHeaderLabel(epochDay: Int, todayEpochDay: Int, locale: Local
     }
 }
 
-/// `AppointmentsScreen.kt:223`.
+/// `AppointmentsScreen.kt:260`.
 private let dayHeaderPattern = "EEEE, d MMMM"
-/// `AppointmentsScreen.kt:304`.
+/// Room for the extended FAB (`AppointmentsScreen.kt:177-181`).
 private let fabClearance: CGFloat = 88
 
-// MARK: - Previews
-
-/// The fixture the three previews share (`AppointmentsScreen.kt:306-349`, which needs only one
-/// preview because Compose renders light and dark from a single `@PreviewLightDark`).
-///
-/// A namespace rather than loose file-scope constants: everything preview-only is then one
-/// `private enum` a reader can skip, and nothing here can be mistaken for screen state.
+/// The fixture the previews share (`AppointmentsScreen.kt:269-311`).
 private enum PreviewData {
     /// Kotlin's `todayEpochDay = 20_684`.
     static let today = 20684
@@ -345,8 +330,6 @@ private enum PreviewData {
         )
     ]
 
-    /// Kotlin's preview passes an empty past list; one row is carried here so the third preview has
-    /// something to expand.
     static let past = [
         item(
             id: "p1",
@@ -376,7 +359,51 @@ private enum PreviewData {
     }
 }
 
-#Preview("Appointments agenda") {
+#Preview("Appointments — upcoming") {
+    SalusPreviewPalettes {
+        AppointmentsScreen(
+            state: AppointmentsUiState(
+                isLoading: false,
+                upcoming: PreviewData.upcoming,
+                past: PreviewData.past,
+                todayEpochDay: PreviewData.today
+            ),
+            onEvent: { _ in },
+            onAddAppointment: {},
+            onOpenAppointment: { _ in }
+        )
+    }
+}
+
+#Preview("Appointments — past") {
+    SalusPreviewPalettes {
+        AppointmentsScreen(
+            state: AppointmentsUiState(
+                isLoading: false,
+                upcoming: PreviewData.upcoming,
+                past: PreviewData.past,
+                selectedTab: .past,
+                todayEpochDay: PreviewData.today
+            ),
+            onEvent: { _ in },
+            onAddAppointment: {},
+            onOpenAppointment: { _ in }
+        )
+    }
+}
+
+#Preview("Appointments — empty") {
+    SalusPreviewPalettes {
+        AppointmentsScreen(
+            state: AppointmentsUiState(isLoading: false, todayEpochDay: PreviewData.today),
+            onEvent: { _ in },
+            onAddAppointment: {},
+            onOpenAppointment: { _ in }
+        )
+    }
+}
+
+#Preview("Appointments — large type") {
     AppointmentsScreen(
         state: AppointmentsUiState(
             isLoading: false,
@@ -388,28 +415,5 @@ private enum PreviewData {
         onAddAppointment: {},
         onOpenAppointment: { _ in }
     )
-}
-
-#Preview("Appointments agenda — past expanded") {
-    AppointmentsScreen(
-        state: AppointmentsUiState(
-            isLoading: false,
-            upcoming: PreviewData.upcoming,
-            past: PreviewData.past,
-            isPastExpanded: true,
-            todayEpochDay: PreviewData.today
-        ),
-        onEvent: { _ in },
-        onAddAppointment: {},
-        onOpenAppointment: { _ in }
-    )
-}
-
-#Preview("Appointments agenda — empty") {
-    AppointmentsScreen(
-        state: AppointmentsUiState(isLoading: false, todayEpochDay: PreviewData.today),
-        onEvent: { _ in },
-        onAddAppointment: {},
-        onOpenAppointment: { _ in }
-    )
+    .dynamicTypeSize(.xxxLarge)
 }

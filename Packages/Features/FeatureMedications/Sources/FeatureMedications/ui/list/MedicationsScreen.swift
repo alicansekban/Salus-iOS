@@ -91,10 +91,10 @@ struct MedicationsScreen: View {
             scroller
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-            // `MedicationsScreen.kt:160-168`, as an icon disc — see this file's header.
-            SalusFab(
+            // `MedicationsScreen.kt:160-168` — the M15 extended FAB, the list's one action.
+            SalusExtendedFab(
+                label: MedicationsStrings.add,
                 systemImage: "plus",
-                contentDescription: MedicationsStrings.fabAdd,
                 action: onAddMedication
             )
             .padding(SalusSpacing.lg)

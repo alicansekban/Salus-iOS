@@ -2,25 +2,26 @@
 // ui/detail/AppointmentDetailScreen.kt`.
 //
 // Material → SwiftUI, per the mapping table in `docs/ios-feature-template.md`:
-//   `TopAppBar`                 → `.navigationTitle(_:)` on the shell's stack; the back arrow is
-//                                 the stack's own, which pops the very path `Navigator.pop()`
-//                                 mutates (`WeightEditorScreen.swift` records the ruling).
+//   `TopAppBar`                 → `.navigationTitle(_:)` + trailing "Düzenle" on the shell's stack;
+//                                 the back arrow is the stack's own, which pops the very path
+//                                 `Navigator.pop()` mutates (`WeightEditorScreen.swift` records the
+//                                 ruling), and the edit action is a `TextButton` in the toolbar.
 //   `Column(verticalScroll)`    → `ScrollView` + `VStack`.
-//   `FlowRow`                   → `SalusUI.ChipFlowLayout`; SwiftUI ships no flow stack.
-//   `SalusButton`           → `SalusUI.SalusButton`, one for one, since iOS-M7: `tonal:`
-//                                 for Kotlin's `tonal`, `fillsWidth:` for its `fillMaxWidth()`,
-//                                 `enabled:` for its `enabled`. The `.borderedProminent` /
-//                                 `.bordered` stand-in this file carried is gone.
-//   `Icons.Filled.*`            → SF Symbol names.
-//   `AlertDialog`               → `.salusConfirmDialog(isPresented:…)`.
+//   `SalusIconBadge(large)`     → `.large` (48 pt); the M15 hero's centred visual.
+//   `SalusStatusChip(accent)`   → the relative-day chip ("Bugün"/"Yarın"/"N gün sonra"/"Geçti").
+//   `SalusListItem`             → the "DETAYLAR" rows, with a chevron on the location row and a
+//                                 time chip trailing the date row.
+//   `SalusInfoNote`             → the profile's health notes, "what to tell the doctor".
+//   `SalusButton`               → the "Takvime Ekle" (.primary) and "Sil" (.destructive) pills.
 //   `Intent(ACTION_INSERT)`     → a `.sheet` over `CalendarEventEditSheet` — divergence (e).
 //   `Intent(ACTION_VIEW, geo:)` → `openURL(mapsURL(for:))` — divergence (a), see `MapsLink.swift`.
 //
-// One layout difference from the Kotlin, the same one the list screen already recorded: Compose
-// pads the whole scrolling column horizontally and passes each `SalusSectionHeader` a
-// `contentPadding` with no horizontal component, while `SalusUI.SalusSectionHeader` pads itself
-// (and deliberately does not port that parameter). So here the cards carry the `lg` inset and the
-// headers keep their own — the drawn result is the same inset, reached from the other side.
+// M15 made this a FULL-SCREEN detail rather than the M4 card: the hero sits on the background
+// with no `SalusCard`, which is why the list and detail now look as M15 drew them. The status chip
+// (`appointment_status_*`) retired with it — Android deleted the three status keys in M15 — and
+// the old `appointment_detail_time`/`_location`/`_health_notes` keys were re-valued or replaced
+// by the "DETAYLAR"/"NOTLAR" and placeholder shape. The `relativeDay` comes from the ViewModel, per
+// emission (A62).
 
 import SalusCommon
 import SalusDesignSystem
@@ -28,7 +29,7 @@ import SalusModel
 import SalusUI
 import SwiftUI
 
-/// Owns the ViewModel and wires it to the shell (`AppointmentDetailScreen.kt:69-85`).
+/// Owns the ViewModel and wires it to the shell (`AppointmentDetailScreen.kt:74-90`).
 public struct AppointmentDetailRoute: View {
     private let appointmentId: String
 
@@ -45,7 +46,7 @@ public struct AppointmentDetailRoute: View {
                 AppointmentDetailScreen(
                     state: viewModel.state,
                     onEvent: viewModel.onEvent,
-                    // `AppointmentDetailScreen.kt:83` — editing is an action on the detail, and the
+                    // `AppointmentDetailScreen.kt:88` — editing is an action on the detail, and the
                     // key it pushes is this feature's own, so no shell callback is involved.
                     onEdit: { module?.navigator.navigate(AppointmentEditorKey(id: appointmentId)) }
                 )
@@ -62,7 +63,7 @@ public struct AppointmentDetailRoute: View {
     }
 }
 
-/// The stateless detail (`AppointmentDetailScreen.kt:87-165`).
+/// The stateless detail (`AppointmentDetailScreen.kt:92-187`).
 struct AppointmentDetailScreen: View {
     let state: AppointmentDetailUiState
     let onEvent: (AppointmentDetailEvent) -> Void
@@ -81,7 +82,16 @@ struct AppointmentDetailScreen: View {
         content
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(theme.colorScheme.background)
+            // The inline title; the trailing "Düzenle" is a text action, exactly Android's
+            // `TextButton` in the pushed top bar (`AppointmentDetailScreen.kt:105-116`).
             .navigationTitle(AppointmentsStrings.detailTitle)
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    Button(action: onEdit) {
+                        Text(verbatim: AppointmentsStrings.detailEdit)
+                    }
+                }
+            }
             .salusConfirmDialog(
                 isPresented: isDeleteConfirmPresented,
                 title: AppointmentsStrings.deleteTitle(state.appointment?.title ?? ""),
@@ -94,7 +104,7 @@ struct AppointmentDetailScreen: View {
         #endif
     }
 
-    /// `AppointmentDetailScreen.kt:113-149`.
+    /// `AppointmentDetailScreen.kt:119-129`.
     @ViewBuilder
     private var content: some View {
         if state.isLoading {
@@ -112,167 +122,39 @@ struct AppointmentDetailScreen: View {
         }
     }
 
-    /// `AppointmentDetailScreen.kt:126-147` — the sections, in the Kotlin order.
+    /// `AppointmentDetailScreen.kt:131-172` — the sections, in the Kotlin order.
     private func detail(of appointment: Appointment) -> some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: SalusSpacing.md) {
-                header(of: appointment)
-                if let location = nonBlank(appointment.location) {
-                    locationSection(location)
-                }
-                notesSection(notes: appointment.notes)
-                if !appointment.reminderOffsetsMinutes.isEmpty {
-                    remindersSection(appointment.reminderOffsetsMinutes)
-                }
-                actions
-            }
-            // `AppointmentDetailScreen.kt:146` — the trailing spacer.
-            .padding(.bottom, SalusSpacing.lg)
-        }
-    }
+            VStack(alignment: .leading, spacing: 0) {
+                Hero(appointment: appointment, relativeDay: state.relativeDay, locale: locale)
 
-    /// `AppointmentDetailScreen.kt:181-231`.
-    private func header(of appointment: Appointment) -> some View {
-        SalusCard {
-            Text(verbatim: appointment.title)
-                .font(SalusTypography.headlineSmall.font)
-            Spacer()
-                .frame(height: SalusSpacing.sm)
-            Text(verbatim: appointment.startsAt.formatted(pattern: headerDatePattern, locale: locale))
-                .font(SalusTypography.bodyLarge.font)
-                .foregroundStyle(theme.extendedColors.appointments.accent)
-            Text(
-                verbatim: AppointmentsStrings.detailTime(
-                    time: appointment.startsAt.formatted(pattern: timePattern, locale: locale),
-                    durationMinutes: appointment.durationMinutes
-                )
-            )
-            .font(SalusTypography.bodyMedium.font)
-            .foregroundStyle(theme.colorScheme.onSurfaceVariant)
+                SalusSectionHeader(title: AppointmentsStrings.detailSectionDetails)
+                DetailRows(appointment: appointment, locale: locale, onEdit: onEdit)
 
-            // `AppointmentDetailScreen.kt:215-222`.
-            let who = [appointment.doctorName, appointment.specialty]
-                .compactMap(nonBlank)
-                .joined(separator: " · ")
-            if !who.isEmpty {
-                Spacer()
-                    .frame(height: SalusSpacing.sm)
-                IconRow(systemImage: "person", text: who)
-            }
+                SalusSectionHeader(title: AppointmentsStrings.detailNotes)
+                Notes(notes: appointment.notes, onEdit: onEdit)
 
-            if appointment.status != .scheduled {
-                Spacer()
-                    .frame(height: SalusSpacing.sm)
-                SalusStatusChip(label: Self.statusLabel(appointment.status))
-            }
-        }
-        .padding(.horizontal, SalusSpacing.lg)
-    }
-
-    /// `AppointmentDetailScreen.kt:233-254`. The maps button is **always** offered here where
-    /// Kotlin offers it only when something resolves `geo:` — divergence (a), see `MapsLink.swift`.
-    @ViewBuilder
-    private func locationSection(_ location: String) -> some View {
-        SalusSectionHeader(title: AppointmentsStrings.detailLocation)
-        SalusCard {
-            IconRow(systemImage: "mappin.and.ellipse", text: location)
-            Spacer()
-                .frame(height: SalusSpacing.sm)
-            OpenMapsButton(location: location)
-        }
-        .padding(.horizontal, SalusSpacing.lg)
-    }
-
-    /// `AppointmentDetailScreen.kt:256-280` — hidden when the appointment has no notes and the
-    /// profile has no health notes.
-    @ViewBuilder
-    private func notesSection(notes: String?) -> some View {
-        let appointmentNotes = nonBlank(notes)
-        if appointmentNotes != nil || state.healthNotes != nil {
-            SalusSectionHeader(title: AppointmentsStrings.detailNotes)
-            SalusCard {
-                if let appointmentNotes {
-                    Text(verbatim: appointmentNotes)
-                        .font(SalusTypography.bodyLarge.font)
-                }
                 if let healthNotes = state.healthNotes {
-                    if appointmentNotes != nil {
-                        Spacer()
-                            .frame(height: SalusSpacing.md)
-                    }
-                    Text(verbatim: AppointmentsStrings.detailHealthNotes)
-                        .font(SalusTypography.labelMedium.font)
-                        .tracking(SalusTypography.labelMedium.tracking)
-                        .foregroundStyle(theme.colorScheme.onSurfaceVariant)
-                    Text(verbatim: healthNotes)
-                        .font(SalusTypography.bodyMedium.font)
+                    SalusInfoNote(
+                        text: healthNotes,
+                        systemImage: "info.circle",
+                        tone: .neutral
+                    )
+                    .padding(.horizontal, SalusSpacing.lg)
+                    .padding(.vertical, SalusSpacing.md)
                 }
+
+                Actions(
+                    calendarEnabled: state.startEpochMs > 0,
+                    onAddToCalendar: { isAddingToCalendar = true },
+                    onDelete: { onEvent(.deleteClicked) }
+                )
             }
-            .padding(.horizontal, SalusSpacing.lg)
+            .padding(.bottom, SalusSpacing.xl)
         }
     }
 
-    /// `AppointmentDetailScreen.kt:282-300`.
-    @ViewBuilder
-    private func remindersSection(_ offsets: [Int]) -> some View {
-        SalusSectionHeader(title: AppointmentsStrings.remindersLabel)
-        SalusCard {
-            ChipFlowLayout(spacing: SalusSpacing.sm) {
-                ForEach(offsets.sorted(), id: \.self) { offset in
-                    SalusStatusChip(label: offsetLabel(offset))
-                }
-            }
-        }
-        .padding(.horizontal, SalusSpacing.lg)
-    }
-
-    /// `AppointmentDetailScreen.kt:291-318` — three full-width pills. Compose emits them as
-    /// children of the screen's own `Column(spacedBy = md)`, so they are spaced `md` here too.
-    ///
-    /// `fillsWidth: true` is Kotlin's `Modifier.fillMaxWidth()` on each of the three
-    /// (`:302`, `:310`, `:316`); an outer `.frame(maxWidth: .infinity)` would only centre a
-    /// text-width capsule in a full-width slot (`SalusButton.swift:35-39`).
-    private var actions: some View {
-        VStack(spacing: SalusSpacing.md) {
-            SalusButton(
-                AppointmentsStrings.detailEdit,
-                size: .large,
-                action: onEdit
-            )
-
-            // Only where a calendar editor exists to present. On any other platform this is the
-            // empty view the brief calls for, rather than a button that opens nothing.
-            #if canImport(EventKitUI)
-                SalusButton(
-                    AppointmentsStrings.addToCalendar,
-                    variant: .secondary,
-                    size: .large,
-                    // `canAddToCalendar = state.startEpochMs > 0L` (`:144`), passed straight
-                    // through as `enabled` (`:307`) — nothing to propose until the bounds are
-                    // derived.
-                    systemImage: "calendar",
-                    enabled: state.startEpochMs > 0
-                ) {
-                    isAddingToCalendar = true
-                }
-            #endif
-
-            SalusButton(
-                AppointmentsStrings.detailDelete,
-                variant: .secondary,
-                size: .large
-            ) {
-                onEvent(.deleteClicked)
-            }
-        }
-        // `Spacer(height = sm)` before the block (`AppointmentDetailScreen.kt:298`): the actions
-        // sit one step further from the section above them than the sections sit from each other.
-        .padding(.top, SalusSpacing.sm)
-        .padding(.horizontal, SalusSpacing.lg)
-    }
-
-    /// `AppointmentDetailScreen.kt:151-164` — the dialog is shown for the appointment being
-    /// deleted, so it disappears with it rather than naming a title that is no longer there.
+    /// `AppointmentDetailScreen.kt:176-186`.
     private var isDeleteConfirmPresented: Binding<Bool> {
         Binding(
             get: { state.showDeleteConfirm && state.appointment != nil },
@@ -285,7 +167,7 @@ struct AppointmentDetailScreen: View {
 
     #if canImport(EventKitUI)
         /// The payload the system's event editor is prefilled with
-        /// (`AppointmentDetailScreen.kt:377-388`).
+        /// (`AppointmentDetailScreen.kt:410-422`).
         private var calendarDraft: CalendarEventDraft? {
             guard let appointment = state.appointment, state.startEpochMs > 0 else { return nil }
             return .forDetail(
@@ -310,76 +192,229 @@ struct AppointmentDetailScreen: View {
             return { isPresented.wrappedValue = false }
         }
     #endif
-
-    /// `AppointmentDetailScreen.kt:390-394`.
-    private static func statusLabel(_ status: AppointmentStatus) -> String {
-        switch status {
-        case .cancelled: AppointmentsStrings.statusCancelled
-        case .completed: AppointmentsStrings.statusCompleted
-        case .scheduled: AppointmentsStrings.statusScheduled
-        }
-    }
 }
 
-/// `AppointmentDetailScreen.kt:352-367`.
-private struct IconRow: View {
-    let systemImage: String
-    let text: String
+/// The centred hero — this appointment's own title block, on the background with no card
+/// (`AppointmentDetailScreen.kt:202-239`).
+private struct Hero: View {
+    let appointment: Appointment
+    let relativeDay: RelativeDay?
+    let locale: Locale
 
     @Environment(\.salusTheme) private var theme
 
     var body: some View {
-        HStack(spacing: SalusSpacing.sm) {
-            Image(systemName: systemImage)
-                .font(.system(size: iconSize))
+        VStack(spacing: SalusSpacing.sm) {
+            SalusIconBadge(
+                systemImage: "calendar",
+                accent: theme.extendedColors.appointments,
+                size: .large
+            )
+            Text(verbatim: appointment.title)
+                .font(SalusTypography.headlineMedium.font)
+                .multilineTextAlignment(.center)
+            Text(verbatim: appointment.startsAt.formatted(pattern: fullDatePattern, locale: locale))
+                .font(SalusTypography.bodyMedium.font)
                 .foregroundStyle(theme.colorScheme.onSurfaceVariant)
-                // Decoration: the text beside it already says what this is
-                // (`contentDescription = null`).
-                .accessibilityHidden(true)
-            Text(verbatim: text)
-                .font(SalusTypography.bodyLarge.font)
+                .multilineTextAlignment(.center)
+            if let relativeDay {
+                SalusStatusChip(label: relativeDayLabel(relativeDay), status: .accent)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(SalusSpacing.lg)
+    }
+
+    /// `RelativeDay.label` (`AppointmentDetailScreen.kt:391-401`).
+    private func relativeDayLabel(_ day: RelativeDay) -> String {
+        switch day {
+        case .today: AppointmentsStrings.relativeToday
+        case .tomorrow: AppointmentsStrings.relativeTomorrow
+        case .past: AppointmentsStrings.relativePast
+        case let .inDays(days): AppointmentsStrings.relativeInDays(days)
         }
     }
 }
 
-/// `AppointmentDetailScreen.kt:235-243` — the `appointment_detail_open_maps` button.
-///
-/// Its own view so the `openURL` environment value is read where it is used; a `Button` whose
-/// action reaches for an environment value of the enclosing screen would work, but this keeps the
-/// one link the screen opens in one place.
-private struct OpenMapsButton: View {
-    let location: String
+/// The "DETAYLAR" rows: date, doctor, location, reminders — all four always present, an empty one
+/// drawn as the row that fills it (`AppointmentDetailScreen.kt:241-322`).
+private struct DetailRows: View {
+    let appointment: Appointment
+    let locale: Locale
+    let onEdit: () -> Void
 
-    @Environment(\.openURL) private var openURL
+    @Environment(\.salusTheme) private var theme
+
+    private var accent: FeatureAccent { theme.extendedColors.appointments }
 
     var body: some View {
-        // `SalusButton(tonal = true, icon = Icons.Filled.Map)`
-        // (`AppointmentDetailScreen.kt:237-242`) — content width, since Kotlin passes it no
-        // `Modifier.fillMaxWidth()` unlike the three in the action block.
-        SalusButton(
-            AppointmentsStrings.detailOpenMaps,
-            variant: .secondary,
-            size: .medium,
-            systemImage: "map"
-        ) {
-            guard let url = mapsURL(for: location) else { return }
-            // `runCatching { startActivity(intent) }` (`AppointmentDetailScreen.kt:239`): no map
-            // app is a legal state on both platforms, and the completion is what says so here.
-            openURL(url) { _ in }
+        VStack(spacing: 0) {
+            dateRow
+            doctorRow
+            locationRow
+            remindersRow
+        }
+    }
+
+    /// `AppointmentDetailScreen.kt:255-262` — the date with a time chip trailing.
+    private var dateRow: some View {
+        SalusListItem(
+            title: appointment.startsAt.formatted(pattern: fullDatePattern, locale: locale),
+            systemImage: "clock",
+            accent: accent,
+            trailing: {
+                SalusStatusChip(
+                    label: appointment.startsAt.formatted(pattern: timePattern, locale: locale),
+                    status: .accent
+                )
+            }
+        )
+    }
+
+    /// `AppointmentDetailScreen.kt:264-278` — the doctor row or its "Doktor ekle" placeholder.
+    @ViewBuilder
+    private var doctorRow: some View {
+        if let doctor = nonBlank(appointment.doctorName) {
+            SalusListItem(
+                title: doctor,
+                subtitle: nonBlank(appointment.specialty),
+                systemImage: "person",
+                accent: accent
+            )
+        } else {
+            AddRow(systemImage: "person", text: AppointmentsStrings.addDoctor, onTap: onEdit)
+        }
+    }
+
+    /// `AppointmentDetailScreen.kt:280-304` — the location row (subtitle "Haritalarda aç" + chevron
+    /// when the location is non-empty; else "Konum ekle"). Divergence (a): iOS Maps is never
+    /// removable, so the row always opens when the location is non-blank.
+    @ViewBuilder
+    private var locationRow: some View {
+        if let location = nonBlank(appointment.location) {
+            SalusListItem(
+                title: location,
+                subtitle: AppointmentsStrings.detailOpenMaps,
+                systemImage: "mappin.and.ellipse",
+                accent: accent,
+                onTap: { openMaps(location) },
+                trailing: { SalusListItemChevron() }
+            )
+        } else {
+            AddRow(systemImage: "mappin.and.ellipse", text: AppointmentsStrings.addLocation, onTap: onEdit)
+        }
+    }
+
+    /// `AppointmentDetailScreen.kt:306-321` — the reminders row or its "Hatırlatıcı ekle".
+    @ViewBuilder
+    private var remindersRow: some View {
+        let reminders = appointment.reminderOffsetsMinutes.sorted()
+        if reminders.isEmpty {
+            AddRow(systemImage: "bell", text: AppointmentsStrings.addReminder, onTap: onEdit)
+        } else {
+            SalusListItem(
+                title: reminders.map { offsetLabel($0) }.joined(separator: " · "),
+                systemImage: "bell",
+                accent: accent
+            )
+        }
+    }
+
+    /// `runCatching { startActivity(intent) }` (`AppointmentDetailScreen.kt:302`): no map app is a
+    /// legal state on both platforms, and `openURL` reports it through its completion.
+    private func openMaps(_ location: String) {
+        guard let url = mapsURL(for: location) else { return }
+        openURL(url)
+    }
+
+    @Environment(\.openURL) private var openURL
+}
+
+/// An empty field drawn as the row that fills it; the title is dimmed to `onSurfaceVariant` so the
+/// invitation reads as a placeholder rather than a value someone already entered
+/// (`AppointmentDetailScreen.kt:344-358`).
+private struct AddRow: View {
+    let systemImage: String
+    let text: String
+    let onTap: () -> Void
+
+    @Environment(\.salusTheme) private var theme
+    private var accent: FeatureAccent { theme.extendedColors.appointments }
+
+    var body: some View {
+        // `accent = appointments`, `titleColor = onSurfaceVariant`
+        // (`AppointmentDetailScreen.kt:351-356`).
+        SalusListItem(
+            title: text,
+            systemImage: systemImage,
+            accent: accent,
+            titleColor: onSurfaceVariant,
+            onTap: onTap
+        )
+    }
+
+    private var onSurfaceVariant: Color { theme.colorScheme.onSurfaceVariant }
+}
+
+/// The "NOTLAR" section — either the saved note in a card, or a "Not ekle" row
+/// (`AppointmentDetailScreen.kt:324-342`).
+private struct Notes: View {
+    let notes: String?
+    let onEdit: () -> Void
+
+    var body: some View {
+        if let text = nonBlank(notes) {
+            SalusCard {
+                Text(verbatim: text)
+                    .font(SalusTypography.bodyMedium.font)
+            }
+            .padding(.horizontal, SalusSpacing.lg)
+            .padding(.vertical, SalusSpacing.xs)
+        } else {
+            AddRow(systemImage: "doc.text", text: AppointmentsStrings.addNote, onTap: onEdit)
         }
     }
 }
 
-/// `AppointmentDetailScreen.kt:186-188`.
-private let headerDatePattern = "EEEE, d MMMM yyyy"
-/// `AppointmentDetailScreen.kt:189`.
+/// The two things done from here, in the order they are reached for (`AppointmentDetailScreen.kt:360-389`).
+///
+/// Editing lives in the top bar's text action alone — a second "Düzenle" down here read as a
+/// different action (`AppointmentDetailScreen.kt:360-363`).
+private struct Actions: View {
+    let calendarEnabled: Bool
+    let onAddToCalendar: () -> Void
+    let onDelete: () -> Void
+
+    @Environment(\.salusTheme) private var theme
+
+    var body: some View {
+        VStack(spacing: SalusSpacing.md) {
+            SalusButton(
+                AppointmentsStrings.addToCalendar,
+                systemImage: "calendar",
+                accent: theme.extendedColors.appointments,
+                enabled: calendarEnabled,
+                action: onAddToCalendar
+            )
+            SalusButton(
+                AppointmentsStrings.detailDelete,
+                variant: .destructive,
+                action: onDelete
+            )
+        }
+        .padding(.horizontal, SalusSpacing.lg)
+        .padding(.vertical, SalusSpacing.md)
+    }
+}
+
+/// `AppointmentDetailScreen.kt:423-424`.
+private let fullDatePattern = "EEEE, d MMMM yyyy"
+/// `AppointmentDetailScreen.kt:424`.
 private let timePattern = "HH:mm"
-/// `AppointmentDetailScreen.kt:396`.
-private let iconSize: CGFloat = 18
 
 // MARK: - Previews
 
-/// `AppointmentDetailScreen.kt:400-437`.
+/// `AppointmentDetailScreen.kt:427-446`.
 private let previewAppointment = Appointment(
     id: "a1",
     title: "Annual check-up",
@@ -401,6 +436,7 @@ private let previewAppointment = Appointment(
                 isLoading: false,
                 appointment: previewAppointment,
                 healthNotes: "Pollen allergy",
+                relativeDay: .inDays(17),
                 startEpochMs: 1_776_000_000_000,
                 endEpochMs: 1_776_001_800_000
             ),
@@ -410,7 +446,7 @@ private let previewAppointment = Appointment(
     }
 }
 
-#Preview("Appointment detail — cancelled, no location") {
+#Preview("Appointment detail — minimal") {
     NavigationStack {
         AppointmentDetailScreen(
             state: AppointmentDetailUiState(
@@ -425,11 +461,10 @@ private let previewAppointment = Appointment(
                     startsAt: LocalDateTime(date: LocalDate(year: 2026, month: 9, day: 2), minuteOfDay: 14 * 60 + 30),
                     timeZone: TimeZone(identifier: "Europe/Istanbul") ?? .gmt,
                     durationMinutes: 45,
-                    status: .cancelled,
+                    status: .scheduled,
                     reminderOffsetsMinutes: []
                 ),
-                startEpochMs: 1_777_000_000_000,
-                endEpochMs: 1_777_002_700_000
+                relativeDay: .tomorrow
             ),
             onEvent: { _ in },
             onEdit: {}

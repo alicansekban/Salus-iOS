@@ -4,6 +4,10 @@
 // `ImmutableList` is dropped rather than imitated — a Swift `Array` in a `struct` already is what
 // `kotlinx.collections.immutable` promises Compose (`ChartUiModel.swift` and `VitalsUiState.swift`
 // record the same ruling).
+//
+// M15 replaced the collapsed past section with a two-tab split, so `isPastExpanded` and the
+// `togglePastSection` event leave: `selectedTab` is what the segmented tabs draw and the `TabBar`
+// reads back (`AppointmentsUiState.kt:28, 34`).
 
 import SalusModel
 
@@ -17,19 +21,23 @@ public struct AppointmentListItem: Equatable, Hashable, Sendable, Identifiable {
     public let doctorName: String?
     public let location: String?
     public let startsAt: LocalDateTime
+    /// Minutes before the start; drawn as the card's reminder chips (`AppointmentsUiState.kt:14`).
+    public let reminderOffsetsMinutes: [Int]
 
     public init(
         id: String,
         title: String,
         doctorName: String?,
         location: String?,
-        startsAt: LocalDateTime
+        startsAt: LocalDateTime,
+        reminderOffsetsMinutes: [Int] = []
     ) {
         self.id = id
         self.title = title
         self.doctorName = doctorName
         self.location = location
         self.startsAt = startsAt
+        self.reminderOffsetsMinutes = reminderOffsetsMinutes
     }
 }
 
@@ -52,53 +60,67 @@ public struct AppointmentDaySection: Equatable, Hashable, Sendable, Identifiable
     }
 }
 
-/// What the appointments list draws (`AppointmentsUiState.kt:25-36`).
+/// The two halves of the list, shown one at a time behind the segmented tabs
+/// (`AppointmentsUiState.kt:28`).
+public enum AppointmentsTab: String, Equatable, Hashable, Sendable, CaseIterable {
+    case upcoming
+    case past
+}
+
+/// What the appointments list draws (`AppointmentsUiState.kt:30-39`).
 public struct AppointmentsUiState: Equatable, Sendable {
     public var isLoading: Bool
     public var upcoming: [AppointmentDaySection]
     public var past: [AppointmentListItem]
-    public var isPastExpanded: Bool
+    public var selectedTab: AppointmentsTab
     /// Lets the header read "Today"/"Tomorrow" without the UI asking for the time itself
-    /// (`AppointmentsUiState.kt:31`).
+    /// (`AppointmentsUiState.kt:36`).
     public var todayEpochDay: Int
     /// The appointment whose delete confirmation is open; nil when none is
-    /// (`AppointmentsUiState.kt:33`).
+    /// (`AppointmentsUiState.kt:38`).
     ///
     /// The row itself rather than its id, so the dialog can put the title in its question without
     /// looking the appointment up again — exactly what Kotlin's `pendingDelete` carries.
     public var pendingDelete: AppointmentListItem?
 
-    /// `AppointmentsUiState.kt:35`.
+    /// `AppointmentsUiState.kt:40`.
     public var hasNothing: Bool { upcoming.isEmpty && past.isEmpty }
+
+    /// The tab badges count appointments, not day headers (`AppointmentsUiState.kt:44-46`).
+    public var upcomingCount: Int { upcoming.reduce(0) { $0 + $1.items.count } }
+
+    /// `AppointmentsUiState.kt:48`.
+    public var pastCount: Int { past.count }
 
     public init(
         isLoading: Bool = true,
         upcoming: [AppointmentDaySection] = [],
         past: [AppointmentListItem] = [],
-        isPastExpanded: Bool = false,
+        selectedTab: AppointmentsTab = .upcoming,
         todayEpochDay: Int = 0,
         pendingDelete: AppointmentListItem? = nil
     ) {
         self.isLoading = isLoading
         self.upcoming = upcoming
         self.past = past
-        self.isPastExpanded = isPastExpanded
+        self.selectedTab = selectedTab
         self.todayEpochDay = todayEpochDay
         self.pendingDelete = pendingDelete
     }
 }
 
-/// Everything the screen can ask the ViewModel to do (`AppointmentsUiState.kt:38-47`).
+/// Everything the screen can ask the ViewModel to do (`AppointmentsUiState.kt:51-59`).
 public enum AppointmentsEvent: Equatable, Sendable {
-    case togglePastSection
+    /// The user tapped a segmented tab (`AppointmentsUiState.kt:52`).
+    case tabSelected(AppointmentsTab)
 
     /// Opens the confirmation for the row's trash icon; nothing is deleted until confirmed
-    /// (`AppointmentsUiState.kt:41-42`).
+    /// (`AppointmentsUiState.kt:54-55`).
     case deleteRequested(String)
 
-    /// `AppointmentsUiState.kt:44`.
+    /// `AppointmentsUiState.kt:57`.
     case deleteDismissed
 
-    /// `AppointmentsUiState.kt:46`.
+    /// `AppointmentsUiState.kt:59`.
     case deleteConfirmed
 }

@@ -56,7 +56,7 @@ struct AppointmentDetailViewModelTests {
     }
 
     /// `AppointmentDetailViewModelTest.kt:59-71`.
-    private func appointment() -> Appointment {
+    private func appointment(start: LocalDateTime = Self.startsAt) -> Appointment {
         Appointment(
             id: "a1",
             title: "Annual check-up",
@@ -64,7 +64,7 @@ struct AppointmentDetailViewModelTests {
             specialty: "Cardiology",
             location: "City Clinic",
             notes: "Bring blood test results",
-            startsAt: Self.startsAt,
+            startsAt: start,
             timeZone: Self.zone,
             durationMinutes: 30,
             status: .scheduled,
@@ -184,6 +184,107 @@ struct AppointmentDetailViewModelTests {
         #expect(loaded.isLoading == false)
         #expect(loaded.appointment == nil)
         #expect(loaded.startEpochMs == 0)
+        navigator.stop()
+    }
+
+    /// `AppointmentDetailViewModelTest.kt:167-172`.
+    @Test("an appointment on the clock's own day is today")
+    func anAppointmentOnTheClocksOwnDayIsToday() async {
+        repository.setAppointments(
+            appointment(start: LocalDateTime(date: LocalDate(year: 2026, month: 8, day: 1), minuteOfDay: 14 * 60))
+        )
+        let viewModel = viewModel()
+
+        await waitUntil("the first emission") { !viewModel.state.isLoading }
+        #expect(viewModel.state.relativeDay == .today)
+        navigator.stop()
+    }
+
+    /// `AppointmentDetailViewModelTest.kt:174-179`.
+    @Test("the next day is tomorrow rather than one day away")
+    func theNextDayIsTomorrowRatherThanOneDayAway() async {
+        repository.setAppointments(
+            appointment(start: LocalDateTime(date: LocalDate(year: 2026, month: 8, day: 2), minuteOfDay: 9 * 60))
+        )
+        let viewModel = viewModel()
+
+        await waitUntil("the first emission") { !viewModel.state.isLoading }
+        #expect(viewModel.state.relativeDay == .tomorrow)
+        navigator.stop()
+    }
+
+    /// `AppointmentDetailViewModelTest.kt:181-186`.
+    @Test("anything further out counts whole days")
+    func anythingFurtherOutCountsWholeDays() async {
+        repository.setAppointments(
+            appointment(start: LocalDateTime(date: LocalDate(year: 2026, month: 8, day: 6), minuteOfDay: 9 * 60))
+        )
+        let viewModel = viewModel()
+
+        await waitUntil("the first emission") { !viewModel.state.isLoading }
+        #expect(viewModel.state.relativeDay == .inDays(5))
+        navigator.stop()
+    }
+
+    /// `AppointmentDetailViewModelTest.kt:188-193`.
+    @Test("an earlier day has already passed")
+    func anEarlierDayHasAlreadyPassed() async {
+        repository.setAppointments(
+            appointment(start: LocalDateTime(date: LocalDate(year: 2026, month: 7, day: 31), minuteOfDay: 23 * 60))
+        )
+        let viewModel = viewModel()
+
+        await waitUntil("the first emission") { !viewModel.state.isLoading }
+        #expect(viewModel.state.relativeDay == .past)
+        navigator.stop()
+    }
+
+    /// `AppointmentDetailViewModelTest.kt:195-198`.
+    @Test("nothing to show means nothing to say about the day")
+    func nothingToShowMeansNothingToSayAboutTheDay() async {
+        let viewModel = viewModel()
+
+        await waitUntil("the first emission") { !viewModel.state.isLoading }
+        #expect(viewModel.state.relativeDay == nil)
+        navigator.stop()
+    }
+
+    /// `AppointmentDetailViewModelTest.kt:200-220` — the one that matters for a screen left open:
+    /// the day is read again on the next emission, so it is never the day the ViewModel happened to
+    /// be built on.
+    @Test("the day is re-read from the clock on every emission")
+    func theDayIsReReadFromTheClockOnEveryEmission() async {
+        let tomorrow = appointment(
+            start: LocalDateTime(date: LocalDate(year: 2026, month: 8, day: 2), minuteOfDay: 9 * 60)
+        )
+        repository.setAppointments(tomorrow)
+        let viewModel = viewModel()
+
+        await waitUntil("the first emission") { viewModel.state.relativeDay != nil }
+        #expect(viewModel.state.relativeDay == .tomorrow)
+
+        clock.advanceTo(
+            LocalDateTime(date: LocalDate(year: 2026, month: 8, day: 2), minuteOfDay: 7 * 60)
+                .instant(in: AppointmentDetailViewModelTests.zone)
+        )
+        repository.setAppointments(
+            Appointment(
+                id: tomorrow.id,
+                title: tomorrow.title + " ",
+                doctorName: tomorrow.doctorName,
+                specialty: tomorrow.specialty,
+                location: tomorrow.location,
+                notes: tomorrow.notes,
+                startsAt: tomorrow.startsAt,
+                timeZone: tomorrow.timeZone,
+                durationMinutes: tomorrow.durationMinutes,
+                status: tomorrow.status,
+                reminderOffsetsMinutes: tomorrow.reminderOffsetsMinutes
+            )
+        )
+
+        await waitUntil("the clock-crossover emission") { viewModel.state.relativeDay != .tomorrow }
+        #expect(viewModel.state.relativeDay == .today)
         navigator.stop()
     }
 }

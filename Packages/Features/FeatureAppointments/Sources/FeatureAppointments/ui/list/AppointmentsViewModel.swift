@@ -19,12 +19,12 @@
 //   cancels the collection through `CancellationBox`.
 //
 // **ONE BEHAVIOURAL DIVERGENCE, deliberate and recorded.** Kotlin hangs the whole graph off
-// `isPastExpanded.flatMapLatest { … }` (`AppointmentsViewModel.kt:33-36`), so every tap on
-// "show/hide past" tears the collections down and reopens them with a **fresh** `clock.now()` and
-// `clock.today()`. Here `now` and `todayEpochDay` are captured once, in `init`, and the toggle only
-// flips a flag and republishes. Two reasons: the flag is presentation state that the repository
-// query does not depend on — restarting two database observations to redraw a disclosure arrow is a
-// side effect of how `flatMapLatest` was reached for, not a behaviour anyone asked for — and a
+// `selectedTab.flatMapLatest { … }` (`AppointmentsViewModel.kt:32-34`), so every tab switch tears
+// the collections down and reopens them with a **fresh** `clock.now()` and `clock.today()`. Here
+// `now` and `todayEpochDay` are captured once, in `init`, and a tab switch only moves `selectedTab`
+// and republishes. Two reasons: the tab is presentation state that the repository query does not
+// depend on — restarting two database observations to redraw which half of the agenda is on top is
+// a side effect of how `flatMapLatest` was reached for, not a behaviour anyone asked for — and a
 // restart would drop the agenda back to its loading state mid-interaction, which on Android is
 // hidden by `stateIn` holding the last value and here would be visible. What Android buys with it
 // is a clock refresh; the same refresh arrives on iOS the way it does everywhere in this port, by
@@ -54,7 +54,7 @@ public final class AppointmentsViewModel {
     private let todayEpochDay: Int
 
     /// `AppointmentsViewModel.kt:30`.
-    private var isPastExpanded = false
+    private var selectedTab = AppointmentsTab.upcoming
 
     /// `AppointmentsViewModel.kt:31` — the id whose confirmation dialog is open, or nil.
     private var pendingDeleteId: String?
@@ -89,8 +89,8 @@ public final class AppointmentsViewModel {
     /// `AppointmentsViewModel.kt:63-80`.
     public func onEvent(_ event: AppointmentsEvent) {
         switch event {
-        case .togglePastSection:
-            isPastExpanded.toggle()
+        case let .tabSelected(tab):
+            selectedTab = tab
             republish()
 
         case let .deleteRequested(id):
@@ -177,7 +177,7 @@ public final class AppointmentsViewModel {
             isLoading: false,
             upcoming: Self.groupIntoDays(upcomingItems),
             past: pastItems,
-            isPastExpanded: isPastExpanded,
+            selectedTab: selectedTab,
             todayEpochDay: todayEpochDay,
             // `(upcomingItems + pastItems).firstOrNull { it.id == confirmingId }`
             // (`AppointmentsViewModel.kt:53`): a row that has already left the list — deleted
@@ -201,7 +201,8 @@ public final class AppointmentsViewModel {
                     title: appointment.title,
                     doctorName: appointment.doctorName,
                     location: appointment.location,
-                    startsAt: appointment.startsAt
+                    startsAt: appointment.startsAt,
+                    reminderOffsetsMinutes: appointment.reminderOffsetsMinutes.sorted()
                 )
             }
     }

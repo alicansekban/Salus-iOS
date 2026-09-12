@@ -1,25 +1,25 @@
 // Ported from `feature/appointments/src/main/kotlin/com/alicansekban/salus/feature/appointments/
-// ui/list/AppointmentsScreen.kt:241-299` (`AppointmentCard` and `DetailRow`). Split into its own
-// file the way M4 split Medications' row into `MedicationCard.swift`: the screen file stays the
-// screen's shape — header, the three content states, the agenda and the confirmation — and
-// splitting the rows out is what brought `AppointmentsScreen.swift` back under the 500-line cap.
+// ui/list/AppointmentCard.kt`.
 //
 // ONE SHAPE THE KOTLIN DOES NOT NEED. The row's trash icon: `SalusCard(onTap:)` is a `Button`, so a
 // second `Button` inside its label is treated as decoration and the outer button swallows the tap.
 // `VitalsRow` (`VitalsScreen.swift:258-307`) settled this, and this row copies its answer: a plain,
 // non-interactive `SalusCard`, "open" as a tap gesture on the text column with the button semantics
 // added back by hand, and the trash as a real `Button` that is the column's **sibling**, so the two
-// targets are disjoint by layout rather than merely ordered by dispatch rules.
+// targets are disjoint by layout rather than merely ordered by dispatch rules. The M15 row's trash
+// is `SalusIconButton(.destructive)` (`AppointmentCard.kt:95-100`).
 
 import SalusDesignSystem
 import SalusModel
 import SalusUI
 import SwiftUI
 
-/// Date tile on the left, time and what/where on the right, the trash on the far right
-/// (`AppointmentsScreen.kt:241-286`).
+/// One appointment, shared by both tabs: the date tile on the left, what and where in the middle,
+/// and the chips that say when it starts and when it will be announced underneath
+/// (`AppointmentCard.kt:45-51`).
 ///
-/// See the file header for why the card is not `SalusCard(onTap:)` with the button inside it.
+/// The whole card opens the detail screen; the trash icon only asks for a confirmation, so a
+/// mistaken tap on a row costs a dialog rather than an appointment.
 struct AppointmentCard: View {
     let item: AppointmentListItem
     let onTap: () -> Void
@@ -32,36 +32,41 @@ struct AppointmentCard: View {
 
     var body: some View {
         SalusCard {
-            HStack(alignment: .top, spacing: 0) {
-                details
-                    // The column already fills every point the trash button does not, and
-                    // `contentShape` makes the empty space beside a short title tappable too.
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .contentShape(Rectangle())
-                    .onTapGesture(perform: onTap)
-                    // A tap gesture is invisible to VoiceOver, where Compose's `SalusCard(onClick =)`
-                    // is announced as a button. `.combine` reads the row's lines as one element, the
-                    // trait announces it as activatable, and the action is what a double tap runs.
-                    .accessibilityElement(children: .combine)
-                    .accessibilityAddTraits(.isButton)
-                    .accessibilityAction(.default, onTap)
+            VStack(alignment: .leading, spacing: 0) {
+                HStack(alignment: .top, spacing: 0) {
+                    details
+                        // The column already fills every point the trash button does not, and
+                        // `contentShape` makes the empty space beside a short title tappable too.
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .contentShape(Rectangle())
+                        .onTapGesture(perform: onTap)
+                        // A tap gesture is invisible to VoiceOver, where Compose's
+                        // `SalusCard(onClick =)` is announced as a button. `.combine` reads the
+                        // row's lines as one element, the trait announces it as activatable, and
+                        // the action is what a double tap runs.
+                        .accessibilityElement(children: .combine)
+                        .accessibilityAddTraits(.isButton)
+                        .accessibilityAction(.default, onTap)
 
-                // `Spacer(width = sm)` + `IconButton` (`AppointmentsScreen.kt:276-283`). A sibling
-                // of the column, not a descendant of any Button.
-                Button(action: onDelete) {
-                    Label(AppointmentsStrings.delete, systemImage: "trash")
-                        .labelStyle(.iconOnly)
-                        .foregroundStyle(theme.colorScheme.error)
+                    // `Spacer(width = sm)` + `IconButton` (`AppointmentCard.kt:94-100`). A sibling
+                    // of the column, not a descendant of any Button.
+                    SalusIconButton(
+                        systemImage: "trash",
+                        accessibilityLabel: AppointmentsStrings.delete,
+                        tone: .destructive,
+                        action: onDelete
+                    )
+                    .padding(.leading, SalusSpacing.sm)
                 }
-                .buttonStyle(.plain)
-                .padding(.leading, SalusSpacing.sm)
+
+                chips
             }
         }
         .padding(.horizontal, SalusSpacing.lg)
     }
 
     /// The date tile and the text column — everything a tap on the row opens
-    /// (`AppointmentsScreen.kt:259-275`).
+    /// (`AppointmentCard.kt:73-101`).
     private var details: some View {
         HStack(alignment: .top, spacing: 0) {
             SalusDateTile(
@@ -71,19 +76,14 @@ struct AppointmentCard: View {
             )
 
             // `Spacer(width = md)` between the tile and the content column
-            // (`AppointmentsScreen.kt:265`).
+            // (`AppointmentCard.kt:79`).
             Spacer().frame(width: SalusSpacing.md)
 
             VStack(alignment: .leading, spacing: 0) {
-                // The time sits directly above the title, in the accent's accent colour
-                // (`AppointmentsScreen.kt:267-271`).
-                Text(verbatim: item.startsAt.formatted(pattern: timePattern, locale: locale))
-                    .font(SalusTypography.labelLarge.font)
-                    .tracking(SalusTypography.labelLarge.tracking)
-                    .foregroundStyle(theme.extendedColors.appointments.accent)
                 Text(verbatim: item.title)
                     .font(SalusTypography.titleMedium.font)
                     .foregroundStyle(theme.colorScheme.onSurface)
+                    .lineLimit(2)
                 if let doctorName = item.doctorName {
                     DetailRow(systemImage: "person", text: doctorName)
                 }
@@ -94,9 +94,29 @@ struct AppointmentCard: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
+
+    /// `FlowRow(spacedBy = sm)` of the time chip and one neutral chip per reminder offset
+    /// (`AppointmentCard.kt:102-119`).
+    private var chips: some View {
+        ChipFlowLayout(spacing: SalusSpacing.sm) {
+            SalusStatusChip(
+                label: item.startsAt.formatted(pattern: timePattern, locale: locale),
+                status: .accent,
+                systemImage: "clock"
+            )
+            ForEach(item.reminderOffsetsMinutes.sorted(), id: \.self) { offsetMinutes in
+                SalusStatusChip(
+                    label: offsetLabel(offsetMinutes),
+                    status: .neutral,
+                    systemImage: "bell"
+                )
+            }
+        }
+        .padding(.top, SalusSpacing.md)
+    }
 }
 
-/// `AppointmentsScreen.kt:280-299`.
+/// `AppointmentCard.kt:124-143`.
 private struct DetailRow: View {
     let systemImage: String
     let text: String
@@ -111,16 +131,17 @@ private struct DetailRow: View {
                 // (`contentDescription = null`).
                 .accessibilityHidden(true)
             Text(verbatim: text)
-                .font(SalusTypography.bodyMedium.font)
+                .font(SalusTypography.bodySmall.font)
+                .lineLimit(1)
         }
         .foregroundStyle(theme.colorScheme.onSurfaceVariant)
         .padding(.top, SalusSpacing.xs)
     }
 }
 
-/// `AppointmentsScreen.kt:249`.
+/// `AppointmentCard.kt:62`.
 private let timePattern = "HH:mm"
-/// `AppointmentsScreen.kt:250`.
+/// `AppointmentCard.kt:63`.
 private let monthPattern = "MMM"
-/// `AppointmentsScreen.kt:301`.
+/// `AppointmentCard.kt:133`.
 private let detailIconSize: CGFloat = 16

@@ -56,8 +56,8 @@ struct AppointmentsViewModelTests {
     }
 
     /// `AppointmentsViewModelTest.kt:56-77`.
-    @Test("upcoming sorted soonest first and past collapsed by default")
-    func upcomingSortedSoonestFirstAndPastCollapsedByDefault() async {
+    @Test("upcoming sorted soonest first and the upcoming tab selected by default")
+    func upcomingSortedSoonestFirstAndTheUpcomingTabSelectedByDefault() async {
         repository.setAppointments(
             appointment("late", startsIn: 7 * .day),
             appointment("soon", startsIn: 1 * .day),
@@ -70,26 +70,50 @@ struct AppointmentsViewModelTests {
 
         #expect(loaded.upcoming.flatMap { section in section.items.map(\.id) } == ["soon", "late"])
         #expect(loaded.past.map(\.id) == ["past"])
-        #expect(loaded.isPastExpanded == false)
+        #expect(loaded.selectedTab == .upcoming)
     }
 
-    /// `AppointmentsViewModelTest.kt:80-95`.
-    @Test("toggle event expands and collapses the past section")
-    func toggleEventExpandsAndCollapsesThePastSection() async {
+    /// `AppointmentsViewModelTest.kt:80-103`.
+    @Test("selecting a tab moves the selection and selecting the first one moves it back")
+    func selectingATabMovesTheSelectionAndSelectingTheFirstOneMovesItBack() async {
         repository.setAppointments(appointment("past", startsIn: -1 * .day))
         let viewModel = viewModel()
 
         await waitUntil("the first emission") { !viewModel.state.isLoading }
-        #expect(viewModel.state.isPastExpanded == false)
+        #expect(viewModel.state.selectedTab == .upcoming)
 
-        viewModel.onEvent(.togglePastSection)
-        #expect(viewModel.state.isPastExpanded == true)
+        viewModel.onEvent(.tabSelected(.past))
+        #expect(viewModel.state.selectedTab == .past)
 
-        viewModel.onEvent(.togglePastSection)
-        #expect(viewModel.state.isPastExpanded == false)
+        viewModel.onEvent(.tabSelected(.upcoming))
+        #expect(viewModel.state.selectedTab == .upcoming)
     }
 
-    /// `AppointmentsViewModelTest.kt:98-116`.
+    /// `AppointmentsViewModelTest.kt:106-128`.
+    @Test("tab counts are the section item total and the past list size")
+    func tabCountsAreTheSectionItemTotalAndThePastListSize() async {
+        repository.setAppointments(
+            appointment("morning", startsIn: 1 * .day),
+            appointment("evening", startsIn: 1 * .day + 6 * .hour),
+            appointment("next-week", startsIn: 7 * .day),
+            appointment("past-near", startsIn: -1 * .day),
+            appointment("past-far", startsIn: -9 * .day)
+        )
+        let viewModel = viewModel()
+
+        await waitUntil("the first emission") { !viewModel.state.isLoading }
+        let loaded = viewModel.state
+
+        // Two sections hold three appointments: the count is the item total, not the number of
+        // day headers the Upcoming tab draws (`AppointmentsViewModelTest.kt:119-121`).
+        #expect(loaded.upcoming.count == 2)
+        #expect(loaded.upcoming.reduce(0) { $0 + $1.items.count } == loaded.upcomingCount)
+        #expect(loaded.upcomingCount == 3)
+        #expect(loaded.past.count == loaded.pastCount)
+        #expect(loaded.pastCount == 2)
+    }
+
+    /// `AppointmentsViewModelTest.kt:131-149`.
     @Test("upcoming is grouped into one section per calendar day")
     func upcomingIsGroupedIntoOneSectionPerCalendarDay() async {
         repository.setAppointments(

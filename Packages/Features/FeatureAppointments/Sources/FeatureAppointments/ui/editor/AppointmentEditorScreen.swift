@@ -135,12 +135,15 @@ struct AppointmentEditorScreen: View {
                 reminderOffsetsSection
                 notesField
                 #if canImport(EventKitUI)
-                    // `AppointmentEditorScreen.kt:211-220` — proposing a calendar event is an
-                    // action on an appointment that exists.
+                    // `AppointmentEditorScreen.kt:183-191` — "Takvime Ekle" is offered only on an
+                    // appointment that exists.
                     if !state.isNew {
                         addToCalendarButton
                     }
                 #endif
+                if !state.isNew {
+                    deleteButton
+                }
                 saveButton
             }
             .padding(SalusSpacing.lg)
@@ -185,54 +188,50 @@ struct AppointmentEditorScreen: View {
         )
     }
 
-    /// `AppointmentEditorScreen.kt:145-163`.
+    /// `AppointmentEditorScreen.kt:120-132`.
     private var titleField: some View {
         VStack(alignment: .leading, spacing: SalusSpacing.xs) {
-            TextField(
-                AppointmentsStrings.titleLabel,
-                text: Binding(get: { state.titleText }, set: { onEvent(.titleChanged($0)) })
+            SalusTextField(
+                text: Binding(get: { state.titleText }, set: { onEvent(.titleChanged($0)) }),
+                label: AppointmentsStrings.titleLabel,
+                placeholder: AppointmentsStrings.titlePlaceholder,
+                isError: state.showMissingTitle,
+                supportingText: state.showMissingTitle ? AppointmentsStrings.missingTitle : nil,
+                capitalization: .words
             )
-            .textFieldStyle(.roundedBorder)
-            #if os(iOS)
-                .textInputAutocapitalization(.words)
-            #endif
-            if state.showMissingTitle {
-                errorText(AppointmentsStrings.missingTitle)
-            }
         }
     }
 
-    /// `AppointmentEditorScreen.kt:165-180`.
+    /// `AppointmentEditorScreen.kt:134-146`.
     private var doctorField: some View {
-        TextField(
-            AppointmentsStrings.doctorLabel,
-            text: Binding(get: { state.doctorText }, set: { onEvent(.doctorChanged($0)) })
+        SalusTextField(
+            text: Binding(get: { state.doctorText }, set: { onEvent(.doctorChanged($0)) }),
+            label: AppointmentsStrings.doctorLabel,
+            placeholder: AppointmentsStrings.doctorPlaceholder,
+            capitalization: .words
         )
-        .textFieldStyle(.roundedBorder)
         #if os(iOS)
-            .textInputAutocapitalization(.words)
-            // `semantics { contentType = ContentType.PersonFullName }`
-            // (`AppointmentEditorScreen.kt:176-178`): one of only two fields in the app with a real
-            // autofill category — the rest are medical free text no provider has an entry for.
-            .textContentType(.name)
+        .textContentType(.name)
         #endif
     }
 
-    /// `AppointmentEditorScreen.kt:182-192`.
+    /// `AppointmentEditorScreen.kt:148-157`.
     private var locationField: some View {
-        TextField(
-            AppointmentsStrings.locationLabel,
-            text: Binding(get: { state.locationText }, set: { onEvent(.locationChanged($0)) })
+        SalusTextField(
+            text: Binding(get: { state.locationText }, set: { onEvent(.locationChanged($0)) }),
+            label: AppointmentsStrings.locationLabel,
+            placeholder: AppointmentsStrings.locationPlaceholder,
+            capitalization: .words
         )
-        .textFieldStyle(.roundedBorder)
-        #if os(iOS)
-            .textInputAutocapitalization(.words)
-        #endif
     }
 
-    /// `AppointmentEditorScreen.kt:258-300` — the two pickers side by side, the error beneath.
+    /// `AppointmentEditorScreen.kt:159` — the date and time pickers side by side, the error beneath.
     private var dateTimeSection: some View {
         VStack(alignment: .leading, spacing: SalusSpacing.xs) {
+            Text(verbatim: AppointmentsStrings.datetimeLabel)
+                .font(SalusTypography.labelSmall.font)
+                .tracking(SalusTypography.labelSmall.tracking)
+                .foregroundStyle(theme.extendedColors.overline)
             HStack(spacing: SalusSpacing.sm) {
                 SalusDateField(
                     title: AppointmentsStrings.selectDate,
@@ -266,16 +265,24 @@ struct AppointmentEditorScreen: View {
         }
     }
 
-    /// `AppointmentEditorScreen.kt:302-323`. The group label is a plain `titleSmall` `Text`, not
-    /// `SalusSectionHeader`: that component is the `titleLarge` screen-section title the detail
-    /// uses, where this is the small label Kotlin writes inline above the chip row — with no colour
-    /// override, so it takes `onSurface` like every other `Text` on the screen.
+    /// `AppointmentEditorScreen.kt:163-173`.
+    private var notesField: some View {
+        SalusTextField(
+            text: Binding(get: { state.notesText }, set: { onEvent(.notesChanged($0)) }),
+            label: AppointmentsStrings.notesLabel,
+            placeholder: AppointmentsStrings.notesPlaceholder,
+            isSingleLine: false,
+            capitalization: .sentences
+        )
+    }
+
+    /// `AppointmentEditorScreen.kt:161` — the "HATIRLATICILAR" overline above the chip row.
     private var reminderOffsetsSection: some View {
         VStack(alignment: .leading, spacing: SalusSpacing.xs) {
             Text(verbatim: AppointmentsStrings.remindersLabel)
-                .font(SalusTypography.titleSmall.font)
-                .tracking(SalusTypography.titleSmall.tracking)
-                .foregroundStyle(theme.colorScheme.onSurface)
+                .font(SalusTypography.labelSmall.font)
+                .tracking(SalusTypography.labelSmall.tracking)
+                .foregroundStyle(theme.extendedColors.overline)
             HStack(spacing: SalusSpacing.sm) {
                 ForEach(ReminderOffsets.options, id: \.self) { offsetMinutes in
                     SalusChoiceChip(
@@ -287,48 +294,31 @@ struct AppointmentEditorScreen: View {
         }
     }
 
-    /// `AppointmentEditorScreen.kt:202-209`.
-    private var notesField: some View {
-        TextField(
-            AppointmentsStrings.notesLabel,
-            text: Binding(get: { state.notesText }, set: { onEvent(.notesChanged($0)) }),
-            axis: .vertical
-        )
-        .textFieldStyle(.roundedBorder)
-        // `minLines = 2` (`AppointmentEditorScreen.kt:207`); the upper bound is SwiftUI's way of
-        // saying the field grows with the text instead of scrolling from the second line.
-        .lineLimit(2 ... 6)
-        #if os(iOS)
-            .textInputAutocapitalization(.sentences)
-        #endif
+    /// `AppointmentEditorScreen.kt:175-181` — the full-width primary pill.
+    private var saveButton: some View {
+        SalusButton(AppointmentsStrings.save, enabled: !state.isSaving, action: { onEvent(.saveClicked) })
     }
 
     #if canImport(EventKitUI)
-        /// `AppointmentEditorScreen.kt:212-219`.
+        /// `AppointmentEditorScreen.kt:183-191` — an outlined "Takvime Ekle".
         private var addToCalendarButton: some View {
-            Button {
-                onEvent(.addToCalendarClicked)
-            } label: {
-                Text(verbatim: AppointmentsStrings.addToCalendar)
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.bordered)
-            .controlSize(.large)
-            .disabled(state.dateEpochDay == nil || state.minuteOfDay == nil)
+            SalusButton(
+                AppointmentsStrings.addToCalendar,
+                variant: .outlined,
+                systemImage: "calendar",
+                enabled: state.dateEpochDay != nil && state.minuteOfDay != nil,
+                action: { onEvent(.addToCalendarClicked) }
+            )
         }
     #endif
 
-    /// `AppointmentEditorScreen.kt:222-228`.
-    private var saveButton: some View {
-        Button {
-            onEvent(.saveClicked)
-        } label: {
-            Text(verbatim: AppointmentsStrings.save)
-                .frame(maxWidth: .infinity)
-        }
-        .buttonStyle(.borderedProminent)
-        .controlSize(.large)
-        .disabled(state.isSaving)
+    /// `AppointmentEditorScreen.kt:192-198` — the destructive "Sil" for an appointment that exists.
+    private var deleteButton: some View {
+        SalusButton(
+            AppointmentsStrings.delete,
+            variant: .destructive,
+            action: { onEvent(.deleteClicked) }
+        )
     }
 
     /// The `supportingText` / error line both error messages are drawn as

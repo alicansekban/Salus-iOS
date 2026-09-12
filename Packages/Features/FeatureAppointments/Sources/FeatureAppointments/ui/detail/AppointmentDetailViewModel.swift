@@ -116,6 +116,10 @@ public final class AppointmentDetailViewModel {
     /// The zone is read on every emission, not captured in `init`: a wall-clock start has to be
     /// resolved with the zone that is current *now*, which is the whole reason the bounds are
     /// derived rather than stored.
+    ///
+    /// `relativeDay` is derived inside this same republish, so every emission asks the clock again:
+    /// hoisting it out would freeze "Today" onto a screen that is still open the next morning
+    /// (`AppointmentDetailViewModel.kt:44`, the A62 ruling).
     private func republish() {
         guard let loaded else { return }
         let appointment = loaded.appointment
@@ -124,12 +128,28 @@ public final class AppointmentDetailViewModel {
             isLoading: false,
             appointment: appointment,
             healthNotes: nonBlank(loaded.profile?.healthNotes),
+            relativeDay: appointment.map { relativeDay(startDate: $0.startsAt.date) },
             startEpochMs: startEpochMs ?? 0,
             endEpochMs: startEpochMs.map { start in
                 start + Int64(appointment?.durationMinutes ?? 0) * Self.millisPerMinute
             } ?? 0,
             showDeleteConfirm: state.showDeleteConfirm
         )
+    }
+
+    /// Whole calendar days between today and the appointment's start date, never an elapsed-hours
+    /// count (`AppointmentDetailViewModel.kt:76-88`).
+    ///
+    /// The chip names the day the appointment sits on, so an appointment at 09:00 still reads
+    /// "Today" at noon and only becomes "Past" once the date itself is behind us.
+    private func relativeDay(startDate: LocalDate) -> RelativeDay {
+        let days = startDate.epochDay - clock.today().epochDay
+        switch days {
+        case 0: return .today
+        case 1: return .tomorrow
+        case let distance where distance > 1: return .inDays(distance)
+        default: return .past
+        }
     }
 
     /// `AppointmentDetailViewModel.kt:73-75`.
