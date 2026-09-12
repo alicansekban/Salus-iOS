@@ -95,6 +95,14 @@ struct ReminderHealthScreen: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(colors.background)
             .navigationTitle(SettingsStrings.reminderHealthTitle)
+        // LAST in the chain, and `#if os(iOS)` because the modifier is iOS-only API while every
+        // feature package also builds for the macOS test host (CLAUDE.md's `.macOS(.v14)`
+        // concession). Last because SwiftFormat indents whatever follows an `#endif` one level
+        // deeper, which reads as if those modifiers were inside the guard
+        // (`VitalsEditorChrome.swift`, `AppointmentDetailScreen.swift` set it the same way).
+        #if os(iOS)
+            .navigationBarTitleDisplayMode(.inline)
+        #endif
     }
 
     @ViewBuilder
