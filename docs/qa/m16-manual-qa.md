@@ -61,6 +61,7 @@ screen and carry their own contract under the table.
 | Reminder Health | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
 | AI summary | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
 | Doctor report | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
+| Doctor report — PDF preview cover | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
 | Trends | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
 | Paywall | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
 | Tab bar (Task 5) | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
@@ -97,6 +98,13 @@ checks above, tick a cell only when all of these hold:
 - **Appointments** — the "YAKLAŞAN RANDEVULAR" overline is upper-case and in the muted overline
   colour, "Tümünü Gör" beside it is `primary`, and each appointment card's time chip follows the
   palette.
+
+The **Doctor report — PDF preview cover** row is the `fullScreenCover` §3.5.6 opens ("Önizle" or
+the preview card). It draws its own chrome rather than a navigation bar — a `headline` title, a
+share glyph and a close ✕ over a `PDFView` — so tick a cell only when that header row sits legibly
+on the screen's ground in the palette, the two glyphs are reachable and distinguishable, and the
+rendered page itself is unaffected by the theme (a PDF is paper: it stays white in dark mode, which
+is correct and is not a finding).
 
 Onboarding is only reachable on a fresh install; its three rows are §2's three pages and can be
 ticked in one walk per palette. Resetting the device (Settings → General → Transfer or Reset

@@ -299,8 +299,8 @@ Milestone plans live in `docs/plans/`. Toolchain and CI usage: `README.md`.
   `.salusConfirmDialog(…)` (+ `.salusDismissesKeyboardOnTap()`). Charts are the four in
   `SalusUI/chart/`. A component that needs a knob gains it in `SalusUI` with its twin's citation —
   never a private copy in a feature. — *review; the list lives in
-  `Packages/SalusUI/Sources/SalusUI/component/`, `…/shell/` and `…/chart/`, which is what to
-  re-derive it from.*
+  `Packages/SalusUI/Sources/SalusUI/component/`, `…/shell/`, `…/snackbar/` and `…/chart/`, which
+  is what to re-derive it from — all four, or the snackbar host goes missing.*
 - **`SalusSegmentedTabs` is the content-tab control; `Picker(.segmented)` is retired.** iOS-M16
   reversed M14's divergence (b): the native segmented control cannot take the per-palette
   `primaryContainer` pill per instance, so the sliding pill is drawn with `matchedGeometryEffect`

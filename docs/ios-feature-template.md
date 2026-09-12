@@ -507,8 +507,8 @@ Design values come only from `salus-android/docs/design/design-tokens.md` throug
 ### The shared vocabulary, and it is closed (MANDATORY)
 
 A screen composes what `SalusUI` already ships. Re-derive the list from
-`Packages/SalusUI/Sources/SalusUI/component/`, `…/shell/` and `…/chart/` rather than from memory —
-today it is:
+`Packages/SalusUI/Sources/SalusUI/component/`, `…/shell/`, `…/snackbar/` and `…/chart/` — all
+four, or `SalusSnackbarHost` goes missing — rather than from memory. Today it is:
 
 | Group | Components |
 | --- | --- |
