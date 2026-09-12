@@ -239,9 +239,12 @@ while a top-level destination is showing.
   Inline mode is set per screen because the modifier describes the view it is applied to — a stack,
   or a root that sets it, says nothing about what gets pushed onto it.
 - Trailing **text** actions ("Kaydet", "Düzenle", "Sil") are plain `Button`s in
-  `ToolbarItem(placement: .primaryAction)`, tinted `primary` — the twin of Android's `TextButton`
-  rule. Trailing **icon** actions are `SalusIconButton` in the same placement, and every one carries
-  an `accessibilityLabel`.
+  `ToolbarItem(placement: .primaryAction)` — the twin of Android's `TextButton` rule. They draw
+  `primary` **by inheritance**: the shell tints the whole `TabView` (`App/RootView.swift`) and a
+  toolbar item takes that tint, so a screen never writes `.tint(…)` on one. `.primaryAction` is
+  also the only placement spelling; `.confirmationAction` resolves to the same trailing slot on
+  iOS, and two spellings for one slot is two things to check. Trailing **icon** actions are
+  `SalusIconButton` in the same placement, and every one carries an `accessibilityLabel`.
 - The system back button stays. Never hide it, never draw your own: `SalusTopBar.Pushed`'s back
   button has no iOS twin.
 - A subtitle Android shows under a pushed title moves into the content's first row, not into the

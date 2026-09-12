@@ -112,10 +112,11 @@ struct MedicationEditorScreen: View {
             // `MedicationEditorScreen.kt:96-104` — the one trailing action M15 leaves in the bar.
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
+                    // No `.tint` of its own: the shell tints the whole `TabView` `primary`
+                    // (`RootView.swift`), and a toolbar action inherits it.
                     Button { onEvent(.saveClicked) } label: {
                         Text(verbatim: MedicationsStrings.editorSave)
                     }
-                    .tint(theme.colorScheme.primary)
                 }
             }
             // `MedicationEditorScreen.kt:170-180`. The confirm label is the shared `salus_delete`,

@@ -282,10 +282,17 @@ Milestone plans live in `docs/plans/`. Toolchain and CI usage: `README.md`.
   `#if os(iOS) .navigationBarTitleDisplayMode(.inline) #endif` **last** in the modifier chain — the
   `#if` because the modifier is iOS-only API and every feature package also builds for the macOS
   test host, and *last* because SwiftFormat indents whatever follows an `#endif` one level deeper.
-  Trailing actions are plain `Button`s in `ToolbarItem(placement: .primaryAction)` tinted `primary`
-  (icons use `SalusIconButton`, each with an `accessibilityLabel`). The system back button stays and
-  is never redrawn. `docs/ios-feature-template.md` §"The title bar is the system's" carries the
-  worked example. — *review.*
+  **There is one toolbar-action shape and it takes no arguments beyond its own:** a plain `Button`
+  in `ToolbarItem(placement: .primaryAction)`, drawing `primary` because the shell tints the whole
+  `TabView` (`App/RootView.swift`) and a toolbar item inherits that — **never a per-site
+  `.tint(…)`**, which is a second place the same colour can drift, and **never a second placement
+  spelling**: `.confirmationAction` resolves to the same trailing slot on iOS, so one spelling
+  means one thing to check. Icons use `SalusIconButton`, each with an `accessibilityLabel`. The
+  system back button stays and is never redrawn. `docs/ios-feature-template.md` §"The title bar is
+  the system's" carries the worked example. — *review; `grep -rn "\.tint(" App/ Packages/` has
+  exactly two production hits and neither is a toolbar item: the shell's own `TabView` line, and
+  `ReminderHealthScreen`'s `.borderedProminent` fill. A third inside a `ToolbarItem` is the
+  finding.*
 - **The shared components are the vocabulary, and it is closed.** A screen composes what
   `SalusUI` already ships and does not hand-roll a fifth copy of one:
   `SalusAvatar`, `SalusButton`, `SalusExtendedFab`, `SalusFab`, `SalusIconButton`, `SalusCard`,

@@ -90,12 +90,13 @@ struct VitalsEditorChrome<Content: View>: View {
             // this tree uses (`MedicationDetailScreen.swift:19-24`).
             ToolbarItem(placement: .primaryAction) {
                 // `TextButton(onClick = onSave, enabled = saveEnabled)`
-                // (`VitalsEditorChrome.kt:56-61`) — a plain `Button` tinted `primary`, the §2.2
-                // rule for every pushed screen's trailing text action.
+                // (`VitalsEditorChrome.kt:56-61`) — a plain `Button`, the §2.2 rule for every
+                // pushed screen's trailing text action. The `primary` tint is inherited: the
+                // shell tints the whole `TabView` (`RootView.swift`), so a per-site `.tint` is a
+                // second place the same colour could drift.
                 Button(action: onSave) {
                     Text(verbatim: VitalsStrings.save)
                 }
-                .tint(theme.colorScheme.primary)
                 .disabled(!saveEnabled)
             }
         }

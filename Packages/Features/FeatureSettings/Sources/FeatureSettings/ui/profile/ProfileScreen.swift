@@ -6,7 +6,7 @@
 //                                      draws the back button, which is why `profile_back` is a
 //                                      dropped key and `onBack` is not a parameter here
 //                                      (recorded divergence (d)).
-//   `actions = { TextButton }`       → a `.confirmationAction` toolbar item.
+//   `actions = { TextButton }`       → a `.primaryAction` toolbar item.
 //   `Column` + `verticalScroll`      → `ScrollView` + `VStack(spacing:)`.
 //   `SalusSectionHeader(             → `SalusSectionHeader(title:)`. Kotlin drops the header's own
 //    contentPadding = top(sm))`        horizontal padding because its scroll column already applies
@@ -94,7 +94,10 @@ struct ProfileScreen: View {
         .background(theme.colorScheme.background)
         .navigationTitle(SettingsStrings.profileTitle)
         .toolbar {
-            ToolbarItem(placement: .confirmationAction) {
+            // `.primaryAction`, the one placement every pushed screen's trailing text action
+            // uses (CLAUDE.md, Design system rules). It resolves to the same trailing slot as
+            // `.confirmationAction` on iOS; one spelling means one thing to check.
+            ToolbarItem(placement: .primaryAction) {
                 // `actions = { TextButton(onClick = SaveClicked) { Text(profile_save) } }`
                 // (`ProfileScreen.kt:88`). A text action in the bar stays a Material TextButton.
                 Button { onEvent(.saveClicked) } label: {

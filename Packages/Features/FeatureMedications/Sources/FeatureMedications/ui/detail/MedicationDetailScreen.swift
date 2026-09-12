@@ -91,10 +91,12 @@ struct MedicationDetailScreen: View {
                     }
                 }
                 ToolbarItem(placement: .primaryAction) {
+                    // No `.tint` of its own: the shell tints the whole `TabView` `primary`
+                    // (`RootView.swift`), and a toolbar action inherits it. One shape for every
+                    // pushed screen's text action (CLAUDE.md, Design system rules).
                     Button(action: onEdit) {
                         Text(verbatim: MedicationsStrings.detailEdit)
                     }
-                    .tint(theme.colorScheme.primary)
                 }
             }
             // `MedicationDetailScreen.kt:165-175`. The confirm and dismiss labels are the shared
