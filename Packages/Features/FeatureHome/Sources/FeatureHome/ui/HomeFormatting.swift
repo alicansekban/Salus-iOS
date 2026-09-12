@@ -1,40 +1,41 @@
 // The four things the dashboard formats, ported from the private helpers at the bottom of
-// `feature/home/src/main/kotlin/com/alicansekban/salus/feature/home/ui/HomeScreen.kt` plus the two
-// `DateTimeFormatter`s its cards build inline (`HomeScreen.kt:151-154`, `:279-281`, `:429-436`).
+// `feature/home/src/main/kotlin/com/alicansekban/salus/feature/home/ui/HomePager.kt:376-380` plus
+// the three `DateTimeFormatter`s the hero and the appointment card build
+// (`HomeScreen.kt:194-196`, `HomeCards.kt:242-246`).
 //
 // Kotlin keeps them file-private next to the composables; Swift has no per-file privacy for
 // something four `View` files call, so they sit in one internal namespace instead. Nothing outside
 // this package can name it — the package exports `HomeRoute` and nothing else.
 //
 // THE LOCALE ASYMMETRY IS ANDROID'S AND IS PORTED AS-IS (research §9, row 14): `minutes` formats in
-// the **view's** locale (`HomeScreen.kt:430` takes `locale`), `number` in a fixed root locale
-// (`HomeScreen.kt:433` names `Locale.ROOT`), so a Turkish device reads "08:00" alongside "72.5" and
+// the **view's** locale (`HomePager.kt:377` takes `locale`), `number` in a fixed root locale
+// (`HomePager.kt:380` names `Locale.ROOT`), so a Turkish device reads "08:00" alongside "72.5" and
 // not "72,5". Unifying the two would be a copy change, not a port.
+//
+// M15 SHORTENED THE HERO'S DATE from `FormatStyle.FULL` to `FormatStyle.MEDIUM`
+// (`HomeScreen.kt:195`): the band's overline is a small line beside a chip, and a spelled-out
+// weekday wrapped it. `todayDate` follows, and is the reason the helper is no longer `fullDate`.
 //
 // NO `Calendar` ANYWHERE HERE, and two of the four helpers are the reason the rule needs stating:
 //
-//   `fullDate` is a **day**, so it goes through `SalusModel.LocalDate(epochDay:)` and its
+//   `todayDate` is a **day**, so it goes through `SalusModel.LocalDate(epochDay:)` and its
 //   `formatted(pattern:locale:)`, which renders through a fixed-GMT `DateFormatter` over six
-//   numbers. Android's `DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL)` has no
-//   `DateFormatter.dateFormat` twin that takes a *style* without a `Date`, so the locale's FULL
+//   numbers. Android's `DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)` has no
+//   `DateFormatter.dateFormat` twin that takes a *style* without a `Date`, so the locale's MEDIUM
 //   pattern is derived once from a template and handed to that renderer.
 //
-//   `appointmentStart` is an **instant** (`epochMs` + the zone it was made in), which is the one
-//   thing `Foundation.Date` is still for in this port. It formats with `Date.FormatStyle`, whose
-//   `.timeZone(_:)` is Android's `atZone(ZoneId.of(id))` and whose `?? .current` is the
-//   `runCatching { … }.getOrDefault(ZoneId.systemDefault())` around it (`HomeScreen.kt:296-297`).
+//   `appointmentDate` / `appointmentTime` read an **instant** (`epochMs` + the zone it was made
+//   in), which is the one thing `Foundation.Date` is still for in this port. They format with
+//   `Date.FormatStyle`, whose `timeZone:` is Android's `atZone(ZoneId.of(id))` and whose
+//   `?? .current` is the `runCatching { … }.getOrDefault(ZoneId.systemDefault())` around it
+//   (`HomeCards.kt:159`).
 
 import Foundation
 import SalusModel
 
-/// The dashboard's formatters (`HomeScreen.kt:429-436` plus the two inline `DateTimeFormatter`s).
+/// The dashboard's formatters (`HomePager.kt:376-380` plus `HomeCards.kt:242-246`).
 enum HomeFormatting {
-    /// `SparklineWidth = 96.dp` (`HomeScreen.kt:435`).
-    static let sparklineWidth: CGFloat = 96
-    /// `SparklineHeight = 32.dp` (`HomeScreen.kt:436`).
-    static let sparklineHeight: CGFloat = 32
-
-    /// `formatMinutes(minutes, locale)` (`HomeScreen.kt:429-430`).
+    /// `formatMinutes(minutes, locale)` (`HomePager.kt:376-377`).
     ///
     /// `%02lld` rather than Kotlin's `%02d`: `String(format:)` reads a 32-bit `CInt` for `%d`, and
     /// Swift's `Int` is encoded 64-bit in the argument list — the same remapping the string catalog
@@ -57,37 +58,56 @@ enum HomeFormatting {
         return String(format: isWhole ? "%.0f" : "%.1f", locale: root, value)
     }
 
-    /// The header's date: `DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL)` over
-    /// `LocalDate.ofEpochDay(todayEpochDay)` (`HomeScreen.kt:151-154`, `:170-172`).
+    /// The hero band's date: `DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)` over
+    /// `LocalDate.ofEpochDay(todayEpochDay)` (`HomeScreen.kt:194-199`).
     ///
     /// Two steps, because Foundation splits what `java.time` joins: `DateFormatter.dateFormat(
-    /// fromTemplate:options:locale:)` answers how *this* locale orders a weekday, day, month and
-    /// year — the FULL style's field set — and `LocalDate.formatted(pattern:locale:)` renders the
-    /// day with it. The template's fallback is the Turkish/English order, since Turkish is both the
-    /// default and the fallback locale (spec §6.4); it is unreachable for every locale Foundation
-    /// ships and exists only because the API is optional.
-    static func fullDate(epochDay: Int, locale: Locale) -> String {
+    /// fromTemplate:options:locale:)` answers how *this* locale orders a day, an abbreviated month
+    /// and a year — the MEDIUM style's field set — and `LocalDate.formatted(pattern:locale:)`
+    /// renders the day with it. The template's fallback is the Turkish/English order, since Turkish
+    /// is both the default and the fallback locale (spec §6.4); it is unreachable for every locale
+    /// Foundation ships and exists only because the API is optional.
+    static func todayDate(epochDay: Int, locale: Locale) -> String {
         let pattern = DateFormatter.dateFormat(
-            fromTemplate: "EEEEdMMMMyyyy",
+            fromTemplate: "dMMMyyyy",
             options: 0,
             locale: locale
-        ) ?? "d MMMM yyyy EEEE"
+        ) ?? "d MMM yyyy"
         return LocalDate(epochDay: epochDay).formatted(pattern: pattern, locale: locale)
     }
 
-    /// One appointment's start: `Instant.ofEpochMilli(...).atZone(...).format(
-    /// ofLocalizedDateTime(MEDIUM, SHORT))` (`HomeScreen.kt:279-281`, `:294-299`).
+    /// One appointment's day: `Instant.ofEpochMilli(...).atZone(...).format(
+    /// ofLocalizedDate(MEDIUM))` (`HomeCards.kt:159-160`, `:242-243`).
     ///
-    /// `.abbreviated` is Java's `MEDIUM` date and `.shortened` its `SHORT` time. An unparsable
-    /// `timeZoneId` falls back to the device zone, which is `runCatching { ZoneId.of(id) }
-    /// .getOrDefault(ZoneId.systemDefault())` (`HomeScreen.kt:296-297`) one for one.
-    static func appointmentStart(epochMs: Int64, timeZoneId: String, locale: Locale) -> String {
+    /// M15 split what used to be one line into a date under the title and a time in the trailing
+    /// chip (`HomeCards.kt:184-193`), so the single `MEDIUM, SHORT` formatter became these two.
+    /// `.abbreviated` is Java's `MEDIUM`.
+    static func appointmentDate(epochMs: Int64, timeZoneId: String, locale: Locale) -> String {
+        formatted(epochMs: epochMs, timeZoneId: timeZoneId, locale: locale, date: .abbreviated, time: .omitted)
+    }
+
+    /// One appointment's clock time: `...format(ofLocalizedTime(SHORT))` (`HomeCards.kt:245-246`).
+    /// `.shortened` is Java's `SHORT`.
+    static func appointmentTime(epochMs: Int64, timeZoneId: String, locale: Locale) -> String {
+        formatted(epochMs: epochMs, timeZoneId: timeZoneId, locale: locale, date: .omitted, time: .shortened)
+    }
+
+    /// The shared half of the two above. An unparsable `timeZoneId` falls back to the device zone,
+    /// which is `runCatching { ZoneId.of(id) }.getOrDefault(ZoneId.systemDefault())`
+    /// (`HomeCards.kt:159`) one for one.
+    private static func formatted(
+        epochMs: Int64,
+        timeZoneId: String,
+        locale: Locale,
+        date: Date.FormatStyle.DateStyle,
+        time: Date.FormatStyle.TimeStyle
+    ) -> String {
         let instant = Date(timeIntervalSince1970: Double(epochMs) / 1000)
         // Set on the style rather than through `.timeZone(_:)`, which is the *symbol* modifier
         // (it adds a zone field to the output) and not the zone the fields are read in.
         let style = Date.FormatStyle(
-            date: .abbreviated,
-            time: .shortened,
+            date: date,
+            time: time,
             locale: locale,
             timeZone: TimeZone(identifier: timeZoneId) ?? .current
         )

@@ -73,6 +73,23 @@ The two Task 5 rows are the chrome rather than a screen, so tick a cell only whe
   `primaryContainer` circle with an emerald-equivalent heart, and the bell and avatar on the right
   take the palette's colours too.
 
+The **Home** row is a screen row, and Task 6 is what filled it in. On top of the four generic
+checks above, tick a cell only when all of these hold:
+
+- **Hero band** — a full-bleed gradient meeting the navigation bar with no seam or gap; the date
+  overline and the greeting are legible on it in **both** modes (light paints the saturated brand
+  green and the text is `onPrimary`; dark rises out of the app background and the text is
+  `onSurface`); the dose-progress chip sits at the trailing edge of the greeting line and follows
+  the palette. No avatar in the band — it is in the navigation bar.
+- **Snapshot pager** — the card fills the width inside the screen inset, its ground is one rung
+  up the surface ladder from the page (`surfaceContainer`), and the dots under it show the
+  palette's `primary` on the active pill.
+- **AI card** — the gradient frame around it is visible in every palette and changes colour with
+  it (emerald→rose in CLASSIC), and the "Yeni Özet" button is the palette's `primary`.
+- **Appointments** — the "YAKLAŞAN RANDEVULAR" overline is upper-case and in the muted overline
+  colour, "Tümünü Gör" beside it is `primary`, and each appointment card's time chip follows the
+  palette.
+
 Onboarding is only reachable on a fresh install; its row can be checked once per palette by
 resetting the app (Settings → General → Transfer or Reset iPhone → Erase All Content and
 Settings is heavy, so prefer removing the app's data/reinstall) rather than re-installing;
@@ -89,7 +106,26 @@ permissions._
 
 ## 3. Gestures
 
-_To be filled by the component and screen tasks — swipe, delete, undo, maps._
+_The remaining rows are filled by the other screen tasks — swipe to delete, undo, maps._
+
+### 3.1 Home's snapshot pager and its entrance (Task 6)
+
+The pager is the one `TabView` outside `App/` (spec §4.1) and the only horizontal gesture on a tab
+root, so it is checked on its own. Run 3.1.1–3.1.4 on a profile that has **all three** pages
+(medications with a dose today, at least one measurement and cycle tracking on) and 3.1.5 on a
+profile with no cycle.
+
+| # | Step | Expect | ☐ |
+|---|---|---|---|
+| 3.1.1 | Home root: swipe the snapshot card left, then right | it pages one card at a time — doses → Ölçümler → Döngü and back; it never scrolls half a card and never jumps two | ☐ |
+| 3.1.2 | Watch the dots under the card while swiping | exactly three dots; the active one is a stretched pill in the palette's `primary` and it moves with the card, not after it | ☐ |
+| 3.1.3 | Swipe the pager while the page is scrolled halfway down | the horizontal swipe pages the card and does **not** scroll the screen; a vertical drag starting on the card scrolls the screen and does not page | ☐ |
+| 3.1.4 | On the doses page, tap "Alındı" | the dose is recorded (the ring's number goes up) and the Medications tab does **not** open; tapping anywhere else on that card opens Medications | ☐ |
+| 3.1.5 | A profile with no cycle tracking | two pages and two dots — never a third, empty card | ☐ |
+| 3.1.6 | VoiceOver, swipe between pages | each page announces its own label ("Bugünün dozları kartı", "Ölçümler kartı", "Döngü kartı") and its contents stay individually reachable; the dots are not announced | ☐ |
+| 3.1.7 | Cold start on Home, watching the five blocks | hero, readiness card (when shown), pager, AI card and appointments fade and settle **in that order**, one short step apart — never all at once and never out of order | ☐ |
+| 3.1.8 | Switch to another tab and come back to Home | Home is already settled — the entrance does **not** replay (spec §3.5). If it does replay, note it: that is the `@SceneStorage` escalation the spec records | ☐ |
+| 3.1.9 | Reduce Motion on (Ayarlar → Erişilebilirlik → Hareket), open Home | the five blocks arrive together on one short curve — no staggered ladder down the screen; note anything that still slides a visible distance | ☐ |
 
 ---
 

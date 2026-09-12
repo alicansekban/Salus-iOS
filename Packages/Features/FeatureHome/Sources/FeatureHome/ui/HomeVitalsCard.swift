@@ -1,25 +1,26 @@
-// Ported from `HomeScreen.kt:350-510` — the latest weight, blood pressure and glucose, each as a
-// badge + `titleMedium` value row (the M12 stat-tile reshape).
+// Ported from `feature/home/src/main/kotlin/com/alicansekban/salus/feature/home/ui/HomePager.kt` —
+// `VitalsPage` (`:272-325`), `PageEmptyState` (`:327-331`) and `MetricLine` (`:333-336`).
+//
+// The M15 page drops the per-row `SalusIconBadge` the pre-M15 card repeated three times: the badge
+// is the card's now, in ``HomeSnapshotCard``'s title row, and each reading is one `titleMedium`
+// line under it (`HomePager.kt:334-335`). The sparkline stops being a 96×32 slot beside the weight
+// and becomes a full-width strip under it (`fillMaxWidth().height(SalusSpacing.xxl)`,
+// `HomePager.kt:293-295`).
 //
 // Three conditions, all Kotlin's:
-//   `hasAnything`                       — nothing recorded at all is one empty line and no rows
-//                                         (`HomeScreen.kt:440-445`).
+//   `hasAnything`                       — nothing recorded at all is the shared empty state and no
+//                                         rows (`HomePager.kt:281-286`).
 //   `weightTrend.size >= 2`             — the sparkline needs two points to be a line
-//                                         (`HomeScreen.kt:459`); `SalusSparkline` draws nothing
-//                                         below that either, but the guard stays where Kotlin
-//                                         has it so the 96×32 slot is not reserved for a blank.
+//                                         (`HomePager.kt:290`); `SalusSparkline` draws nothing
+//                                         below that either, but the guard stays where Kotlin has
+//                                         it so the strip is not reserved for a blank.
 //   `systolic != null && diastolic != null` — one half of a reading is not a reading
-//                                         (`HomeScreen.kt:468`).
+//                                         (`HomePager.kt:300`).
 //
 // The glucose line is the one place the port does arithmetic Kotlin spells inline: the snapshot
 // always carries mg/dL, and `GlucoseConversion.fromMgDl(_:unit:)` is the twin of
-// `mgdl / GlucoseConversion.MG_DL_PER_MMOL_L` (`HomeScreen.kt:487-501`) — with the mg/dL arm the
-// identity, exactly as the Kotlin `when` leaves it unconverted. Untouched by this milestone.
-//
-// Every row leads with `SalusIconBadge(MonitorHeart, vitals)` and the value is `titleMedium`
-// (`HomeScreen.kt:447-508`); `MonitorHeart` → `waveform.path.ecg` (SF Symbol twin, iOS 17 — a 60 Hz
-// heart trace, the closest family symbol to Material's monitor-heart). The weight row keeps the
-// sparkline trailing; the two rows below have no trailing child, so their text stays greedy.
+// `mgdl / GlucoseConversion.MG_DL_PER_MMOL_L` (`HomePager.kt:309-322`) — with the mg/dL arm the
+// identity, exactly as the Kotlin `when` leaves it unconverted.
 //
 // The sparkline is `.accessibilityHidden(true)` inside `SalusSparkline` itself: the weight beside
 // it is already spoken, and Compose gives its `Canvas` no `contentDescription` either.
@@ -29,89 +30,84 @@ import SalusModel
 import SalusUI
 import SwiftUI
 
-/// The vitals snapshot (`HomeScreen.kt:437-509`).
+/// The vitals snapshot (`VitalsPage`, `HomePager.kt:272-325`).
 struct HomeVitalsCard: View {
     let vitals: VitalsSnapshot
     let onTap: () -> Void
 
     @Environment(\.salusTheme) private var theme
 
-    /// `hasAnything` (`HomeScreen.kt:440-441`).
+    /// `hasAnything` (`HomePager.kt:281-282`).
     private var hasAnything: Bool {
         vitals.latestWeightKg != nil || vitals.latestSystolic != nil || vitals.latestGlucoseMgdl != nil
     }
 
     var body: some View {
-        HomeDashboardCard(onTap: onTap) {
+        // The page holds no interactive child, so the card can be the real `Button`
+        // `SalusCard(onTap:)` builds — free button semantics, free VoiceOver
+        // (``HomeDashboardCard``'s note). `MonitorHeart` → `waveform.path.ecg` (SF Symbol twin,
+        // iOS 17 — a heart trace, the closest family symbol to Material's monitor-heart).
+        HomeSnapshotCard(
+            systemImage: "waveform.path.ecg",
+            accent: theme.extendedColors.vitals,
+            title: HomeStrings.vitalsTitle,
+            onTap: onTap
+        ) {
             if hasAnything {
-                weightRow
-                bloodPressureLine
-                glucoseLine
-            } else {
-                HomeEmptyLine(text: HomeStrings.vitalsEmpty)
-            }
-        }
-    }
-
-    /// The weight row: badge, `titleMedium` value, and the sparkline when there is a trend to draw
-    /// (`HomeScreen.kt:447-467`).
-    @ViewBuilder private var weightRow: some View {
-        if let weight = vitals.latestWeightKg {
-            HStack(spacing: 0) {
-                rowBadge
-                Spacer().frame(width: SalusSpacing.md)
-                value(HomeStrings.vitalsWeight(HomeFormatting.number(weight)))
-                if vitals.weightTrend.count >= 2 {
-                    SalusSparkline(
-                        values: vitals.weightTrend,
-                        lineColor: theme.extendedColors.vitals.accent
-                    )
-                    .frame(width: HomeFormatting.sparklineWidth, height: HomeFormatting.sparklineHeight)
+                // `Column(verticalArrangement = spacedBy(SalusSpacing.sm))` (`HomePager.kt:287`).
+                VStack(alignment: .leading, spacing: SalusSpacing.sm) {
+                    weightRows
+                    bloodPressureLine
+                    glucoseLine
                 }
+            } else {
+                // `PageEmptyState(MonitorHeart, today_vitals_empty, accent)` (`HomePager.kt:284`).
+                SalusEmptyState(
+                    systemImage: "waveform.path.ecg",
+                    title: HomeStrings.vitalsEmpty,
+                    accent: theme.extendedColors.vitals
+                )
             }
-            .frame(maxWidth: .infinity)
         }
     }
 
-    /// `today_vitals_bp`, only with both halves (`HomeScreen.kt:468-485`).
+    /// The weight line and, when there is a trend to draw, the strip under it
+    /// (`HomePager.kt:288-299`).
+    @ViewBuilder private var weightRows: some View {
+        if let weight = vitals.latestWeightKg {
+            metricLine(HomeStrings.vitalsWeight(HomeFormatting.number(weight)))
+            if vitals.weightTrend.count >= 2 {
+                SalusSparkline(
+                    values: vitals.weightTrend,
+                    lineColor: theme.extendedColors.vitals.accent
+                )
+                // `fillMaxWidth().height(SalusSpacing.xxl)` (`HomePager.kt:293-295`).
+                .frame(maxWidth: .infinity)
+                .frame(height: SalusSpacing.xxl)
+            }
+        }
+    }
+
+    /// `today_vitals_bp`, only with both halves (`HomePager.kt:300-308`).
     @ViewBuilder private var bloodPressureLine: some View {
         if let systolic = vitals.latestSystolic, let diastolic = vitals.latestDiastolic {
-            HStack(spacing: 0) {
-                rowBadge
-                Spacer().frame(width: SalusSpacing.md)
-                value(HomeStrings.vitalsBloodPressure(
-                    HomeFormatting.number(systolic),
-                    HomeFormatting.number(diastolic)
-                ))
-            }
-            .padding(.top, SalusSpacing.sm)
+            metricLine(HomeStrings.vitalsBloodPressure(
+                HomeFormatting.number(systolic),
+                HomeFormatting.number(diastolic)
+            ))
         }
     }
 
-    /// The glucose reading in the unit the user reads in (`HomeScreen.kt:486-508`).
+    /// The glucose reading in the unit the user reads in (`HomePager.kt:309-322`).
     @ViewBuilder private var glucoseLine: some View {
         if let mgdl = vitals.latestGlucoseMgdl {
             let glucose = GlucoseConversion.fromMgDl(mgdl, unit: vitals.glucoseUnit)
-            HStack(spacing: 0) {
-                rowBadge
-                Spacer().frame(width: SalusSpacing.md)
-                value(HomeStrings.vitalsGlucose(HomeFormatting.number(glucose), unit: vitals.glucoseUnit))
-            }
-            .padding(.top, SalusSpacing.sm)
+            metricLine(HomeStrings.vitalsGlucose(HomeFormatting.number(glucose), unit: vitals.glucoseUnit))
         }
     }
 
-    /// `SalusIconBadge(MonitorHeart, vitals)` (`HomeScreen.kt:449-452`, `:471-474`, `:489-492`).
-    /// Repeated per row rather than shared so each row is self-contained, exactly as Kotlin calls
-    /// the composable once per row.
-    private var rowBadge: some View {
-        SalusIconBadge(systemImage: "waveform.path.ecg", accent: theme.extendedColors.vitals)
-    }
-
-    /// The value text: `titleMedium`, `weight(1f)` (`HomeScreen.kt:454-458`, `:476-483`,
-    /// `:503-506`) — greedy so the weight sparkline is pushed to the trailing edge and the two
-    /// lines below start at the same inset.
-    private func value(_ text: String) -> some View {
+    /// `MetricLine(text)` — one reading, `titleMedium` (`HomePager.kt:333-336`).
+    private func metricLine(_ text: String) -> some View {
         // `verbatim:` because the caller hands over a resolved string; the plain initializer would
         // treat it as a `LocalizedStringKey` and look it up in the *main* bundle.
         Text(verbatim: text)

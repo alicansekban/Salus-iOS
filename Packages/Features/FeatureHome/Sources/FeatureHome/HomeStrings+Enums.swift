@@ -9,7 +9,7 @@
 //
 // **The plain accessors in `HomeStrings.swift` stay.** These add a typed door to keys that already
 // have one; `HomeStringsTests` asserts against `HomeStrings.Key`, which is untouched, and the string
-// pin stays at 32.
+// pin is unmoved by this file.
 //
 // This lives in a separate file rather than in `HomeStrings.swift` for one reason: the accessors
 // there are a flat transcription of the Android XML, and mixing switches over feature enums into it

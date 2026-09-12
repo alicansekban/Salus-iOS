@@ -1,84 +1,138 @@
-// Ported from `HomeScreen.kt:273-314` — the next few appointments.
+// Ported from `feature/home/src/main/kotlin/com/alicansekban/salus/feature/home/ui/HomeCards.kt` —
+// `AppointmentsSection` (`:108-150`) and `AppointmentCard` (`:152-196`).
+//
+// THE M15 SHAPE IS ONE CARD PER APPOINTMENT, not one card holding every row: a card names one
+// appointment, so it is the thing that opens it (parity row A58). The section header carries the
+// "Tümünü Gör" action that opens the tab, and an empty list is a single card holding the shared
+// empty state (`HomeCards.kt:132-139`).
+//
+// The file keeps its name while holding the section, because the section is nothing but its cards:
+// ``HomeAppointmentsSection`` is the header plus the list, and the card itself is `private` here
+// the way Kotlin keeps `AppointmentCard` private inside `HomeCards.kt`.
+//
+// DIVERGENCE (e), WHERE A CARD GOES. Kotlin takes `onOpenAppointment: (String) -> Unit` and opens
+// that appointment's own detail screen (`HomeCards.kt:144`); Home does not own that key, so on
+// Android it is a shell callback. iOS's shell hands Home five callbacks and `onOpenAppointments` is
+// the one for this section (spec §4.1 leaves the callback contract alone in this task), so a card
+// opens the Appointments tab rather than the appointment. The per-id jump needs a shell change and
+// is not this task's.
 //
 // Material → SwiftUI:
-//   `Column { … }` per appointment                 → a `VStack(alignment: .leading)`.
-//   `Spacer(height = sm)` + `align(Alignment.End)` → the same `sm` gap and a trailing-aligned frame
-//                                                    around the pill.
-//   `DateTimeFormatter.ofLocalizedDateTime(...)`   → `HomeFormatting.appointmentStart(...)`.
-//
-// The pill's action is the card's action: Kotlin passes the very same `onClick` to both
-// (`HomeScreen.kt:306-311`), because "see details" and tapping the card are one intention.
-//
-// AND THAT IS WHY THE CARD IS NOT A BUTTON. Same callback or not, `SalusCard(onTap:)` is a
-// `Button` on iOS (`SalusCard.swift:33-34`) and the pill would be a button inside its label —
-// swallowed by the outer one, and read by VoiceOver as a button within a button. So the card is
-// the plain, non-interactive `HomeDashboardCard`, the rows carry the tap through
-// `homeOpensCard(_:)`, and the pill is their **sibling** in the column. `VitalsRow`,
-// `MedicationCard` and `AppointmentCard` all take this shape; it is recorded as a divergence.
+//   `Column(verticalArrangement = spacedBy(sm))`  → `VStack(spacing: SalusSpacing.sm)`.
+//   `SalusSectionHeader(action =, onAction =)`    → the header's `actions:` `@ViewBuilder` slot.
+//   `startsAt.format(dateFormatter(locale))`      → `HomeFormatting.appointmentDate(...)`.
+//   `startsAt.format(timeFormatter(locale))`      → `HomeFormatting.appointmentTime(...)`.
 
 import SalusDesignSystem
 import SalusUI
 import SwiftUI
 
-/// The upcoming appointments (`HomeScreen.kt:273-313`).
-struct HomeAppointmentsCard: View {
+/// The next few appointments: a section header that opens the tab, then one card each
+/// (`AppointmentsSection`, `HomeCards.kt:108-150`).
+struct HomeAppointmentsSection: View {
     let appointments: [UpcomingAppointment]
-    let onTap: () -> Void
+    let onOpenAppointments: () -> Void
 
     @Environment(\.salusTheme) private var theme
 
     var body: some View {
-        HomeDashboardCard {
+        VStack(alignment: .leading, spacing: SalusSpacing.sm) {
+            // `today_appointments_title` is stored upper-case in the catalog (spec §6) — never
+            // `uppercased()` at runtime, which a Turkish locale would spell with a dotted İ.
+            SalusSectionHeader(title: HomeStrings.appointmentsTitle) {
+                seeAllAction
+            }
             if appointments.isEmpty {
-                HomeEmptyLine(text: HomeStrings.appointmentsEmpty)
-                    .homeOpensCard(onTap)
+                // `SalusCard { SalusEmptyState(CalendarMonth, today_appointments_empty, accent) }`
+                // (`HomeCards.kt:133-139`). `CalendarMonth` → `calendar` (SF Symbol twin).
+                HomeDashboardCard {
+                    SalusEmptyState(
+                        systemImage: "calendar",
+                        title: HomeStrings.appointmentsEmpty,
+                        accent: theme.extendedColors.appointments
+                    )
+                }
             } else {
-                // `Row(verticalAlignment = Top) { SalusIconBadge(CalendarMonth, …); Column(weight(1f)) }`
-                // (`HomeScreen.kt:355-389`). `CalendarMonth` → `calendar` (SF Symbol twin).
-                HStack(alignment: .top, spacing: 0) {
-                    SalusIconBadge(systemImage: "calendar", accent: theme.extendedColors.appointments)
-                    Spacer().frame(width: SalusSpacing.md)
-                    VStack(alignment: .leading, spacing: 0) {
-                        ForEach(appointments, id: \.id) { appointment in
-                            HomeAppointmentRow(appointment: appointment)
-                                .homeOpensCard(onTap)
-                        }
-                        // `Spacer(height = sm)` then the trailing pill (`HomeScreen.kt:381-387`).
-                        Spacer().frame(height: SalusSpacing.sm)
-                        SalusButton(HomeStrings.viewDetails, variant: .secondary, size: .medium, action: onTap)
-                            .frame(maxWidth: .infinity, alignment: .trailing)
-                    }
+                ForEach(appointments, id: \.id) { appointment in
+                    HomeAppointmentCard(appointment: appointment, onTap: onOpenAppointments)
                 }
             }
         }
     }
+
+    /// The header's trailing text action: `labelLarge` in `primary`, on a full-height touch target
+    /// (`SalusSectionHeader.kt:59-73`).
+    private var seeAllAction: some View {
+        Button(action: onOpenAppointments) {
+            // `verbatim:` because the string is already resolved; the plain initializer would
+            // treat it as a `LocalizedStringKey` and look it up in the *main* bundle.
+            Text(verbatim: HomeStrings.seeAll)
+                .font(SalusTypography.labelLarge.font)
+                .tracking(SalusTypography.labelLarge.tracking)
+                .foregroundStyle(theme.colorScheme.primary)
+                .padding(.horizontal, SalusSpacing.sm)
+                .frame(minHeight: SalusTouchTarget.min)
+        }
+        // `.plain`, or the label would take the system tint over the token colour above it.
+        .buttonStyle(.plain)
+    }
 }
 
-/// One appointment: who and what, over when (`HomeScreen.kt:287-303`).
-private struct HomeAppointmentRow: View {
+/// One appointment: who and what, over when (`AppointmentCard`, `HomeCards.kt:152-196`).
+///
+/// The card holds no interactive child, so it can be the real `Button` `SalusCard(onTap:)` builds —
+/// free button semantics, free VoiceOver (``HomeDashboardCard``'s note). The M15 card lost the
+/// "Detayları gör" pill that used to force the non-interactive shape.
+private struct HomeAppointmentCard: View {
     let appointment: UpcomingAppointment
+    let onTap: () -> Void
 
     @Environment(\.salusTheme) private var theme
-    /// `LocalLocale.current.platformLocale` (`HomeScreen.kt:278`).
+    /// `LocalLocale.current.platformLocale` (`HomeCards.kt:158`).
     @Environment(\.locale) private var locale
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            // `listOfNotNull(title, doctorName).joinToString(" · ")` (`HomeScreen.kt:289-290`).
-            // Both halves are the user's own text, so nothing here is a catalog key.
-            Text(verbatim: [appointment.title, appointment.doctorName].compactMap(\.self).joined(separator: " · "))
-                .font(SalusTypography.titleMedium.font)
-                .tracking(SalusTypography.titleMedium.tracking)
-            Text(verbatim: HomeFormatting.appointmentStart(
-                epochMs: appointment.startsAtEpochMs,
-                timeZoneId: appointment.timeZoneId,
-                locale: locale
-            ))
-            .font(SalusTypography.bodyMedium.font)
-            .tracking(SalusTypography.bodyMedium.tracking)
-            .foregroundStyle(theme.colorScheme.onSurfaceVariant)
+        HomeDashboardCard(onTap: onTap) {
+            // `Row(verticalAlignment = CenterVertically, spacedBy(md))` (`HomeCards.kt:164-194`).
+            HStack(spacing: SalusSpacing.md) {
+                SalusAvatar(name: appointment.doctorName)
+                // `Column(weight(1f), spacedBy(xs))` (`HomeCards.kt:169-189`).
+                VStack(alignment: .leading, spacing: SalusSpacing.xs) {
+                    // The user's own text, so nothing here is a catalog key.
+                    Text(verbatim: appointment.title)
+                        .font(SalusTypography.titleMedium.font)
+                        .tracking(SalusTypography.titleMedium.tracking)
+                    if let doctorName = appointment.doctorName {
+                        // `listOfNotNull(doctorName, location).joinToString(" · ")`
+                        // (`HomeCards.kt:161-162`); iOS's `UpcomingAppointment` carries no
+                        // `location`, so the secondary line is the doctor alone.
+                        secondary(doctorName)
+                    }
+                    secondary(HomeFormatting.appointmentDate(
+                        epochMs: appointment.startsAtEpochMs,
+                        timeZoneId: appointment.timeZoneId,
+                        locale: locale
+                    ))
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                // `SalusStatusChip(startsAt.format(timeFormatter), Accent)` (`HomeCards.kt:190-193`).
+                SalusStatusChip(
+                    label: HomeFormatting.appointmentTime(
+                        epochMs: appointment.startsAtEpochMs,
+                        timeZoneId: appointment.timeZoneId,
+                        locale: locale
+                    ),
+                    status: .accent
+                )
+            }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.vertical, SalusSpacing.xs)
+    }
+
+    /// A supporting line: `bodySmall` on `onSurfaceVariant` (`HomeCards.kt:177-188`).
+    private func secondary(_ text: String) -> some View {
+        Text(verbatim: text)
+            .font(SalusTypography.bodySmall.font)
+            .tracking(SalusTypography.bodySmall.tracking)
+            .foregroundStyle(theme.colorScheme.onSurfaceVariant)
     }
 }

@@ -1,17 +1,34 @@
 // The twin of `feature/home/src/main/res/values/strings.xml` (Turkish, the source language) and
-// `feature/home/src/main/res/values-en/strings.xml` — all 34 keys `:feature:home` declares, name
+// `feature/home/src/main/res/values-en/strings.xml` — all 42 keys `:feature:home` declares, name
 // and text verbatim, resolved against this package's own bundle exactly as `R.string` resolves
 // against `:feature:home`.
+//
+// THE M15 SWEEP, key for key (Android `3391896..529a30f`). The table grew from 34 to 42: nine keys
+// were added (`home_overline_today`, `home_see_all`, `home_ai_new_summary`, the three
+// `home_pager_*` page labels, `home_next_dose`, `home_next_dose_none`, `home_last_dose`), exactly
+// one was deleted (`home_ai_summary_free_credit` — the AI card announces a new summary with a
+// control now, not with a credit line), and three kept their name while their text changed
+// (`home_view_details` in Turkish only, `today_appointments_title` and `home_take_dose` in both).
+// A `git diff` of the XML lists four `-` lines for that last group plus the deletion; only the
+// deletion is a key that left, which is why the count here is 34 + 9 − 1.
+//
+// TWO OF THE 42 ARE CARRIED FOR PARITY AND READ BY NOTHING ON iOS, and both are the same
+// component divergence: `SalusHeroBand` does not port Kotlin's `trailingOverline` slot
+// (`SalusHeroBand.swift`'s header, spec §3.3), so Home's band spends its one overline on the date
+// and never draws `home_overline_today`; and the AI card ends in a `SalusButton` rather than
+// Kotlin's "Detaylı İncele" + chevron affordance (spec §4.1), so `home_view_details` is unread
+// too. Both stay in the catalog because the key-set pin is Android's key set, not iOS's call
+// sites — dropping them would make the next Android string sweep look like a divergence.
 //
 // TWO ANDROID KEYS WERE DELIBERATELY NOT PORTED, and the omission is still the point: `home_title`
 // and `home_settings` were declared in both locales and read by nothing — `HomeScreen.kt` named
 // neither. They were leftovers of Android's M9, which removed the settings gear and moved the
 // title to the shell. Porting them would have put two keys in the catalog and in the key-set pin
 // that no accessor ever asks for. Android deleted them itself in `aebb056`, so the two key sets
-// are now the same 34; `HomeStringsTests` keeps the guard that neither comes back here alone.
+// agree; `HomeStringsTests` keeps the guard that neither comes back here alone.
 //
 // PLACEHOLDER MAPPING, the one place the port is not byte-for-byte. Android's specifiers are
-// Java's; nine keys carry them, and each is rewritten to the Swift spelling of the same argument:
+// Java's; ten keys carry them, and each is rewritten to the Swift spelling of the same argument:
 //
 //   Android      Swift        Keys                        Why
 //   -------------------------------------------------------------------------------------------
@@ -25,7 +42,8 @@
 //                             home_greeting_afternoon,
 //                             home_greeting_evening,
 //                             home_greeting_night
-//   %1$s/%2$s    %1$@/%2$@    today_vitals_bp             Same, twice: systolic and diastolic.
+//   %1$s/%2$s    %1$@/%2$@    today_vitals_bp,            Same, twice: systolic and diastolic;
+//                             home_next_dose              medication name and time.
 //
 // The sentence around every specifier is unchanged, and `HomeStringsTests` pins the rendered text
 // in both languages so the mapping cannot drift into a reworded string.
@@ -49,7 +67,14 @@ import SalusCommon
 
 /// The strings `:feature:home` owns.
 public enum HomeStrings {
-    // MARK: - The header: greeting and the card action (9)
+    // MARK: - The hero band (10)
+
+    /// `home_overline_today` — "BUGÜN" / "TODAY", stored upper-case (spec §6).
+    ///
+    /// Kotlin's hero puts this in the overline and the date in `trailingOverline`
+    /// (`HomeScreen.kt:196-199`); iOS's `SalusHeroBand` has one overline slot and spends it on the
+    /// date, so nothing reads this today. See the file header.
+    public static var overlineToday: String { localized(.overlineToday) }
 
     /// `home_greeting_morning` — "Günaydın, %1$@" / "Good morning, %1$@".
     public static func greetingMorning(_ name: String) -> String {
@@ -79,12 +104,20 @@ public enum HomeStrings {
     public static var greetingEveningPlain: String { localized(.greetingEveningPlain) }
     /// `home_greeting_night_plain` — "İyi geceler" / "Good night".
     public static var greetingNightPlain: String { localized(.greetingNightPlain) }
-    public static var viewDetails: String { localized(.viewDetails) }
 
     /// `home_dose_progress` — "Bugünün ilerlemesi %1$lld/%2$lld" / "Today's progress %1$lld/%2$lld".
     public static func doseProgress(_ taken: Int, _ total: Int) -> String {
         formatted(.doseProgress, taken, total)
     }
+
+    // MARK: - Carried for key parity, read by nothing on iOS (1)
+
+    /// `home_view_details` — "Detaylı İncele" / "View details".
+    ///
+    /// Kotlin's AI card ends in this label plus a chevron (`HomeCards.kt:93-104`); the iOS card
+    /// ends in a `SalusButton` instead (spec §4.1), so the label is unread here. See the file
+    /// header for why it stays in the catalog.
+    public static var viewDetails: String { localized(.viewDetails) }
 
     // MARK: - The reminder readiness card (2)
 
@@ -97,9 +130,10 @@ public enum HomeStrings {
 
     public static var aiSummaryTitle: String { localized(.aiSummaryTitle) }
     public static var aiSummaryDescription: String { localized(.aiSummaryDescription) }
-    public static var aiSummaryFreeCredit: String { localized(.aiSummaryFreeCredit) }
+    /// `home_ai_new_summary` — "Yeni Özet" / "New summary", the card's own call to action.
+    public static var aiNewSummary: String { localized(.aiNewSummary) }
 
-    // MARK: - The doses card (7)
+    // MARK: - The doses page (10)
 
     public static var dosesTitle: String { localized(.dosesTitle) }
     public static var dosesEmpty: String { localized(.dosesEmpty) }
@@ -109,12 +143,36 @@ public enum HomeStrings {
     public static var doseStatusMissed: String { localized(.doseStatusMissed) }
     public static var takeDose: String { localized(.takeDose) }
 
-    // MARK: - The appointments card (2)
+    /// `home_next_dose` — "Sıradaki: %1$@ · %2$@" / "Next: %1$@ · %2$@".
+    ///
+    /// Both arguments are already-resolved text, as on Android: the medication's own name and the
+    /// time `HomeFormatting.minutes(_:locale:)` rendered.
+    public static func nextDose(_ medicationName: String, _ time: String) -> String {
+        formatted(.nextDose, medicationName, time)
+    }
+
+    /// `home_next_dose_none` — "Bugün bekleyen doz kalmadı." / "Nothing left to take today.".
+    public static var nextDoseNone: String { localized(.nextDoseNone) }
+    /// `home_last_dose` — "SON DOZ" / "LAST DOSE", stored upper-case (spec §6).
+    public static var lastDose: String { localized(.lastDose) }
+
+    // MARK: - The appointments section (3)
 
     public static var appointmentsTitle: String { localized(.appointmentsTitle) }
     public static var appointmentsEmpty: String { localized(.appointmentsEmpty) }
+    /// `home_see_all` — "Tümünü Gör" / "See all", the section header's trailing action.
+    public static var seeAll: String { localized(.seeAll) }
 
-    // MARK: - The cycle card (4)
+    // MARK: - The pager page labels (3)
+
+    /// `home_pager_doses` — the doses page's accessibility label (`HomePager.kt:98`).
+    public static var pagerDoses: String { localized(.pagerDoses) }
+    /// `home_pager_vitals` — the vitals page's accessibility label (`HomePager.kt:110`).
+    public static var pagerVitals: String { localized(.pagerVitals) }
+    /// `home_pager_cycle` — the cycle page's accessibility label (`HomePager.kt:114`).
+    public static var pagerCycle: String { localized(.pagerCycle) }
+
+    // MARK: - The cycle page (4)
 
     public static var cycleTitle: String { localized(.cycleTitle) }
     public static var cycleEmpty: String { localized(.cycleEmpty) }
@@ -126,7 +184,7 @@ public enum HomeStrings {
 
     public static var cyclePeriodOngoing: String { localized(.cyclePeriodOngoing) }
 
-    // MARK: - The vitals card (6)
+    // MARK: - The vitals page (6)
 
     public static var vitalsTitle: String { localized(.vitalsTitle) }
     public static var vitalsEmpty: String { localized(.vitalsEmpty) }
@@ -160,9 +218,10 @@ public enum HomeStrings {
     /// a key the catalog really carries — a typo here would otherwise ship the key as the label.
     ///
     /// Android's `home_title` and `home_settings` were never ported (both were dead there, and
-    /// Android has since deleted them), so this enum and the XML are the same 34 keys.
+    /// Android has since deleted them), so this enum and the XML are the same 42 keys.
     enum Key: String, CaseIterable {
-        // The header: greeting and the card action (9).
+        // The hero band (10).
+        case overlineToday = "home_overline_today"
         case greetingMorning = "home_greeting_morning"
         case greetingAfternoon = "home_greeting_afternoon"
         case greetingEvening = "home_greeting_evening"
@@ -171,8 +230,10 @@ public enum HomeStrings {
         case greetingAfternoonPlain = "home_greeting_afternoon_plain"
         case greetingEveningPlain = "home_greeting_evening_plain"
         case greetingNightPlain = "home_greeting_night_plain"
-        case viewDetails = "home_view_details"
         case doseProgress = "home_dose_progress"
+
+        /// Carried for key parity, read by nothing on iOS (1).
+        case viewDetails = "home_view_details"
 
         // The reminder readiness card (2).
         case remindersBrokenTitle = "home_reminders_broken_title"
@@ -181,9 +242,9 @@ public enum HomeStrings {
         // The AI summary card (3).
         case aiSummaryTitle = "home_ai_summary_title"
         case aiSummaryDescription = "home_ai_summary_description"
-        case aiSummaryFreeCredit = "home_ai_summary_free_credit"
+        case aiNewSummary = "home_ai_new_summary"
 
-        // The doses card (7).
+        // The doses page (10).
         case dosesTitle = "today_doses_title"
         case dosesEmpty = "today_doses_empty"
         case doseStatusTaken = "dose_status_taken"
@@ -191,18 +252,27 @@ public enum HomeStrings {
         case doseStatusPending = "dose_status_pending"
         case doseStatusMissed = "dose_status_missed"
         case takeDose = "home_take_dose"
+        case nextDose = "home_next_dose"
+        case nextDoseNone = "home_next_dose_none"
+        case lastDose = "home_last_dose"
 
-        // The appointments card (2).
+        // The appointments section (3).
         case appointmentsTitle = "today_appointments_title"
         case appointmentsEmpty = "today_appointments_empty"
+        case seeAll = "home_see_all"
 
-        // The cycle card (4).
+        // The pager page labels (3).
+        case pagerDoses = "home_pager_doses"
+        case pagerVitals = "home_pager_vitals"
+        case pagerCycle = "home_pager_cycle"
+
+        // The cycle page (4).
         case cycleTitle = "today_cycle_title"
         case cycleEmpty = "today_cycle_empty"
         case cycleDay = "today_cycle_day"
         case cyclePeriodOngoing = "today_cycle_period_ongoing"
 
-        // The vitals card (6).
+        // The vitals page (6).
         case vitalsTitle = "today_vitals_title"
         case vitalsEmpty = "today_vitals_empty"
         case vitalsWeight = "today_vitals_weight"
@@ -224,7 +294,8 @@ public enum HomeStrings {
         String(format: localized(key), locale: .current, argument)
     }
 
-    /// The two-argument form, for `today_vitals_bp` — the only key Android gives two placeholders.
+    /// The two-argument form, for `today_vitals_bp`, `home_dose_progress` and `home_next_dose` —
+    /// the three keys Android gives two placeholders.
     private static func formatted(_ key: Key, _ first: CVarArg, _ second: CVarArg) -> String {
         String(format: localized(key), locale: .current, first, second)
     }

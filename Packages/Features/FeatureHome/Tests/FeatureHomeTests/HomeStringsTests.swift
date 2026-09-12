@@ -5,10 +5,16 @@ import Testing
 @testable import FeatureHome
 
 /// The twin of Android's `feature/home/src/main/res/values/strings.xml` (`tr`, the source
-/// language) and `values-en/strings.xml`, and the drift detector between them: the 34 ported keys
+/// language) and `values-en/strings.xml`, and the drift detector between them: the 42 ported keys
 /// and both of their translations are pinned here, copied from the XML.
 ///
-/// **34 on both sides now.** iOS deliberately never ported `home_title` and `home_settings`,
+/// **M16 moved the table from 34 to 42**, mirroring Android's M15 sweep (`3391896..529a30f`):
+/// nine keys added, one deleted (`home_ai_summary_free_credit`) and three re-valued under the same
+/// name (`home_view_details` in Turkish only, `today_appointments_title` and `home_take_dose` in
+/// both). The re-valued three show up as `-` lines in the XML diff without being keys that left,
+/// which is the trap this table exists to catch.
+///
+/// **42 on both sides now.** iOS deliberately never ported `home_title` and `home_settings`,
 /// which Android declared and read nowhere; Android has since deleted them itself (`aebb056`), so
 /// the two catalogs finally hold the same key set. The disjointness assertion below stays as the
 /// guard it always was — if either key ever comes back, it comes back on both sides on purpose or
@@ -30,7 +36,8 @@ struct HomeStringsTests {
     /// A new key there means a new row here, in the same commit — that is the whole job of this
     /// table. The rows follow the XML's order, grouped by the card that reads them.
     static let samples: [HomeStringSample] = [
-        // The header: greeting and the card action (9).
+        // The hero band (10).
+        HomeStringSample(key: "home_overline_today", turkish: "BUGÜN", english: "TODAY"),
         HomeStringSample(key: "home_greeting_morning", turkish: "Günaydın, %1$@", english: "Good morning, %1$@"),
         HomeStringSample(key: "home_greeting_afternoon", turkish: "İyi günler, %1$@", english: "Good afternoon, %1$@"),
         HomeStringSample(key: "home_greeting_evening", turkish: "İyi akşamlar, %1$@", english: "Good evening, %1$@"),
@@ -39,12 +46,13 @@ struct HomeStringsTests {
         HomeStringSample(key: "home_greeting_afternoon_plain", turkish: "İyi günler", english: "Good afternoon"),
         HomeStringSample(key: "home_greeting_evening_plain", turkish: "İyi akşamlar", english: "Good evening"),
         HomeStringSample(key: "home_greeting_night_plain", turkish: "İyi geceler", english: "Good night"),
-        HomeStringSample(key: "home_view_details", turkish: "Detayları gör", english: "View details"),
         HomeStringSample(
             key: "home_dose_progress",
             turkish: "Bugünün ilerlemesi %1$lld/%2$lld",
             english: "Today's progress %1$lld/%2$lld"
         ),
+        // Carried for key parity, read by nothing on iOS (1).
+        HomeStringSample(key: "home_view_details", turkish: "Detaylı İncele", english: "View details"),
         // The reminder readiness card (2).
         HomeStringSample(
             key: "home_reminders_broken_title",
@@ -63,12 +71,8 @@ struct HomeStringsTests {
             turkish: "Kayıtlarından haftalık ya da aylık bir sağlık özeti çıkar.",
             english: "Turn your records into a weekly or monthly health summary."
         ),
-        HomeStringSample(
-            key: "home_ai_summary_free_credit",
-            turkish: "1 ücretsiz deneme hakkın var",
-            english: "You have 1 free summary left"
-        ),
-        // The doses card (7).
+        HomeStringSample(key: "home_ai_new_summary", turkish: "Yeni Özet", english: "New summary"),
+        // The doses page (10).
         HomeStringSample(key: "today_doses_title", turkish: "Bugünün dozları", english: "Today's doses"),
         HomeStringSample(
             key: "today_doses_empty",
@@ -79,24 +83,36 @@ struct HomeStringsTests {
         HomeStringSample(key: "dose_status_snoozed", turkish: "Ertelendi", english: "Snoozed"),
         HomeStringSample(key: "dose_status_pending", turkish: "Bekliyor", english: "Pending"),
         HomeStringSample(key: "dose_status_missed", turkish: "Kaçırıldı", english: "Missed"),
-        HomeStringSample(key: "home_take_dose", turkish: "Al", english: "Take"),
-        // The appointments card (2).
+        HomeStringSample(key: "home_take_dose", turkish: "Alındı", english: "Taken"),
+        HomeStringSample(key: "home_next_dose", turkish: "Sıradaki: %1$@ · %2$@", english: "Next: %1$@ · %2$@"),
+        HomeStringSample(
+            key: "home_next_dose_none",
+            turkish: "Bugün bekleyen doz kalmadı.",
+            english: "Nothing left to take today."
+        ),
+        HomeStringSample(key: "home_last_dose", turkish: "SON DOZ", english: "LAST DOSE"),
+        // The appointments section (3).
         HomeStringSample(
             key: "today_appointments_title",
-            turkish: "Yaklaşan randevular",
-            english: "Upcoming appointments"
+            turkish: "YAKLAŞAN RANDEVULAR",
+            english: "UPCOMING APPOINTMENTS"
         ),
         HomeStringSample(
             key: "today_appointments_empty",
             turkish: "Yaklaşan randevu yok.",
             english: "No upcoming appointments."
         ),
-        // The cycle card (4).
+        HomeStringSample(key: "home_see_all", turkish: "Tümünü Gör", english: "See all"),
+        // The pager page labels (3).
+        HomeStringSample(key: "home_pager_doses", turkish: "Bugünün dozları kartı", english: "Today's doses card"),
+        HomeStringSample(key: "home_pager_vitals", turkish: "Ölçümler kartı", english: "Measurements card"),
+        HomeStringSample(key: "home_pager_cycle", turkish: "Döngü kartı", english: "Cycle card"),
+        // The cycle page (4).
         HomeStringSample(key: "today_cycle_title", turkish: "Döngü", english: "Cycle"),
         HomeStringSample(key: "today_cycle_empty", turkish: "Henüz dönem kaydı yok.", english: "No period logged yet."),
         HomeStringSample(key: "today_cycle_day", turkish: "Döngünün %1$lld. günü", english: "Cycle day %1$lld"),
         HomeStringSample(key: "today_cycle_period_ongoing", turkish: "Dönem devam ediyor", english: "Period ongoing"),
-        // The vitals card (6).
+        // The vitals page (6).
         HomeStringSample(key: "today_vitals_title", turkish: "Ölçümler", english: "Measurements"),
         HomeStringSample(key: "today_vitals_empty", turkish: "Henüz ölçüm yok.", english: "No measurements yet."),
         HomeStringSample(key: "today_vitals_weight", turkish: "Kilo: %1$@ kg", english: "Weight: %1$@ kg"),
@@ -123,11 +139,11 @@ struct HomeStringsTests {
     /// pinned decision rather than something that looks like a forgotten row.
     static let deadAndroidKeys: Set = ["home_title", "home_settings"]
 
-    @Test("the catalog holds exactly the 34 keys ported from :feature:home")
-    func catalogHoldsExactlyTheThirtyFourKeys() throws {
+    @Test("the catalog holds exactly the 42 keys ported from :feature:home")
+    func catalogHoldsExactlyTheFortyTwoKeys() throws {
         // Pinned as a number as well as a set: a row deleted from the table together with its key
         // from the catalog would otherwise agree with itself and pass.
-        #expect(Self.samples.count == 34)
+        #expect(Self.samples.count == 42)
 
         try StringCatalogParity.assertKeys(of: Self.loadCatalog(), are: Self.expectedKeys)
     }
@@ -137,7 +153,7 @@ struct HomeStringsTests {
         // `home_title` (the shell owns the title) and `home_settings` (the settings gear Android's
         // M9 removed) were declared in both `values/` and `values-en/` and read by no `R.string.*`
         // in `HomeScreen.kt`. iOS never ported them; Android has since deleted them itself
-        // (`aebb056`), so both XMLs hold 34 `<string>` entries today — the same count as this
+        // (`aebb056`), so both XMLs hold 42 `<string>` entries today — the same count as this
         // catalog, with neither dead key on either side.
         //
         // Only assertions that can fail live here. A third line used to pin
@@ -175,7 +191,7 @@ struct HomeStringsTests {
         #expect(Set(HomeStrings.Key.allCases.map(\.rawValue)) == catalog.keys)
     }
 
-    @Test("the nine format keys carry Swift specifiers and render the Android sentence")
+    @Test("the ten format keys carry Swift specifiers and render the Android sentence")
     func formatKeysRenderTheAndroidSentence() throws {
         // Android's `%1$s`/`%1$d` are Java specifiers. `%s` reads a C string pointer under
         // `String(format:)` and `%d` reads 32 bits of a 64-bit Swift `Int`, so the catalog carries
@@ -201,6 +217,8 @@ struct HomeStringsTests {
         try #expect(Self.render("today_vitals_glucose_mmol", "en", "6.1") == "Blood glucose: 6.1 mmol/L")
         try #expect(Self.render("today_vitals_bp", "tr", "120", "80") == "Tansiyon: 120/80 mmHg")
         try #expect(Self.render("today_vitals_bp", "en", "120", "80") == "Blood pressure: 120/80 mmHg")
+        try #expect(Self.render("home_next_dose", "tr", "Metformin", "08:00") == "Sıradaki: Metformin · 08:00")
+        try #expect(Self.render("home_next_dose", "en", "Metformin", "08:00") == "Next: Metformin · 08:00")
 
         try Self.assertSpecifiers()
     }
@@ -229,7 +247,8 @@ struct HomeStringsTests {
             "home_greeting_morning",
             "home_greeting_afternoon",
             "home_greeting_evening",
-            "home_greeting_night"
+            "home_greeting_night",
+            "home_next_dose"
         ]
 
         for locale in ["tr", "en"] {
@@ -242,8 +261,10 @@ struct HomeStringsTests {
                 try #expect(#require(catalog.value(of: key, in: locale)).contains("%1$@"))
             }
 
-            // Blood pressure is the only key with a second `%1$@`-style argument.
+            // Blood pressure and the next dose are the two keys with a second `%1$@`-style
+            // argument.
             try #expect(#require(catalog.value(of: "today_vitals_bp", in: locale)).contains("%2$@"))
+            try #expect(#require(catalog.value(of: "home_next_dose", in: locale)).contains("%2$@"))
         }
     }
 

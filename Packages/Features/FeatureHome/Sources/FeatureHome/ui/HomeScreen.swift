@@ -1,27 +1,37 @@
 // Ported from `feature/home/src/main/kotlin/com/alicansekban/salus/feature/home/ui/HomeScreen.kt`
-// — the Route (`:64-83`), the screen itself (`:85-143`) and the two helpers every card shares
-// (`DashboardCard` `:406-418`, `EmptyLine` `:420-427`). The five cards live beside this file, one
-// per file, the way `MedicationDetailSections.swift` was split out of its screen: Kotlin can keep
-// them private in one file, Swift cannot, so each is an internal `View` this package alone can
-// name.
+// — the Route (`:55-106`), the screen itself (`:118-190`), the hero band (`:192-212`) and the
+// greeting (`:214-230`). The pager, the AI card, the appointments section, the readiness card and
+// the three pager pages live beside this file, one per file, the way
+// `MedicationDetailSections.swift` was split out of its screen: Kotlin can keep them private in
+// two files, Swift cannot, so each is an internal `View` this package alone can name.
 //
 // Material → SwiftUI:
 //   `Column(verticalScroll(rememberScrollState()))` → `ScrollView` + `VStack`.
 //   `CircularProgressIndicator`                     → `ProgressView()`.
-//   `Arrangement.spacedBy(SalusSpacing.xs)`         → `VStack(spacing: SalusSpacing.xs)`.
-//   `Spacer(Modifier.height(sm))`                   → `Spacer().frame(height: sm)`.
-//   `state.cycle?.let { … }`                        → `if let cycle = state.cycle { … }`.
+//   `Arrangement.spacedBy(SalusSpacing.lg)`         → `VStack(spacing: SalusSpacing.lg)`.
+//   `state.reminderReadiness?.let { … }`            → `if let report = state.reminderReadiness`.
+//   `SalusTopBarDefaults.Clearance` padding          — **not ported**, see below.
 //
-// No `Scaffold` twin and no `NavigationStack`: the shell owns the one stack, its insets and the
-// tab bar, and a feature never writes `.toolbar(…, for: .tabBar)` (`CLAUDE.md`).
+// No `Scaffold` twin, no `NavigationStack` and no toolbar of its own: the shell owns the one stack,
+// its insets, the tab bar and — since Task 5 — the root toolbar with the brand tile, the tab title,
+// the bell and the avatar (`App/RootNavigationStack.swift`). Home therefore draws no title, no
+// avatar and no bell, and never writes `.toolbar(…, for: .tabBar)` (`CLAUDE.md`).
 //
-// THE ORDER IS LOAD-BEARING and it is Kotlin's, header first and doses immediately after
-// (`HomeScreen.kt:107-141`, whose comment says today's doses must stay the first thing the user
-// sees). Do not reorder to fit a new card in. The reminder readiness card is the one thing that
-// sits above the doses, and it is Android's own exception (`HomeScreen.kt:173-176`): a dose list
-// is worthless when the alarm behind it cannot fire.
+// ANDROID'S BAR CLEARANCE IS DELIBERATELY NOT PORTED. Its bars float over the content, so the tab
+// root pads itself by `SalusTopBarDefaults.Clearance` / `SalusBottomBarDefaults.Clearance` inside
+// the scroll (`HomeScreen.kt:136-147`). iOS's bars are the system's: they reserve their own space
+// and the scroll view already carries the safe-area insets, so padding here would leave a gap under
+// the navigation bar and push the hero band's gradient off the top edge.
+//
+// THE ORDER IS LOAD-BEARING and it is Kotlin's (`HomeScreen.kt:148-189`): hero band, then the
+// reminder readiness card when reminders are in trouble, then the snapshot pager, the AI card and
+// the appointments — `salusEnter` 0 to 4, the same ladder here. The readiness card sits *between*
+// the greeting and the pager after owner QA (`HomeScreen.kt:152-155`): a dose list is worthless
+// when the alarm behind it cannot fire, and the card only exists when there is something wrong, so
+// it belongs immediately above the doses it is about.
 
 import SalusDesignSystem
+import SalusReminder
 import SalusUI
 import StoreKit
 import SwiftUI
@@ -139,7 +149,7 @@ public struct HomeRoute: View {
     }
 }
 
-/// The stateless dashboard (`HomeScreen.kt:86-143`).
+/// The stateless dashboard (`HomeScreen.kt:107-190`).
 struct HomeScreen: View {
     let state: HomeUiState
     let onEvent: (HomeEvent) -> Void
@@ -151,11 +161,13 @@ struct HomeScreen: View {
     let onOpenReminderHealth: () -> Void
 
     @Environment(\.salusTheme) private var theme
+    /// `LocalLocale.current.platformLocale` (`HomeScreen.kt:194`).
+    @Environment(\.locale) private var locale
 
     var body: some View {
         Group {
             if state.isLoading {
-                // `HomeScreen.kt:95-100` — the whole screen, not a per-card skeleton.
+                // `HomeScreen.kt:130-135` — the whole screen, not a per-card skeleton.
                 ProgressView()
             } else {
                 content
@@ -165,123 +177,94 @@ struct HomeScreen: View {
         .background(theme.colorScheme.background)
     }
 
-    /// `Column(fillMaxSize().verticalScroll(...))` (`HomeScreen.kt:102-142`).
+    /// `Column(fillMaxSize().verticalScroll(...), spacedBy(lg))` (`HomeScreen.kt:137-189`).
     private var content: some View {
         ScrollView {
-            VStack(spacing: 0) {
-                HomeHeader(
-                    todayEpochDay: state.todayEpochDay,
-                    greeting: state.greeting,
-                    profileName: state.profileName,
-                    doseProgress: state.doseProgress
+            VStack(spacing: SalusSpacing.lg) {
+                hero
+                    .salusEntrance(index: 0)
+
+                // Nil while the device is healthy or has not been read yet, which is the same
+                // thing here (`HomeScreen.kt:156-162`).
+                if let report = state.reminderReadiness {
+                    HomeReminderReadinessCard(report: report, onTap: onOpenReminderHealth)
+                        .salusEntrance(index: 1)
+                }
+
+                HomeSnapshotPager(
+                    state: state,
+                    onEvent: onEvent,
+                    onOpenMedications: onOpenMedications,
+                    onOpenVitals: onOpenVitals,
+                    onOpenCycle: onOpenCycle
                 )
-                .salusEntrance(index: 0)
-                sections
+                .salusEntrance(index: 2)
+
+                HomeAiCard(onOpenAiSummary: onOpenAiSummary)
+                    .salusEntrance(index: 3)
+
+                HomeAppointmentsSection(
+                    appointments: state.appointments,
+                    onOpenAppointments: onOpenAppointments
+                )
+                .salusEntrance(index: 4)
+            }
+            // No top padding: the hero band's gradient is full-bleed and meets the navigation bar.
+            // The bottom step is the last card's clearance from the tab bar, the `lg` spec §4 gives
+            // every root.
+            .padding(.bottom, SalusSpacing.lg)
+        }
+    }
+
+    /// The band Home opens on: today's date over the greeting, with the day's dose progress
+    /// (`HomeHero`, `HomeScreen.kt:192-212`).
+    ///
+    /// Kotlin puts `home_overline_today` in the overline and the date in `trailingOverline`
+    /// (`:196-199`). `SalusHeroBand` ports one overline slot and spends it on the date, per the
+    /// spec §3.3 contract the component records in its own header — so the fixed "BUGÜN" label is
+    /// the one thing of the band that does not cross over (`HomeStrings.swift`'s header).
+    private var hero: some View {
+        SalusHeroBand(
+            overline: HomeFormatting.todayDate(epochDay: state.todayEpochDay, locale: locale),
+            title: greetingText
+        ) {
+            // `chip = state.doseProgress?.let { (taken, total) -> { SalusStatusChip(…, Accent) } }`
+            // (`HomeScreen.kt:200-209`). A SwiftUI slot has no null, so an absent chip is the
+            // `ViewBuilder`'s own empty branch.
+            if let doseProgress = state.doseProgress {
+                SalusStatusChip(
+                    label: HomeStrings.doseProgress(doseProgress.taken, doseProgress.total),
+                    status: .accent
+                )
             }
         }
     }
 
-    /// The inner column: a section header above each card, `xs` between them, `sm` around the lot
-    /// (`HomeScreen.kt:112-141`).
-    private var sections: some View {
-        VStack(alignment: .leading, spacing: SalusSpacing.xs) {
-            // First on purpose, and it is the one card that outranks the doses
-            // (`HomeScreen.kt:173-176`): a dose list is worthless when the alarm behind it cannot
-            // fire. No section header — it is a warning, not a section of the dashboard. Nil while
-            // the device is healthy or has not been read yet, which is the same thing here.
-            if let report = state.reminderReadiness {
-                HomeReminderReadinessCard(report: report, onTap: onOpenReminderHealth)
-                    .salusEntrance(index: 1)
-            }
-
-            Group {
-                SalusSectionHeader(title: HomeStrings.dosesTitle)
-                HomeDosesCard(doses: state.doses, onEvent: onEvent, onTap: onOpenMedications)
-            }
-            .salusEntrance(index: 2)
-
-            Group {
-                SalusSectionHeader(title: HomeStrings.appointmentsTitle)
-                HomeAppointmentsCard(appointments: state.appointments, onTap: onOpenAppointments)
-            }
-            .salusEntrance(index: 3)
-
-            // Drawn only for a female profile: `cycleForProfile` returns nil for a male or missing
-            // profile (`TodayModels.kt:10-11`), so `state.cycle` is nil and the card is skipped —
-            // the same rule that hides the More row (`MoreViewModel.kt:64-65`). The optional is the
-            // gate's, not the default state's.
-            if let cycle = state.cycle {
-                Group {
-                    SalusSectionHeader(title: HomeStrings.cycleTitle)
-                    HomeCycleCard(cycle: cycle, onTap: onOpenCycle)
-                }
-                .salusEntrance(index: 4)
-            }
-
-            if let vitals = state.vitals {
-                Group {
-                    SalusSectionHeader(title: HomeStrings.vitalsTitle)
-                    HomeVitalsCard(vitals: vitals, onTap: onOpenVitals)
-                }
-                .salusEntrance(index: 5)
-            }
-
-            // The AI summary card, last on purpose because it summarises everything above it
-            // (`HomeScreen.kt:132-138`). Always drawn once loaded, and for every user: the free
-            // credit line is the only conditional, shown when the one-off free summary is still
-            // unspent and the user is not entitled.
-            Group {
-                SalusSectionHeader(title: HomeStrings.aiSummaryTitle)
-                HomeDashboardCard(onTap: onOpenAiSummary) {
-                    // `Row(verticalAlignment = Top) { SalusIconBadge(AutoAwesome, trends); … Column(weight(1f)) }`
-                    // (`HomeScreen.kt:251-271`). `AutoAwesome` → `sparkles` (SF Symbol twin).
-                    //
-                    // The greedy frame is the twin of Kotlin's `Column(modifier = Modifier.weight(1f))`
-                    // (`HomeScreen.kt:258`): `HomeDashboardCard` routes through `SalusCard(onTap:)`'s
-                    // Button branch, and SwiftUI centers a Button's label when it does not fill the
-                    // width — without the greedy frame the text column would sit centered instead of
-                    // flush left with the other cards' padding rhythm.
-                    HStack(alignment: .top, spacing: 0) {
-                        SalusIconBadge(systemImage: "sparkles", accent: theme.extendedColors.trends)
-                        Spacer().frame(width: SalusSpacing.md)
-                        VStack(alignment: .leading, spacing: SalusSpacing.xs) {
-                            Text(verbatim: HomeStrings.aiSummaryDescription)
-                                .font(SalusTypography.bodyMedium.font)
-                                .tracking(SalusTypography.bodyMedium.tracking)
-                            if state.freeAiSummaryAvailable, !state.isPremium {
-                                Text(verbatim: HomeStrings.aiSummaryFreeCredit)
-                                    .font(SalusTypography.bodySmall.font)
-                                    .tracking(SalusTypography.bodySmall.tracking)
-                                    .foregroundStyle(theme.colorScheme.onSurfaceVariant)
-                            }
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                }
-            }
-            .salusEntrance(index: 6)
-
-            // `Spacer(Modifier.height(sm))` (`HomeScreen.kt:140`).
-            Spacer().frame(height: SalusSpacing.sm)
-        }
-        .padding(.vertical, SalusSpacing.sm)
+    /// `greetingText(greeting, profileName)` (`HomeScreen.kt:214-230`) — the formatted `%1$@` arm
+    /// when a profile name exists and the `*_plain` arm otherwise. Kotlin's `profileName != null`
+    /// gate is mirrored exactly: a non-nil (even blank) name takes the formatted arm.
+    private var greetingText: String {
+        guard let profileName = state.profileName else { return HomeStrings.greeting(state.greeting) }
+        return HomeStrings.greeting(state.greeting, name: profileName)
     }
 }
 
-/// The card every section draws into: full width, `lg` inset (`HomeScreen.kt:406-418`).
+/// The card the cards outside the pager draw into: full width, `lg` inset
+/// (`HomeCards.kt:133`, `:163`, `:208` — every one of them a `SalusCard` the section insets).
 ///
 /// `onTap` is **optional**, and which cards pass it is the one place this screen departs from
 /// Kotlin's uniform `SalusCard(onClick = …)`:
 ///
-///   * **Cycle and vitals pass it.** They contain no interactive child, so the card can be the
-///     real `Button` `SalusCard(onTap:)` builds — free button semantics, free VoiceOver.
-///   * **Doses and appointments do not.** Each contains a `SalusButton`, and a `Button` inside
-///     another `Button`'s label is treated as decoration by SwiftUI: the outer one swallows the
-///     tap. Three shipped features settled this — `VitalsRow` first, then `MedicationCard` and
-///     `AppointmentCard` — so those two cards are non-interactive here and carry the "open" tap on
-///     their content through ``SwiftUI/View/homeOpensCard(_:)``, with the pill as a **sibling** of
-///     that content. The two targets are then disjoint by layout rather than ordered by dispatch
-///     rules.
+///   * **The readiness card and each appointment card pass it.** They contain no interactive
+///     child, so the card can be the real `Button` `SalusCard(onTap:)` builds — free button
+///     semantics, free VoiceOver.
+///   * **A card holding a `SalusButton` does not.** A `Button` inside another `Button`'s label is
+///     treated as decoration by SwiftUI: the outer one swallows the tap. Three shipped features
+///     settled this — `VitalsRow` first, then `MedicationCard` and `AppointmentCard` — so such a
+///     card is non-interactive and carries the "open" tap on its content through
+///     ``SwiftUI/View/homeOpensCard(_:)``, with the pill as a **sibling** of that content. The two
+///     targets are then disjoint by layout rather than ordered by dispatch rules. The doses pager
+///     page is the one that needs it today.
 struct HomeDashboardCard<Content: View>: View {
     private let onTap: (() -> Void)?
     private let content: Content
@@ -315,35 +298,20 @@ extension View {
     }
 }
 
-/// Every empty case on this screen is one line (`HomeScreen.kt:420-427`).
-///
-/// `SalusEmptyState` is deliberately not used: a dashboard card that says "nothing today" is a
-/// statement, not a dead end with a call to action, and Android says the same thing the same way.
-struct HomeEmptyLine: View {
-    let text: String
-
-    @Environment(\.salusTheme) private var theme
-
-    var body: some View {
-        // `verbatim:` because the caller hands over a resolved string; the plain initializer would
-        // treat it as a `LocalizedStringKey` and look it up in the *main* bundle.
-        Text(verbatim: text)
-            .font(SalusTypography.bodyMedium.font)
-            .tracking(SalusTypography.bodyMedium.tracking)
-            .foregroundStyle(theme.colorScheme.onSurfaceVariant)
-            .frame(maxWidth: .infinity, alignment: .leading)
-    }
-}
+// `HomeEmptyLine` — the one-line "nothing today" every card used to draw — left with M15: each
+// empty case is now the shared `SalusEmptyState` inside its own card (`HomePager.kt:327-331`,
+// `HomeCards.kt:134-138`), so the screen no longer owns an empty-state of its own.
 
 // MARK: - Previews
 
-/// The fixtures the previews share — `HomeScreen.kt:440-496`, value for value, plus an all-empty
-/// state Kotlin has no twin for (Compose renders one preview; SwiftUI gets one per case).
+/// The fixtures the previews share — `populatedPreviewState()` (`HomeScreen.kt:232-284`) and
+/// `emptyPreviewState()` (`HomeScreen.kt:286-300`), value for value, plus the readiness-problem
+/// state Kotlin builds by `copy` (`HomeScreen.kt:307-316`).
 ///
 /// A `private enum` so everything preview-only is one block a reader can skip.
 private enum PreviewData {
-    /// `todayEpochDay = 20_680` (`HomeScreen.kt:446`), `profileName = "Alican"`, `doseProgress = 2 to 4`
-    /// (`HomeScreen.kt:457-458`).
+    /// `todayEpochDay = 20_680` (`HomeScreen.kt:235`), `profileName = "Alican"`,
+    /// `doseProgress = 2 to 4` (`HomeScreen.kt:237-238`).
     static let loaded = HomeUiState(
         isLoading: false,
         todayEpochDay: 20680,
@@ -389,8 +357,9 @@ private enum PreviewData {
         freeAiSummaryAvailable: true
     )
 
-    /// A loaded dashboard with nothing recorded yet — the four empty lines, which is what a first
-    /// run draws. No profile name, no doses: the `*_plain` greeting and no dose ring.
+    /// A loaded dashboard with nothing recorded yet — every empty state at once, which is what a
+    /// first run draws. No profile name, no doses: the `*_plain` greeting and no dose chip
+    /// (`emptyPreviewState()`, `HomeScreen.kt:286-300`).
     static let allEmpty = HomeUiState(
         isLoading: false,
         todayEpochDay: 20680,
@@ -405,9 +374,84 @@ private enum PreviewData {
             glucoseUnit: .mgDl
         )
     )
+
+    /// The populated root with reminders broken — the one state that draws
+    /// ``HomeReminderReadinessCard``, between the hero and the pager
+    /// (`readinessProblemPreviewState()`, `HomeScreen.kt:301-316`).
+    static let readinessProblem: HomeUiState = {
+        var state = loaded
+        state.reminderReadiness = ReminderReadinessReport(
+            problems: [.notificationsOff, .backgroundRefreshOff]
+        )
+        return state
+    }()
 }
 
+// The eight-panel fan-out every restyled surface gets (spec §7): one render per premium palette in
+// both modes, so a palette regression is visible without opening the app.
 #Preview("Home") {
+    SalusPreviewPalettes {
+        HomeScreen(
+            state: PreviewData.loaded,
+            onEvent: { _ in },
+            onOpenMedications: {},
+            onOpenAppointments: {},
+            onOpenCycle: {},
+            onOpenVitals: {},
+            onOpenAiSummary: {},
+            onOpenReminderHealth: {}
+        )
+    }
+}
+
+#Preview("Home — loading") {
+    SalusPreviewPalettes {
+        HomeScreen(
+            state: HomeUiState(),
+            onEvent: { _ in },
+            onOpenMedications: {},
+            onOpenAppointments: {},
+            onOpenCycle: {},
+            onOpenVitals: {},
+            onOpenAiSummary: {},
+            onOpenReminderHealth: {}
+        )
+    }
+}
+
+#Preview("Home — nothing recorded") {
+    SalusPreviewPalettes {
+        HomeScreen(
+            state: PreviewData.allEmpty,
+            onEvent: { _ in },
+            onOpenMedications: {},
+            onOpenAppointments: {},
+            onOpenCycle: {},
+            onOpenVitals: {},
+            onOpenAiSummary: {},
+            onOpenReminderHealth: {}
+        )
+    }
+}
+
+#Preview("Home — reminders broken") {
+    SalusPreviewPalettes {
+        HomeScreen(
+            state: PreviewData.readinessProblem,
+            onEvent: { _ in },
+            onOpenMedications: {},
+            onOpenAppointments: {},
+            onOpenCycle: {},
+            onOpenVitals: {},
+            onOpenAiSummary: {},
+            onOpenReminderHealth: {}
+        )
+    }
+}
+
+// The tab root at the largest text size the design is checked against — Kotlin's
+// `@Preview(fontScale = 1.3f)` (`HomeScreen.kt:356-361`), and the step spec §7 names for iOS.
+#Preview("Home — xxxLarge") {
     HomeScreen(
         state: PreviewData.loaded,
         onEvent: { _ in },
@@ -418,30 +462,5 @@ private enum PreviewData {
         onOpenAiSummary: {},
         onOpenReminderHealth: {}
     )
-}
-
-#Preview("Home — loading") {
-    HomeScreen(
-        state: HomeUiState(),
-        onEvent: { _ in },
-        onOpenMedications: {},
-        onOpenAppointments: {},
-        onOpenCycle: {},
-        onOpenVitals: {},
-        onOpenAiSummary: {},
-        onOpenReminderHealth: {}
-    )
-}
-
-#Preview("Home — nothing recorded") {
-    HomeScreen(
-        state: PreviewData.allEmpty,
-        onEvent: { _ in },
-        onOpenMedications: {},
-        onOpenAppointments: {},
-        onOpenCycle: {},
-        onOpenVitals: {},
-        onOpenAiSummary: {},
-        onOpenReminderHealth: {}
-    )
+    .dynamicTypeSize(.xxxLarge)
 }

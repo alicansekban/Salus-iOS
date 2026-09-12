@@ -69,6 +69,23 @@
         }
       }
     },
+    "home_ai_new_summary" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New summary"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yeni Özet"
+          }
+        }
+      }
+    },
     "home_ai_summary_description" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -82,23 +99,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Kayıtlarından haftalık ya da aylık bir sağlık özeti çıkar."
-          }
-        }
-      }
-    },
-    "home_ai_summary_free_credit" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "You have 1 free summary left"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "1 ücretsiz deneme hakkın var"
           }
         }
       }
@@ -273,6 +273,125 @@
         }
       }
     },
+    "home_last_dose" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "LAST DOSE"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SON DOZ"
+          }
+        }
+      }
+    },
+    "home_next_dose" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next: %1$@ · %2$@"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sıradaki: %1$@ · %2$@"
+          }
+        }
+      }
+    },
+    "home_next_dose_none" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nothing left to take today."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bugün bekleyen doz kalmadı."
+          }
+        }
+      }
+    },
+    "home_overline_today" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "TODAY"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "BUGÜN"
+          }
+        }
+      }
+    },
+    "home_pager_cycle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cycle card"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Döngü kartı"
+          }
+        }
+      }
+    },
+    "home_pager_doses" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today's doses card"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bugünün dozları kartı"
+          }
+        }
+      }
+    },
+    "home_pager_vitals" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Measurements card"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ölçümler kartı"
+          }
+        }
+      }
+    },
     "home_reminders_broken_title" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -307,19 +426,36 @@
         }
       }
     },
+    "home_see_all" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "See all"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tümünü Gör"
+          }
+        }
+      }
+    },
     "home_take_dose" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Take"
+            "value" : "Taken"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Al"
+            "value" : "Alındı"
           }
         }
       }
@@ -336,7 +472,7 @@
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Detayları gör"
+            "value" : "Detaylı İncele"
           }
         }
       }
@@ -364,13 +500,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Upcoming appointments"
+            "value" : "UPCOMING APPOINTMENTS"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Yaklaşan randevular"
+            "value" : "YAKLAŞAN RANDEVULAR"
           }
         }
       }

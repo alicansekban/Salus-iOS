@@ -1,122 +1,181 @@
-// Ported from `HomeScreen.kt:215-271` — the first card, and the only one with an action inside it.
+// Ported from `feature/home/src/main/kotlin/com/alicansekban/salus/feature/home/ui/HomePager.kt` —
+// `DosesPage` (`:173-236`), `LastDoseRow` (`:238-259`), `DoseStatusChip` (`:261-270`) and the
+// `lastSettled()` helper (`:372-374`). The M15 page is the day's dose ring beside one sentence
+// about what is next, the last settled dose under it, and a single action — not the scrolling list
+// of every slot the pre-M15 card drew, which a fixed-height pager page has no room for.
+//
+// THE "NEXT DOSE" IS DERIVED HERE, and that is the one shape difference from Kotlin. Android added
+// `HomeUiState.nextDose` and computes it in the ViewModel "so the snapshot card never re-scans the
+// list on every recomposition" (`HomeUiState.kt:45-50`); spec §4.1 records **no UiState change**
+// for iOS, so the same rule — the earliest `.pending` entry of `doses` — is applied to the list the
+// state already carries. It reads the same data and answers the same dose; nothing new is observed,
+// stored or passed across a layer.
 //
 // Material → SwiftUI:
-//   `Row(verticalAlignment = CenterVertically)` → `HStack` (its default alignment is `.center`).
-//   `Spacer(width = md)` + `Modifier.weight(1f)` → a leading `padding` on a greedy `frame`, which
-//                                                  is the same drawn result: fixed time column,
-//                                                  `md` gap, name filling what is left.
-//   `SalusButton(tonal = true, accent = …)`  → `SalusUI.SalusButton`, argument for argument.
+//   `Row(verticalAlignment = CenterVertically, spacedBy(lg))` → `HStack(spacing: SalusSpacing.lg)`.
+//   `Column(weight(1f), spacedBy(sm))`                → `VStack(spacing: sm)` on a greedy frame.
+//   `Modifier.align(Alignment.End)`                   → a trailing-aligned greedy frame.
+//   `SalusEmptyState(icon, title, accent)`            → the same component, SF Symbol for the icon.
 //
 // THE CARD IS NOT A BUTTON HERE, AND KOTLIN'S IS. Compose dispatches a tap to the innermost
 // clickable, so `SalusCard(onClick = …)` with a `SalusButton` inside it works there. On iOS
-// `SalusCard(onTap:)` is `Button(action:) { surface }` (`SalusCard.swift:33-34`), and a `Button`
+// `SalusCard(onTap:)` is `Button(action:) { surface }` (`SalusCard.swift:64-76`), and a `Button`
 // inside another `Button`'s label is treated as decoration: the outer one swallows the tap, so
-// "Al" would switch tabs and never record the dose. Three shipped features settled the shape —
-// `VitalsRow` first (`VitalsScreen.swift:258-272`), then `MedicationCard.swift:7-13` and
-// `AppointmentCard` — and this card copies it: a plain, non-interactive `HomeDashboardCard`, the
-// "open medications" tap on the time-and-name column through `homeOpensCard(_:)`, and the pill as
-// that column's **sibling** in the row. The two targets are disjoint by layout rather than merely
-// ordered by dispatch rules. Recorded as a divergence.
+// "Alındı" would switch tabs and never record the dose. Three shipped features settled the shape —
+// `VitalsRow` first, then `MedicationCard` and `AppointmentCard` — and this page keeps it: a
+// non-interactive ``HomeSnapshotCard``, the "open medications" tap on the ring-and-text block
+// through `homeOpensCard(_:)`, and the pill as that block's **sibling**. The two targets are then
+// disjoint by layout rather than merely ordered by dispatch rules.
+//
+// DIVERGENCE (c), THE RING'S COLOUR. Kotlin tints the ring with the medications accent
+// (`progressColor = accent.accent`, `HomePager.kt:201`); `SalusProgressRing` takes `progress`,
+// `label`, `size` and `strokeWidth` and draws `primary` (`SalusProgressRing.swift:51-56`). Adding a
+// colour to a shared component is `SalusUI`'s change, not this screen's, so the ring stays
+// `primary` here and the accent is carried by the badge, the time and the action beside it.
 
 import SalusDesignSystem
 import SalusUI
 import SwiftUI
 
-/// Today's dose slots (`HomeScreen.kt:215-260`).
+/// Today's doses at a glance (`DosesPage`, `HomePager.kt:172-236`).
 struct HomeDosesCard: View {
     let doses: [TodayDose]
+    let doseProgress: (taken: Int, total: Int)?
     let onEvent: (HomeEvent) -> Void
     let onTap: () -> Void
 
     @Environment(\.salusTheme) private var theme
+    /// `LocalLocale.current.platformLocale` (`HomePager.kt:182`).
+    @Environment(\.locale) private var locale
+
+    /// `HomeUiState.nextDose` (`HomeUiState.kt:45-50`), whose rule is
+    /// `doses.filter { it.status == PENDING }.minByOrNull { it.minuteOfDay }`
+    /// (`HomeViewModel.kt:143-144`) — applied here rather than in the ViewModel, see the file
+    /// header. `minByOrNull` orders explicitly because the repository promises a list of today's
+    /// slots, not an ordered one (`HomeViewModel.kt:139-142`).
+    private var nextDose: TodayDose? {
+        doses.filter { $0.status == .pending }.min { $0.minuteOfDay < $1.minuteOfDay }
+    }
+
+    /// `List<TodayDose>.lastSettled()` (`HomePager.kt:372-374`): the latest dose of the day that is
+    /// no longer waiting on the user — what was taken, snoozed or missed, so the ring's number has
+    /// a story behind it (`HomePager.kt:220-221`).
+    private var lastSettled: TodayDose? {
+        doses.filter { $0.status != .pending }.max { $0.minuteOfDay < $1.minuteOfDay }
+    }
 
     var body: some View {
-        HomeDashboardCard {
+        HomeSnapshotCard(
+            systemImage: "pills.fill",
+            accent: theme.extendedColors.medications,
+            title: HomeStrings.dosesTitle
+        ) {
             if doses.isEmpty {
-                // With no rows, the empty line is the only thing left to open the card with.
-                HomeEmptyLine(text: HomeStrings.dosesEmpty)
-                    .homeOpensCard(onTap)
+                // `PageEmptyState(Medication, today_doses_empty, accent)` (`HomePager.kt:189-192`).
+                // `Medication` → `pills.fill` (SF Symbol twin).
+                SalusEmptyState(
+                    systemImage: "pills.fill",
+                    title: HomeStrings.dosesEmpty,
+                    accent: theme.extendedColors.medications
+                )
+                .homeOpensCard(onTap)
             } else {
-                // `Row(verticalAlignment = Top) { SalusIconBadge(Medication, …); … }`
-                // (`HomeScreen.kt:286-326`). `Medication` → `pills.fill` (SF Symbol twin).
-                //
-                // The badge and the gap beside it are decorative, not a tap target: each dose row's
-                // `slot` already carries the "open medications" tap through `homeOpensCard`, with
-                // the take pill as its sibling — the documented divergence recorded in this file's
-                // header — and making the outer HStack tappable too would nest that gesture above
-                // the pill. Kotlin's whole-card `onClick` is, here, the column of slots.
-                HStack(alignment: .top, spacing: 0) {
-                    SalusIconBadge(systemImage: "pills.fill", accent: theme.extendedColors.medications)
-                    Spacer().frame(width: SalusSpacing.md)
-                    VStack(alignment: .leading, spacing: 0) {
-                        ForEach(doses, id: \.self) { dose in
-                            HomeDoseRow(dose: dose, onEvent: onEvent, onTap: onTap)
-                        }
-                    }
+                summary
+                takeAction
+            }
+        }
+    }
+
+    /// The ring and the two lines beside it (`HomePager.kt:193-224`).
+    private var summary: some View {
+        HStack(spacing: SalusSpacing.lg) {
+            if let doseProgress {
+                // `SalusProgressRing(progress = taken.toFloat() / total, label = "$taken/$total")`
+                // (`HomePager.kt:198-202`). The label is two numbers, never a catalog key.
+                SalusProgressRing(
+                    progress: Float(doseProgress.taken) / Float(doseProgress.total),
+                    label: "\(doseProgress.taken)/\(doseProgress.total)"
+                )
+            }
+            VStack(alignment: .leading, spacing: SalusSpacing.sm) {
+                Text(verbatim: nextDoseText)
+                    .font(SalusTypography.titleMedium.font)
+                    .tracking(SalusTypography.titleMedium.tracking)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                if let lastSettled {
+                    HomeLastDoseRow(dose: lastSettled)
                 }
             }
+            // `Modifier.weight(1f)` (`HomePager.kt:205`).
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .homeOpensCard(onTap)
+    }
+
+    /// `if (nextDose == null) home_next_dose_none else home_next_dose(name, time)`
+    /// (`HomePager.kt:209-217`).
+    private var nextDoseText: String {
+        guard let nextDose else { return HomeStrings.nextDoseNone }
+        return HomeStrings.nextDose(
+            // The medication's own name, never a catalog key.
+            nextDose.medicationName,
+            HomeFormatting.minutes(nextDose.minuteOfDay, locale: locale)
+        )
+    }
+
+    /// `if (nextDose != null) { Spacer(md); SalusButton(home_take_dose, align(End), Medium, accent) }`
+    /// (`HomePager.kt:225-234`).
+    @ViewBuilder private var takeAction: some View {
+        if let nextDose {
+            Spacer().frame(height: SalusSpacing.md)
+            SalusButton(
+                HomeStrings.takeDose,
+                size: .medium,
+                accent: theme.extendedColors.medications
+            ) {
+                onEvent(.takeDose(scheduleId: nextDose.scheduleId, minuteOfDay: nextDose.minuteOfDay))
+            }
+            .frame(maxWidth: .infinity, alignment: .trailing)
         }
     }
 }
 
-/// One dose slot: time, name and either the take button or the status chip
-/// (`HomeScreen.kt:227-256`).
-private struct HomeDoseRow: View {
+/// The last settled dose: the overline, then the time, the name and the status chip
+/// (`LastDoseRow`, `HomePager.kt:238-259`).
+private struct HomeLastDoseRow: View {
     let dose: TodayDose
-    let onEvent: (HomeEvent) -> Void
-    let onTap: () -> Void
 
     @Environment(\.salusTheme) private var theme
-    /// `LocalLocale.current.platformLocale` (`HomeScreen.kt:221`).
+    /// `LocalLocale.current.platformLocale` (`HomePager.kt:239`).
     @Environment(\.locale) private var locale
 
     var body: some View {
-        HStack(spacing: 0) {
-            slot
-                // The column already fills every point the trailing control does not, so the gap
-                // beside a short medication name opens the card too.
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .homeOpensCard(onTap)
-            trailing
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, SalusSpacing.xs)
-    }
-
-    /// The half a tap opens the medications tab from (`HomeScreen.kt:233-243`).
-    private var slot: some View {
-        HStack(spacing: 0) {
-            Text(verbatim: HomeFormatting.minutes(dose.minuteOfDay, locale: locale))
-                .font(SalusTypography.labelLarge.font)
-                .tracking(SalusTypography.labelLarge.tracking)
-                .foregroundStyle(theme.extendedColors.medications.accent)
-            // The medication's own name, never a catalog key.
-            Text(verbatim: dose.medicationName)
-                .font(SalusTypography.bodyMedium.font)
-                .tracking(SalusTypography.bodyMedium.tracking)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.leading, SalusSpacing.md)
-        }
-    }
-
-    /// `if (dose.status == PENDING) SalusButton(...) else DoseStatusChip(...)`
-    /// (`HomeScreen.kt:244-255`). A sibling of `slot`, not a descendant of any Button.
-    @ViewBuilder private var trailing: some View {
-        if dose.status == .pending {
-            SalusButton(
-                HomeStrings.takeDose,
-                variant: .secondary,
-                size: .medium,
-                accent: theme.extendedColors.medications
-            ) {
-                onEvent(.takeDose(scheduleId: dose.scheduleId, minuteOfDay: dose.minuteOfDay))
+        VStack(alignment: .leading, spacing: SalusSpacing.xs) {
+            // `home_last_dose` is stored upper-case in the catalog (spec §6) — never
+            // `uppercased()` at runtime, which a Turkish locale would spell with a dotted İ.
+            Text(verbatim: HomeStrings.lastDose)
+                .font(SalusTypography.labelSmall.font)
+                .tracking(SalusTypography.labelSmall.tracking)
+                .foregroundStyle(theme.extendedColors.overline)
+            // `Row(verticalAlignment = CenterVertically, spacedBy(sm))` (`HomePager.kt:246-257`).
+            HStack(spacing: SalusSpacing.sm) {
+                // `"${formatMinutes(minuteOfDay, locale)} · ${medicationName}"`
+                // (`HomePager.kt:251`) — a time and the user's own text, so nothing is a key.
+                Text(verbatim: "\(HomeFormatting.minutes(dose.minuteOfDay, locale: locale)) · \(dose.medicationName)")
+                    .font(SalusTypography.bodySmall.font)
+                    .tracking(SalusTypography.bodySmall.tracking)
+                    .foregroundStyle(theme.colorScheme.onSurfaceVariant)
+                // `Modifier.weight(1f, fill = false)` (`HomePager.kt:254`) is "take what you need,
+                // do not expand", which is a plain `Text`'s own behaviour here — the greedy frame
+                // is on the row below, not on the line, so a short name leaves the chip beside it
+                // instead of pushing it to the edge.
+                SalusStatusChip(label: HomeStrings.doseStatus(dose.status), status: Self.chipStatus(dose.status))
             }
-        } else {
-            SalusStatusChip(label: HomeStrings.doseStatus(dose.status), status: Self.chipStatus(dose.status))
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 
-    /// `DoseStatusChip`'s table (`HomeScreen.kt:264-269`). The label half of that `when` lives in
+    /// `DoseStatusChip`'s table (`HomePager.kt:262-270`). The label half of that `when` lives in
     /// `HomeStrings.doseStatus(_:)`, so only the tint is decided here.
     private static func chipStatus(_ status: DoseStatus) -> SalusStatus {
         switch status {
