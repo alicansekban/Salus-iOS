@@ -467,11 +467,11 @@ the iOS-M4 task 6, 8 and 9 reports for the rows marked *(M4)*.
 | Vico `CartesianChartHost` + `CartesianChartModelProducer` | Swift Charts `Chart { }` — the marks *are* the data, so the producer and its `LaunchedEffect` disappear |
 | `LineCartesianLayer` + `AreaFill` + `Brush.verticalGradient` | `LineMark` + `AreaMark` + `LinearGradient` |
 | `CartesianValueFormatter` | `AxisMarks { AxisValueLabel { … } }` calling `model.xLabel` / `model.yLabel` |
-| `SingleChoiceSegmentedButtonRow` (one of N, a range selector) | `Picker(…).pickerStyle(.segmented)` with an **empty** label |
-| `FilterChip` (multi-select, M4's reminder offsets) *(M4)* | `SalusUI.SalusFilterChip(label:isSelected:action:)` — `secondaryContainer` fill when selected, outline when not, 48 pt minimum touch target, Dynamic-Type-scaled |
+| `SingleChoiceSegmentedButtonRow` (one of N, a range selector) | `SalusUI.SalusSegmentedTabs(options:selected:enabled:label:onSelected:)` *(M16)*. The M4 row said `Picker(…).pickerStyle(.segmented)`; iOS-M16 reversed it (spec §9 (b)) because the native control cannot take the per-palette `primaryContainer` pill per instance, and `pickerStyle(.segmented)` is now retired from the tree. A *choice tile grid* (Profile's sex row, the medication form) is not this: it is `SalusChoiceTile` |
+| `FilterChip` (multi-select, M4's reminder offsets) *(M4, renamed M16)* | `SalusUI.SalusChoiceChip(label:isSelected:action:)` — `secondaryContainer` fill when selected, outline when not, 48 pt minimum touch target, Dynamic-Type-scaled. It was `SalusFilterChip` until iOS-M16 renamed it to its M15 twin's name |
 | `AssistChip` / status pill *(M4)* | `SalusUI.SalusStatusChip(label:accent:)`, tinted from a `FeatureAccent?` |
-| `SalusSectionHeader` (core/ui) *(M4)* | `SalusUI.SalusSectionHeader(title:)`, or `SalusSectionHeader(title:actions:)` with a `@ViewBuilder` trailing closure for the optional trailing action — `titleLarge` / `onSurface`. A *group label* inside a form is **not** this: it is a plain `Text` at `titleSmall` / `onSurface` |
-| `SalusPillButton` (core/ui) *(M4, superseded by M6/M7)* | `SalusUI.SalusPillButton` — `.buttonStyle(.plain)` over a hand-drawn `SalusShapes.pill`, 48-pt label floor, Material's disabled alphas, `fillsWidth`. The M4 row said "there is no `SalusPillButton` view; use `.borderedProminent`/`.bordered`": iOS-M6 built the component (a system button style cannot be held to the 48-pt token) and **iOS-M7 migrated the last four inline copies** (appointment detail ×4 including the maps pill, medication detail ×2, `SalusEmptyState`). Do not hand-roll a fifth |
+| `SalusSectionHeader` (core/ui) *(M4, restyled M16)* | `SalusUI.SalusSectionHeader(title:)`, or `SalusSectionHeader(title:actions:)` with a `@ViewBuilder` trailing closure for the optional trailing action. M15's header is an **overline**: `labelSmall` in `extendedColors.overline`, upper-case in the resource, with the action slot held to `SalusTouchTarget.min`. A *group label* inside a form is **not** this: it is a plain `Text` at `titleSmall` / `onSurface` |
+| `SalusButton` (core/ui) *(M4, superseded by M6/M7, renamed M16)* | `SalusUI.SalusButton(_:variant:size:systemImage:accent:enabled:action:)` — `.buttonStyle(.plain)` over token shapes, the M15 `variant` (primary / secondary / outlined / destructive) × `size` vocabulary, Material's disabled alphas. The M4 row said "there is no such view; use `.borderedProminent`/`.bordered`": iOS-M6 built the component (a system button style cannot be held to the token floor), **iOS-M7 migrated the last four inline copies** (appointment detail ×4 including the maps pill, medication detail ×2, `SalusEmptyState`), and iOS-M16 renamed it from `SalusPillButton` to its twin's name. Do not hand-roll a fifth. A list's add action is `SalusExtendedFab` or `SalusFab`, not a button |
 | `DatePickerDialog` over an `epochDay` *(M4)* | `SalusUI.SalusDateField(title:epochDay:placeholder:seedEpochDay:onChange:)` — the binding converts on the GMT boundary, never `Calendar.current`; `nil` draws a placeholder button that opens the wheel at `seedEpochDay` and **commits nothing** until the wheel actually moves, the twin of `SalusTimeField` below |
 | `TimePickerDialog` over a `minuteOfDay` *(M4)* | `SalusUI.SalusTimeField(title:minuteOfDay:placeholder:seedMinuteOfDay:onChange:)` — `nil` draws a placeholder button and **commits nothing** until the wheel actually moves, which is how a Compose dialog's Cancel behaves; `seedMinuteOfDay` is required so the caller, not the component, owns the Kotlin `?: 9` default |
 | `kotlinx.datetime.LocalDateTime` *(M4)* | `SalusModel.LocalDateTime` (`LocalDate` + `minuteOfDay`), with `isoLocalString` / `init?(isoLocalString:)` writing exactly what Kotlin's `toString()` writes, and `instant(in:)` in `SalusCommon/SalusClock.swift`. It moved out of `FeatureVitals` the moment a second feature needed it — do not copy it into a feature |
@@ -503,6 +503,44 @@ appointment cards); the Android twin nests, which is Android follow-up `A32`.
 Design values come only from `salus-android/docs/design/design-tokens.md` through
 `SalusDesignSystem`; a view reads the theme from `@Environment(\.salusTheme)` and never takes a
 `theme:` parameter.
+
+### The shared vocabulary, and it is closed (MANDATORY)
+
+A screen composes what `SalusUI` already ships. Re-derive the list from
+`Packages/SalusUI/Sources/SalusUI/component/`, `…/shell/` and `…/chart/` rather than from memory —
+today it is:
+
+| Group | Components |
+| --- | --- |
+| Actions | `SalusButton` (variant × size), `SalusIconButton`, `SalusFab`, `SalusExtendedFab` |
+| Containers | `SalusCard`, `SalusHeroBand`, `SalusEmptyState`, `SalusInfoNote`, `SalusDisclaimer` |
+| Rows and pickers | `SalusListItem` (+ `SalusListItemChevron`), `SalusSelectableRow`, `SalusCheckRow`, `SalusChoiceTile`, `SalusChoiceChip`, `ChipFlowLayout` |
+| Headers and marks | `SalusSectionHeader`, `SalusAvatar`, `SalusIconBadge`, `SalusStatusChip` (+ `SalusStatus`) |
+| Data display | `SalusMetricTile`, `SalusProgressBar`, `SalusProgressRing`, `SalusPagerDots` |
+| Fields | `SalusTextField`, `SalusStepperField`, `SalusDateField`, `SalusDateTile`, `SalusTimeField` |
+| Navigation-ish | `SalusSegmentedTabs`, `salusRootToolbar(…)` (shell only), `SalusBarAppearance` (shell only) |
+| Modifiers | `.salusBottomSheet(…)`, `.salusDialog(…)`, `.salusConfirmDialog(…)`, `.salusEntrance(index:)`, `.salusDismissesKeyboardOnTap()`, `.salusShadow(_:isDark:)` |
+| Charts | `SalusLineChart`, `SalusBarChart`, `SalusMultiSeriesChart`, `SalusSparkline` |
+| Misc | `SalusWeekdaySymbols`, `SalusSnackbarHost` (shell only), `SalusUIStrings` |
+
+- **A component that needs a new knob gains it in `SalusUI`, with the Kotlin citation** — never a
+  private copy inside a feature. Two features drawing the same thing two ways is the drift this
+  package exists to prevent.
+- **No inline hex.** `Color(hex:)` / `0xRRGGBB` lives in five files, all in
+  `Packages/SalusDesignSystem/Sources/SalusDesignSystem/`: `SalusColorScheme.swift`,
+  `SalusExtendedColors.swift` and the three `SalusPremium*.swift` palettes (plus
+  `Color+SalusHex.swift`, which defines the initializer). Everywhere else a colour is
+  `theme.colorScheme.…` or `theme.extendedColors.…`.
+- **No raw point sizes.** A size, inset, radius or stroke is a `SalusSpacing` / `SalusDimensions` /
+  `SalusTypography` token, or a named constant on the view's own `…Defaults` enum — the house
+  pattern is `enum <Thing>Defaults { static let … }` at the foot of the file that uses it
+  (`SalusFabDefaults`, `HomePagerDefaults`, `MedicationsHeaderDefaults`). A bare number in a view
+  body is a finding.
+- **`SalusStepperField` comes with a caller contract.** The field holds no `range` and no `step`:
+  it reports the text an edit produced and hands the nudges back, and **the state holder must
+  answer every `onValueChange` — accept the text as the new `value`, or clamp it and re-emit the
+  value it will accept.** Ignoring one leaves the field showing a number the state holder rejected
+  (spec §9 (i); `SalusStepperField.swift:13-15`).
 
 ## Strings
 
@@ -539,6 +577,18 @@ package**: `Sources/Feature<Name>/Resources/Localizable.xcstrings`, `tr` as the 
   that package's `Localizable.xcstrings` — which is how a stray `"Host"` and an empty key landed in
   `SalusUI`'s catalog during the M2 simulator pass and broke its key-set pin. If the text is not
   meant to be translated, it must not look like a key.
+- **An overline is stored upper-case in the resource.** "BUGÜN", "HESAP", every
+  `SalusSectionHeader` title, the vitals field labels: the catalog carries the upper-case form in
+  *both* locales and no call site ever calls `uppercased()`. Turkish has two dotted i's and a
+  runtime fold cannot know which one a label means. A per-catalog pin asserts it
+  (`VitalsStringsTests.swift:90`, `OnboardingStringsTests.swift:91`). The one folded string in the
+  tree is `SalusAvatar`'s initials, which fold a *name the user typed* and have no resource.
+- **The banned health-claims vocabulary binds on copy, code and comments.** Case-insensitive
+  stems: `uyum` · `hedef aral` · `planlan` · `adher` · `complian` · `complie` · `comply` ·
+  `planned dos` · `target range` (plus the dotted-İ foldings `compli̇an` / `compli̇e`). The phrase
+  is **"kaydedilen doz" / "recorded doses"** — no `MISSED` dose row is ever written, so the ratio
+  describes recorded doses only. `BannedHealthClaims` scans `Packages/` **and** `App/` repo-wide
+  and fails loudly if a scan reaches zero files.
 - **A delete goes through `UndoableDelete`, and its snackbar dies with the undo window.** The
   request is built with `duration: .milliseconds(PendingDeleteController.undoWindowMillis)`, so the
   timeout is derived from the window rather than repeating the number; a feature never sets a
@@ -563,3 +613,12 @@ the catalog verbatim, so a lookup under `swift test` finds no table and `String(
 returns the key. That is why the tests assert against the **file**, never against a resolved
 string; the end-to-end check is the simulator run
 (`Packages/Features/FeatureVitals/Sources/FeatureVitals/VitalsStrings.swift:24-31`).
+
+## Manual QA
+
+A milestone's manual QA sheet is `docs/qa/m<N>-manual-qa.md` — **not** `scripts/`, which is where
+iOS-M3 to iOS-M14's sheets still live and where no new one goes: a checklist a human reads is
+documentation, and `scripts/` holds things that run. The sheet carries one row per screen plus a
+"known risks" section for everything the gate cannot see (live theme repaint, Dynamic Type at
+xxxLarge, sheet heights on wide layouts, VoiceOver order, delivery races). It is written by the
+milestone's sweep task and walked by the owner after `scripts/ci.sh` is green.

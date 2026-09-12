@@ -9,9 +9,10 @@ values, status colours never move, palette-independent roles never move). Full a
 `scripts/ci.sh` green before this sheet is run.
 
 This is a **reskin** milestone: no behaviour was meant to change, so anything that behaves
-differently from the last milestone is a finding even when it looks right. The deliberate
-changes live in the spec; the token layer alone is covered in Task 1, and the component and
-screen restyles land in later tasks and append their rows here.
+differently from the last milestone is a finding even when it looks right. The deliberate changes
+live in the spec, and every recorded iOS divergence is in its §9 — read that before filing a
+finding against something this sheet calls a divergence. The sheet is complete: Tasks 1-13 each
+appended their rows and Task 14 closed §6.
 
 Sections 1 and 5 need a **premium entitlement** — OCEAN / SUNSET / FOREST are locked for a free
 user, so run the matrix (§1) with premium enabled and the paywall-gating checks (§5) on a free
@@ -30,11 +31,14 @@ at a glance, card edges visible (dark: a border and **no** shadow; light: a shad
 hairline), accent colour following the palette rather than staying emerald, and no element
 clipped or overlapping.
 
-L = light, D = dark. The screen matrix header is the contract later tasks append rows under.
+L = light, D = dark. Every screen the app has is a row; the last two are chrome rather than a
+screen and carry their own contract under the table.
 
 | Screen | Light CLASSIC | Dark CLASSIC | OCEAN L | OCEAN D | SUNSET L | SUNSET D | FOREST L | FOREST D |
 |---|---|---|---|---|---|---|---|---|
-| Onboarding | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
+| Onboarding — cover (page 1) | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
+| Onboarding — personal details (page 2) | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
+| Onboarding — health notes (page 3) | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
 | App Lock | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
 | Home | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
 | Medications list | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
@@ -94,9 +98,9 @@ checks above, tick a cell only when all of these hold:
   colour, "Tümünü Gör" beside it is `primary`, and each appointment card's time chip follows the
   palette.
 
-Onboarding is only reachable on a fresh install; its row can be checked once per palette by
-resetting the app (Settings → General → Transfer or Reset iPhone → Erase All Content and
-Settings is heavy, so prefer removing the app's data/reinstall) rather than re-installing;
+Onboarding is only reachable on a fresh install; its three rows are §2's three pages and can be
+ticked in one walk per palette. Resetting the device (Settings → General → Transfer or Reset
+iPhone → Erase All Content and Settings) is heavy, so prefer deleting the app and reinstalling;
 check light first, matching the mockups.
 
 ---
@@ -142,7 +146,8 @@ notification permission can only be asked for once per install.
 
 ## 3. Gestures
 
-_The remaining rows are filled by the other screen tasks — swipe to delete, undo, maps._
+Per-screen interaction rows, one subsection per screen task. Swipe-to-delete, undo and the maps
+row live with the screen that owns them rather than in a list of their own.
 
 ### 3.1 Home's snapshot pager and its entrance (Task 6)
 
@@ -263,20 +268,24 @@ Run with cycle tracking on and at least two recorded periods, so the prediction 
 ## 4. Dynamic Type
 
 _Run at xxxLarge (Ayarlar → Erişilebilirlik → Ekran ve Metin Boyutu) and confirm no clipping or
-truncation. The remaining rows are filled by the other screen tasks._
+truncation._ Onboarding's own xxxLarge walk is §2.19, and the screens not listed here are covered
+by the generic "nothing clipped or overlapping" check of §1.
 
 | # | Screen | Expect | ☐ |
 |---|---|---|---|
 | 4.1 | Vitals editors at xxxLarge (Task 8) | each stepper keeps its − and + reachable beside the number, the number itself is not clipped, and the range hint under it wraps instead of truncating. The three blood pressure steppers stack without overlapping | ☐ |
 | 4.2 | Vitals list at xxxLarge (Task 8) | the three type tabs still read (a label may shorten but must not be cut mid-word), the four range chips wrap onto a second line inside the chart card rather than overflowing it, and the three statistics tiles stay on one row or wrap cleanly | ☐ |
 | 4.3 | Appointments list at xxxLarge (Task 9) | the two segmented tabs still read, the "Yeni Randevu Oluştur" extended pill wraps or shortens without clipping its label, and a card's date tile and time/reminder chips stay readable and unwrapped | ☐ |
+| 4.4 | Home at xxxLarge, swiping the snapshot pager through all three pages (Task 6) | the pager box grows with the text (it is `@ScaledMetric`) and **no page is cut at the bottom** — the doses page with an empty state is the tallest and the one to watch; the hero's greeting and date wrap instead of truncating, and the "Tümünü Gör" action stays beside its overline rather than under it | ☐ |
+| 4.5 | Medications list and editor at xxxLarge (Task 7/9) | the "İlaç ekle" extended pill keeps its label, the three metric tiles ("Aktif ilaç", "Kaydedilen doz", "Sıradaki doz") wrap rather than clip, the eight form tiles keep their labels, and a dose amount's − / + stay reachable beside the number with its range hint wrapping | ☐ |
 
 ---
 
 ## 5. Sheets and the live theme switch
 
-_Theme/language sheets (`.medium` detent, swatches, paywall gating, CLASSIC never paywalls) and the
-paywall full-screen cover are Task 10's rows._
+The theme and language sheets (`.medium` detent, swatches, paywall gating, CLASSIC never
+paywalls) are §5.3; the paywall full-screen cover is §5.4. §5.1 is the live theme switch, which is
+the one row set that can force a shell change.
 
 ### 5.1 The theme sheet repaints the bars while it is open (Task 5)
 
@@ -348,9 +357,12 @@ a free account from More → a locked palette, or from a locked feature (Trends 
 Each of these is a place the implementation made a judgement that only a device can settle.
 Note what actually happens, not just pass/fail.
 
-_To be filled as later tasks surface them — the token layer's recorded shortfalls are the two
-CLASSIC-light feature-accent pairs (medications 4.45:1, vitals 4.05:1) kept on the Android
-ledger, not fixed by the token test (`salus-android` design-tokens §14.1)._
+**Task 1 — two CLASSIC-light accent pairs below AA.** The token layer's recorded shortfalls are
+the medications (4.45:1) and vitals (4.05:1) feature-accent pairs in CLASSIC light, carried on the
+Android ledger and not fixed by the token test (`salus-android` design-tokens §14.1). They are
+Android's numbers and they are the same here; any *new* pair below AA fails
+`SalusColorSchemeContrastTests`. Note only whether either reads as illegible on a device — the
+pairs themselves are a cross-platform decision, not an iOS finding.
 
 **Task 5 — appearance-proxy timing.** §5.1 is the whole of it: the unselected tab-item colour and
 the navigation-bar title font are set on `UITabBar.appearance()` / `UINavigationBar.appearance()`,
@@ -369,6 +381,40 @@ number on the keyboard's Done or on the field losing focus, and opens focused on
 instance; neither is something a unit test can observe. §3.3.6–§3.3.8 and §3.3.12 are the rows
 that settle them. Note in particular whether a value typed and then saved **without** dismissing
 the keyboard is the value that gets stored.
+
+**Task 10 — sheet hosting on a wide layout.** §5.3 is the whole of it: the appearance and
+language pickers are `.medium`-detent sheets presented from the `MoreScreen` body, and a detent is
+a fraction of the *presenting* container. On an iPad-class width, or on an iPhone in landscape, a
+medium detent can leave the palette rows below the fold or, in the other direction, leave half the
+sheet empty. Nothing automated can measure a detent. Run §5.3.1 and §5.3.6 once in landscape and
+once on the widest device available, and note whether the four palette rows and the three language
+rows are all reachable without the sheet having to be dragged up.
+
+**Tasks 3 and 6 — xxxLarge: the stepper's range hint and the Home pager's fixed height.** Two
+places where the largest text size meets a box that cannot grow with it. (a) `SalusStepperField`
+draws its range hint under the number; §4.1 is the row that says whether it wraps or truncates at
+xxxLarge, and the medication editor's dose amount (§3.2.12) is the second caller. (b) Home's
+snapshot pager is a **fixed** height — `HomePagerDefaults.height`, `@ScaledMetric`-scaled, because
+SwiftUI's `TabView(.page)` has no intrinsic height (spec §9 (p)). The constant was sized against
+the tallest page with a step of slack, but the slack is a judgement: at xxxLarge a page whose card
+holds an empty state can still clip. §4.4 is the row: walk all three pages at xxxLarge and note any page whose
+content is cut at the bottom, not just the worst one.
+
+**Task 13 — the onboarding finish is a race the tests can only half-see.** §2.13 and §2.14 are
+the rows. The completion flag is written from a detached task and the notification prompt is the
+system's, so "the effect arrived" and "the flag was written" are two events on a device and the
+unit tests wait on the second only. What a device settles: whether the prompt ever blocks the
+landing on Home (it must not), whether declining is as harmless as accepting, and whether a kill
+mid-save (§2.18) replays the flow rather than leaving a half-filled profile behind a closed gate.
+
+**Task 13 — the reminder row is one accessibility element, not a whole-row tap target.** Android
+makes the `SalusListItem` clickable *and* puts a `Switch` in it; on iOS a `Button` wrapped around
+a `Toggle` swallows the toggle's own gesture, so the row is combined instead
+(`.accessibilityElement(children: .combine)`): VoiceOver reads title + subtitle + state as one
+control and a double-tap flips it (§2.23), while a *sighted* user must hit the switch itself — a
+native ≥44 pt target, but a smaller one than the whole row. Recorded as spec §9 (w). Note whether
+tapping the row's text and getting nothing reads as broken on a device; if it does, the fix is a
+`Toggle` with a custom label, which stops being `SalusListItem`.
 
 **Task 12 — the Cycle top-bar overline is a content line.** Android's `SalusTopBar.Pushed(overline:)`
 puts "SALUS HEALTH" inside the top bar above the title; iOS's pushed nav bar has no overline slot,

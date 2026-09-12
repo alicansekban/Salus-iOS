@@ -237,7 +237,7 @@ Milestone plans live in `docs/plans/`. Toolchain and CI usage: `README.md`.
   invent, round, or eyeball a color, spacing, radius, elevation or duration. If the doc lacks it,
   the doc gets updated on the Android side first.
   — *enforcement: `Packages/SalusDesignSystem/Tests/SalusDesignSystemTests/SalusDesignTokensTests.swift`
-  pins **213 tokens** and **5 `FeatureAccent` sets** per theme, plus per-section tables against
+  pins **233 tokens** and **5 `FeatureAccent` sets** per theme, plus per-section tables against
   §1–§9 of the doc. Adding a token without the doc line fails the count.*
 - **`SalusDesignSystem` is tokens only, no views** (mirrors Android's `:core:designsystem`).
   Shared views live in `SalusUI`. — *review.*
@@ -255,6 +255,71 @@ Milestone plans live in `docs/plans/`. Toolchain and CI usage: `README.md`.
   a timeout. — *enforcement: the existing shape in
   `Packages/SalusDesignSystem/Sources/SalusDesignSystem/` + review; a regression shows up as a
   compile timeout in `scripts/test-packages.sh`.*
+- **No inline hex outside the palette files, and no raw point size outside a `*Defaults`.**
+  A `Color(hex:)` / `0xRRGGBB` literal belongs in exactly five files, all in
+  `Packages/SalusDesignSystem/Sources/SalusDesignSystem/`: `SalusColorScheme.swift`,
+  `SalusExtendedColors.swift` and the three `SalusPremium*.swift` palettes (plus
+  `Color+SalusHex.swift`, which defines the initializer, and the design-system tests, which pin the
+  values). Anywhere else a colour is `theme.colorScheme.…` / `theme.extendedColors.…`. A number with
+  a unit — a size, an inset, a radius, a stroke — is either a `SalusSpacing` / `SalusDimensions` /
+  `SalusTypography` token or a named constant on the component's own `…Defaults` enum
+  (`SalusFabDefaults`, `HomePagerDefaults`, `MedicationsHeaderDefaults`, …). A bare `44`, `16` or
+  `0.24` in a view body is a finding: the `Defaults` enum is where a reader looks for what it is and
+  why. — *review; the token half is mechanical through `SalusDesignTokensTests`, the point-size half
+  is not.*
+- **The shell owns the bars; a feature paints neither.** The tab bar's look and the navigation
+  bar's ground, title colour and title font come from `SalusBarAppearance`
+  (`Packages/SalusUI/Sources/SalusUI/shell/SalusBarAppearance.swift`), applied once per theme
+  resolution; the tab bar's *visibility* is `App/RootView.swift`'s (the rule above); and the five
+  tab roots' toolbar — brand tile, principal title, bell, avatar — is `salusRootToolbar(…)`, applied
+  in `App/RootNavigationStack.swift` and nowhere else. A feature never writes a toolbar background,
+  never writes `.toolbar(…, for: .tabBar)`, and never adds a second bell or avatar. Since iOS-M16
+  (spec §2.2) there is **no in-content screen header** at all: `SalusScreenHeader` is deleted and
+  `SalusTopBar` was never ported. — *enforcement: `no_tab_bar_toolbar_in_features` (above) for the
+  tab-bar half; review for the rest.*
+- **A pushed screen writes `.navigationTitle` + inline mode + `ToolbarItem` text actions, and
+  nothing else.** `.navigationTitle(Text(verbatim: …))`, then
+  `#if os(iOS) .navigationBarTitleDisplayMode(.inline) #endif` **last** in the modifier chain — the
+  `#if` because the modifier is iOS-only API and every feature package also builds for the macOS
+  test host, and *last* because SwiftFormat indents whatever follows an `#endif` one level deeper.
+  Trailing actions are plain `Button`s in `ToolbarItem(placement: .primaryAction)` tinted `primary`
+  (icons use `SalusIconButton`, each with an `accessibilityLabel`). The system back button stays and
+  is never redrawn. `docs/ios-feature-template.md` §"The title bar is the system's" carries the
+  worked example. — *review.*
+- **The shared components are the vocabulary, and it is closed.** A screen composes what
+  `SalusUI` already ships and does not hand-roll a fifth copy of one:
+  `SalusAvatar`, `SalusButton`, `SalusExtendedFab`, `SalusFab`, `SalusIconButton`, `SalusCard`,
+  `SalusListItem` (+ `SalusListItemChevron`), `SalusSelectableRow`, `SalusCheckRow`,
+  `SalusChoiceChip`, `SalusChoiceTile`, `SalusStatusChip`, `SalusIconBadge`, `SalusHeroBand`,
+  `SalusMetricTile`, `SalusSectionHeader`, `SalusSegmentedTabs`, `SalusPagerDots`,
+  `SalusProgressBar`, `SalusProgressRing`, `SalusEmptyState`, `SalusInfoNote`, `SalusDisclaimer`,
+  `SalusTextField`, `SalusStepperField`, `SalusDateField`, `SalusDateTile`, `SalusTimeField`,
+  `SalusEntrance` (`.salusEntrance(index:)`), `ChipFlowLayout`, `SalusWeekdaySymbols`,
+  `SalusSnackbarHost`, and the three modifiers `.salusBottomSheet(…)`, `.salusDialog(…)`,
+  `.salusConfirmDialog(…)` (+ `.salusDismissesKeyboardOnTap()`). Charts are the four in
+  `SalusUI/chart/`. A component that needs a knob gains it in `SalusUI` with its twin's citation —
+  never a private copy in a feature. — *review; the list lives in
+  `Packages/SalusUI/Sources/SalusUI/component/`, `…/shell/` and `…/chart/`, which is what to
+  re-derive it from.*
+- **`SalusSegmentedTabs` is the content-tab control; `Picker(.segmented)` is retired.** iOS-M16
+  reversed M14's divergence (b): the native segmented control cannot take the per-palette
+  `primaryContainer` pill per instance, so the sliding pill is drawn with `matchedGeometryEffect`
+  in `SalusUI`. Every content tab strip — vitals types, appointments upcoming/past, trends ranges —
+  is `SalusSegmentedTabs`; a `pickerStyle(.segmented)` anywhere in the tree is a finding.
+  — *review; `grep -rn "pickerStyle(.segmented"` over `App/` and `Packages/` must match no call
+  site. It has exactly one hit today and it is a comment —
+  `FeatureSettings/ui/profile/ProfileScreen.swift:24`, the Material→SwiftUI mapping table in that
+  file's header, which records the retirement.*
+- **`SalusStepperField` owns no range, and the caller contract that replaces it binds.** The field
+  takes the number already written (`value: String`), reports the text an edit produced
+  (`onValueChange`) and hands the nudges back; the step, the unit and the bounds stay with the
+  feature's state holder, where Kotlin keeps them inside the component. So **a state holder must
+  answer every `onValueChange` — by accepting the text as the new `value`, or by clamping it and
+  re-emitting the value it will accept.** Silently ignoring one leaves the field displaying a number
+  the state holder rejected, and the field cannot tell that from "not answered yet". Recorded as
+  spec §9 (i). — *enforcement:
+  `Packages/SalusUI/Tests/SalusUITests/SalusStepperFieldTests.swift` ("a caller's clamped
+  re-emission replaces the text that was reported") + review of every caller.*
 
 ## Copy and localisation rules
 
@@ -292,6 +357,17 @@ Milestone plans live in `docs/plans/`. Toolchain and CI usage: `README.md`.
     the catalog into the resource bundle verbatim, so a lookup under `swift test` finds no table and
     `String(localized:)` returns the key. String tests therefore assert against the **file**; the
     end-to-end check is `scripts/build-app.sh` plus a simulator run.
+- **Overlines are stored upper-case in the resource, never folded at run time.** An overline —
+  "BUGÜN", "HESAP", "SALUS HEALTH", the vitals field labels, the onboarding step counter — ships
+  upper-case in both locales of the catalog, and no call site ever calls `uppercased()` on it.
+  Turkish has two dotted i's and a runtime fold cannot know which one a label means, so the
+  decision belongs to whoever wrote the string. (`SalusAvatar`'s initials are not an overline: it
+  folds a *name* the user typed, which has no resource to be stored upper-case in.) — *enforcement:
+  a per-catalog pin, the shape set by
+  `Packages/Features/FeatureVitals/Tests/FeatureVitalsTests/VitalsStringsTests.swift:90` and
+  `Packages/Features/FeatureOnboarding/Tests/FeatureOnboardingTests/OnboardingStringsTests.swift:91`
+  — each asserts `value == value.uppercased(with: Locale(identifier: locale))` for every overline
+  key it owns.*
 
 ## Project file and build rules
 
@@ -337,3 +413,10 @@ Milestone plans live in `docs/plans/`. Toolchain and CI usage: `README.md`.
 - **Linear history only.** Rebase onto `main`, fast-forward merge (`git merge --ff-only`). Never
   `--no-ff`, never a merge commit.
 - Review before merge; `scripts/ci.sh` green is the entry ticket, not the finish line.
+- **A milestone's manual QA sheet lives in `docs/qa/m<N>-manual-qa.md`.** That is the current
+  home; the sheets from iOS-M3 to iOS-M14 still sit in `scripts/` and stay where they are, but no
+  new one is written there — a checklist a human reads is documentation, and `scripts/` is for
+  things that run. The sheet is written by the milestone's sweep task, hands the owner one row per
+  screen plus a "known risks" section for everything the automated gate cannot see (live theme
+  repaint, Dynamic Type at xxxLarge, sheet heights, VoiceOver order), and is what the owner walks
+  before the merge. `scripts/ci.sh` green is the entry ticket to that walk. — *review.*
