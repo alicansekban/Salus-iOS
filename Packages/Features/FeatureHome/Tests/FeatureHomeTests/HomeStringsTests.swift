@@ -51,8 +51,6 @@ struct HomeStringsTests {
             turkish: "Bugünün ilerlemesi %1$lld/%2$lld",
             english: "Today's progress %1$lld/%2$lld"
         ),
-        // Carried for key parity, read by nothing on iOS (1).
-        HomeStringSample(key: "home_view_details", turkish: "Detaylı İncele", english: "View details"),
         // The reminder readiness card (2).
         HomeStringSample(
             key: "home_reminders_broken_title",
@@ -64,7 +62,7 @@ struct HomeStringsTests {
             turkish: "Alarmlar gecikebilir",
             english: "Alarms may be late"
         ),
-        // The AI summary card (3).
+        // The AI summary card (4).
         HomeStringSample(key: "home_ai_summary_title", turkish: "Yapay zekâ özeti", english: "AI summary"),
         HomeStringSample(
             key: "home_ai_summary_description",
@@ -72,6 +70,7 @@ struct HomeStringsTests {
             english: "Turn your records into a weekly or monthly health summary."
         ),
         HomeStringSample(key: "home_ai_new_summary", turkish: "Yeni Özet", english: "New summary"),
+        HomeStringSample(key: "home_view_details", turkish: "Detaylı İncele", english: "View details"),
         // The doses page (10).
         HomeStringSample(key: "today_doses_title", turkish: "Bugünün dozları", english: "Today's doses"),
         HomeStringSample(

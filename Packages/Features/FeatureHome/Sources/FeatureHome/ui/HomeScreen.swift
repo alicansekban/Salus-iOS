@@ -200,8 +200,11 @@ struct HomeScreen: View {
                 )
                 .salusEntrance(index: 2)
 
-                HomeAiCard(onOpenAiSummary: onOpenAiSummary)
-                    .salusEntrance(index: 3)
+                HomeAiCard(
+                    newSummaryAvailable: state.freeAiSummaryAvailable,
+                    onOpenAiSummary: onOpenAiSummary
+                )
+                .salusEntrance(index: 3)
 
                 HomeAppointmentsSection(
                     appointments: state.appointments,

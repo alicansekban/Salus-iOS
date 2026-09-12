@@ -12,13 +12,12 @@
 // A `git diff` of the XML lists four `-` lines for that last group plus the deletion; only the
 // deletion is a key that left, which is why the count here is 34 + 9 − 1.
 //
-// TWO OF THE 42 ARE CARRIED FOR PARITY AND READ BY NOTHING ON iOS, and both are the same
-// component divergence: `SalusHeroBand` does not port Kotlin's `trailingOverline` slot
-// (`SalusHeroBand.swift`'s header, spec §3.3), so Home's band spends its one overline on the date
-// and never draws `home_overline_today`; and the AI card ends in a `SalusButton` rather than
-// Kotlin's "Detaylı İncele" + chevron affordance (spec §4.1), so `home_view_details` is unread
-// too. Both stay in the catalog because the key-set pin is Android's key set, not iOS's call
-// sites — dropping them would make the next Android string sweep look like a divergence.
+// ONE OF THE 42 IS CARRIED FOR PARITY AND READ BY NOTHING ON iOS, and it is a component
+// divergence rather than a screen decision: `SalusHeroBand` does not port Kotlin's
+// `trailingOverline` slot (`SalusHeroBand.swift`'s header, spec §3.3), so Home's band spends its
+// one overline on the date and never draws `home_overline_today`. It stays in the catalog because
+// the key-set pin is Android's key set, not iOS's call sites — dropping it would make the next
+// Android string sweep look like a divergence.
 //
 // TWO ANDROID KEYS WERE DELIBERATELY NOT PORTED, and the omission is still the point: `home_title`
 // and `home_settings` were declared in both locales and read by nothing — `HomeScreen.kt` named
@@ -110,15 +109,6 @@ public enum HomeStrings {
         formatted(.doseProgress, taken, total)
     }
 
-    // MARK: - Carried for key parity, read by nothing on iOS (1)
-
-    /// `home_view_details` — "Detaylı İncele" / "View details".
-    ///
-    /// Kotlin's AI card ends in this label plus a chevron (`HomeCards.kt:93-104`); the iOS card
-    /// ends in a `SalusButton` instead (spec §4.1), so the label is unread here. See the file
-    /// header for why it stays in the catalog.
-    public static var viewDetails: String { localized(.viewDetails) }
-
     // MARK: - The reminder readiness card (2)
 
     /// `home_reminders_broken_title` — "Alarmlar çalışmayacak" / "Alarms will not fire".
@@ -126,12 +116,16 @@ public enum HomeStrings {
     /// `home_reminders_degraded_title` — "Alarmlar gecikebilir" / "Alarms may be late".
     public static var remindersDegradedTitle: String { localized(.remindersDegradedTitle) }
 
-    // MARK: - The AI summary card (3)
+    // MARK: - The AI summary card (4)
 
     public static var aiSummaryTitle: String { localized(.aiSummaryTitle) }
     public static var aiSummaryDescription: String { localized(.aiSummaryDescription) }
-    /// `home_ai_new_summary` — "Yeni Özet" / "New summary", the card's own call to action.
+    /// `home_ai_new_summary` — "Yeni Özet" / "New summary", the chip that announces an unspent free
+    /// summary (`HomeCards.kt:79-84`).
     public static var aiNewSummary: String { localized(.aiNewSummary) }
+    /// `home_view_details` — "Detaylı İncele" / "View details", the card's trailing affordance
+    /// (`HomeCards.kt:98-102`).
+    public static var viewDetails: String { localized(.viewDetails) }
 
     // MARK: - The doses page (10)
 
@@ -232,17 +226,15 @@ public enum HomeStrings {
         case greetingNightPlain = "home_greeting_night_plain"
         case doseProgress = "home_dose_progress"
 
-        /// Carried for key parity, read by nothing on iOS (1).
-        case viewDetails = "home_view_details"
-
         // The reminder readiness card (2).
         case remindersBrokenTitle = "home_reminders_broken_title"
         case remindersDegradedTitle = "home_reminders_degraded_title"
 
-        // The AI summary card (3).
+        // The AI summary card (4).
         case aiSummaryTitle = "home_ai_summary_title"
         case aiSummaryDescription = "home_ai_summary_description"
         case aiNewSummary = "home_ai_new_summary"
+        case viewDetails = "home_view_details"
 
         // The doses page (10).
         case dosesTitle = "today_doses_title"

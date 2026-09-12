@@ -85,7 +85,9 @@ checks above, tick a cell only when all of these hold:
   up the surface ladder from the page (`surfaceContainer`), and the dots under it show the
   palette's `primary` on the active pill.
 - **AI card** — the gradient frame around it is visible in every palette and changes colour with
-  it (emerald→rose in CLASSIC), and the "Yeni Özet" button is the palette's `primary`.
+  it (emerald→rose in CLASSIC); the trailing "Detaylı İncele" line and its chevron are the
+  palette's `primary`, and the "Yeni Özet" chip — shown only while a free summary is unspent —
+  takes the palette's accent.
 - **Appointments** — the "YAKLAŞAN RANDEVULAR" overline is upper-case and in the muted overline
   colour, "Tümünü Gör" beside it is `primary`, and each appointment card's time chip follows the
   palette.
