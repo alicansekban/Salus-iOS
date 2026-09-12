@@ -18,11 +18,6 @@ public struct SaveWeightEntryUseCase: VitalsQuickEntry {
         case invalidWeight
     }
 
-    /// `SaveWeightEntryUseCase.kt:64` — the lower end of the range a human body weight can fall in.
-    public static let minKg = 20.0
-    /// `SaveWeightEntryUseCase.kt:65`.
-    public static let maxKg = 400.0
-
     private let repository: any VitalsRepository
     private let idGenerator: any IdGenerator
 
@@ -46,8 +41,9 @@ public struct SaveWeightEntryUseCase: VitalsQuickEntry {
         timeZone: TimeZone,
         note: String?
     ) async throws -> Result {
-        // `SaveWeightEntryUseCase.kt:30-32`, written as the range the value must be *inside*
-        // rather than as the two comparisons it must fail. The two spellings agree on every real
+        // `SaveWeightEntryUseCase.kt:32`, written as the range the value must be *inside* rather
+        // than as the two comparisons it must fail — which is also how Kotlin now spells it
+        // (`kilograms !in VitalsLimits.WEIGHT_KG`). The two spellings agree on every real
         // number and differ on one value: Kotlin's `kilograms < MIN || kilograms > MAX` is false
         // for NaN, so Android stores a NaN weight where this rejects it. Both text fields can
         // produce NaN — Swift's `Double("nan")` and Kotlin's `"nan".toDoubleOrNull()` both parse
@@ -56,7 +52,7 @@ public struct SaveWeightEntryUseCase: VitalsQuickEntry {
         // This is a **recorded divergence**, not an incidental one: iOS is the correct side, and
         // Android carries the backlog item (§11 A11) to reject NaN too. `NaN is rejected` in
         // `SaveWeightEntryUseCaseTests` pins it until Android catches up.
-        guard let kilograms, kilograms >= Self.minKg, kilograms <= Self.maxKg else {
+        guard let kilograms, VitalsLimits.weightKg.contains(kilograms) else {
             return .invalidWeight
         }
         let entry = WeightEntry(

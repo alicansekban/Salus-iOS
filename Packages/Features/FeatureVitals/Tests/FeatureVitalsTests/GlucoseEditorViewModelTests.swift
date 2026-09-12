@@ -49,6 +49,55 @@ struct GlucoseEditorViewModelTests {
         )
     }
 
+    /// `GlucoseEditorViewModelTest.kt:56-68`.
+    @Test("a new reading starts with the mg dL suggestion, no value and save disabled")
+    func aNewReadingStartsWithTheMgDLSuggestionNoValueAndSaveDisabled() async {
+        let viewModel = viewModel()
+        await waitUntil("the preferred unit to arrive") { viewModel.state.dateEpochDay != nil }
+
+        let state = viewModel.state
+        #expect(state.isNew)
+        #expect(state.valueText.isEmpty)
+        #expect(!state.hasValue)
+        #expect(!state.saveEnabled)
+        #expect(state.suggestedValue == 100.0)
+    }
+
+    /// `GlucoseEditorViewModelTest.kt:69-88`.
+    @Test("switching the unit while the value is only a suggestion converts the suggestion")
+    func switchingTheUnitWhileTheValueIsOnlyASuggestionConvertsTheSuggestion() async {
+        let viewModel = viewModel()
+        await waitUntil("the preferred unit to arrive") { viewModel.state.dateEpochDay != nil }
+
+        viewModel.onEvent(.unitSelected(.mmolL))
+
+        let state = viewModel.state
+        #expect(state.unit == .mmolL)
+        #expect(state.valueText.isEmpty)
+        #expect(!state.hasValue)
+        #expect(!state.saveEnabled)
+        // 100 mg/dL = 5.5499… mmol/L, on the stepper's one-decimal grid.
+        #expect(abs(state.suggestedValue - 5.5) <= 1e-9)
+
+        viewModel.onEvent(.unitSelected(.mgDl))
+        #expect(abs(viewModel.state.suggestedValue - 100.0) <= 1e-9)
+    }
+
+    /// `GlucoseEditorViewModelTest.kt:89-102`.
+    @Test("nudging the suggestion makes it the first real value and enables save")
+    func nudgingTheSuggestionMakesItTheFirstRealValueAndEnablesSave() async {
+        let viewModel = viewModel()
+        await waitUntil("the preferred unit to arrive") { viewModel.state.dateEpochDay != nil }
+        let suggested = viewModel.state.suggestedValue
+
+        // What the stepper writes back when + is tapped while the suggestion is showing.
+        viewModel.onEvent(.valueChanged(editorWholeText(suggested + 1.0)))
+
+        #expect(viewModel.state.valueText == "101")
+        #expect(viewModel.state.hasValue)
+        #expect(viewModel.state.saveEnabled)
+    }
+
     /// `GlucoseEditorViewModelTest.kt:55-70`.
     @Test("saving a valid mg dL value stores entry with context and closes")
     func savingAValidMgDLValueStoresEntryWithContextAndCloses() async throws {

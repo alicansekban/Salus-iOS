@@ -1,28 +1,21 @@
 // Ported from `feature/vitals/src/main/kotlin/com/alicansekban/salus/feature/vitals/
 // ui/editor/GlucoseEditorScreen.kt`.
 //
-// Material → SwiftUI by the mapping table `WeightEditorScreen.swift` spells out, plus what this
-// screen adds over `BloodPressureEditorScreen`:
-//   `SingleChoiceSegmentedButtonRow`   → a `.segmented` `Picker`, the same widget the list screen's
-//                                        type selector already is.
-//   `Row { FilterChip … }`             → `ChipFlowLayout` of `SalusChoiceChip`s. Kotlin's plain
-//                                        `Row` does not wrap, and the four Turkish context labels
-//                                        ("Açlık", "Tokluk", "Yatmadan önce", "Rastgele") do not
-//                                        fit one line on any phone — the layout that wraps is what
-//                                        every other chip row in this tree already uses.
-//   `label` / `suffix` / `isError`     → `VitalsEditorField`, the one view the three vitals editors
-//                                        share; the unit symbol is its suffix, so the field is the
-//                                        only place `state.unit` is drawn.
+// The Material → SwiftUI mapping is `WeightEditorScreen.swift`'s, plus what this screen adds over
+// the other two:
+//   `FlowRow { SalusChoiceChip … }`   → `ChipFlowLayout` of `SalusChoiceChip`s. Kotlin's `FlowRow`
+//                                       wraps and SwiftUI ships no flow stack, so this is the
+//                                       layout every other chip row in this tree already uses.
 //
-// `"mg/dL"` / `"mmol/L"` stay hardcoded here, exactly as Kotlin's `private fun GlucoseUnit.label()`
-// does: they are unit symbols, not copy.
+// `"mg/dL"` / `"mmol/L"` stay hardcoded, exactly as Kotlin's `GlucoseUnit.unitLabel()` does: they
+// are unit symbols, not copy (`VitalsFormatting.kt:15-20`).
 
 import SalusDesignSystem
 import SalusModel
 import SalusUI
 import SwiftUI
 
-/// Owns the ViewModel and wires it to the shell (`GlucoseEditorScreen.kt:45-58`).
+/// Owns the ViewModel and wires it to the shell (`GlucoseEditorScreen.kt:37-50`).
 ///
 /// The module comes from the environment, exactly as `koinViewModel(parameters = …)` reaches Koin's
 /// graph — see `VitalsModule.swift` for what the composition root injects.
@@ -53,70 +46,50 @@ public struct GlucoseEditorRoute: View {
     }
 }
 
-/// The stateless editor (`GlucoseEditorScreen.kt:60-172`).
+/// The stateless editor (`GlucoseEditorScreen.kt:52-161`).
 struct GlucoseEditorScreen: View {
     let state: GlucoseEditorUiState
     let onEvent: (GlucoseEditorEvent) -> Void
 
-    @Environment(\.salusTheme) private var theme
+    /// The in-app language pick the shell publishes (`RootView+Locale.swift`) — the number in the
+    /// field is written in it, exactly as Kotlin's `format = { String.format(locale, …) }` does.
+    @Environment(\.locale) private var locale
 
     var body: some View {
-        // No `Scaffold` twin here: the app shell owns the one navigation stack and its insets.
-        Form {
-            Section {
-                valueField
-                unitSelector
+        VitalsEditorChrome(
+            isEdit: !state.isNew,
+            saveEnabled: state.saveEnabled,
+            onSave: { onEvent(.saveClicked) },
+            // Explicit `content:` rather than a trailing closure: `onSave` is a closure argument
+            // too, and SwiftLint's `multiple_closures_with_trailing_closure` is right that the
+            // trailing form hides which one is which.
+            content: {
+                valueStepper
+                unitChips
                 contextChips
-                SalusDateField(
-                    title: VitalsStrings.selectDate,
-                    epochDay: state.dateEpochDay,
-                    placeholder: VitalsStrings.selectDate,
-                    // Where the wheel opens before a day is set — the same fallback
-                    // `WeightEditorScreen` documents; the ViewModel fills `dateEpochDay` at init
-                    // on a new entry and from the loaded entry otherwise.
-                    seedEpochDay: state.dateEpochDay ?? 0
-                ) { onEvent(.dateSelected($0)) }
-                noteField
-            }
 
-            Section {
-                Button {
-                    onEvent(.saveClicked)
-                } label: {
-                    Text(verbatim: VitalsStrings.save)
-                        .frame(maxWidth: .infinity)
+                if state.showInvalidValue {
+                    SalusInfoNote(
+                        text: VitalsStrings.invalidGlucose,
+                        systemImage: "exclamationmark.triangle",
+                        tone: .warning
+                    )
                 }
-                .buttonStyle(.borderedProminent)
-                // `GlucoseEditorScreen.kt:157-160`.
-                .disabled(state.isSaving || Self.isBlank(state.valueText))
-            }
-            .listRowBackground(Color.clear)
-        }
-        // The pair `WeightEditorScreen` records: `.decimalPad` draws no return key, so the keyboard
-        // needs the two ways down the platform expects — a tap and a drag over the form.
-        .salusDismissesKeyboardOnTap()
-        .scrollDismissesKeyboard(.interactively)
-        // The token background the two shipped editors paint (`AppointmentEditorScreen`,
-        // `MedicationEditorScreen`), in the same place on the outer container. Those two wrap a
-        // `ScrollView`, which is transparent; a `Form` is a `List` and paints
-        // `systemGroupedBackground` of its own over anything behind it, so hiding that is what
-        // makes the token visible here — the `.background` alone would never be seen.
-        .scrollContentBackground(.hidden)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(theme.colorScheme.background)
-        .navigationTitle(state.isNew ? VitalsStrings.glucoseNewTitle : VitalsStrings.glucoseEditTitle)
-        .toolbar {
-            // `GlucoseEditorScreen.kt:86-95` — the delete action exists only for an existing entry.
-            if !state.isNew {
-                ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        onEvent(.deleteClicked)
-                    } label: {
-                        Label(VitalsStrings.delete, systemImage: "trash")
-                    }
+
+                EditorDateField(dateEpochDay: state.dateEpochDay) { onEvent(.dateSelected($0)) }
+
+                noteField
+
+                // `GlucoseEditorScreen.kt:142-148`.
+                if !state.isNew {
+                    SalusButton(
+                        VitalsStrings.delete,
+                        variant: .destructive,
+                        action: { onEvent(.deleteClicked) }
+                    )
                 }
             }
-        }
+        )
         .salusConfirmDialog(
             isPresented: Binding(
                 get: { state.showDeleteConfirm },
@@ -132,118 +105,147 @@ struct GlucoseEditorScreen: View {
         )
     }
 
-    /// `GlucoseEditorScreen.kt:105-121` — one decimal field, the unit as its suffix, and the single
-    /// rejection message below it.
-    private var valueField: some View {
-        VStack(alignment: .leading, spacing: SalusSpacing.xs) {
-            VitalsEditorField(
-                label: VitalsStrings.glucoseValueLabel,
-                // `suffix = { Text(state.unit.label()) }` — the symbol Kotlin writes as a literal.
-                suffix: state.unit.label,
-                text: Binding(get: { state.valueText }, set: { onEvent(.valueChanged($0)) }),
-                isError: state.showInvalidValue,
-                keyboard: .decimal
-            )
-
-            // `GlucoseEditorScreen.kt:111-115` — the supporting text exists only while flagged.
-            if state.showInvalidValue {
-                Text(verbatim: VitalsStrings.invalidGlucose)
-                    .font(SalusTypography.bodySmall.font)
-                    .foregroundStyle(theme.colorScheme.error)
-            }
-        }
-    }
-
-    /// `GlucoseEditorScreen.kt:123-127` and `:176-192` — the `GlucoseUnitSelector` composable.
+    /// `GlucoseEditorScreen.kt:65-90`.
     ///
-    /// The label is empty for the same reason `VitalsScreen.swift`'s type selector's is: Kotlin's
-    /// `SingleChoiceSegmentedButtonRow` carries none, and inventing one would mean inventing
-    /// user-facing copy the string catalog does not carry. `glucoseValueLabel` belongs to the value
-    /// field above, so titling the unit picker with it made VoiceOver announce the unit selector as
-    /// "value".
-    private var unitSelector: some View {
-        Picker(
-            selection: Binding(
-                get: { state.unit },
-                set: { onEvent(.unitSelected($0)) }
-            )
-        ) {
-            ForEach(GlucoseUnit.allCases, id: \.self) { unit in
-                Text(verbatim: unit.label).tag(unit)
-            }
-        } label: {
-            EmptyView()
-        }
-        .pickerStyle(.segmented)
-        .labelsHidden()
+    /// mg/dL is a whole number and mmol/L runs an order of magnitude smaller, so the step, the
+    /// range and the printed precision all follow the selected unit. A new reading shows the
+    /// suggestion dimmed and opens focused: it is a prompt to type over, not a reading the app is
+    /// claiming.
+    private var valueStepper: some View {
+        let range = VitalsLimits.glucoseRange(state.unit)
+        return SalusStepperField(
+            label: VitalsStrings.glucoseValueLabel,
+            value: formatted(stepperValue(of: state.valueText, fallback: state.suggestedValue)),
+            placeholder: !state.hasValue,
+            rangeHint: state.unit.vitalsUnitLabel,
+            autoFocus: state.isNew,
+            keyboard: .decimal,
+            parse: { clampedStepperText($0, in: range) != nil },
+            onValueChange: { typed in
+                // Answered, accepted or clamped, never dropped — the caller contract
+                // `SalusStepperField.swift` writes down.
+                guard let clamped = clampedStepperText(typed, in: range) else { return }
+                onEvent(.valueChanged(canonicalText(clamped)))
+            },
+            onDecrement: { nudge(by: -step, in: range) },
+            onIncrement: { nudge(by: step, in: range) }
+        )
     }
 
-    /// `GlucoseEditorScreen.kt:129-140` — tapping the selected chip deselects it, which is what
-    /// `context.takeIf { state.measurementContext != context }` means.
+    /// `GlucoseEditorScreen.kt:92-100`.
+    private var unitChips: some View {
+        ChipFlowLayout(spacing: SalusSpacing.sm) {
+            ForEach(GlucoseUnit.allCases, id: \.self) { unit in
+                SalusChoiceChip(
+                    label: unit.vitalsUnitLabel,
+                    isSelected: state.unit == unit,
+                    action: { onEvent(.unitSelected(unit)) }
+                )
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    /// `GlucoseEditorScreen.kt:102-114`.
     private var contextChips: some View {
         ChipFlowLayout(spacing: SalusSpacing.sm) {
             ForEach(MeasurementContext.allCases, id: \.self) { context in
                 SalusChoiceChip(
                     label: context.vitalsLabel,
-                    isSelected: state.measurementContext == context
-                ) {
-                    onEvent(.contextSelected(state.measurementContext == context ? nil : context))
-                }
+                    isSelected: state.measurementContext == context,
+                    // Tapping the selected chip clears it: the context is optional
+                    // (`GlucoseEditorScreen.kt:108-110`).
+                    action: {
+                        onEvent(.contextSelected(state.measurementContext == context ? nil : context))
+                    }
+                )
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    /// `GlucoseEditorScreen.kt:147-155` — `minLines = 2`, sentence capitalisation.
+    /// `GlucoseEditorScreen.kt:128-138`.
     private var noteField: some View {
-        TextField(
-            VitalsStrings.noteLabel,
+        SalusTextField(
             text: Binding(get: { state.noteText }, set: { onEvent(.noteChanged($0)) }),
-            axis: .vertical
+            label: VitalsStrings.noteLabel,
+            placeholder: VitalsStrings.notePlaceholder,
+            isSingleLine: false,
+            capitalization: .sentences
         )
-        .lineLimit(2 ... 6)
-        #if os(iOS)
-            .textInputAutocapitalization(.sentences)
-        #endif
     }
 
-    /// `String.isNotBlank()` — whitespace is not a reading.
-    private static func isBlank(_ text: String) -> Bool {
-        text.trimmingCharacters(in: .whitespaces).isEmpty
-    }
-}
-
-/// `GlucoseEditorScreen.kt:194-197` — the unit symbols, hardcoded on both platforms.
-extension GlucoseUnit {
-    fileprivate var label: String {
-        switch self {
-        case .mgDl: "mg/dL"
-        case .mmolL: "mmol/L"
+    /// `format = { … }` (`GlucoseEditorScreen.kt:79-84`) — the reader's separator, the unit's
+    /// precision.
+    private func formatted(_ value: Double) -> String {
+        switch state.unit {
+        case .mgDl: String(format: "%.0f", locale: locale, value)
+        case .mmolL: String(format: "%.1f", locale: locale, value)
         }
     }
+
+    /// What goes back into `valueText`: the canonical dot notation the ViewModel parses
+    /// (`GlucoseEditorScreen.kt:71-74`).
+    private func canonicalText(_ value: Double) -> String {
+        switch state.unit {
+        case .mgDl: editorWholeText(value)
+        case .mmolL: editorDecimalText(value)
+        }
+    }
+
+    /// `GlucoseUnit.step()` (`GlucoseEditorScreen.kt:163-166`).
+    private var step: Double {
+        switch state.unit {
+        case .mgDl: 1.0
+        case .mmolL: 0.1
+        }
+    }
+
+    private func nudge(by step: Double, in range: ClosedRange<Double>) {
+        let next = nudgedStepperValue(
+            from: state.valueText,
+            fallback: state.suggestedValue,
+            by: step,
+            in: range
+        )
+        onEvent(.valueChanged(canonicalText(next)))
+    }
 }
 
-#Preview("New entry") {
-    NavigationStack {
+#Preview("Glucose editor — new, showing the suggestion") {
+    SalusPreviewPalettes {
         GlucoseEditorScreen(
-            state: GlucoseEditorUiState(dateEpochDay: 20682),
+            state: GlucoseEditorUiState(dateEpochDay: 20700),
             onEvent: { _ in }
         )
     }
 }
 
-#Preview("Existing entry, rejected value") {
-    NavigationStack {
+#Preview("Glucose editor — existing entry in mmol/L") {
+    SalusPreviewPalettes {
         GlucoseEditorScreen(
             state: GlucoseEditorUiState(
                 isNew: false,
-                valueText: "5.5",
+                valueText: "5.8",
+                suggestedValue: 5.5,
                 unit: .mmolL,
-                measurementContext: .postMeal,
-                noteText: "After lunch",
-                dateEpochDay: 20682,
-                showInvalidValue: true
+                measurementContext: .fasting,
+                dateEpochDay: 20700
             ),
             onEvent: { _ in }
         )
     }
+}
+
+#Preview("Glucose editor — xxxLarge") {
+    GlucoseEditorScreen(
+        state: GlucoseEditorUiState(
+            isNew: false,
+            valueText: "104",
+            measurementContext: .postMeal,
+            dateEpochDay: 20700
+        ),
+        onEvent: { _ in }
+    )
+    .dynamicTypeSize(.xxxLarge)
 }

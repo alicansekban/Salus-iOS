@@ -43,6 +43,48 @@ struct WeightEditorViewModelTests {
         )
     }
 
+    /// `WeightEditorViewModelTest.kt:50-62`.
+    @Test("a new entry starts with a suggestion, no value and save disabled")
+    func aNewEntryStartsWithASuggestionNoValueAndSaveDisabled() async {
+        let viewModel = viewModel()
+        await waitUntil("the today seed") { viewModel.state.dateEpochDay != nil }
+
+        let state = viewModel.state
+        #expect(state.isNew)
+        #expect(state.valueText.isEmpty)
+        #expect(!state.hasValue, "the suggestion is not a value")
+        #expect(!state.saveEnabled)
+        #expect(state.suggestedKilograms == 70.0)
+    }
+
+    /// `WeightEditorViewModelTest.kt:63-75`.
+    @Test("nudging the suggestion makes it the first real value and enables save")
+    func nudgingTheSuggestionMakesItTheFirstRealValueAndEnablesSave() async {
+        let viewModel = viewModel()
+        await waitUntil("the today seed") { viewModel.state.dateEpochDay != nil }
+        let suggested = viewModel.state.suggestedKilograms
+
+        // What the stepper writes back when + is tapped while the suggestion is showing.
+        viewModel.onEvent(.valueChanged(editorDecimalText(suggested + 0.1)))
+
+        #expect(viewModel.state.valueText == "70.1")
+        #expect(viewModel.state.hasValue)
+        #expect(viewModel.state.saveEnabled)
+    }
+
+    /// `WeightEditorViewModelTest.kt:77-87`.
+    @Test("a typed value enables save and clearing it disables save again")
+    func aTypedValueEnablesSaveAndClearingItDisablesSaveAgain() async {
+        let viewModel = viewModel()
+        await waitUntil("the today seed") { viewModel.state.dateEpochDay != nil }
+
+        viewModel.onEvent(.valueChanged("82.5"))
+        #expect(viewModel.state.saveEnabled)
+
+        viewModel.onEvent(.valueChanged(""))
+        #expect(!viewModel.state.saveEnabled)
+    }
+
     /// `WeightEditorViewModelTest.kt:49-59`.
     @Test("saving a valid value stores entry and closes")
     func savingAValidValueStoresEntryAndCloses() async throws {

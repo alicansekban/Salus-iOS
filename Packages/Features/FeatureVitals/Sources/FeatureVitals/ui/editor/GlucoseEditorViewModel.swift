@@ -70,6 +70,7 @@ public final class GlucoseEditorViewModel {
             guard let self, let unit = await Self.firstUnit(from: preferences) else { return }
             guard let entryId else {
                 state.unit = unit
+                state.suggestedValue = Self.suggestion(in: unit)
                 state.dateEpochDay = clock.todayEpochDay()
                 return
             }
@@ -81,6 +82,7 @@ public final class GlucoseEditorViewModel {
                 GlucoseConversion.fromMgDl(entry.mgDl, unit: unit),
                 unit: unit
             )
+            state.suggestedValue = Self.suggestion(in: unit)
             state.unit = unit
             state.measurementContext = entry.measurementContext
             state.noteText = entry.note ?? ""
@@ -144,9 +146,29 @@ public final class GlucoseEditorViewModel {
             )
         }
         state.unit = newUnit
+        // The suggestion follows the unit even when the field holds a value: it is what the
+        // stepper falls back to, and "100" under mmol/L would suggest a reading nobody survives
+        // (`GlucoseEditorViewModel.kt:101`).
+        state.suggestedValue = Self.suggestion(in: newUnit)
         state.showInvalidValue = false
         preferences.setGlucoseUnit(newUnit)
     }
+
+    /// The starting suggestion expressed in `unit`, on the grid that unit's stepper moves on
+    /// (`GlucoseEditorViewModel.kt:108-119`).
+    ///
+    /// Derived from the one canonical figure rather than a table per unit, so switching back and
+    /// forth lands on the number it started from.
+    private static func suggestion(in unit: GlucoseUnit) -> Double {
+        let converted = GlucoseConversion.fromMgDl(GlucoseEditorUiState.defaultSuggestedMgDl, unit: unit)
+        switch unit {
+        case .mgDl: return converted.rounded()
+        case .mmolL: return (converted * tenths).rounded() / tenths
+        }
+    }
+
+    /// The mmol/L stepper's grid: one decimal (`GlucoseEditorViewModel.kt:117`).
+    private static let tenths = 10.0
 
     /// `GlucoseEditorViewModel.kt:110-134`.
     private func save() {

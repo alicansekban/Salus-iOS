@@ -41,7 +41,9 @@ L = light, D = dark. The screen matrix header is the contract later tasks append
 | Medication detail | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
 | Medication editor | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
 | Vitals list | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
-| Vitals editors | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
+| Vitals — weight editor | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
+| Vitals — blood pressure editor | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
+| Vitals — glucose editor | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
 | Appointments list | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
 | Appointment detail | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
 | Appointment editor | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
@@ -152,11 +154,40 @@ one row that checks Android's M15 critical fix, so it is worth the clock change.
 | 3.2.12 | Medication editor: tap − and + on a dose amount, then type a number into it | the nudges move by 0.5 and stop at 0.5 and 99; a typed number is accepted on the keyboard's Done or on leaving the field, and a non-number reverts to what was there | ☐ |
 | 3.2.13 | Medication editor: turn "Stok takibi" off | the two stock fields disappear and saving stores no stock; turning it back on leaves them empty rather than restoring the old numbers | ☐ |
 
+### 3.3 Vitals — the suggestion, the tabs and the chart card (Task 8)
+
+Run 3.3.1–3.3.5 on a profile that has **at least three** weight readings (so the chart, the
+statistics row and a delta all exist) and at least one blood pressure reading. 3.3.6–3.3.10 are
+the editors, and 3.3.6 is the row the whole "suggestion, not a value" design rests on.
+
+| # | Step | Expect | ☐ |
+|---|---|---|---|
+| 3.3.1 | Vitals root: tap Tansiyon, then Şeker, then Kilo | one pill slides between the three segments — it never fades out and back in, and never jumps two segments at once. The chart, the statistics row and the history rows all follow the selected type | ☐ |
+| 3.3.2 | Look at the top of the Vitals root | the navigation bar carries **only** the shell's brand tile, title, bell and avatar — no chart icon. The trends link is "Analizler" beside the "GRAFİK" overline, inside the content | ☐ |
+| 3.3.3 | Tap "Analizler" | Trends opens (a free user meets Trends' own lock there, which is correct — the link is deliberately ungated) | ☐ |
+| 3.3.4 | Tap 7G / 30G / 90G / 1Y inside the chart card | exactly one chip is filled at a time, the chart and the statistics row re-read, and the card's header keeps showing the newest reading with its measured-at chip | ☐ |
+| 3.3.5 | Read a history row whose value rose, then one that fell | the rise is `+` with the up arrow, the fall is `−` (a typographic minus, not a hyphen) with the down arrow, and the two are different colours; the oldest row in the window carries no delta at all. Neither colour is red-for-bad: this screen passes no verdict | ☐ |
+| 3.3.6 | Tap the + FAB with Kilo selected: look at the value field **before touching anything** | the number is dimmed — it is a suggestion, not a weight the app is claiming — the keyboard is already open on that field, and both "Kaydet" (bar) and "Ölçümü Kaydet" (bottom) are disabled | ☐ |
+| 3.3.7 | Tap + once | the dimmed number becomes a real one (full contrast), and both save actions turn on | ☐ |
+| 3.3.8 | Back out, open the editor again, type a value, then clear the field and leave it | save turns on when there is a number and off again when the field is empty | ☐ |
+| 3.3.9 | With Tansiyon selected, tap the FAB | the blood pressure editor opens (not weight's), the systolic field opens focused, and save stays off until **both** systolic and diastolic have a value — the pulse may be left as its suggestion and saves without one | ☐ |
+| 3.3.10 | Glucose editor: tap mmol/L while the value is still only a suggestion | the suggestion converts (about 5,5), the field is still empty and save is still off. Switching back lands on 100 again | ☐ |
+| 3.3.11 | Any editor: nudge a value to the very bottom or top of its range, then tap past it | the number stops at the bound rather than running past it, and saving a value at the bound is accepted | ☐ |
+| 3.3.12 | Editor: rotate the device part-way through typing | focus stays where the caret is — the opening focus does not drag back to the first field | ☐ |
+
+---
+
 ---
 
 ## 4. Dynamic Type
 
-_To be filled — run at xxxLarge and confirm no clipping or truncation on each root screen._
+_Run at xxxLarge (Ayarlar → Erişilebilirlik → Ekran ve Metin Boyutu) and confirm no clipping or
+truncation. The remaining rows are filled by the other screen tasks._
+
+| # | Screen | Expect | ☐ |
+|---|---|---|---|
+| 4.1 | Vitals editors at xxxLarge (Task 8) | each stepper keeps its − and + reachable beside the number, the number itself is not clipped, and the range hint under it wraps instead of truncating. The three blood pressure steppers stack without overlapping | ☐ |
+| 4.2 | Vitals list at xxxLarge (Task 8) | the three type tabs still read (a label may shorten but must not be cut mid-word), the four range chips wrap onto a second line inside the chart card rather than overflowing it, and the three statistics tiles stay on one row or wrap cleanly | ☐ |
 
 ---
 
@@ -192,7 +223,7 @@ theme change.
 | 5.2.4 | On any pushed screen (detail, editor, Cycle, Reminder health, Profile) | NO brand tile, NO bell, NO avatar — a system back button, an inline title, and at most the screen's own trailing action | ☐ |
 | 5.2.5 | Push from a tab root and look at the back button's label | it reads the root's title ("İlaçlar", "Ölçümler", …) or "Geri" when the title is too long — never blank | ☐ |
 | 5.2.6 | Push anything from any tab | the tab bar slides away and comes back on Back, exactly as before (the rule is unchanged) | ☐ |
-| 5.2.7 | Vitals root: the trends action | still reachable, now as the chart icon in the navigation bar beside the bell and avatar; three trailing controls plus the title must not clip on the narrowest device | ☐ |
+| 5.2.7 | Vitals root: the trends action | the navigation bar carries **only** the brand tile, the title, the bell and the avatar — no chart icon (Task 8 moved the action into the content, the Android M15 shape; 3.3.2 checks the same thing from the other side) | ☐ |
 | 5.2.8 | Medications root: add a medication to an empty list, then delete the last one, without leaving the screen | the count is the "Aktif ilaç" metric tile in the list's own header and its number tracks the list in the same interaction. The navigation bar carries **only** the brand tile, the title, the bell and the avatar — no count chip (Task 7 retired it; 3.2.3 checks the same thing from the other side) | ☐ |
 | 5.2.9 | VoiceOver on any root | the bell announces "Hatırlatıcı sağlığı", the avatar "Profil"; the brand tile is skipped | ☐ |
 | 5.2.10 | Cycle calendar (pushed from Home's card and from the More row) | inline title "Döngü" with a back button, no root toolbar | ☐ |
@@ -214,11 +245,17 @@ which reach bars created after the call. Nothing automated can run a live theme 
 is the row that decides whether `.id(theme.isDark)` on the `TabView` has to be added. Note what
 actually happens — "repaints at once", "repaints after a tab switch", or "only after relaunch".
 
-**Task 5 — a third trailing control beside the shell's own two.** Vitals still puts its trends
-chart icon in the bar next to the bell and the avatar (§5.2.7): three trailing controls plus the
-title. Check the narrowest supported device and the largest Dynamic Type size for clipping and note
-what truncates. Medications is no longer on this list — Task 7 moved its count into the list's own
-"Aktif ilaç" metric tile, the Android M15 shape (§3.2.3, §5.2.8); Vitals is Task 8's to mirror.
+**Task 5 — a third trailing control beside the shell's own two: closed.** Both screens that used
+to add one have given it up — Task 7 moved Medications' count into the list's own "Aktif ilaç"
+metric tile (§3.2.3, §5.2.8) and Task 8 moved Vitals' trends icon into the chart section header
+(§3.3.2, §5.2.7), each following the Android M15 shape. No root adds a trailing control to the
+shell's bell and avatar any more; §5.2.7 and §3.2.3 are now the rows that prove it stayed that way.
+
+**Task 8 — the stepper's commit, and the opening focus.** `SalusStepperField` commits a typed
+number on the keyboard's Done or on the field losing focus, and opens focused once per view
+instance; neither is something a unit test can observe. §3.3.6–§3.3.8 and §3.3.12 are the rows
+that settle them. Note in particular whether a value typed and then saved **without** dismissing
+the keyboard is the value that gets stored.
 
 ---
 

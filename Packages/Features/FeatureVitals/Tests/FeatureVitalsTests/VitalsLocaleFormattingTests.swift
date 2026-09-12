@@ -29,21 +29,29 @@ struct VitalsLocaleFormattingTests {
     )
     private static let day = measuredAt.date.epochDay
 
+    private static let weight = VitalsListItem.weight(
+        VitalsListItem.Weight(
+            id: "w1",
+            measuredAt: VitalsLocaleFormattingTests.measuredAt,
+            kilograms: 72.5,
+            note: nil
+        )
+    )
+
     // MARK: - The row
 
+    /// M15 replaced the row's two separate lines with one `metaLine` — date · time · context
+    /// (`VitalsFormatting.kt:66-79`) — so the case moved with the function it pins.
     @Test("a row's date is written in the locale it is handed")
     func rowDate() {
-        #expect(vitalsRowDate(Self.measuredAt, locale: Self.turkish) == "23 Ağu 2026, 23:09")
-        #expect(vitalsRowDate(Self.measuredAt, locale: Self.english) == "23 Aug 2026, 23:09")
+        #expect(Self.weight.metaLine(locale: Self.turkish) == "23 Ağu 2026 · 23:09")
+        #expect(Self.weight.metaLine(locale: Self.english) == "23 Aug 2026 · 23:09")
     }
 
     @Test("a row's value carries the reader's decimal separator")
     func rowValue() {
-        let weight = VitalsListItem.weight(
-            VitalsListItem.Weight(id: "w1", measuredAt: Self.measuredAt, kilograms: 72.5, note: nil)
-        )
-        #expect(weight.headline(locale: Self.turkish) == "72,5 kg")
-        #expect(weight.headline(locale: Self.english) == "72.5 kg")
+        #expect(Self.weight.headline(locale: Self.turkish) == "72,5 kg")
+        #expect(Self.weight.headline(locale: Self.english) == "72.5 kg")
         #expect(formatGlucose(5.5, unit: .mmolL, locale: Self.turkish) == "5,5 mmol/L")
         #expect(formatGlucose(5.5, unit: .mmolL, locale: Self.english) == "5.5 mmol/L")
     }
@@ -70,8 +78,7 @@ struct VitalsLocaleFormattingTests {
     func hostLocaleCannotReach() {
         #expect(chart(in: Self.turkish)?.xLabel(Self.day) != chart(in: Self.english)?.xLabel(Self.day))
         #expect(
-            vitalsRowDate(Self.measuredAt, locale: Self.turkish)
-                != vitalsRowDate(Self.measuredAt, locale: Self.english)
+            Self.weight.metaLine(locale: Self.turkish) != Self.weight.metaLine(locale: Self.english)
         )
     }
 

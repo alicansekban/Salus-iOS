@@ -1,39 +1,32 @@
 // Ported from `feature/vitals/src/main/kotlin/com/alicansekban/salus/feature/vitals/
-// ui/list/VitalsScreen.kt:102-115`, `:124-141`, `:184-246`, `:286-382` — the screen header, the
-// loading/empty/list content, one row, and the value formatters they share. The row's per-type
-// `SalusIconBadge` and its `icon()` helper (`:300-304`, `:362-366`) arrived with the M12 mirror
-// (Android `a9f8e23`), closing the list/card badge parity gap iOS-M14 Task 9 flagged.
+// ui/list/VitalsScreen.kt:126-248` — the loading/empty/list branch and the `LazyColumn` that draws
+// the chart section, the chart card, the statistics row, the history header and the rows.
 //
-// Split out of `VitalsScreen.swift` in iOS-M7, the way `MedicationDetailSections.swift` was split
-// out of `MedicationDetailScreen.swift` and for the same reason: the screen file stays the
-// screen's shape, and neither file approaches the 500-line limit once the second and third vital
-// types land. Kotlin keeps all of it in one file because a `private @Composable` is invisible
-// outside it; Swift has no per-file privacy for a `View` used from another file, so these are
-// internal types rather than private computed properties. Nothing outside this package can name
-// them — the package exports the Route and nothing else.
+// Kotlin keeps all of it in one file because a `private @Composable` is invisible outside it; Swift
+// has no per-file privacy for a `View` used from another file, so the row, the chart card and the
+// formatters are `VitalsRow.swift`, `VitalsChartCard.swift` and `VitalsFormatting.swift` — internal
+// types nothing outside this package can name, since the package exports the Routes and nothing
+// else.
 //
-// This is a move, not a rewrite: every view below draws exactly what the M2 screen drew, and the
-// only change of substance is that `header` and `content` now take the state they read as
-// parameters rather than closing over `VitalsScreen`'s stored properties.
+// Material → SwiftUI, M15 shapes:
+//   `LazyColumn`              → `ScrollView` + `LazyVStack`.
+//   `SalusSectionHeader(action:onAction:)` → the same component, whose trailing slot is a `Button`.
+//   `CircularProgressIndicator` → `ProgressView()`.
 
 import SalusDesignSystem
 import SalusModel
 import SalusUI
 import SwiftUI
 
-/// `VitalsScreen.kt:124-141` — the loading spinner, the empty state, or the list.
-///
-/// The M2 `content` property carried an `@ViewBuilder`; a `View`'s own `body` is already one.
+/// `VitalsScreen.kt:126-150` — the loading spinner, the empty state, or the list.
 struct VitalsListContent: View {
     let state: VitalsUiState
     let onEvent: (VitalsEvent) -> Void
     let onAddEntry: (VitalType) -> Void
     let onEditEntry: (VitalsListItem) -> Void
+    let onOpenTrends: () -> Void
 
     @Environment(\.salusTheme) private var theme
-    /// The in-app language pick the shell publishes (`RootView+Locale.swift`), which is what the
-    /// numbers below are written in — `Locale.current` would be the device's.
-    @Environment(\.locale) private var locale
 
     /// §10: reduce motion keeps the fade and drops the move, on both platforms.
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -56,42 +49,40 @@ struct VitalsListContent: View {
         }
     }
 
-    /// `VitalsScreen.kt:184-246`.
+    /// `VitalsScreen.kt:177-248`.
     private var entryList: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: SalusSpacing.md) {
-                Text(verbatim: headerText)
-                    .font(SalusTypography.headlineSmall.font)
-                    .foregroundStyle(theme.colorScheme.onBackground)
-
-                rangeSelector
-
-                if let chart = state.chart {
-                    SalusCard(contentPadding: EdgeInsets(
-                        top: SalusSpacing.md,
-                        leading: SalusSpacing.md,
-                        bottom: SalusSpacing.md,
-                        trailing: SalusSpacing.md
-                    )) {
-                        SalusLineChart(
-                            model: chart,
-                            lineColor: theme.extendedColors.vitals.accent,
-                            // The latest-value summary doubles as the chart's spoken description.
-                            contentDescription: headerText
-                        )
-                        .frame(height: chartHeight)
-                    }
+                if state.chart != nil {
+                    chartSectionHeader
                 }
+
+                // Drawn whether or not there is a line to draw: the card also carries the latest
+                // reading and the range filter, and both stay reachable below the two points a
+                // chart needs (`VitalsScreen.kt:215-220`).
+                VitalsChartCard(state: state, onEvent: onEvent)
+
+                // The summary describes exactly what the chart draws, so the two can never
+                // disagree. The chart is nil below two points, which is also where a
+                // highest/average/lowest row would be restating a single reading three times
+                // (`VitalsScreen.kt:184-189`).
+                if let stats {
+                    VitalsStatsRow(state: state, stats: stats)
+                }
+
+                SalusSectionHeader(
+                    title: VitalsStrings.historySection,
+                    contentPadding: SalusSectionHeaderDefaults.topOnly
+                )
 
                 ForEach(state.entries) { entry in
                     VitalsRow(
                         entry: entry,
-                        onTap: { onEditEntry(entry) },
+                        onEdit: { onEditEntry(entry) },
                         onDelete: { onEvent(.deleteRequested(entry.id)) }
                     )
-                    // §10 list mutation: fade + vertical move on add, remove and undo's
-                    // return. Reduce motion keeps the fade and drops the move
-                    // (`VitalsScreen.kt:251-256`).
+                    // §10 list mutation: fade + vertical move on add, remove and undo's return.
+                    // Reduce motion keeps the fade and drops the move (`VitalsScreen.kt:240-244`).
                     .transition(
                         reduceMotion
                             ? SalusMotion.listMutationReducedMotionTransition
@@ -100,10 +91,10 @@ struct VitalsListContent: View {
                 }
             }
             .padding(.horizontal, SalusSpacing.lg)
-            .padding(.top, SalusSpacing.sm)
+            .padding(.top, SalusSpacing.xs)
             // Keeps the last row scrollable above the floating action button
-            // (`VitalsScreen.kt:385-386`).
-            .padding(.bottom, fabClearance)
+            // (`VitalsScreen.kt:373-375`).
+            .padding(.bottom, VitalsListDefaults.fabClearance)
             // Every mutation path — delete confirmed, undo's return, an editor save landing —
             // arrives as a state change the container observes, so the animation rides with it
             // wherever it came from.
@@ -116,45 +107,30 @@ struct VitalsListContent: View {
         }
     }
 
-    /// `VitalsScreen.kt:207-217` — a row of `FilterChip`s, which carries no label either.
-    private var rangeSelector: some View {
-        Picker(
-            selection: Binding(
-                get: { state.selectedRange },
-                set: { onEvent(.rangeSelected($0)) }
-            )
+    /// `metricStatsOf(chart.points.map { it.y })` (`VitalsScreen.kt:187-188`) — a property rather
+    /// than a clause inside the `LazyVStack`, so the builder stays one expression per row.
+    private var stats: MetricStats? {
+        state.chart.flatMap { metricStatsOf($0.points.map { Double($0.y) }) }
+    }
+
+    /// `VitalsScreen.kt:201-213` — the "GRAFİK" overline with the trends link in its trailing slot.
+    ///
+    /// Trends live in another feature, so the tap is a callback the shell fills in. Deliberately
+    /// ungated: a free user reaches the screen and meets its own lock.
+    private var chartSectionHeader: some View {
+        SalusSectionHeader(
+            title: VitalsStrings.chartSection,
+            contentPadding: SalusSectionHeaderDefaults.topOnly
         ) {
-            ForEach(ChartRange.allCases, id: \.self) { range in
-                Text(verbatim: range.vitalsLabel).tag(range)
+            Button(action: onOpenTrends) {
+                Text(verbatim: VitalsStrings.openTrends)
+                    .font(SalusTypography.labelLarge.font)
             }
-        } label: {
-            EmptyView()
-        }
-        .pickerStyle(.segmented)
-        .labelsHidden()
-    }
-
-    /// `VitalsScreen.kt:248-277`.
-    private var headerText: String {
-        switch state.selectedType {
-        case .weight:
-            state.latestKilograms
-                .map { VitalsStrings.latestWeight(formatKg($0, locale: locale)) }
-                ?? VitalsStrings.empty
-
-        case .bloodPressure:
-            state.latestBloodPressure
-                .map { VitalsStrings.latestBloodPressure(formatBloodPressure($0, locale: locale)) }
-                ?? VitalsStrings.emptyBloodPressure
-
-        case .bloodGlucose:
-            state.latestGlucose
-                .map { VitalsStrings.latestGlucose(formatGlucose($0.value, unit: $0.unit, locale: locale)) }
-                ?? VitalsStrings.emptyGlucose
+            .tint(theme.colorScheme.primary)
         }
     }
 
-    /// `VitalsScreen.kt:279-284`.
+    /// `emptyTitle` (`VitalsScreen.kt:364-369`).
     private var emptyTitle: String {
         switch state.selectedType {
         case .weight: VitalsStrings.empty
@@ -164,195 +140,9 @@ struct VitalsListContent: View {
     }
 }
 
-/// One row of the list (`VitalsScreen.kt:286-331`).
-///
-/// **Why this is not `SalusCard(onTap:)` with the trash button inside it.** That is what Compose
-/// does — `SalusCard(onClick = onClick)` with an `IconButton` in its content — and it works there
-/// because Compose dispatches a tap to the innermost clickable. `SalusCard(onTap:)` on iOS is
-/// `Button(action: onTap) { surface }` (`SalusCard.swift:33-34`), so the trash button would sit
-/// **inside another Button's label**, where SwiftUI's default styles treat it as decoration and
-/// route the tap to the outer button: the row would open the editor and `deleteRequested` would
-/// never fire.
-///
-/// So the outer `Button` is gone. The card is the plain, non-interactive `SalusCard`, "open" is a
-/// tap gesture on the text column, and the trash stays a real `Button` — and the two tap targets
-/// are **disjoint by layout**, not merely ordered by dispatch rules: the column is a sibling of the
-/// button in the `HStack`, so no tap can reach both and there is nothing left to swallow anything.
-/// The gesture route costs the row its automatic button semantics, so they are added back by hand
-/// below; VoiceOver still reaches both actions, the row's own and the trash button's.
-private struct VitalsRow: View {
-    let entry: VitalsListItem
-    let onTap: () -> Void
-    let onDelete: () -> Void
-
-    @Environment(\.salusTheme) private var theme
-    /// The in-app language pick (`RootView+Locale.swift`) — the date and the value are both
-    /// written in it, and `Locale.current` does not follow it on iOS.
-    @Environment(\.locale) private var locale
-
-    var body: some View {
-        SalusCard {
-            HStack(alignment: .center, spacing: 0) {
-                // `SalusIconBadge(icon = entry.icon(), accent = vitals)` then `Spacer(lg)`
-                // (`VitalsScreen.kt:300-304`). The badge repeats what the row's first line already
-                // says, so the component carries `contentDescription = null` on Android too and
-                // both platforms hide it from the accessibility tree.
-                SalusIconBadge(systemImage: entry.icon, accent: theme.extendedColors.vitals)
-                Spacer().frame(width: SalusSpacing.lg)
-
-                details
-                    // The column already fills every point the trash button does not, and
-                    // `contentShape` makes the empty space beside a short value tappable too.
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .contentShape(Rectangle())
-                    .onTapGesture(perform: onTap)
-                    // A tap gesture is invisible to VoiceOver, where Compose's `Card(onClick =)`
-                    // is announced as a button. `.combine` reads the row's lines as one element,
-                    // the trait announces it as activatable, and the action is what a double tap
-                    // runs — the three together are what the outer `Button` used to provide.
-                    .accessibilityElement(children: .combine)
-                    .accessibilityAddTraits(.isButton)
-                    .accessibilityAction(.default, onTap)
-
-                // A sibling of the column, not a descendant of any Button: this is the whole fix.
-                // `Spacer(sm)` between the column and the button, as Kotlin's `Spacer(sm)` has it
-                // (`VitalsScreen.kt:330`).
-                Spacer().frame(width: SalusSpacing.sm)
-                Button(action: onDelete) {
-                    Label(VitalsStrings.delete, systemImage: "trash")
-                        .labelStyle(.iconOnly)
-                        .foregroundStyle(theme.colorScheme.error)
-                }
-                .buttonStyle(.plain)
-            }
-        }
-    }
-
-    /// `VitalsScreen.kt:296-320`.
-    private var details: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Text(verbatim: entry.headline(locale: locale))
-                .font(SalusTypography.titleMedium.font)
-                .foregroundStyle(theme.colorScheme.onSurface)
-            Text(verbatim: vitalsRowDate(entry.measuredAt, locale: locale))
-                .font(SalusTypography.bodyMedium.font)
-                .foregroundStyle(theme.colorScheme.onSurfaceVariant)
-            if let supporting = entry.supportingText {
-                Text(verbatim: supporting)
-                    .font(SalusTypography.bodySmall.font)
-                    .foregroundStyle(theme.colorScheme.onSurfaceVariant)
-            }
-            if let note = entry.note {
-                Text(verbatim: note)
-                    .font(SalusTypography.bodySmall.font)
-                    .foregroundStyle(theme.colorScheme.onSurfaceVariant)
-            }
-        }
-    }
+/// Component dimensions, not design tokens (`VitalsScreen.kt:373-375`).
+enum VitalsListDefaults {
+    /// Keeps the last row scrollable above the floating action button. Android adds the floating
+    /// bottom bar's clearance on top; the iOS tab bar is the system's and already inset.
+    static let fabClearance: CGFloat = 88
 }
-
-// MARK: - Formatting
-
-/// `VitalsScreen.kt:333-338`.
-extension VitalsListItem {
-    func headline(locale: Locale) -> String {
-        switch self {
-        case let .weight(item): formatKg(item.kilograms, locale: locale)
-        case let .bloodPressure(item): formatBloodPressure(item, locale: locale)
-        case let .glucose(item): formatGlucose(item.value, unit: item.unit, locale: locale)
-        }
-    }
-
-    /// `VitalsScreen.kt:340-345`.
-    var supportingText: String? {
-        switch self {
-        case .weight: nil
-        case let .bloodPressure(item): item.pulse.map(VitalsStrings.pulseValue)
-        case let .glucose(item): item.measurementContext?.vitalsLabel
-        }
-    }
-
-    /// `VitalsScreen.kt:362-366` — the per-type row badge, SF Symbol twins of Material's filled
-    /// icons. `MonitorWeight` → `scalemass.fill`, `MonitorHeart` → `waveform.path.ecg`, `WaterDrop`
-    /// → `drop.fill`; the same family mapping T4 applied to the Home vitals card tiles
-    /// (`HomeVitalsCard.swift:19-22`, where `MonitorHeart` → `waveform.path.ecg`). All four
-    /// symbols are iOS 17 SF Symbols.
-    var icon: String {
-        switch self {
-        case .weight: "scalemass.fill"
-        case .bloodPressure: "waveform.path.ecg"
-        case .glucose: "drop.fill"
-        }
-    }
-}
-
-/// `VitalsScreen.kt:353-357`.
-extension VitalType {
-    var vitalsLabel: String {
-        switch self {
-        case .weight: VitalsStrings.typeWeight
-        case .bloodPressure: VitalsStrings.typeBloodPressure
-        case .bloodGlucose: VitalsStrings.typeGlucose
-        }
-    }
-}
-
-/// `VitalsScreen.kt:359-364`.
-extension MeasurementContext {
-    var vitalsLabel: String {
-        switch self {
-        case .fasting: VitalsStrings.contextFasting
-        case .postMeal: VitalsStrings.contextPostMeal
-        case .bedtime: VitalsStrings.contextBedtime
-        case .random: VitalsStrings.contextRandom
-        }
-    }
-}
-
-/// `VitalsScreen.kt:366-371`.
-extension ChartRange {
-    var vitalsLabel: String {
-        switch self {
-        case .week: VitalsStrings.rangeWeek
-        case .month: VitalsStrings.rangeMonth
-        case .quarter: VitalsStrings.rangeQuarter
-        case .year: VitalsStrings.rangeYear
-        }
-    }
-}
-
-/// One row's date and time (`VitalsScreen.kt:293`).
-///
-/// A free function rather than a computed property on the row, so what it writes can be asserted
-/// in a test without rendering a view.
-func vitalsRowDate(_ measuredAt: LocalDateTime, locale: Locale) -> String {
-    measuredAt.formatted(pattern: rowDatePattern, locale: locale)
-}
-
-/// `VitalsScreen.kt:373-374`. The **environment** locale is Android's `Locale.getDefault()` here:
-/// `setApplicationLocales` moves that one, while nothing moves iOS's `Locale.current`, which keeps
-/// answering with the device's language whatever the in-app setting says. So a reader who picked
-/// Turkish reads "72,5 kg" on both platforms — which is the whole point of taking it as a parameter.
-func formatKg(_ kilograms: Double, locale: Locale) -> String {
-    String(format: "%.1f kg", locale: locale, kilograms)
-}
-
-/// `VitalsScreen.kt:376-377`.
-func formatBloodPressure(_ item: VitalsListItem.BloodPressure, locale: Locale) -> String {
-    String(format: "%lld/%lld mmHg", locale: locale, item.systolic, item.diastolic)
-}
-
-/// `VitalsScreen.kt:379-382`.
-func formatGlucose(_ value: Double, unit: GlucoseUnit, locale: Locale) -> String {
-    switch unit {
-    case .mgDl: String(format: "%.0f mg/dL", locale: locale, value)
-    case .mmolL: String(format: "%.1f mmol/L", locale: locale, value)
-    }
-}
-
-/// `VitalsScreen.kt:293`.
-private let rowDatePattern = "d MMM yyyy, HH:mm"
-/// `VitalsScreen.kt:384`.
-private let chartHeight: CGFloat = 220
-/// `VitalsScreen.kt:386`.
-private let fabClearance: CGFloat = 88

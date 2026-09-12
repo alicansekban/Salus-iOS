@@ -16,12 +16,6 @@ public struct SaveGlucoseEntryUseCase: Sendable {
         case invalidValue
     }
 
-    /// `SaveGlucoseEntryUseCase.kt:52` — the bounds are on the **canonical mg/dL** value, which is
-    /// why the conversion runs first.
-    public static let minMgDl = 20.0
-    /// `SaveGlucoseEntryUseCase.kt:53`.
-    public static let maxMgDl = 600.0
-
     private let repository: any VitalsRepository
     private let idGenerator: any IdGenerator
 
@@ -63,7 +57,7 @@ public struct SaveGlucoseEntryUseCase: Sendable {
             return .invalidValue
         }
         let mgDl = GlucoseConversion.toMgDl(value, unit: unit)
-        guard mgDl >= Self.minMgDl, mgDl <= Self.maxMgDl else {
+        guard VitalsLimits.glucoseMgDl.contains(mgDl) else {
             return .invalidValue
         }
         let entry = GlucoseEntry(

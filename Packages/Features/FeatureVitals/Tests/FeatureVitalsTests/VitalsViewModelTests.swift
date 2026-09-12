@@ -288,4 +288,114 @@ struct VitalsViewModelTests {
         #expect(viewModel.state.selectedType == .weight)
         #expect(viewModel.state.selectedRange == .month)
     }
+
+    // MARK: - Row deltas and trends (M15, `VitalsViewModelTest.kt:231-347`)
+
+    /// `VitalsViewModelTest.kt:231-250`.
+    @Test("the oldest entry has no delta and no trend")
+    func theOldestEntryHasNoDeltaAndNoTrend() async throws {
+        repository.setEntries(
+            entry("old", daysAgo: 5, kg: 80.0),
+            entry("new", daysAgo: 1, kg: 90.0)
+        )
+        let viewModel = viewModel()
+        await waitUntil("the weight state") { !viewModel.state.isLoading }
+
+        let oldest = try #require(viewModel.state.entries.last)
+        #expect(oldest.delta == nil)
+        #expect(oldest.trend == nil)
+    }
+
+    /// `VitalsViewModelTest.kt:252-268`.
+    @Test("a rise beyond the band is rising with a positive delta")
+    func aRiseBeyondTheBandIsRisingWithAPositiveDelta() async throws {
+        repository.setEntries(
+            entry("old", daysAgo: 5, kg: 80.0),
+            entry("new", daysAgo: 1, kg: 90.0)
+        )
+        let viewModel = viewModel()
+        await waitUntil("the weight state") { !viewModel.state.isLoading }
+
+        let newest = try #require(viewModel.state.entries.first)
+        #expect(try abs(#require(newest.delta) - 10.0) <= 1e-9)
+        #expect(newest.trend == .rising)
+    }
+
+    /// `VitalsViewModelTest.kt:270-286`.
+    @Test("a fall beyond the band is falling with a negative delta")
+    func aFallBeyondTheBandIsFallingWithANegativeDelta() async throws {
+        repository.setEntries(
+            entry("old", daysAgo: 5, kg: 90.0),
+            entry("new", daysAgo: 1, kg: 80.0)
+        )
+        let viewModel = viewModel()
+        await waitUntil("the weight state") { !viewModel.state.isLoading }
+
+        let newest = try #require(viewModel.state.entries.first)
+        #expect(try abs(#require(newest.delta) + 10.0) <= 1e-9)
+        #expect(newest.trend == .falling)
+    }
+
+    /// `VitalsViewModelTest.kt:288-305`.
+    @Test("a move inside the band is stable and still carries its delta")
+    func aMoveInsideTheBandIsStableAndStillCarriesItsDelta() async throws {
+        // 1 kg on 80 kg is 1.25 percent, well inside the 5 percent band
+        // (`VitalsViewModelTest.kt:290`).
+        repository.setEntries(
+            entry("old", daysAgo: 5, kg: 80.0),
+            entry("new", daysAgo: 1, kg: 81.0)
+        )
+        let viewModel = viewModel()
+        await waitUntil("the weight state") { !viewModel.state.isLoading }
+
+        let newest = try #require(viewModel.state.entries.first)
+        #expect(try abs(#require(newest.delta) - 1.0) <= 1e-9)
+        #expect(newest.trend == .stable)
+    }
+
+    /// `VitalsViewModelTest.kt:307-332`.
+    @Test("blood pressure deltas compare systolic values only, ignoring other types")
+    func bloodPressureDeltasCompareSystolicValuesOnlyIgnoringOtherTypes() async throws {
+        // Weight entries sit in the same window; a leak between types would show up here
+        // (`VitalsViewModelTest.kt:309`).
+        repository.setEntries(
+            entry("w-old", daysAgo: 5, kg: 80.0),
+            entry("w-new", daysAgo: 1, kg: 81.0)
+        )
+        repository.setBloodPressureEntries(
+            bloodPressureEntry("bp-old", daysAgo: 5, systolic: 120.0, diastolic: 80.0),
+            bloodPressureEntry("bp-new", daysAgo: 1, systolic: 140.0, diastolic: 70.0)
+        )
+        let viewModel = viewModel()
+        await waitUntil("the weight state") { !viewModel.state.isLoading }
+
+        viewModel.onEvent(.typeSelected(.bloodPressure))
+        await waitUntil("the blood pressure window") { viewModel.state.selectedType == .bloodPressure }
+
+        let items = viewModel.state.entries
+        let newest = try #require(items.first)
+        #expect(try abs(#require(newest.delta) - 20.0) <= 1e-9)
+        #expect(newest.trend == .rising)
+        #expect(try #require(items.last).delta == nil)
+    }
+
+    /// `VitalsViewModelTest.kt:334-346`.
+    @Test("glucose deltas are expressed in the displayed unit")
+    func glucoseDeltasAreExpressedInTheDisplayedUnit() async throws {
+        preferences.setGlucoseUnit(.mmolL)
+        repository.setGlucoseEntries(
+            glucoseEntry("g-old", daysAgo: 3, mgDl: 90.0),
+            glucoseEntry("g-new", daysAgo: 1, mgDl: 108.0)
+        )
+        let viewModel = viewModel()
+        await waitUntil("the weight state") { !viewModel.state.isLoading }
+
+        viewModel.onEvent(.typeSelected(.bloodGlucose))
+        await waitUntil("the glucose window") { viewModel.state.selectedType == .bloodGlucose }
+
+        let newest = try #require(viewModel.state.entries.first)
+        let expected = (108.0 - 90.0) / GlucoseConversion.mgDlPerMmolL
+        #expect(try abs(#require(newest.delta) - expected) <= 1e-9)
+        #expect(newest.trend == .rising)
+    }
 }

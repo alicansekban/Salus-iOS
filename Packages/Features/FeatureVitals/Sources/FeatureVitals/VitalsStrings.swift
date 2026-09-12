@@ -1,17 +1,25 @@
 // The twin of `feature/vitals/src/main/res/values/strings.xml` (Turkish, the source language) and
-// `feature/vitals/src/main/res/values-en/strings.xml` — all 48 keys `:feature:vitals` owns, name
+// `feature/vitals/src/main/res/values-en/strings.xml` — all 56 keys `:feature:vitals` owns, name
 // and text verbatim, resolved against this package's own bundle exactly as `R.string` resolves
 // against `:feature:vitals`.
 //
+// **`vitals_title` is the one key iOS keeps that Android M15 deleted.** Compose's M15 root draws no
+// title of its own, so the key had no reader left there. On iOS `.navigationTitle` is what names
+// the back button of everything this root pushes and what VoiceOver reads for the screen, so the
+// key stays and the value stays Android's last one. A recorded divergence, not a missed deletion.
+//
+// **Overlines are stored upper-case** (`vitals_weight_label`, `vitals_latest_label`,
+// `vitals_chart_section`, …): spec §6's rule, and the reason no call site ever calls `uppercased()`
+// — Turkish has two dotted i's and the runtime cannot know which one a label means.
+//
 // PLACEHOLDER MAPPING, the one place the port is not byte-for-byte. Android's specifiers are
-// Java's; four keys carry one each, and each is rewritten to the Swift spelling of the same
-// argument:
+// Java's; two keys carry them, and each is rewritten to the Swift spelling of the same argument:
 //
 //   Android      Swift        Keys                              Why
 //   ---------------------------------------------------------------------------------------------
-//   %1$s         %1$@         vitals_latest_weight,             `%s` under `String(format:)` reads
-//                             vitals_latest_blood_pressure,     a C string pointer. Handed a Swift
-//                             vitals_latest_glucose             `String` it prints garbage or
+//   %1$s %2$s    %1$@ %2$@    vitals_kpi_chip                   `%s` under `String(format:)` reads
+//                                                               a C string pointer. Handed a Swift
+//                                                               `String` it prints garbage or
 //                                                               crashes; `%@` is the object form.
 //   %1$d         %1$lld       vitals_pulse_value                Swift's `Int` is 64-bit and `%d`
 //                                                               reads 32, so a `%d` here is a
@@ -46,12 +54,6 @@ public enum VitalsStrings {
     public static var rangeMonth: String { localized(.rangeMonth) }
     public static var rangeQuarter: String { localized(.rangeQuarter) }
     public static var rangeYear: String { localized(.rangeYear) }
-    public static var newTitle: String { localized(.newTitle) }
-    public static var editTitle: String { localized(.editTitle) }
-    public static var bloodPressureNewTitle: String { localized(.bloodPressureNewTitle) }
-    public static var bloodPressureEditTitle: String { localized(.bloodPressureEditTitle) }
-    public static var glucoseNewTitle: String { localized(.glucoseNewTitle) }
-    public static var glucoseEditTitle: String { localized(.glucoseEditTitle) }
     public static var weightLabel: String { localized(.weightLabel) }
     public static var systolicLabel: String { localized(.systolicLabel) }
     public static var diastolicLabel: String { localized(.diastolicLabel) }
@@ -71,29 +73,41 @@ public enum VitalsStrings {
     public static var selectDate: String { localized(.selectDate) }
     public static var save: String { localized(.save) }
     public static var delete: String { localized(.delete) }
-    public static var back: String { localized(.back) }
-    public static var ok: String { localized(.ok) }
-    public static var cancel: String { localized(.cancel) }
     public static var deleteTitle: String { localized(.deleteTitle) }
     public static var deleteMessage: String { localized(.deleteMessage) }
     public static var entryDeleted: String { localized(.entryDeleted) }
     public static var openTrends: String { localized(.openTrends) }
 
+    // MARK: - M15 list
+
+    public static var kpiWeight: String { localized(.kpiWeight) }
+    public static var kpiBloodPressure: String { localized(.kpiBloodPressure) }
+    public static var kpiGlucose: String { localized(.kpiGlucose) }
+    public static var valueNone: String { localized(.valueNone) }
+    public static var latestLabel: String { localized(.latestLabel) }
+    public static var chartSection: String { localized(.chartSection) }
+    public static var historySection: String { localized(.historySection) }
+    public static var metricMax: String { localized(.metricMax) }
+    public static var metricAvg: String { localized(.metricAvg) }
+    public static var metricMin: String { localized(.metricMin) }
+    public static var edit: String { localized(.edit) }
+
+    // MARK: - M15 editor
+
+    public static var editorTitleNew: String { localized(.editorTitleNew) }
+    public static var editorTitleEdit: String { localized(.editorTitleEdit) }
+    public static var editorSubtitle: String { localized(.editorSubtitle) }
+    public static var editorTip: String { localized(.editorTip) }
+    public static var bpHintSys: String { localized(.bpHintSys) }
+    public static var bpHintDia: String { localized(.bpHintDia) }
+    public static var saveMeasurement: String { localized(.saveMeasurement) }
+    public static var notePlaceholder: String { localized(.notePlaceholder) }
+
     // MARK: - Formatted strings
 
-    /// `vitals_latest_weight` — "Son kilo: %1$@" / "Latest weight: %1$@".
-    public static func latestWeight(_ value: String) -> String {
-        formatted(.latestWeight, value)
-    }
-
-    /// `vitals_latest_blood_pressure` — "Son ölçüm: %1$@" / "Latest: %1$@".
-    public static func latestBloodPressure(_ value: String) -> String {
-        formatted(.latestBloodPressure, value)
-    }
-
-    /// `vitals_latest_glucose` — "Son ölçüm: %1$@" / "Latest: %1$@".
-    public static func latestGlucose(_ value: String) -> String {
-        formatted(.latestGlucose, value)
+    /// `vitals_kpi_chip` — "%1$@ · %2$@" in both languages: a metric's name joined to its value.
+    public static func kpiChip(_ metric: String, _ value: String) -> String {
+        String(format: localized(.kpiChip), locale: .current, metric, value)
     }
 
     /// `vitals_pulse_value` — "Nabız: %1$lld bpm" / "Pulse: %1$lld bpm".
@@ -110,9 +124,6 @@ public enum VitalsStrings {
         case typeWeight = "vitals_type_weight"
         case typeBloodPressure = "vitals_type_blood_pressure"
         case typeGlucose = "vitals_type_glucose"
-        case latestWeight = "vitals_latest_weight"
-        case latestBloodPressure = "vitals_latest_blood_pressure"
-        case latestGlucose = "vitals_latest_glucose"
         case empty = "vitals_empty"
         case emptyBloodPressure = "vitals_empty_blood_pressure"
         case emptyGlucose = "vitals_empty_glucose"
@@ -121,12 +132,6 @@ public enum VitalsStrings {
         case rangeMonth = "vitals_range_month"
         case rangeQuarter = "vitals_range_quarter"
         case rangeYear = "vitals_range_year"
-        case newTitle = "vitals_new_title"
-        case editTitle = "vitals_edit_title"
-        case bloodPressureNewTitle = "vitals_blood_pressure_new_title"
-        case bloodPressureEditTitle = "vitals_blood_pressure_edit_title"
-        case glucoseNewTitle = "vitals_glucose_new_title"
-        case glucoseEditTitle = "vitals_glucose_edit_title"
         case weightLabel = "vitals_weight_label"
         case systolicLabel = "vitals_systolic_label"
         case diastolicLabel = "vitals_diastolic_label"
@@ -147,13 +152,30 @@ public enum VitalsStrings {
         case selectDate = "vitals_select_date"
         case save = "vitals_save"
         case delete = "vitals_delete"
-        case back = "vitals_back"
-        case ok = "vitals_ok"
-        case cancel = "vitals_cancel"
         case deleteTitle = "vitals_delete_title"
         case deleteMessage = "vitals_delete_message"
         case entryDeleted = "vitals_entry_deleted"
         case openTrends = "vitals_open_trends"
+        case kpiWeight = "vitals_kpi_weight"
+        case kpiBloodPressure = "vitals_kpi_blood_pressure"
+        case kpiGlucose = "vitals_kpi_glucose"
+        case kpiChip = "vitals_kpi_chip"
+        case valueNone = "vitals_value_none"
+        case latestLabel = "vitals_latest_label"
+        case chartSection = "vitals_chart_section"
+        case historySection = "vitals_history_section"
+        case metricMax = "vitals_metric_max"
+        case metricAvg = "vitals_metric_avg"
+        case metricMin = "vitals_metric_min"
+        case edit = "vitals_edit"
+        case editorTitleNew = "vitals_editor_title_new"
+        case editorTitleEdit = "vitals_editor_title_edit"
+        case editorSubtitle = "vitals_editor_subtitle"
+        case editorTip = "vitals_editor_tip"
+        case bpHintSys = "vitals_bp_hint_sys"
+        case bpHintDia = "vitals_bp_hint_dia"
+        case saveMeasurement = "vitals_save_measurement"
+        case notePlaceholder = "vitals_note_placeholder"
     }
 
     private static func localized(_ key: Key) -> String {

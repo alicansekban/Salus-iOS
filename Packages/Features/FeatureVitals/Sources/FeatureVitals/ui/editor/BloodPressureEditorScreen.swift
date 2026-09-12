@@ -1,29 +1,17 @@
 // Ported from `feature/vitals/src/main/kotlin/com/alicansekban/salus/feature/vitals/
 // ui/editor/BloodPressureEditorScreen.kt`.
 //
-// Material → SwiftUI by the same mapping table `WeightEditorScreen.swift` spells out. Kotlin's
-// private `NumberField` composable (`BloodPressureEditorScreen.kt:174-196`) is `VitalsEditorField`
-// here — the same view the weight and glucose editors draw — and two of its parts matter most on
-// this screen:
-//   `isError = true` on an `OutlinedTextField` → a stroked overlay in the `error` role. SwiftUI's
-//   `.roundedBorder` field has no error state, and Kotlin's red outline is the *only* per-field
-//   signal here (the message itself is a single `Text` below the three fields), so dropping it
-//   would leave `SYSTOLIC_NOT_ABOVE_DIASTOLIC` unable to say *which* two fields it means.
-//   `label = { Text(…) }` on an `OutlinedTextField` → a persistent caption above the field, *plus*
-//   the same string as the `TextField`'s placeholder. Material floats the label to the border and
-//   keeps it once the field is filled; SwiftUI's placeholder disappears at the first character,
-//   which would leave systolic and diastolic — two adjacent boxes carrying the identical `"mmHg"`
-//   suffix — unlabelled in exactly the edit case where both are filled. The caption takes the
-//   `error` role with the field, so `SYSTOLIC_NOT_ABOVE_DIASTOLIC` reddens the names too.
+// The Material → SwiftUI mapping is `WeightEditorScreen.swift`'s, and so is the `rangeHint` ruling.
+// The one thing this editor adds: Compose gives the stepper a `unit` slot *and* a `hint` slot and
+// passes both here (`:66-68`, `:79-81`), where the iOS component ports one text slot (spec §3.3).
+// The two are joined with the separator the catalog already owns — `vitals_kpi_chip`, "%1$@ · %2$@"
+// — rather than by inventing a punctuation rule in Swift. No new copy, and both halves survive.
 
 import SalusDesignSystem
 import SalusUI
 import SwiftUI
 
-/// Owns the ViewModel and wires it to the shell (`BloodPressureEditorScreen.kt:38-51`).
-///
-/// The module comes from the environment, exactly as `koinViewModel(parameters = …)` reaches Koin's
-/// graph — see `VitalsModule.swift` for what the composition root injects.
+/// Owns the ViewModel and wires it to the shell (`BloodPressureEditorScreen.kt:29-42`).
 public struct BloodPressureEditorRoute: View {
     private let entryId: String?
 
@@ -39,7 +27,6 @@ public struct BloodPressureEditorRoute: View {
             if let viewModel {
                 BloodPressureEditorScreen(state: viewModel.state, onEvent: viewModel.onEvent)
             } else {
-                // Only until `.task` has run, or if the shell forgot to inject the module.
                 ProgressView()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
@@ -51,71 +38,51 @@ public struct BloodPressureEditorRoute: View {
     }
 }
 
-/// The stateless editor (`BloodPressureEditorScreen.kt:53-170`).
+/// The stateless editor (`BloodPressureEditorScreen.kt:44-140`).
 struct BloodPressureEditorScreen: View {
     let state: BloodPressureEditorUiState
     let onEvent: (BloodPressureEditorEvent) -> Void
 
-    @Environment(\.salusTheme) private var theme
-
     var body: some View {
-        // No `Scaffold` twin here: the app shell owns the one navigation stack and its insets.
-        Form {
-            Section {
-                readings
-                SalusDateField(
-                    title: VitalsStrings.selectDate,
-                    epochDay: state.dateEpochDay,
-                    placeholder: VitalsStrings.selectDate,
-                    // Where the wheel opens before a day is set — the same fallback
-                    // `WeightEditorScreen` documents; the ViewModel fills `dateEpochDay` at init
-                    // on a new entry and from the loaded entry otherwise.
-                    seedEpochDay: state.dateEpochDay ?? 0
-                ) { onEvent(.dateSelected($0)) }
-                noteField
-            }
+        VitalsEditorChrome(
+            isEdit: !state.isNew,
+            saveEnabled: state.saveEnabled,
+            onSave: { onEvent(.saveClicked) },
+            // Explicit `content:` rather than a trailing closure: `onSave` is a closure argument
+            // too, and SwiftLint's `multiple_closures_with_trailing_closure` is right that the
+            // trailing form hides which one is which.
+            content: {
+                // The hints state the range a reading is usually reported in. They are informational
+                // only: this screen classifies nothing and passes no verdict on a value. On a new
+                // reading each stepper shows its suggestion dimmed — a prompt to type over, not a
+                // reading the app is claiming — and the first field opens focused
+                // (`BloodPressureEditorScreen.kt:56-59`).
+                systolicStepper
+                diastolicStepper
+                pulseStepper
 
-            Section {
-                Button {
-                    onEvent(.saveClicked)
-                } label: {
-                    Text(verbatim: VitalsStrings.save)
-                        .frame(maxWidth: .infinity)
+                if let error = state.error {
+                    SalusInfoNote(
+                        text: Self.message(for: error),
+                        systemImage: "exclamationmark.triangle",
+                        tone: .warning
+                    )
                 }
-                .buttonStyle(.borderedProminent)
-                // `BloodPressureEditorScreen.kt:154-157`.
-                .disabled(state.isSaving || Self.isBlank(state.systolicText) || Self.isBlank(state.diastolicText))
+
+                EditorDateField(dateEpochDay: state.dateEpochDay) { onEvent(.dateSelected($0)) }
+
+                noteField
+
+                // `BloodPressureEditorScreen.kt:121-127`.
+                if !state.isNew {
+                    SalusButton(
+                        VitalsStrings.delete,
+                        variant: .destructive,
+                        action: { onEvent(.deleteClicked) }
+                    )
+                }
             }
-            .listRowBackground(Color.clear)
-        }
-        // The pair `WeightEditorScreen` records: `.numberPad` draws no return key, so the keyboard
-        // needs the two ways down the platform expects — a tap and a drag over the form.
-        .salusDismissesKeyboardOnTap()
-        .scrollDismissesKeyboard(.interactively)
-        // The token background the two shipped editors paint (`AppointmentEditorScreen`,
-        // `MedicationEditorScreen`), in the same place on the outer container. Those two wrap a
-        // `ScrollView`, which is transparent; a `Form` is a `List` and paints
-        // `systemGroupedBackground` of its own over anything behind it, so hiding that is what
-        // makes the token visible here — the `.background` alone would never be seen.
-        .scrollContentBackground(.hidden)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(theme.colorScheme.background)
-        .navigationTitle(
-            state.isNew ? VitalsStrings.bloodPressureNewTitle : VitalsStrings.bloodPressureEditTitle
         )
-        .toolbar {
-            // `BloodPressureEditorScreen.kt:79-88` — the delete action exists only for an
-            // existing entry.
-            if !state.isNew {
-                ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        onEvent(.deleteClicked)
-                    } label: {
-                        Label(VitalsStrings.delete, systemImage: "trash")
-                    }
-                }
-            }
-        }
         .salusConfirmDialog(
             isPresented: Binding(
                 get: { state.showDeleteConfirm },
@@ -131,71 +98,105 @@ struct BloodPressureEditorScreen: View {
         )
     }
 
-    /// `BloodPressureEditorScreen.kt:101-141` — the two-column row, the full-width pulse, and the
-    /// one error message the three of them share.
-    private var readings: some View {
-        // Kotlin's outer `Column` is `Arrangement.spacedBy(16.dp)` — `SalusSpacing.lg` — between the
-        // row and the pulse field. The shared error line keeps `.xs` instead, the idiom
-        // `WeightEditorScreen` uses: the message hugs the fields it describes rather than floating
-        // a full 16 below them.
-        VStack(alignment: .leading, spacing: SalusSpacing.lg) {
-            HStack(spacing: SalusSpacing.lg) {
-                VitalsEditorField(
-                    label: VitalsStrings.systolicLabel,
-                    suffix: "mmHg",
-                    text: Binding(
-                        get: { state.systolicText },
-                        set: { onEvent(.systolicChanged($0)) }
-                    ),
-                    // `BloodPressureEditorScreen.kt:106-107` — the difference error reddens both.
-                    isError: state.error == .invalidSystolic || state.error == .systolicNotAboveDiastolic,
-                    keyboard: .number
-                )
-                VitalsEditorField(
-                    label: VitalsStrings.diastolicLabel,
-                    suffix: "mmHg",
-                    text: Binding(
-                        get: { state.diastolicText },
-                        set: { onEvent(.diastolicChanged($0)) }
-                    ),
-                    isError: state.error == .invalidDiastolic || state.error == .systolicNotAboveDiastolic,
-                    keyboard: .number
-                )
-            }
-
-            VStack(alignment: .leading, spacing: SalusSpacing.xs) {
-                VitalsEditorField(
-                    label: VitalsStrings.pulseLabel,
-                    suffix: "bpm",
-                    text: Binding(get: { state.pulseText }, set: { onEvent(.pulseChanged($0)) }),
-                    isError: state.error == .invalidPulse,
-                    keyboard: .number
-                )
-
-                // `BloodPressureEditorScreen.kt:133-139` — one message for four rejections.
-                if let error = state.error {
-                    Text(verbatim: Self.message(for: error))
-                        .font(SalusTypography.bodySmall.font)
-                        .foregroundStyle(theme.colorScheme.error)
-                }
-            }
-        }
-    }
-
-    /// `BloodPressureEditorScreen.kt:145-151` — `minLines = 2`, sentence capitalisation.
-    private var noteField: some View {
-        TextField(
-            VitalsStrings.noteLabel,
-            text: Binding(get: { state.noteText }, set: { onEvent(.noteChanged($0)) }),
-            axis: .vertical
+    /// `BloodPressureEditorScreen.kt:60-71`.
+    private var systolicStepper: some View {
+        wholeNumberStepper(
+            label: VitalsStrings.systolicLabel,
+            text: state.systolicText,
+            suggestion: state.suggestedSystolic,
+            range: VitalsLimits.systolicMmHg,
+            rangeHint: VitalsStrings.kpiChip(VitalsUnits.mmHg, VitalsStrings.bpHintSys),
+            placeholder: !state.hasSystolic,
+            autoFocus: state.isNew,
+            write: { onEvent(.systolicChanged($0)) }
         )
-        .lineLimit(2 ... 6)
-        #if os(iOS)
-            .textInputAutocapitalization(.sentences)
-        #endif
     }
 
-    /// `BloodPressureEditorScreen.kt:198-203` — `BloodPressureError.messageRes()`.
+    /// `BloodPressureEditorScreen.kt:73-83`.
+    private var diastolicStepper: some View {
+        wholeNumberStepper(
+            label: VitalsStrings.diastolicLabel,
+            text: state.diastolicText,
+            suggestion: state.suggestedDiastolic,
+            range: VitalsLimits.diastolicMmHg,
+            rangeHint: VitalsStrings.kpiChip(VitalsUnits.mmHg, VitalsStrings.bpHintDia),
+            placeholder: !state.hasDiastolic,
+            autoFocus: false,
+            write: { onEvent(.diastolicChanged($0)) }
+        )
+    }
+
+    /// `BloodPressureEditorScreen.kt:85-93` — optional, so it may stay a suggestion for the life
+    /// of the form.
+    private var pulseStepper: some View {
+        wholeNumberStepper(
+            label: VitalsStrings.pulseLabel,
+            text: state.pulseText,
+            suggestion: state.suggestedPulse,
+            range: VitalsLimits.pulseBpm,
+            rangeHint: VitalsUnits.bpm,
+            placeholder: state.pulseText.isEmpty,
+            autoFocus: false,
+            write: { onEvent(.pulseChanged($0)) }
+        )
+    }
+
+    // The parameters are the stepper's own, one for one.
+    // swiftlint:disable function_parameter_count
+
+    /// The three fields are one shape with three bounds — Kotlin repeats the call three times
+    /// because a `@Composable` cannot be curried; Swift can say it once.
+    private func wholeNumberStepper(
+        label: String,
+        text: String,
+        suggestion: Double,
+        range: ClosedRange<Double>,
+        rangeHint: String,
+        placeholder: Bool,
+        autoFocus: Bool,
+        write: @escaping (String) -> Void
+    ) -> some View {
+        SalusStepperField(
+            label: label,
+            value: editorWholeText(stepperValue(of: text, fallback: suggestion)),
+            placeholder: placeholder,
+            rangeHint: rangeHint,
+            autoFocus: autoFocus,
+            keyboard: .standard,
+            parse: { clampedStepperText($0, in: range) != nil },
+            onValueChange: { typed in
+                // Answered, accepted or clamped, never dropped — the caller contract
+                // `SalusStepperField.swift` writes down.
+                guard let clamped = clampedStepperText(typed, in: range) else { return }
+                write(editorWholeText(clamped))
+            },
+            onDecrement: {
+                write(editorWholeText(
+                    nudgedStepperValue(from: text, fallback: suggestion, by: -Self.step, in: range)
+                ))
+            },
+            onIncrement: {
+                write(editorWholeText(
+                    nudgedStepperValue(from: text, fallback: suggestion, by: Self.step, in: range)
+                ))
+            }
+        )
+    }
+
+    // swiftlint:enable function_parameter_count
+
+    /// `BloodPressureEditorScreen.kt:107-117`.
+    private var noteField: some View {
+        SalusTextField(
+            text: Binding(get: { state.noteText }, set: { onEvent(.noteChanged($0)) }),
+            label: VitalsStrings.noteLabel,
+            placeholder: VitalsStrings.notePlaceholder,
+            isSingleLine: false,
+            capitalization: .sentences
+        )
+    }
+
+    /// `BloodPressureError.messageRes()` (`BloodPressureEditorScreen.kt:142-147`).
     private static func message(for error: BloodPressureError) -> String {
         switch error {
         case .invalidSystolic: VitalsStrings.invalidSystolic
@@ -205,34 +206,43 @@ struct BloodPressureEditorScreen: View {
         }
     }
 
-    /// `String.isNotBlank()` — whitespace is not a reading.
-    private static func isBlank(_ text: String) -> Bool {
-        text.trimmingCharacters(in: .whitespaces).isEmpty
-    }
+    /// Compose's default `step = 1.0` (`SalusStepperField.kt:85`), which all three fields take.
+    private static let step = 1.0
 }
 
-#Preview("New entry") {
-    NavigationStack {
+#Preview("Blood pressure editor — new, showing the suggestions") {
+    SalusPreviewPalettes {
         BloodPressureEditorScreen(
-            state: BloodPressureEditorUiState(dateEpochDay: 20682),
+            state: BloodPressureEditorUiState(dateEpochDay: 20700),
             onEvent: { _ in }
         )
     }
 }
 
-#Preview("Existing entry, rejected difference") {
-    NavigationStack {
+#Preview("Blood pressure editor — existing entry, rejected pair") {
+    SalusPreviewPalettes {
         BloodPressureEditorScreen(
             state: BloodPressureEditorUiState(
                 isNew: false,
-                systolicText: "80",
-                diastolicText: "90",
-                pulseText: "62",
-                noteText: "After breakfast",
-                dateEpochDay: 20682,
+                systolicText: "128",
+                diastolicText: "82",
+                pulseText: "72",
+                dateEpochDay: 20700,
                 error: .systolicNotAboveDiastolic
             ),
             onEvent: { _ in }
         )
     }
+}
+
+#Preview("Blood pressure editor — xxxLarge") {
+    BloodPressureEditorScreen(
+        state: BloodPressureEditorUiState(
+            systolicText: "128",
+            diastolicText: "82",
+            dateEpochDay: 20700
+        ),
+        onEvent: { _ in }
+    )
+    .dynamicTypeSize(.xxxLarge)
 }

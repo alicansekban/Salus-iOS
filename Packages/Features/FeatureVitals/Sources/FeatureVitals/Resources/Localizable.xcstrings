@@ -18,70 +18,53 @@
         }
       }
     },
-    "vitals_back" : {
+    "vitals_bp_hint_dia" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Back"
+            "value" : "Range: 60–90"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Geri"
+            "value" : "Aralık: 60–90"
           }
         }
       }
     },
-    "vitals_blood_pressure_edit_title" : {
+    "vitals_bp_hint_sys" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edit blood pressure entry"
+            "value" : "Range: 90–140"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tansiyon kaydını düzenle"
+            "value" : "Aralık: 90–140"
           }
         }
       }
     },
-    "vitals_blood_pressure_new_title" : {
+    "vitals_chart_section" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "New blood pressure entry"
+            "value" : "CHART"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Yeni tansiyon kaydı"
-          }
-        }
-      }
-    },
-    "vitals_cancel" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cancel"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "İptal"
+            "value" : "GRAFİK"
           }
         }
       }
@@ -211,30 +194,98 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Diastolic"
+            "value" : "DIASTOLIC"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Küçük tansiyon"
+            "value" : "KÜÇÜK TANSİYON"
           }
         }
       }
     },
-    "vitals_edit_title" : {
+    "vitals_edit" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edit weight entry"
+            "value" : "Edit"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Kilo kaydını düzenle"
+            "value" : "Düzenle"
+          }
+        }
+      }
+    },
+    "vitals_editor_subtitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter the values, pick the date and save."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Değerleri gir, tarihi seç ve kaydet."
+          }
+        }
+      }
+    },
+    "vitals_editor_tip" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Taking measurements under similar conditions each time keeps your records comparable with one another."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ölçümleri her seferinde benzer koşullarda almak, kayıtlarını birbiriyle karşılaştırılabilir kılar."
+          }
+        }
+      }
+    },
+    "vitals_editor_title_edit" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Edit measurement"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ölçümü Düzenle"
+          }
+        }
+      }
+    },
+    "vitals_editor_title_new" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "New measurement"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yeni Ölçüm"
           }
         }
       }
@@ -307,53 +358,36 @@
         }
       }
     },
-    "vitals_glucose_edit_title" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Edit blood glucose entry"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kan şekeri kaydını düzenle"
-          }
-        }
-      }
-    },
-    "vitals_glucose_new_title" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "New blood glucose entry"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Yeni kan şekeri kaydı"
-          }
-        }
-      }
-    },
     "vitals_glucose_value_label" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Blood glucose"
+            "value" : "BLOOD GLUCOSE"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Kan şekeri"
+            "value" : "KAN ŞEKERİ"
+          }
+        }
+      }
+    },
+    "vitals_history_section" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PAST MEASUREMENTS"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "GEÇMİŞ ÖLÇÜMLER"
           }
         }
       }
@@ -460,73 +494,139 @@
         }
       }
     },
-    "vitals_latest_blood_pressure" : {
-      "comment" : "Blood pressure card subtitle. %1$@ is the formatted latest reading (Android %1$s).",
+    "vitals_kpi_blood_pressure" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Latest: %1$@"
+            "value" : "Blood pressure"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Son ölçüm: %1$@"
+            "value" : "Tansiyon"
           }
         }
       }
     },
-    "vitals_latest_glucose" : {
-      "comment" : "Blood glucose card subtitle. %1$@ is the formatted latest reading (Android %1$s).",
+    "vitals_kpi_chip" : {
+      "comment" : "Joins a metric's name with its value. %1$@ is the metric, %2$@ the value (Android %1$s / %2$s).",
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Latest: %1$@"
+            "value" : "%1$@ · %2$@"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Son ölçüm: %1$@"
+            "value" : "%1$@ · %2$@"
           }
         }
       }
     },
-    "vitals_latest_weight" : {
-      "comment" : "Weight card subtitle. %1$@ is the formatted latest weight (Android %1$s).",
+    "vitals_kpi_glucose" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Latest weight: %1$@"
+            "value" : "Glucose"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Son kilo: %1$@"
+            "value" : "Şeker"
           }
         }
       }
     },
-    "vitals_new_title" : {
+    "vitals_kpi_weight" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "New weight entry"
+            "value" : "Weight"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Yeni kilo kaydı"
+            "value" : "Kilo"
+          }
+        }
+      }
+    },
+    "vitals_latest_label" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "LATEST MEASUREMENT"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SON ÖLÇÜM"
+          }
+        }
+      }
+    },
+    "vitals_metric_avg" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AVERAGE"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ORTALAMA"
+          }
+        }
+      }
+    },
+    "vitals_metric_max" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "HIGHEST"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "EN YÜKSEK"
+          }
+        }
+      }
+    },
+    "vitals_metric_min" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "LOWEST"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "EN DÜŞÜK"
           }
         }
       }
@@ -537,30 +637,30 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Note (optional)"
+            "value" : "NOTE (OPTIONAL)"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Not (isteğe bağlı)"
+            "value" : "NOT (İSTEĞE BAĞLI)"
           }
         }
       }
     },
-    "vitals_ok" : {
+    "vitals_note_placeholder" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "OK"
+            "value" : "Add a short note"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tamam"
+            "value" : "Kısa bir not ekle"
           }
         }
       }
@@ -588,13 +688,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pulse (optional)"
+            "value" : "PULSE (OPTIONAL)"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nabız (isteğe bağlı)"
+            "value" : "NABIZ (İSTEĞE BAĞLI)"
           }
         }
       }
@@ -702,6 +802,23 @@
         }
       }
     },
+    "vitals_save_measurement" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Save measurement"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ölçümü Kaydet"
+          }
+        }
+      }
+    },
     "vitals_select_date" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -725,13 +842,13 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Systolic"
+            "value" : "SYSTOLIC"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Büyük tansiyon"
+            "value" : "BÜYÜK TANSİYON"
           }
         }
       }
@@ -804,19 +921,36 @@
         }
       }
     },
+    "vitals_value_none" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "—"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "—"
+          }
+        }
+      }
+    },
     "vitals_weight_label" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Weight"
+            "value" : "WEIGHT"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Kilo"
+            "value" : "KİLO"
           }
         }
       }

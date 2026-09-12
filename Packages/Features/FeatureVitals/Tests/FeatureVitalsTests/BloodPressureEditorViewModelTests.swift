@@ -44,6 +44,43 @@ struct BloodPressureEditorViewModelTests {
         )
     }
 
+    /// `BloodPressureEditorViewModelTest.kt:51-68`.
+    @Test("a new reading starts with suggestions, no values and save disabled")
+    func aNewReadingStartsWithSuggestionsNoValuesAndSaveDisabled() async {
+        let viewModel = viewModel()
+        await waitUntil("the today seed") { viewModel.state.dateEpochDay != nil }
+
+        let state = viewModel.state
+        #expect(state.isNew)
+        #expect(state.systolicText.isEmpty)
+        #expect(state.diastolicText.isEmpty)
+        #expect(state.pulseText.isEmpty)
+        #expect(!state.hasSystolic)
+        #expect(!state.hasDiastolic)
+        #expect(!state.saveEnabled)
+        #expect(state.suggestedSystolic == 120.0)
+        #expect(state.suggestedDiastolic == 80.0)
+        #expect(state.suggestedPulse == 70.0)
+    }
+
+    /// `BloodPressureEditorViewModelTest.kt:69-84`.
+    @Test("save waits for both systolic and diastolic, pulse stays optional")
+    func saveWaitsForBothSystolicAndDiastolicPulseStaysOptional() async {
+        let viewModel = viewModel()
+        await waitUntil("the today seed") { viewModel.state.dateEpochDay != nil }
+        let suggested = viewModel.state.suggestedSystolic
+
+        // What the stepper writes back when + is tapped while the suggestion is showing.
+        viewModel.onEvent(.systolicChanged(editorWholeText(suggested + 1.0)))
+        #expect(viewModel.state.systolicText == "121")
+        #expect(viewModel.state.hasSystolic)
+        #expect(!viewModel.state.saveEnabled, "diastolic is still only a suggestion")
+
+        viewModel.onEvent(.diastolicChanged("81"))
+        #expect(viewModel.state.saveEnabled)
+        #expect(viewModel.state.pulseText.isEmpty)
+    }
+
     /// `BloodPressureEditorViewModelTest.kt:50-66`.
     @Test("saving valid values stores entry and closes")
     func savingValidValuesStoresEntryAndCloses() async throws {

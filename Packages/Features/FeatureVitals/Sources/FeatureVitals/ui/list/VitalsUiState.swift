@@ -12,7 +12,7 @@
 import SalusModel
 import SalusUI
 
-/// How far back the list and the chart reach (`VitalsUiState.kt:11-16`).
+/// How far back the list and the chart reach (`VitalsUiState.kt:12-17`).
 ///
 /// `CaseIterable` is Kotlin's `entries`, which is what the range selector iterates.
 public enum ChartRange: CaseIterable, Equatable, Hashable, Sendable {
@@ -21,7 +21,7 @@ public enum ChartRange: CaseIterable, Equatable, Hashable, Sendable {
     case quarter
     case year
 
-    /// `VitalsUiState.kt:12-15`.
+    /// `VitalsUiState.kt:13-16`.
     public var days: Int {
         switch self {
         case .week: 7
@@ -32,9 +32,9 @@ public enum ChartRange: CaseIterable, Equatable, Hashable, Sendable {
     }
 }
 
-/// One row of the list (`VitalsUiState.kt:18-47`).
+/// One row of the list (`VitalsUiState.kt:19-67`).
 ///
-/// Kotlin's `sealed interface` with three `data class` members and three shared properties is a
+/// Kotlin's `sealed interface` with three `data class` members and five shared properties is a
 /// Swift enum with three payload cases: same closed set, same value semantics, and the shared
 /// properties become computed ones so a call site reads `item.id` exactly as it does there.
 public enum VitalsListItem: Equatable, Hashable, Sendable, Identifiable {
@@ -42,22 +42,33 @@ public enum VitalsListItem: Equatable, Hashable, Sendable, Identifiable {
     case bloodPressure(BloodPressure)
     case glucose(Glucose)
 
-    /// `VitalsUiState.kt:23-28`.
+    /// `VitalsUiState.kt:37-44`.
     public struct Weight: Equatable, Hashable, Sendable {
         public let id: String
         public let measuredAt: LocalDateTime
         public let kilograms: Double
         public let note: String?
+        public let delta: Double?
+        public let trend: Trend?
 
-        public init(id: String, measuredAt: LocalDateTime, kilograms: Double, note: String?) {
+        public init(
+            id: String,
+            measuredAt: LocalDateTime,
+            kilograms: Double,
+            note: String?,
+            delta: Double? = nil,
+            trend: Trend? = nil
+        ) {
             self.id = id
             self.measuredAt = measuredAt
             self.kilograms = kilograms
             self.note = note
+            self.delta = delta
+            self.trend = trend
         }
     }
 
-    /// `VitalsUiState.kt:30-37`.
+    /// `VitalsUiState.kt:46-55`.
     public struct BloodPressure: Equatable, Hashable, Sendable {
         public let id: String
         public let measuredAt: LocalDateTime
@@ -65,6 +76,8 @@ public enum VitalsListItem: Equatable, Hashable, Sendable, Identifiable {
         public let diastolic: Int
         public let pulse: Int?
         public let note: String?
+        public let delta: Double?
+        public let trend: Trend?
 
         public init(
             id: String,
@@ -72,7 +85,9 @@ public enum VitalsListItem: Equatable, Hashable, Sendable, Identifiable {
             systolic: Int,
             diastolic: Int,
             pulse: Int?,
-            note: String?
+            note: String?,
+            delta: Double? = nil,
+            trend: Trend? = nil
         ) {
             self.id = id
             self.measuredAt = measuredAt
@@ -80,10 +95,12 @@ public enum VitalsListItem: Equatable, Hashable, Sendable, Identifiable {
             self.diastolic = diastolic
             self.pulse = pulse
             self.note = note
+            self.delta = delta
+            self.trend = trend
         }
     }
 
-    /// `VitalsUiState.kt:39-46`.
+    /// `VitalsUiState.kt:57-66`.
     public struct Glucose: Equatable, Hashable, Sendable {
         public let id: String
         public let measuredAt: LocalDateTime
@@ -91,6 +108,8 @@ public enum VitalsListItem: Equatable, Hashable, Sendable, Identifiable {
         public let unit: GlucoseUnit
         public let measurementContext: MeasurementContext?
         public let note: String?
+        public let delta: Double?
+        public let trend: Trend?
 
         public init(
             id: String,
@@ -98,7 +117,9 @@ public enum VitalsListItem: Equatable, Hashable, Sendable, Identifiable {
             value: Double,
             unit: GlucoseUnit,
             measurementContext: MeasurementContext?,
-            note: String?
+            note: String?,
+            delta: Double? = nil,
+            trend: Trend? = nil
         ) {
             self.id = id
             self.measuredAt = measuredAt
@@ -106,11 +127,13 @@ public enum VitalsListItem: Equatable, Hashable, Sendable, Identifiable {
             self.unit = unit
             self.measurementContext = measurementContext
             self.note = note
+            self.delta = delta
+            self.trend = trend
         }
     }
 
-    /// `VitalsUiState.kt:19`. Also the `Identifiable` conformance the list is keyed by, which is
-    /// what `items(items = state.entries, key = { it.id })` does on Android (`VitalsScreen.kt:238`).
+    /// `VitalsUiState.kt:20`. Also the `Identifiable` conformance the list is keyed by, which is
+    /// what `items(items = state.entries, key = { it.id })` does on Android (`VitalsScreen.kt:235`).
     public var id: String {
         switch self {
         case let .weight(item): item.id
@@ -119,7 +142,7 @@ public enum VitalsListItem: Equatable, Hashable, Sendable, Identifiable {
         }
     }
 
-    /// `VitalsUiState.kt:20`.
+    /// `VitalsUiState.kt:21`.
     public var measuredAt: LocalDateTime {
         switch self {
         case let .weight(item): item.measuredAt
@@ -128,7 +151,7 @@ public enum VitalsListItem: Equatable, Hashable, Sendable, Identifiable {
         }
     }
 
-    /// `VitalsUiState.kt:21`.
+    /// `VitalsUiState.kt:22`.
     public var note: String? {
         switch self {
         case let .weight(item): item.note
@@ -137,7 +160,29 @@ public enum VitalsListItem: Equatable, Hashable, Sendable, Identifiable {
         }
     }
 
-    /// `VitalsScreen.kt:347-351` — which editor a row opens.
+    /// Change against the previous entry of the same type in time order, in this row's own unit
+    /// — blood pressure compares systolic, glucose the displayed unit. `nil` on the oldest row in
+    /// the window, which has nothing to compare against (`VitalsUiState.kt:24-29`).
+    public var delta: Double? {
+        switch self {
+        case let .weight(item): item.delta
+        case let .bloodPressure(item): item.delta
+        case let .glucose(item): item.delta
+        }
+    }
+
+    /// Direction of ``delta``, `nil` wherever it is. Derived with the same 0.05 band `MetricStats`
+    /// uses, so a move smaller than 5 % of the previous value reads as `.stable`
+    /// (`VitalsUiState.kt:31-35`).
+    public var trend: Trend? {
+        switch self {
+        case let .weight(item): item.trend
+        case let .bloodPressure(item): item.trend
+        case let .glucose(item): item.trend
+        }
+    }
+
+    /// `VitalsFormatting.kt:110-114` — which editor a row opens.
     public var vitalType: VitalType {
         switch self {
         case .weight: .weight
@@ -147,7 +192,7 @@ public enum VitalsListItem: Equatable, Hashable, Sendable, Identifiable {
     }
 }
 
-/// What the vitals list draws (`VitalsUiState.kt:49-61`).
+/// What the vitals list draws (`VitalsUiState.kt:69-81`).
 ///
 /// Deliberately **not** `Equatable`: `chart` is a `ChartUiModel`, which carries two closures and is
 /// not comparable (`ChartUiModel.swift:29-33`). Kotlin's `data class` equality exists to conflate
@@ -163,7 +208,7 @@ public struct VitalsUiState: Sendable {
     public var latestGlucose: VitalsListItem.Glucose?
     public var glucoseUnit: GlucoseUnit
     /// The entry the delete confirmation is about, or nil when no dialog is open
-    /// (`VitalsUiState.kt:59-60`).
+    /// (`VitalsUiState.kt:79-80`).
     public var pendingDeleteId: String?
 
     public init(
@@ -191,11 +236,11 @@ public struct VitalsUiState: Sendable {
     }
 }
 
-/// Everything the screen can ask the ViewModel to do (`VitalsUiState.kt:63-74`).
+/// Everything the screen can ask the ViewModel to do (`VitalsUiState.kt:83-94`).
 public enum VitalsEvent: Equatable, Sendable {
     case typeSelected(VitalType)
     case rangeSelected(ChartRange)
-    /// Opens the confirmation; nothing is deleted until it is confirmed (`VitalsUiState.kt:68-69`).
+    /// Opens the confirmation; nothing is deleted until it is confirmed (`VitalsUiState.kt:88-89`).
     case deleteRequested(String)
     case deleteDismissed
     case deleteConfirmed

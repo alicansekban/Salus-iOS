@@ -21,19 +21,6 @@ public struct SaveBloodPressureEntryUseCase: Sendable {
         case systolicNotAboveDiastolic
     }
 
-    /// `SaveBloodPressureEntryUseCase.kt:63`.
-    public static let minSystolic = 60.0
-    /// `SaveBloodPressureEntryUseCase.kt:64`.
-    public static let maxSystolic = 250.0
-    /// `SaveBloodPressureEntryUseCase.kt:65`.
-    public static let minDiastolic = 30.0
-    /// `SaveBloodPressureEntryUseCase.kt:66`.
-    public static let maxDiastolic = 150.0
-    /// `SaveBloodPressureEntryUseCase.kt:67`.
-    public static let minPulse = 20.0
-    /// `SaveBloodPressureEntryUseCase.kt:68`.
-    public static let maxPulse = 250.0
-
     private let repository: any VitalsRepository
     private let idGenerator: any IdGenerator
 
@@ -82,13 +69,13 @@ public struct SaveBloodPressureEntryUseCase: Sendable {
         // This is the **recorded divergence** `SaveWeightEntryUseCase` already carries (§11 A11),
         // applied to the two new use cases by iOS-M7 ruling 5. `NaN is rejected` in
         // `SaveBloodPressureEntryUseCaseTests` pins it until Android catches up.
-        guard let systolic, systolic >= Self.minSystolic, systolic <= Self.maxSystolic else {
+        guard let systolic, VitalsLimits.systolicMmHg.contains(systolic) else {
             return .invalidSystolic
         }
-        guard let diastolic, diastolic >= Self.minDiastolic, diastolic <= Self.maxDiastolic else {
+        guard let diastolic, VitalsLimits.diastolicMmHg.contains(diastolic) else {
             return .invalidDiastolic
         }
-        if let pulse, !(pulse >= Self.minPulse && pulse <= Self.maxPulse) {
+        if let pulse, !VitalsLimits.pulseBpm.contains(pulse) {
             return .invalidPulse
         }
         // `SaveBloodPressureEntryUseCase.kt:46-48` — strictly above, so an equal pair is rejected.
