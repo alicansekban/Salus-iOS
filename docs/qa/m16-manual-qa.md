@@ -129,6 +129,29 @@ profile with no cycle.
 | 3.1.8 | Switch to another tab and come back to Home | Home is already settled — the entrance does **not** replay (spec §3.5). If it does replay, note it: that is the `@SceneStorage` escalation the spec records | ☐ |
 | 3.1.9 | Reduce Motion on (Ayarlar → Erişilebilirlik → Hareket), open Home | the five blocks arrive together on one short curve — no staggered ladder down the screen; note anything that still slides a visible distance | ☐ |
 
+### 3.2 Medications — the dose on offer, the count and the day boundary (Task 7)
+
+Run 3.2.1–3.2.6 on a profile with **at least two** medications: one taken daily with a dose time
+already past (so its card offers "Hemen Al") and one taken as needed. 3.2.7 needs the app left open
+across midnight, or the device clock moved forward a day with the app in the background — it is the
+one row that checks Android's M15 critical fix, so it is worth the clock change.
+
+| # | Step | Expect | ☐ |
+|---|---|---|---|
+| 3.2.1 | Medications root: tap "Hemen Al" on a card whose dose time has passed | the dose is recorded — the card's chip turns to "Alındı", the button goes, the stock line drops by the dose amount, and the "Kaydedilen doz" tile moves. The detail screen does **not** open | ☐ |
+| 3.2.2 | Tap "Hemen Al" twice quickly on the same card | exactly one intake row: the stock drops once, not twice (the button goes through the same use case as the notification action, which is idempotent) | ☐ |
+| 3.2.3 | Look at the top of the Medications root | the count is the first metric tile ("Aktif ilaç"), **not** a chip in the navigation bar — the bar carries only the shell's brand tile, bell and avatar | ☐ |
+| 3.2.4 | A card of a medication taken as needed | its chip reads "İhtiyaç halinde", it shows the plan's own words instead of a clock time, and it offers no "Hemen Al" | ☐ |
+| 3.2.5 | Tap the trash on a card, confirm, then tap "Geri al" in the snackbar | the card leaves the grid at once and comes back in its place; nothing is deleted. Let a second delete's snackbar time out and the medication is gone for good | ☐ |
+| 3.2.6 | VoiceOver on a card: swipe through it | the card is announced as one button (name, strength, next dose, stock), and the trash and "Hemen Al" are each reachable as their own controls with their own labels | ☐ |
+| 3.2.7 | Leave Medications open past midnight (or set the device clock a day forward and return to the app), then tap the "Hemen Al" the card was already showing | **nothing is recorded against yesterday.** The overline date moves to the new day, the "Sıradaki doz" tile re-reads, and the card offers the new day's dose — tapping that one records it, dated today | ☐ |
+| 3.2.8 | Medication detail of a medication with stock: read the "Kutu & Stok" card | "≈ N gün yetecek" is there and the number is plausible for the plan (an every-other-day dose lasts about twice as long as a daily one of the same amount); the bar turns rose at or below the warning threshold | ☐ |
+| 3.2.9 | Medication detail: tap the reminders switch off, then back on | the switch answers immediately, the subtitle swaps between "Doz vaktinde hatırlat" and the "no notifications" line, and the dose still shows on Home either way | ☐ |
+| 3.2.10 | Medication editor: tap through all eight form tiles | each has its own glyph, only one is selected at a time, and the four-column grid does not clip a label at the default text size | ☐ |
+| 3.2.11 | Medication editor: switch the plan tabs Her gün → Belirli günler → Aralıklı → Gerektiğinde | the pill slides between segments; the weekday chips appear only under "Belirli günler" and the day stepper only under "Aralıklı"; "Gerektiğinde" hides the dose-times card entirely | ☐ |
+| 3.2.12 | Medication editor: tap − and + on a dose amount, then type a number into it | the nudges move by 0.5 and stop at 0.5 and 99; a typed number is accepted on the keyboard's Done or on leaving the field, and a non-number reverts to what was there | ☐ |
+| 3.2.13 | Medication editor: turn "Stok takibi" off | the two stock fields disappear and saving stores no stock; turning it back on leaves them empty rather than restoring the old numbers | ☐ |
+
 ---
 
 ## 4. Dynamic Type

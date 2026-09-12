@@ -33,7 +33,20 @@ public struct MedicationDetailUiState: Equatable, Sendable {
     public var history: [IntakeHistoryItem]
     public var showDeleteConfirm: Bool
 
-    /// Supply is hidden entirely when stock tracking is off (`MedicationDetailUiState.kt:25-26`).
+    /// Whole days the remaining stock covers, rounded down; nil when stock is not tracked or when no
+    /// dose leaves the box on a given day (`MedicationDetailUiState.kt:25-29`).
+    public var daysOfSupply: Int?
+
+    /// Today's earliest unrecorded dose whose time has passed; what "record now" writes
+    /// (`MedicationDetailUiState.kt:30-31`).
+    public var pendingDose: PendingDose?
+
+    /// Today, which the seven-day rhythm row counts back from. It comes from the view model's clock
+    /// rather than from the view: a screen never asks the machine what day it is
+    /// (`MedicationDetailUiState.kt:32-36`).
+    public var todayEpochDay: Int
+
+    /// Supply is hidden entirely when stock tracking is off (`MedicationDetailUiState.kt:38-39`).
     public var showSupply: Bool { medication?.stockCount != nil }
 
     public init(
@@ -41,13 +54,19 @@ public struct MedicationDetailUiState: Equatable, Sendable {
         medication: Medication? = nil,
         schedules: [MedicationSchedule] = [],
         history: [IntakeHistoryItem] = [],
-        showDeleteConfirm: Bool = false
+        showDeleteConfirm: Bool = false,
+        daysOfSupply: Int? = nil,
+        pendingDose: PendingDose? = nil,
+        todayEpochDay: Int = 0
     ) {
         self.isLoading = isLoading
         self.medication = medication
         self.schedules = schedules
         self.history = history
         self.showDeleteConfirm = showDeleteConfirm
+        self.daysOfSupply = daysOfSupply
+        self.pendingDose = pendingDose
+        self.todayEpochDay = todayEpochDay
     }
 }
 
@@ -64,12 +83,19 @@ public enum MedicationDetailEvent: Equatable, Sendable {
     /// Written immediately, like the cycle reminder switch — not an editor field. One tap
     /// silences a medication for now; the medication stays active and its doses stay on Home.
     ///
-    /// (`MedicationDetailUiState.kt:37-41`.)
+    /// (`MedicationDetailUiState.kt:50-54`.)
     case remindersToggled(Bool)
+
+    /// Records the dose that is due now. Goes through the same use case as the notification action,
+    /// so this screen is not a second write path (`MedicationDetailUiState.kt:56-60`).
+    case takeDoseClicked(PendingDose)
 }
 
-/// How far back the history section looks (`MedicationDetailUiState.kt:44-45`).
+/// How far back the history section looks (`MedicationDetailUiState.kt:63-64`).
 ///
 /// Internal rather than `public`, unlike Kotlin's top-level `const val`: nothing outside this
 /// package reads it, and the `@testable import` the suite already uses reaches it as it is.
 let historyWindowDays = 30
+
+/// How many days the rhythm row draws, newest last (`MedicationDetailUiState.kt:66-67`).
+let rhythmWindowDays = 7

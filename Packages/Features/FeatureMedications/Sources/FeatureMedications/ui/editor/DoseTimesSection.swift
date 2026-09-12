@@ -1,113 +1,126 @@
-// Ported from `MedicationEditorScreen.kt:381-450` (`DoseTimesSection`), split into its own file
-// under the 500-line rule; `MedicationEditorScreen.swift`'s header carries the Material → SwiftUI
-// mapping this follows.
+// Ported from `feature/medications/src/main/kotlin/com/alicansekban/salus/feature/medications/
+// ui/editor/MedicationEditorSections.kt:217-270` (`MedicationDoseTimesCard`).
 //
-// **The add row is the one gesture that had to be re-drawn, and this is why.** Kotlin's "+ add
-// time" is an `OutlinedButton` that opens a `TimePicker` `AlertDialog` and emits `DoseTimeAdded`
-// from its Confirm button. `SalusTimeField` is the button and its wheel in one view, and it reports
-// *every* turn of the wheel — which is right for "set this row's time" and wrong for "append a
-// row", where it would add one row per intermediate minute the wheel passed through. So the add row
-// is the wheel plus an explicit add button: the wheel writes to this view's own `@State`, and the
-// button is the Confirm that emits the event. Two taps on both platforms, one row per confirmation.
+// One row per dose of the day: the clock time, the amount and a way to drop the row. The stepper is
+// a full-width block of its own, so the time and the remove button share the row above it rather
+// than being squeezed alongside a display-sized number — Kotlin's own reasoning, and the layout is
+// the same here.
 //
-// The `-1 = add new` sentinel of Kotlin's `timePickerTarget` (`MedicationEditorScreen.kt:385`) has
-// no twin for the same reason: each row owns its wheel here, so there is no shared target to encode.
+// TWO SHAPES THE KOTLIN DOES NOT NEED.
+//
+// 1. **The time is a `SalusTimeField`, not a `SalusChoiceChip` that opens a dialog.** Kotlin draws a
+//    chip and hoists a `timePickerTarget` up to the screen, which renders an `AlertDialog` with a
+//    Material `TimePicker` (`MedicationEditorScreen.kt:86`, `:155-170`, `:195-215`). SwiftUI's
+//    `DatePicker` *is* the button plus its picker, which is exactly what `SalusTimeField` wraps
+//    (`SalusTimeField.swift:1-23`) — so the chip, the dialog, its OK and its Cancel all collapse
+//    into the one control, and the screen keeps no picker state at all. Rebuilding the chip and a
+//    sheet around a second `DatePicker` would duplicate a shipped component to land on the same
+//    two taps.
+//
+// 2. **The add button appends a row rather than opening a picker first.** With no dialog to open,
+//    "Yeni doz saati ekle" adds a dose at `DEFAULT_DOSE_MINUTES` — the very minute Kotlin's picker
+//    opens at (`MedicationEditorScreen.kt:157-158`, `:229`) — and the new row's own wheel is what
+//    moves it. Same two taps to a non-default time, one fewer surface. The ViewModel sorts after
+//    every append and deliberately does not de-duplicate: two rows at the same minute are two
+//    doses, which is what a split dose looks like.
+//
+// The stepper's `rangeHint` carries the strength unit, or nothing — `MedicationEditorSections.swift`
+// records why.
 
 import SalusDesignSystem
 import SalusUI
 import SwiftUI
 
-/// The dose-time builder: one row per dose, plus the way to add another
-/// (`MedicationEditorScreen.kt:381-450`).
-struct DoseTimesSection: View {
+/// The dose times card (`MedicationEditorSections.kt:222-270`).
+struct MedicationDoseTimesCard: View {
     let state: MedicationEditorUiState
     let onEvent: (MedicationEditorEvent) -> Void
 
-    @Environment(\.salusTheme) private var theme
-
-    /// What the add row's wheel is showing, or nil while it still shows the seed. Presentation
-    /// state, not editor state: nothing is added until the add button is tapped.
-    @State private var newDoseMinuteOfDay: Int?
-
-    /// `MedicationEditorScreen.kt:435` — where the wheel opens when there is nothing to open at.
-    private static let defaultDoseMinutes = 8 * 60
-
     var body: some View {
-        VStack(alignment: .leading, spacing: SalusSpacing.md) {
-            // `MedicationEditorScreen.kt:387-390`.
-            Text(verbatim: MedicationsStrings.editorTimesSection)
-                .font(SalusTypography.labelLarge.font)
-                .foregroundStyle(theme.colorScheme.onSurface)
+        SalusCard {
+            VStack(alignment: .leading, spacing: SalusSpacing.lg) {
+                EditorSectionTitle(text: MedicationsStrings.editorTimesSection)
 
-            // `MedicationEditorScreen.kt:392-420`. Keyed by position because that is what every
-            // event carries: the rows are a list the ViewModel re-sorts, not a set of identities.
-            ForEach(Array(state.doseTimes.enumerated()), id: \.offset) { index, row in
-                doseRow(index: index, row: row)
+                // Keyed by position because that is what every event carries: the rows are a list
+                // the ViewModel re-sorts, not a set of identities
+                // (`MedicationEditorSections.kt:226`).
+                ForEach(Array(state.doseTimes.enumerated()), id: \.offset) { index, row in
+                    doseRow(index: index, row: row)
+                }
+
+                // `MedicationEditorSections.kt:262-269`.
+                SalusButton(
+                    MedicationsStrings.addDoseTime,
+                    variant: .outlined,
+                    size: .medium,
+                    systemImage: "plus"
+                ) { onEvent(.doseTimeAdded(minuteOfDay: MedicationEditorDefaults.defaultDoseMinutes)) }
             }
-
-            addRow
         }
     }
 
     /// One dose: when it is taken, how much, and the way to drop it
-    /// (`MedicationEditorScreen.kt:393-419`).
+    /// (`MedicationEditorSections.kt:227-261`).
     private func doseRow(index: Int, row: DoseTimeUi) -> some View {
-        HStack(spacing: SalusSpacing.md) {
-            SalusTimeField(
-                title: MedicationsStrings.editorTimesSection,
-                minuteOfDay: row.minuteOfDay,
-                // Unreachable — a row always has a time — but the field takes one.
-                placeholder: MedicationsStrings.editorAddTime,
-                seedMinuteOfDay: Self.defaultDoseMinutes
-            ) { onEvent(.doseTimeChanged(index: index, minuteOfDay: $0)) }
-                .labelsHidden()
+        VStack(alignment: .leading, spacing: SalusSpacing.sm) {
+            HStack(alignment: .center, spacing: SalusSpacing.sm) {
+                SalusTimeField(
+                    title: MedicationsStrings.editorTimesSection,
+                    minuteOfDay: row.minuteOfDay,
+                    // Unreachable — a row always has a time — but the field takes one.
+                    placeholder: MedicationsStrings.addDoseTime,
+                    seedMinuteOfDay: MedicationEditorDefaults.defaultDoseMinutes
+                ) { onEvent(.doseTimeChanged(index: index, minuteOfDay: $0)) }
+                    .labelsHidden()
 
-            TextField(
-                MedicationsStrings.editorDoseAmount,
-                text: Binding(
-                    get: { row.amountInput },
-                    set: { onEvent(.doseAmountChanged(index: index, value: $0)) }
-                )
-            )
-            .textFieldStyle(.roundedBorder)
-            .frame(maxWidth: .infinity)
-            #if os(iOS)
-                .keyboardType(.decimalPad)
-            #endif
+                Spacer(minLength: 0)
 
-            // `MedicationEditorScreen.kt:412-418`.
-            Button {
-                onEvent(.doseTimeRemoved(index: index))
-            } label: {
-                Label(MedicationsStrings.editorRemoveTime, systemImage: "xmark")
+                // `MedicationEditorSections.kt:252-257`.
+                SalusIconButton(
+                    systemImage: "xmark",
+                    accessibilityLabel: MedicationsStrings.editorRemoveTime,
+                    tone: .destructive
+                ) { onEvent(.doseTimeRemoved(index: index)) }
             }
-            .labelStyle(.iconOnly)
-            .buttonStyle(.borderless)
+
+            amountStepper(index: index, row: row)
         }
     }
 
-    /// `MedicationEditorScreen.kt:422-426` — the wheel and its Confirm, for the reason in this
-    /// file's header.
-    private var addRow: some View {
-        HStack(spacing: SalusSpacing.md) {
-            SalusTimeField(
-                title: MedicationsStrings.editorAddTime,
-                minuteOfDay: newDoseMinuteOfDay,
-                placeholder: MedicationsStrings.editorAddTime,
-                seedMinuteOfDay: Self.defaultDoseMinutes
-            ) { newDoseMinuteOfDay = $0 }
-                .labelsHidden()
+    /// `SalusStepperField(label:value:step:range:format:unit:)`
+    /// (`MedicationEditorSections.kt:258-260`).
+    ///
+    /// The step and the bounds are Kotlin's, applied here because the iOS component owns no
+    /// arithmetic. Every `onValueChange` is answered — the ViewModel stores whatever text arrives
+    /// (`MedicationEditorViewModel.onEvent`, `.doseAmountChanged`) — which is the caller contract
+    /// `SalusStepperField.swift` writes down.
+    private func amountStepper(index: Int, row: DoseTimeUi) -> some View {
+        SalusStepperField(
+            label: MedicationsStrings.editorDoseAmount,
+            value: row.amountInput,
+            rangeHint: state.strengthUnitInput,
+            parse: { Self.amount(of: $0) != nil },
+            onValueChange: { onEvent(.doseAmountChanged(index: index, value: $0)) },
+            onDecrement: { nudge(index: index, row: row, by: -MedicationEditorDefaults.doseStep) },
+            onIncrement: { nudge(index: index, row: row, by: MedicationEditorDefaults.doseStep) }
+        )
+    }
 
-            Button {
-                onEvent(.doseTimeAdded(minuteOfDay: newDoseMinuteOfDay ?? Self.defaultDoseMinutes))
-                // Back to the placeholder, which is also what closes the wheel
-                // (`SalusTimeField.clearsPicker(whenValueBecomes:)`): the next add starts at the
-                // seed rather than resuming where the last one left off.
-                newDoseMinuteOfDay = nil
-            } label: {
-                Label(MedicationsStrings.editorAddTime, systemImage: "plus")
-            }
-            .buttonStyle(.bordered)
-        }
+    /// `step = DOSE_STEP, range = DOSE_STEP..MAX_DOSE_AMOUNT`
+    /// (`MedicationEditorSections.kt:259-260`), reported through `formatAmount` exactly as Kotlin's
+    /// `onValueChange` does (`:255-257`).
+    private func nudge(index: Int, row: DoseTimeUi, by step: Double) {
+        let current = Self.amount(of: row.amountInput) ?? MedicationEditorDefaults.defaultDoseAmount
+        let next = min(
+            MedicationEditorDefaults.maxDoseAmount,
+            max(MedicationEditorDefaults.doseStep, current + step)
+        )
+        onEvent(.doseAmountChanged(index: index, value: formatAmount(next)))
+    }
+
+    /// `amountInput.replace(',', '.').toDoubleOrNull()` (`MedicationEditorSections.kt:254`): a
+    /// Turkish decimal keypad types a comma, and the stored value is always a dot.
+    private static func amount(of input: String) -> Double? {
+        Double(input.replacingOccurrences(of: ",", with: "."))
     }
 }

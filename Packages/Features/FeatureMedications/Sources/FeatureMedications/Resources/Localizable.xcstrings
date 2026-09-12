@@ -120,40 +120,6 @@
         }
       }
     },
-    "editor_add_time" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Add time"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Saat ekle"
-          }
-        }
-      }
-    },
-    "editor_back" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Back"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Geri"
-          }
-        }
-      }
-    },
     "editor_cancel" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -205,23 +171,6 @@
         }
       }
     },
-    "editor_delete" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Delete"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sil"
-          }
-        }
-      }
-    },
     "editor_dose_amount" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -239,19 +188,19 @@
         }
       }
     },
-    "editor_end_date" : {
+    "editor_end_date_label" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Until %1$@"
+            "value" : "End"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$@ tarihine kadar"
+            "value" : "Bitiş"
           }
         }
       }
@@ -375,6 +324,23 @@
         }
       }
     },
+    "editor_instructions_placeholder" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "e.g. after meals"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "örn. yemeklerden sonra"
+          }
+        }
+      }
+    },
     "editor_interval_days" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -405,6 +371,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ad"
+          }
+        }
+      }
+    },
+    "editor_name_placeholder" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "e.g. Metformin"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "örn. Metformin"
           }
         }
       }
@@ -477,19 +460,87 @@
         }
       }
     },
-    "editor_start_date" : {
+    "editor_section_basics" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "From %1$@"
+            "value" : "Medication details"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$@ tarihinden itibaren"
+            "value" : "İlaç bilgileri"
+          }
+        }
+      }
+    },
+    "editor_section_dates" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dates"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tarihler"
+          }
+        }
+      }
+    },
+    "editor_section_stock" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stock tracking"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stok takibi"
+          }
+        }
+      }
+    },
+    "editor_start_date_label" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Başlangıç"
+          }
+        }
+      }
+    },
+    "editor_start_date_placeholder" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bugün"
           }
         }
       }
@@ -511,6 +562,23 @@
         }
       }
     },
+    "editor_stock_placeholder" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "e.g. 30"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "örn. 30"
+          }
+        }
+      }
+    },
     "editor_stock_threshold" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -524,6 +592,40 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Stok uyarı eşiği"
+          }
+        }
+      }
+    },
+    "editor_stock_threshold_placeholder" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "e.g. 10"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "örn. 10"
+          }
+        }
+      }
+    },
+    "editor_stock_tracking_desc" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Count what is left and warn when it runs low"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kalan adedi say, azalınca uyar"
           }
         }
       }
@@ -545,6 +647,23 @@
         }
       }
     },
+    "editor_strength_placeholder" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "e.g. 500"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "örn. 500"
+          }
+        }
+      }
+    },
     "editor_strength_unit" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -558,6 +677,57 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Birim (örn. mg)"
+          }
+        }
+      }
+    },
+    "editor_strength_unit_placeholder" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "mg"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "mg"
+          }
+        }
+      }
+    },
+    "editor_subtitle_edit" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Update the dose times, the dates and the stock"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Doz saatlerini, tarihleri ve stoğu güncelle"
+          }
+        }
+      }
+    },
+    "editor_subtitle_new" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Set the dose times, the dates and the stock"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Doz saatlerini, tarihleri ve stoğu ayarla"
           }
         }
       }
@@ -868,53 +1038,36 @@
         }
       }
     },
-    "medication_detail_delete" : {
+    "medication_detail_active_tracking" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Delete"
+            "value" : "Active tracking"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Sil"
+            "value" : "Aktif Takip"
           }
         }
       }
     },
-    "medication_detail_dose" : {
+    "medication_detail_delete_medication" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dose"
+            "value" : "Delete medication"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Doz"
-          }
-        }
-      }
-    },
-    "medication_detail_dose_value" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$@ unit(s)"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$@ birim"
+            "value" : "İlacı Sil"
           }
         }
       }
@@ -987,6 +1140,40 @@
         }
       }
     },
+    "medication_detail_metric_amount" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Amount"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Miktar"
+          }
+        }
+      }
+    },
+    "medication_detail_metric_time" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dose time"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Doz saati"
+          }
+        }
+      }
+    },
     "medication_detail_missing" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1004,19 +1191,70 @@
         }
       }
     },
-    "medication_detail_schedule" : {
+    "medication_detail_plan" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Schedule"
+            "value" : "Usage plan"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Kullanım"
+            "value" : "Kullanım Planı"
+          }
+        }
+      }
+    },
+    "medication_detail_record_now" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Record dose now (%1$@)"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dozu Şimdi Kaydet (%1$@)"
+          }
+        }
+      }
+    },
+    "medication_detail_rhythm" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "LAST 7 DAYS"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SON 7 GÜN"
+          }
+        }
+      }
+    },
+    "medication_detail_rhythm_none" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No record"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kayıt yok"
           }
         }
       }
@@ -1038,19 +1276,36 @@
         }
       }
     },
-    "medication_detail_supply" : {
+    "medication_detail_supply_title" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Supply"
+            "value" : "Box & stock"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Stok"
+            "value" : "Kutu & Stok"
+          }
+        }
+      }
+    },
+    "medication_detail_threshold" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alert at: %1$@"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uyarı eşiği: %1$@"
           }
         }
       }
@@ -1068,23 +1323,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "İlaç detayı"
-          }
-        }
-      }
-    },
-    "medication_detail_when" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "When"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ne zaman"
           }
         }
       }
@@ -1119,23 +1357,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Bildirim gelmez; dozlar Ana Sayfa'da görünmeye ve işaretlenmeye devam eder."
-          }
-        }
-      }
-    },
-    "medication_reminders_on_desc" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "You get a notification at each dose time."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Doz saatlerinde bildirim gelir."
           }
         }
       }
@@ -1191,36 +1412,19 @@
         }
       }
     },
-    "medications_count" : {
+    "medications_add_dose_time" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$lld medications"
+            "value" : "Add another dose time"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$lld ilaç"
-          }
-        }
-      }
-    },
-    "medications_count_one" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$lld medication"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$lld ilaç"
+            "value" : "Yeni doz saati ekle"
           }
         }
       }
@@ -1238,6 +1442,57 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sil"
+          }
+        }
+      }
+    },
+    "medications_detail_days_of_supply" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "≈ %1$lld day(s) left"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "≈ %1$lld gün yetecek"
+          }
+        }
+      }
+    },
+    "medications_detail_per_day" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld time(s) a day"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Günde %1$lld kez"
+          }
+        }
+      }
+    },
+    "medications_detail_reminder_subtitle" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remind me at each dose time"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Doz vaktinde hatırlat"
           }
         }
       }
@@ -1276,19 +1531,87 @@
         }
       }
     },
-    "medications_low_stock" : {
+    "medications_fab_add" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Low stock: %1$@ left"
+            "value" : "Add new medication"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Stok azaldı: %1$@ kaldı"
+            "value" : "Yeni İlaç Ekle"
+          }
+        }
+      }
+    },
+    "medications_metric_active" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Active medications"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aktif ilaç"
+          }
+        }
+      }
+    },
+    "medications_metric_next" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next dose"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sıradaki doz"
+          }
+        }
+      }
+    },
+    "medications_metric_none" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "—"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "—"
+          }
+        }
+      }
+    },
+    "medications_metric_recorded" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recorded doses"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kaydedilen doz"
           }
         }
       }
@@ -1310,19 +1633,70 @@
         }
       }
     },
-    "medications_recorded_doses" : {
+    "medications_overline_today" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Recorded doses, last 7 days: %1$lld%%"
+            "value" : "TODAY • %1$@"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Son 7 gün kaydedilen doz %%%1$lld"
+            "value" : "BUGÜN • %1$@"
+          }
+        }
+      }
+    },
+    "medications_status_as_needed" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "As needed"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "İhtiyaç halinde"
+          }
+        }
+      }
+    },
+    "medications_stock_left" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stock: %1$@"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stok: %1$@"
+          }
+        }
+      }
+    },
+    "medications_take_now" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Take now"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hemen Al"
           }
         }
       }
@@ -1340,6 +1714,23 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "İlaçlar"
+          }
+        }
+      }
+    },
+    "medications_title_routine" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Treatment & Routine"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tedavi & Rutin"
           }
         }
       }
@@ -1497,19 +1888,36 @@
         }
       }
     },
-    "recurrence_interval" : {
+    "recurrence_tab_days" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Every N days"
+            "value" : "Set days"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Gün aralıklı"
+            "value" : "Belirli günler"
+          }
+        }
+      }
+    },
+    "recurrence_tab_interval" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Interval"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aralıklı"
           }
         }
       }

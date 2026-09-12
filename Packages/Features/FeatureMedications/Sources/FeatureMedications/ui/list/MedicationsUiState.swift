@@ -26,12 +26,34 @@ public struct MedicationListItem: Equatable, Hashable, Sendable, Identifiable {
     /// drawing it as 0% would say it was.
     public let recordedDosePercent: Int?
 
+    /// Today's chip. Nil when the day holds no dose slot for this medication
+    /// (`MedicationsUiState.kt:19-20`).
+    public let dayStatus: MedicationDayStatus?
+
+    /// The earliest of today's unrecorded doses; what the card prints under the name
+    /// (`MedicationsUiState.kt:21-22`).
+    public let nextDoseMinuteOfDay: Int?
+
+    /// Set while a dose of today is unrecorded and its time has passed — the "take now" button
+    /// (`MedicationsUiState.kt:23-24`).
+    public let dueDose: PendingDose?
+
     public var id: String { medication.id }
 
-    public init(medication: Medication, schedules: [MedicationSchedule], recordedDosePercent: Int?) {
+    public init(
+        medication: Medication,
+        schedules: [MedicationSchedule],
+        recordedDosePercent: Int?,
+        dayStatus: MedicationDayStatus? = nil,
+        nextDoseMinuteOfDay: Int? = nil,
+        dueDose: PendingDose? = nil
+    ) {
         self.medication = medication
         self.schedules = schedules
         self.recordedDosePercent = recordedDosePercent
+        self.dayStatus = dayStatus
+        self.nextDoseMinuteOfDay = nextDoseMinuteOfDay
+        self.dueDose = dueDose
     }
 }
 
@@ -47,14 +69,27 @@ public struct MedicationsUiState: Equatable, Sendable {
     /// without looking it up again — exactly what Kotlin's `pendingDelete` carries.
     public var pendingDelete: Medication?
 
+    /// Earliest unrecorded dose of today across every medication; nil when none is left
+    /// (`MedicationsUiState.kt:32-33`).
+    public var nextDoseMinuteOfDay: Int?
+
+    /// Today, for the header's date. It comes from the view model's `SalusClock` rather than from
+    /// the view, because a screen is never allowed to ask the machine what day it is
+    /// (`MedicationsUiState.kt:34-38`).
+    public var todayEpochDay: Int
+
     public init(
         isLoading: Bool = true,
         medications: [MedicationListItem] = [],
-        pendingDelete: Medication? = nil
+        pendingDelete: Medication? = nil,
+        nextDoseMinuteOfDay: Int? = nil,
+        todayEpochDay: Int = 0
     ) {
         self.isLoading = isLoading
         self.medications = medications
         self.pendingDelete = pendingDelete
+        self.nextDoseMinuteOfDay = nextDoseMinuteOfDay
+        self.todayEpochDay = todayEpochDay
     }
 }
 
@@ -69,4 +104,9 @@ public enum MedicationsEvent: Equatable, Sendable {
 
     /// `MedicationsUiState.kt:28`.
     case deleteConfirmed
+
+    /// The card's inline "take now". Goes through the same use case as the notification action, so
+    /// the list is not a second write path — only a second button on the first one
+    /// (`MedicationsUiState.kt:49-53`).
+    case takeDoseClicked(PendingDose)
 }

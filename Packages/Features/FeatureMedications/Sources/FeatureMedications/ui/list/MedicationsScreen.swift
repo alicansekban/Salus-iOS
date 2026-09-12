@@ -1,21 +1,38 @@
 // Ported from `feature/medications/src/main/kotlin/com/alicansekban/salus/feature/medications/
-// ui/list/MedicationsScreen.kt`.
+// ui/list/MedicationsScreen.kt` in its M15 shape.
 //
 // Material → SwiftUI, per the mapping table in `docs/ios-feature-template.md`:
-//   `LazyColumn` + `contentPadding`      → `ScrollView` + `LazyVStack` + `.padding`.
-//   `CircularProgressIndicator`          → `ProgressView()`.
-//   `Icons.Filled.*`                     → SF Symbol names.
-//   `LocalLocale.current.platformLocale` → `@Environment(\.locale)`.
+//   `LazyVerticalGrid(Fixed(2))` + `contentPadding`  → `ScrollView` + `LazyVGrid(2 flexible columns)`
+//                                                      + `.padding`.
+//   `GridItemSpan(maxLineSpan)`                      → a full-width row outside the grid, because
+//                                                      SwiftUI's `LazyVGrid` has no span: the header
+//                                                      and the two content states are siblings of
+//                                                      the grid inside one `LazyVStack`, which draws
+//                                                      the same column.
+//   `CircularProgressIndicator`                      → `ProgressView()`.
+//   `Icons.Filled.*`                                 → SF Symbol names.
+//   `LocalLocale.current.platformLocale`             → `@Environment(\.locale)`.
 //
-// The card itself lives in `MedicationCard.swift`: this file is the screen's own shape — header,
-// the three content states, the FAB and the confirmation — and splitting the row out is what M4 did
-// once its screen passed 500 lines.
+// The header lives in `MedicationsHeader.swift` and the card in `MedicationCard.swift`: this file is
+// the screen's own shape — the grid, the three content states, the FAB and the confirmation.
+//
+// **NO CLEARANCE CONSTANTS, and no `SalusTopBarDefaults` / `SalusBottomBarDefaults` twin.** Kotlin
+// reserves both bars in its `contentPadding` because they float over the root; on iOS the native
+// navigation bar and tab bar live in the safe area, so scroll content clears them by itself
+// (spec §2.4). The one inset that survives is the FAB's, which does float.
+//
+// **THE EXTENDED FAB IS AN ICON FAB HERE.** Android draws `SalusExtendedFab(text, icon)` bottom
+// centre (`MedicationsScreen.kt:160-168`); `SalusUI.SalusFab` has no extended variant — Task 2's
+// brief did not ask for one and this task may not touch `SalusUI` — so the plus disc keeps the
+// bottom-trailing placement it has had since M5 and `medications_fab_add` becomes its
+// `accessibilityLabel`. Recorded as a deviation in `task-7-report.md`.
 
 import SalusDesignSystem
+import SalusModel
 import SalusUI
 import SwiftUI
 
-/// Owns the ViewModel and wires it to the shell (`MedicationsScreen.kt:69-83`).
+/// Owns the ViewModel and wires it to the shell (`MedicationsScreen.kt:79-91`).
 ///
 /// No callback parameters: every destination this screen reaches is this feature's own, so there is
 /// no cross-feature move for the shell to fill in.
@@ -32,8 +49,8 @@ public struct MedicationsRoute: View {
                     state: viewModel.state,
                     onEvent: viewModel.onEvent,
                     onAddMedication: { navigate(MedicationEditorKey(id: nil)) },
-                    // Rows open the detail screen; editing is an action on it, not the row's job
-                    // (`MedicationsScreen.kt:80`).
+                    // Cards open the detail screen; editing is an action on it, not the card's job
+                    // (`MedicationsScreen.kt:88`).
                     onOpenMedication: { id in navigate(MedicationDetailKey(id: id)) }
                 )
             } else {
@@ -42,10 +59,10 @@ public struct MedicationsRoute: View {
             }
         }
         .task {
-            // Built once and owned for the lifetime of the route. The recorded-dose window is read
-            // when the ViewModel is built, so a route that outlives midnight keeps yesterday's
-            // seven days — the same thing Android's `stateIn` does with the value it holds, and the
-            // same refresh on both platforms: re-entering the tab rebuilds it.
+            // Built once and owned for the lifetime of the route — which is the whole app session,
+            // because `TabView` keeps a root alive. That is exactly why the ViewModel re-reads the
+            // clock on every emission rather than holding the day it was built on
+            // (`MedicationsViewModel.swift`, the M15 critical fix).
             guard viewModel == nil, let module else { return }
             viewModel = module.makeMedicationsViewModel()
         }
@@ -56,7 +73,7 @@ public struct MedicationsRoute: View {
     }
 }
 
-/// The stateless list (`MedicationsScreen.kt:84-143`).
+/// The stateless list (`MedicationsScreen.kt:98-181`).
 struct MedicationsScreen: View {
     let state: MedicationsUiState
     let onEvent: (MedicationsEvent) -> Void
@@ -71,42 +88,25 @@ struct MedicationsScreen: View {
     var body: some View {
         // No `Scaffold` twin here: the app shell owns the one navigation stack and its insets.
         ZStack(alignment: .bottomTrailing) {
-            VStack(spacing: 0) {
-                content
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            scroller
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-            // `MedicationsScreen.kt:122-129`.
-            SalusFab(systemImage: "plus", contentDescription: MedicationsStrings.add, action: onAddMedication)
-                .padding(SalusSpacing.lg)
+            // `MedicationsScreen.kt:160-168`, as an icon disc — see this file's header.
+            SalusFab(
+                systemImage: "plus",
+                contentDescription: MedicationsStrings.fabAdd,
+                action: onAddMedication
+            )
+            .padding(SalusSpacing.lg)
         }
         .background(theme.colorScheme.background)
         // The screen title. The shell's root toolbar draws it in the navigation bar's principal
         // slot; `.navigationTitle` is still what names the back button of everything this root
-        // pushes, and what VoiceOver reads for the screen.
+        // pushes, and what VoiceOver reads for the screen. M15 deleted `medications_title` on
+        // Android because its custom top bar needed no such label — the ruling that iOS keeps the
+        // key is recorded in `MedicationsStrings.swift`.
         .navigationTitle(Text(verbatim: MedicationsStrings.title))
-        // `MedicationsScreen.kt:99-113` — the count chip the retired `SalusScreenHeader` carried in
-        // its trailing slot, now a toolbar item beside the shell's bell and avatar. Hidden while the
-        // list is empty (an empty state owns the screen), exactly as Kotlin's header had it. M15
-        // moved the count into the list's own metric tiles (`MedicationsScreen.kt:270`, `:306`) —
-        // that is Task 7's restyle; until it lands the chip keeps the place it had.
-        //
-        // The `ToolbarItem` is CONSTANT and the emptiness test lives inside its `ViewBuilder`, not
-        // around it. `ToolbarContentBuilder` identifies items by position, and toolbar content that
-        // appears and disappears has a history of not being inserted or removed on a live state
-        // change — the chip would then be a frame (or a screen visit) behind the list. An item that
-        // always exists and draws nothing when there is nothing to say has no identity to lose.
-        // The retired in-content header had the same `if` and no such problem, because a `VStack`
-        // child is re-evaluated like any other view; this is the one thing the migration had to
-        // re-spell rather than move.
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                if !state.medications.isEmpty {
-                    SalusStatusChip(label: MedicationsStrings.medicationCount(state.medications.count))
-                }
-            }
-        }
-        // `MedicationsScreen.kt:132-142`. The confirm label is the shared `salus_delete`, exactly
+        // `MedicationsScreen.kt:171-180`. The confirm label is the shared `salus_delete`, exactly
         // as Kotlin reaches into `core.ui`'s string rather than the feature's own.
         .salusConfirmDialog(
             isPresented: isDeleteConfirmPresented,
@@ -139,12 +139,29 @@ struct MedicationsScreen: View {
         )
     }
 
-    /// `MedicationsScreen.kt:88-120`.
+    /// The one scrolling column: the header, then whichever of the three content states holds
+    /// (`MedicationsScreen.kt:104-158`).
+    private var scroller: some View {
+        ScrollView {
+            LazyVStack(alignment: .leading, spacing: SalusSpacing.md) {
+                MedicationsHeader(state: state)
+                content
+            }
+            .padding(.horizontal, SalusSpacing.lg)
+            .padding(.top, SalusSpacing.lg)
+            // Keeps the last row of cards scrollable above the floating action button
+            // (`MedicationsScreen.kt:112`, `:353`).
+            .padding(.bottom, MedicationsScreenDefaults.fabClearance)
+        }
+    }
+
+    /// `MedicationsScreen.kt:120-157`.
     @ViewBuilder
     private var content: some View {
         if state.isLoading {
             ProgressView()
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .frame(maxWidth: .infinity)
+                .padding(SalusSpacing.xxl)
         } else if state.medications.isEmpty {
             SalusEmptyState(
                 systemImage: "pills",
@@ -154,62 +171,69 @@ struct MedicationsScreen: View {
                 actionLabel: MedicationsStrings.add,
                 onAction: onAddMedication
             )
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .frame(maxWidth: .infinity)
         } else {
-            list
+            grid
         }
     }
 
-    /// `MedicationsScreen.kt:144-168`.
-    private var list: some View {
-        ScrollView {
-            LazyVStack(alignment: .leading, spacing: SalusSpacing.md) {
-                ForEach(state.medications) { item in
-                    MedicationCard(
-                        item: item,
-                        onTap: { onOpenMedication(item.medication.id) },
-                        onDelete: { onEvent(.deleteRequested(item.medication.id)) }
-                    )
-                    // §10 list mutation: fade + vertical move on add, remove and undo's
-                    // return. Reduce motion keeps the fade and drops the move
-                    // (`MedicationsScreen.kt:191-194`).
-                    .transition(
-                        reduceMotion
-                            ? SalusMotion.listMutationReducedMotionTransition
-                            : SalusMotion.listMutationTransition
-                    )
-                }
+    /// `items(state.medications, key = { it.medication.id })` inside the two-column grid
+    /// (`MedicationsScreen.kt:144-156`).
+    private var grid: some View {
+        LazyVGrid(columns: MedicationsScreenDefaults.columns, alignment: .leading, spacing: SalusSpacing.md) {
+            ForEach(state.medications) { item in
+                MedicationCard(
+                    item: item,
+                    onTap: { onOpenMedication(item.medication.id) },
+                    onDelete: { onEvent(.deleteRequested(item.medication.id)) },
+                    onTakeDose: { dose in onEvent(.takeDoseClicked(dose)) }
+                )
+                // §10 list mutation: fade + vertical move on add, remove and undo's return.
+                // Reduce motion keeps the fade and drops the move (`MedicationsScreen.kt:151-154`).
+                .transition(
+                    reduceMotion
+                        ? SalusMotion.listMutationReducedMotionTransition
+                        : SalusMotion.listMutationTransition
+                )
             }
-            .padding(.horizontal, SalusSpacing.lg)
-            .padding(.top, SalusSpacing.sm)
-            // Keeps the last card scrollable above the floating action button
-            // (`MedicationsScreen.kt:156`, `:258`).
-            .padding(.bottom, fabClearance)
-            // Every mutation path — delete confirmed, undo's return, an editor save landing —
-            // arrives as a state change the container observes, so the animation rides with it
-            // wherever it came from.
-            .animation(
-                reduceMotion
-                    ? SalusMotion.listMutationReducedMotionAnimation
-                    : SalusMotion.listMutationAnimation,
-                value: state.medications
-            )
         }
+        // Every mutation path — delete confirmed, undo's return, an editor save landing — arrives
+        // as a state change the container observes, so the animation rides with it wherever it
+        // came from.
+        .animation(
+            reduceMotion
+                ? SalusMotion.listMutationReducedMotionAnimation
+                : SalusMotion.listMutationAnimation,
+            value: state.medications
+        )
     }
 }
 
-/// `MedicationsScreen.kt:258`.
-private let fabClearance: CGFloat = 88
+/// The screen's own measurements. Not design tokens — a column count and a FAB inset.
+enum MedicationsScreenDefaults {
+    /// `GridCells.Fixed(GRID_COLUMNS)` with `horizontalArrangement = spacedBy(md)`
+    /// (`MedicationsScreen.kt:106`, `:114`, `:349`).
+    static let columns = [
+        GridItem(.flexible(), spacing: SalusSpacing.md, alignment: .top),
+        GridItem(.flexible(), spacing: SalusSpacing.md, alignment: .top)
+    ]
+
+    /// `FabRow = SalusSpacing.xxl + SalusSpacing.xl` (`MedicationsScreen.kt:353`) — enough for the
+    /// last row of cards to clear the floating button.
+    static let fabClearance = SalusSpacing.xxl + SalusSpacing.xl
+}
 
 // MARK: - Previews
 
-/// The fixture the previews share (`MedicationsScreen.kt:260-306`, which needs only one preview
-/// because Compose renders light and dark from a single `@PreviewLightDark`).
+/// The fixture the previews share (`MedicationsPreviewData.kt`).
 ///
 /// A namespace rather than loose file-scope constants: everything preview-only is then one
 /// `private enum` a reader can skip, and nothing here can be mistaken for screen state.
 private enum PreviewData {
-    /// Kotlin's `Metformin`, with its stock below its threshold so the low-stock chip is drawn.
+    static let today = 20700
+
+    /// Kotlin's `Metformin`, with its stock below its threshold so the bar draws rose, and a dose
+    /// still outstanding this morning so the card offers "Hemen Al".
     static let metformin = MedicationListItem(
         medication: Medication(
             id: "m1",
@@ -237,11 +261,14 @@ private enum PreviewData {
                 isActive: true
             )
         ],
-        recordedDosePercent: 92
+        recordedDosePercent: 92,
+        dayStatus: .pending,
+        nextDoseMinuteOfDay: 9 * 60,
+        dueDose: PendingDose(scheduleId: "s1", epochDay: today, minuteOfDay: 9 * 60)
     )
 
-    /// No Kotlin twin: the two branches the Kotlin preview does not exercise — reminders off, and
-    /// nothing recorded yet, so the bar is absent rather than 0%.
+    /// The branches the first card does not exercise: reminders off, nothing recorded yet (so no
+    /// share on the tile), as-needed (so no clock time and no due dose).
     static let insulin = MedicationListItem(
         medication: Medication(
             id: "m2",
@@ -258,24 +285,50 @@ private enum PreviewData {
             remindersEnabled: false
         ),
         schedules: [],
-        recordedDosePercent: nil
+        recordedDosePercent: nil,
+        dayStatus: .asNeeded
+    )
+
+    static let loaded = MedicationsUiState(
+        isLoading: false,
+        medications: [metformin, insulin],
+        nextDoseMinuteOfDay: 9 * 60,
+        todayEpochDay: today
     )
 }
 
+// The eight-panel fan-out every restyled surface gets (spec §7): one render per premium palette in
+// both modes, so a palette regression is visible without opening the app.
 #Preview("Medications list") {
-    MedicationsScreen(
-        state: MedicationsUiState(isLoading: false, medications: [PreviewData.metformin, PreviewData.insulin]),
-        onEvent: { _ in },
-        onAddMedication: {},
-        onOpenMedication: { _ in }
-    )
+    SalusPreviewPalettes {
+        MedicationsScreen(
+            state: PreviewData.loaded,
+            onEvent: { _ in },
+            onAddMedication: {},
+            onOpenMedication: { _ in }
+        )
+    }
 }
 
 #Preview("Medications list — empty") {
+    SalusPreviewPalettes {
+        MedicationsScreen(
+            state: MedicationsUiState(isLoading: false, todayEpochDay: PreviewData.today),
+            onEvent: { _ in },
+            onAddMedication: {},
+            onOpenMedication: { _ in }
+        )
+    }
+}
+
+// The tab root at the largest text size the design is checked against — Kotlin's
+// `@Preview(fontScale = 1.3f)` (`MedicationsScreen.kt:368-376`), and the step spec §7 names for iOS.
+#Preview("Medications list — xxxLarge") {
     MedicationsScreen(
-        state: MedicationsUiState(isLoading: false),
+        state: PreviewData.loaded,
         onEvent: { _ in },
         onAddMedication: {},
         onOpenMedication: { _ in }
     )
+    .dynamicTypeSize(.xxxLarge)
 }

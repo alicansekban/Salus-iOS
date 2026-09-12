@@ -1,48 +1,55 @@
 // Ported from `feature/medications/src/main/kotlin/com/alicansekban/salus/feature/medications/
-// ui/list/MedicationsScreen.kt:170-253` (`MedicationCard`). Split into its own file the way M4
-// split `AppointmentDetailScreen`'s sections: the screen file stays the screen's shape.
+// ui/list/MedicationsScreen.kt:239-347` (`MedicationCard` + `MedicationStock`) in its M15 shape.
+// Split into its own file the way M4 split `AppointmentDetailScreen`'s sections: the screen file
+// stays the screen's shape.
 //
-// TWO SHAPES THE KOTLIN DOES NOT NEED.
+// THREE SHAPES THE KOTLIN DOES NOT NEED.
 //
-// 1. **The trash is a sibling, not a nested button.** Kotlin's card is `SalusCard(onClick = …)`
-//    with an `IconButton` inside it. `SalusCard(onTap:)` is a `Button`, and a second `Button`
-//    inside its label is treated as decoration — the outer button swallows the tap. `VitalsRow`
-//    settled this and `AppointmentCard` copies it: a plain, non-interactive `SalusCard`, "open" as
-//    a tap gesture on the content column with the button semantics added back by hand, and the
-//    trash as a real `Button` that is the column's **sibling**, so the two targets are disjoint by
-//    layout rather than merely ordered by dispatch rules.
+// 1. **The delete affordance is a button, not a long press.** Kotlin wraps the card in
+//    `combinedClickable(onClick, onLongClick = onDelete)` (`MedicationsScreen.kt:254-258`), which is
+//    Android's idiom and TalkBack's named action. iOS has no long-press convention for destructive
+//    row actions — the platform's is a swipe, and a `ScrollView` of cards has no swipe gesture to
+//    hang it on — so the trash stays the explicit `SalusIconButton(tone: .destructive)` this card
+//    already drew, as its own sibling of the tap target. `VitalsRow` settled the sibling shape and
+//    `AppointmentCard` copies it: `SalusCard(onTap:)` is a `Button`, and a second `Button` inside
+//    its label is swallowed by the outer one, so "open" is a tap gesture on the content column with
+//    the button semantics added back by hand and the trash is a real `Button` beside it.
 //
-// 2. **`LinearProgressIndicator(color:trackColor:)` has no full twin.** `ProgressView(value:)` takes
-//    a tint and nothing else, so the accent is carried by `.tint` and the track is the platform's
-//    own dimmed rendering of it rather than `accent.container`. Drawing the bar by hand would give
-//    the token back and cost the platform's sizing, animation and accessibility; the bar is 72 pt
-//    on both platforms, which is the measurement that matters.
+// 2. **"Hemen Al" is a third target inside that card**, so it is a sibling of the tap column too,
+//    for the same dispatch reason. Kotlin can nest it because its card is a `Box` with a
+//    `combinedClickable` modifier rather than a `Button`.
+//
+// 3. **Two columns, not one.** The M15 list is a two-column grid (`MedicationsScreen.kt:106`), so
+//    the card is narrow: the badge and the day chip share the top row, and everything else stacks
+//    under them exactly as Kotlin's `SalusCard` column does.
 
 import SalusDesignSystem
 import SalusUI
 import SwiftUI
 
-/// One medication (`MedicationsScreen.kt:170-253`).
+/// One medication (`MedicationsScreen.kt:239-325`).
 ///
 /// Internal rather than private: the file split is a length decision, not an API one.
 struct MedicationCard: View {
     let item: MedicationListItem
     let onTap: () -> Void
     let onDelete: () -> Void
+    let onTakeDose: (PendingDose) -> Void
 
     @Environment(\.salusTheme) private var theme
     @Environment(\.locale) private var locale
 
     var body: some View {
-        SalusCard {
-            HStack(alignment: .top, spacing: 0) {
+        SalusCard(contentPadding: MedicationCardDefaults.contentPadding) {
+            VStack(alignment: .leading, spacing: 0) {
+                topRow
                 details
-                    // The column already fills every point the trash button does not, and
+                    // The column already fills every point the row above it does, and
                     // `contentShape` makes the empty space beside a short name tappable too.
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .contentShape(Rectangle())
                     .onTapGesture(perform: onTap)
-                    // A tap gesture is invisible to VoiceOver, where Compose's `SalusCard(onClick =)`
+                    // A tap gesture is invisible to VoiceOver, where Compose's `combinedClickable`
                     // is announced as a button. `.combine` reads the card's lines as one element,
                     // the trait announces it as activatable, and the action is what a double tap
                     // runs.
@@ -50,91 +57,107 @@ struct MedicationCard: View {
                     .accessibilityAddTraits(.isButton)
                     .accessibilityAction(.default, onTap)
 
-                // `Spacer(width = sm)` + `IconButton` (`MedicationsScreen.kt:217-224`). A sibling of
-                // the column, not a descendant of any Button.
-                Button(action: onDelete) {
-                    Label(MedicationsStrings.delete, systemImage: "trash")
-                        .labelStyle(.iconOnly)
-                        .foregroundStyle(theme.colorScheme.error)
+                stock
+
+                // `item.dueDose?.let { … }` (`MedicationsScreen.kt:315-323`).
+                if let dose = item.dueDose {
+                    SalusButton(
+                        MedicationsStrings.takeNow,
+                        size: .medium,
+                        accent: theme.extendedColors.medications
+                    ) { onTakeDose(dose) }
+                        .padding(.top, SalusSpacing.md)
                 }
-                .buttonStyle(.plain)
-                .padding(.leading, SalusSpacing.sm)
             }
         }
     }
 
-    /// Everything a tap on the card opens (`MedicationsScreen.kt:176-252`, minus the trash).
+    /// The form badge and today's chip (`MedicationsScreen.kt:261-275`).
+    ///
+    /// A sibling of the tap column rather than part of it: the trash button lives here, and two
+    /// targets must be disjoint by layout rather than merely ordered by dispatch rules.
+    private var topRow: some View {
+        HStack(alignment: .center, spacing: SalusSpacing.sm) {
+            SalusIconBadge(
+                systemImage: item.medication.form.systemImage,
+                accent: theme.extendedColors.medications
+            )
+            Spacer(minLength: 0)
+            if let status = item.dayStatus {
+                SalusStatusChip(label: status.label, status: status.chipStatus)
+            }
+            // `onLongClickLabel = medications_delete` (`MedicationsScreen.kt:257`), spelled as a
+            // button for the reason in this file's header.
+            SalusIconButton(
+                systemImage: "trash",
+                accessibilityLabel: MedicationsStrings.delete,
+                tone: .destructive,
+                action: onDelete
+            )
+        }
+        .padding(.bottom, SalusSpacing.md)
+    }
+
+    /// Everything a tap on the card opens (`MedicationsScreen.kt:277-311`).
     private var details: some View {
-        VStack(alignment: .leading, spacing: SalusSpacing.sm) {
-            HStack(alignment: .center, spacing: 0) {
-                SalusIconBadge(
-                    systemImage: item.medication.form.systemImage,
-                    accent: theme.extendedColors.medications
-                )
-                .padding(.trailing, SalusSpacing.lg)
-
-                VStack(alignment: .leading, spacing: 0) {
-                    Text(verbatim: item.medication.name)
-                        .font(SalusTypography.titleMedium.font)
-                        .foregroundStyle(theme.colorScheme.onSurface)
-                    if let strength {
-                        Text(verbatim: strength)
-                            .font(SalusTypography.bodyMedium.font)
-                            .foregroundStyle(theme.colorScheme.onSurfaceVariant)
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-                if let percent = item.recordedDosePercent {
-                    recordedDoses(percent: percent)
-                }
-            }
-
-            // `MedicationsScreen.kt:226-231`: the recurrence label (`recurrenceLabel`), then the
-            // dose-time pills (`doseTimes` + `FlowRow`) — `MedicationFormatting.kt:63-81`.
-            Text(verbatim: recurrenceLabel(schedules: item.schedules, strings: .localized))
-                .font(SalusTypography.bodyMedium.font)
+        VStack(alignment: .leading, spacing: 0) {
+            Text(verbatim: item.medication.name)
+                .font(SalusTypography.titleMedium.font)
                 .foregroundStyle(theme.colorScheme.onSurface)
-
-            // `MedicationsScreen.kt:252-269` — the `val times = doseTimes(item.schedules)` guard
-            // is Kotlin's `times.isNotEmpty()`, which is empty for AS_NEEDED and for empty
-            // schedules, so no pills in either. The pill is `formatTime` in `labelLarge`,
-            // medications accent on the medications container, `CircleShape` (`Shape.kt:6`),
-            // `md`/`xs` padding, in a `FlowRow` (`xs` spacing).
-            if !times.isEmpty {
-                ChipFlowLayout(spacing: SalusSpacing.xs) {
-                    ForEach(times, id: \.self) { minute in
-                        Text(verbatim: formatTime(minuteOfDay: minute, locale: locale))
-                            .font(SalusTypography.labelLarge.font)
-                            .tracking(SalusTypography.labelLarge.tracking)
-                            .foregroundStyle(theme.extendedColors.medications.accent)
-                            .padding(.horizontal, SalusSpacing.md)
-                            .padding(.vertical, SalusSpacing.xs)
-                            .background(theme.extendedColors.medications.container, in: SalusShapes.pill)
-                    }
-                }
+                // `maxLines = 2, overflow = Ellipsis` (`MedicationsScreen.kt:281-282`).
+                .lineLimit(2)
+            if let strength {
+                Text(verbatim: strength)
+                    .font(SalusTypography.bodySmall.font)
+                    .foregroundStyle(theme.colorScheme.onSurfaceVariant)
             }
 
-            // `MedicationsScreen.kt:233-252`. Both chips can be up at once, and they stack rather
-            // than flow: two lines is what Kotlin's `Spacer` + chip pair draws.
+            // `nextDoseMinuteOfDay?.let { formatTime(it) } ?: recurrenceLabel(schedules)`
+            // (`MedicationsScreen.kt:296-302`): the clock time while a dose is outstanding, the
+            // plan's own words when none is.
+            Text(verbatim: nextDoseOrRecurrence)
+                .font(SalusTypography.labelMedium.font)
+                .tracking(SalusTypography.labelMedium.tracking)
+                .foregroundStyle(theme.extendedColors.medications.accent)
+                .padding(.top, SalusSpacing.xs)
+
+            // `MedicationsScreen.kt:304-311`.
             if !item.medication.remindersEnabled {
                 SalusStatusChip(
                     label: MedicationsStrings.remindersOff,
                     status: .neutral,
                     systemImage: "bell.slash"
                 )
-            }
-            if item.medication.isLowOnStock {
-                SalusStatusChip(
-                    label: MedicationsStrings.lowStock(remaining: formatAmount(item.medication.stockCount ?? 0.0)),
-                    status: .warning
-                )
+                .padding(.top, SalusSpacing.sm)
             }
         }
     }
 
+    /// `MedicationStock` (`MedicationsScreen.kt:333-347`) — how many are left and, when the user
+    /// said what "low" means, the bar that says how low.
+    @ViewBuilder
+    private var stock: some View {
+        if let remaining = item.medication.stockCount {
+            VStack(alignment: .leading, spacing: SalusSpacing.xs) {
+                Text(verbatim: MedicationsStrings.stockLeft(remaining: formatAmount(remaining)))
+                    .font(SalusTypography.bodySmall.font)
+                    .foregroundStyle(theme.colorScheme.onSurfaceVariant)
+                if let threshold = item.medication.stockThreshold {
+                    SalusProgressBar(
+                        progress: StockBar.fill(remaining: remaining, threshold: threshold),
+                        tone: StockBar.tone(remaining: remaining, threshold: threshold)
+                    )
+                }
+            }
+            .padding(.top, SalusSpacing.md)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            // The number and the bar are one fact; VoiceOver reads them as one element.
+            .accessibilityElement(children: .combine)
+        }
+    }
+
     /// `listOfNotNull(strengthValue?.let(::formatAmount), strengthUnit).joinToString(" ")`
-    /// (`MedicationsScreen.kt:189-200`), with Kotlin's `isNotBlank()` guard spelled as the optional
+    /// (`MedicationsScreen.kt:284-288`), with Kotlin's `isNotBlank()` guard spelled as the optional
     /// this returns — a medication with neither field draws no second line at all.
     private var strength: String? {
         let parts = [item.medication.strengthValue.map(formatAmount), item.medication.strengthUnit]
@@ -143,29 +166,23 @@ struct MedicationCard: View {
         return joined.trimmingCharacters(in: .whitespaces).isEmpty ? nil : joined
     }
 
-    /// The label and its bar (`MedicationsScreen.kt:201-216`).
-    private func recordedDoses(percent: Int) -> some View {
-        VStack(alignment: .trailing, spacing: SalusSpacing.xs) {
-            Text(verbatim: MedicationsStrings.recordedDoses(percent: percent))
-                .font(SalusTypography.labelMedium.font)
-                .foregroundStyle(theme.extendedColors.medications.accent)
-            ProgressView(value: Double(percent) / percentMax)
-                .progressViewStyle(.linear)
-                .tint(theme.extendedColors.medications.accent)
-                .frame(width: recordedDoseBarWidth)
+    /// `MedicationsScreen.kt:298-299`.
+    private var nextDoseOrRecurrence: String {
+        if let minute = item.nextDoseMinuteOfDay {
+            return formatTime(minuteOfDay: minute, locale: locale)
         }
-        // The bar repeats the label beside it; one element, one announcement.
-        .accessibilityElement(children: .combine)
-    }
-
-    /// `MedicationsScreen.kt:252` — `val times = doseTimes(item.schedules)`, read once and shared
-    /// by the guard and the pill loop, exactly as Kotlin's single `val`.
-    private var times: [Int] {
-        doseTimes(schedules: item.schedules)
+        return recurrenceLabel(schedules: item.schedules, strings: .localized)
     }
 }
 
-/// `MedicationsScreen.kt:255`.
-private let percentMax = 100.0
-/// `MedicationsScreen.kt:256`, renamed with the field it draws.
-private let recordedDoseBarWidth: CGFloat = 72
+/// What the card measures itself with. Not design tokens — one component's padding.
+enum MedicationCardDefaults {
+    /// `contentPadding = PaddingValues(SalusSpacing.md)` (`MedicationsScreen.kt:259`): a narrower
+    /// inset than `SalusCard`'s own `lg`, because the M15 card sits in a two-column grid.
+    static let contentPadding = EdgeInsets(
+        top: SalusSpacing.md,
+        leading: SalusSpacing.md,
+        bottom: SalusSpacing.md,
+        trailing: SalusSpacing.md
+    )
+}

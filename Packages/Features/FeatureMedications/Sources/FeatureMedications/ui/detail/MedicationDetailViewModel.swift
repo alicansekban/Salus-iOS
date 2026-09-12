@@ -11,10 +11,21 @@
 //   stored property plus a `republish()` — the same divergence `MedicationsViewModel` records for
 //   its `pendingDeleteId` and `AppointmentDetailViewModel` for its own confirmation flag.
 //
+//   `dayRefresh` (`MedicationDetailViewModel.kt:46`) is the fourth arm and has no stored twin at
+//   all: its only job on Android is to make the `combine` re-run, and `republish()` IS that re-run.
+//   A `takeDoseClicked` that finds the day has turned calls it directly.
+//
 //   `.stateIn(scope, WhileSubscribed(5_000), MedicationDetailUiState())` — `@Observable` has no
 //   subscription-count hook, so the observation runs from `init` to `deinit` instead of starting
 //   and stopping with the UI. The initial value is the same `MedicationDetailUiState()`, and
 //   `deinit` cancels the collection through `CancellationBox`.
+//
+// **THE DAY AND THE MINUTE ARE READ PER EMISSION, never once at construction, and that is Android's
+// M15 critical fix (`MedicationDetailViewModel.kt:54-56`, `:61`).** This screen can sit open across
+// midnight; a day captured in `init` would keep the rhythm row counting back from yesterday, and
+// the dose the "record now" button offers would write an intake row dated to it. The queried log
+// range is therefore only a *bound* — padded forward by `queryLookaheadDays` — while the history
+// window and the day itself are re-derived from the clock inside `republish()`.
 
 import Foundation
 import Observation
@@ -24,21 +35,27 @@ import SalusNavigation
 import SalusReminder
 import SalusUI
 
-/// Drives one medication's detail screen (`MedicationDetailViewModel.kt:22-87`).
+/// Drives one medication's detail screen (`MedicationDetailViewModel.kt:23-148`).
 @MainActor
 @Observable
 public final class MedicationDetailViewModel {
-    /// `MedicationDetailViewModel.kt:34` — what the screen draws.
+    /// `MedicationDetailViewModel.kt:48` — what the screen draws.
     public private(set) var state = MedicationDetailUiState()
 
     private let medicationId: String
     private let repository: any MedicationRepository
     private let deleteMedication: DeleteMedicationUseCase
+    private let markDoseTaken: MarkDoseTakenUseCase
     private let navigator: Navigator
     private let undoableDelete: UndoableDelete
     private let reminderScheduler: any ReminderScheduler
+    private let clock: any SalusClock
 
-    /// `MedicationDetailViewModel.kt:32` — the confirmation flag, off the state until it is
+    /// `MedicationDetailViewModel.kt:143-147` — how many days past construction the observed range
+    /// still covers a rolled-over day.
+    private static let queryLookaheadDays = 7
+
+    /// `MedicationDetailViewModel.kt:43` — the confirmation flag, off the state until it is
     /// republished with it.
     private var showDeleteConfirm = false
 
@@ -50,7 +67,7 @@ public final class MedicationDetailViewModel {
     /// The collection. Boxed so `deinit` can cancel it — see `CancellationBox`.
     private let observation = CancellationBox()
 
-    // The seven parameters are the seven Koin resolves for `MedicationDetailViewModel`
+    // The eight parameters are the eight Koin resolves for `MedicationDetailViewModel`
     // (`MedicationsModule.kt:39-49`), in Kotlin's order. No opt-out comment is needed and none is
     // written: `function_parameter_count` exempts initialisers, which is why
     // `makeMedicationsModule` — a free function — has to waive the rule and this does not.
@@ -58,6 +75,7 @@ public final class MedicationDetailViewModel {
         medicationId: String,
         repository: any MedicationRepository,
         deleteMedication: DeleteMedicationUseCase,
+        markDoseTaken: MarkDoseTakenUseCase,
         navigator: Navigator,
         undoableDelete: UndoableDelete,
         reminderScheduler: any ReminderScheduler,
@@ -66,16 +84,22 @@ public final class MedicationDetailViewModel {
         self.medicationId = medicationId
         self.repository = repository
         self.deleteMedication = deleteMedication
+        self.markDoseTaken = markDoseTaken
         self.navigator = navigator
         self.undoableDelete = undoableDelete
         self.reminderScheduler = reminderScheduler
+        self.clock = clock
 
-        // `MedicationDetailViewModel.kt:31, 36` — read once, when the observation opens, so the
-        // window the logs are queried over cannot drift across midnight while the screen is up.
+        // `MedicationDetailViewModel.kt:40-41` — the DAO bounds only, padded forward so a screen
+        // that outlives midnight still observes the rows of the day it rolls into. The history
+        // window and the day itself are re-derived per emission in `republish()`.
         let today = clock.todayEpochDay()
         let pairs = latestOfBoth(
             repository.observeMedication(id: medicationId),
-            repository.observeLogsBetween(fromEpochDay: today - historyWindowDays, toEpochDay: today)
+            repository.observeLogsBetween(
+                fromEpochDay: today - historyWindowDays,
+                toEpochDay: today + Self.queryLookaheadDays
+            )
         ) { ($0, $1) }
         observation.replace(with: Task { [weak self] in
             do {
@@ -98,7 +122,7 @@ public final class MedicationDetailViewModel {
         observation.cancel()
     }
 
-    /// `MedicationDetailViewModel.kt:63-86`.
+    /// `MedicationDetailViewModel.kt:99-141`.
     public func onEvent(_ event: MedicationDetailEvent) {
         switch event {
         case .deleteClicked:
@@ -114,10 +138,37 @@ public final class MedicationDetailViewModel {
 
         case let .remindersToggled(enabled):
             setRemindersEnabled(enabled)
+
+        case let .takeDoseClicked(dose):
+            takeDose(dose)
         }
     }
 
-    /// `MedicationDetailViewModel.kt:69-77`.
+    /// `MedicationDetailViewModel.kt:122-139` — the notification action's use case, not a second
+    /// write path of this screen's own.
+    ///
+    /// The day is re-read here rather than trusted from the state: the screen may have been built
+    /// before midnight, and recording it now would date an intake row to yesterday. A dose that no
+    /// longer belongs to today is refused, and the state re-derived so the screen offers the right
+    /// one — which is what Kotlin's `dayRefresh` bump amounts to.
+    private func takeDose(_ dose: PendingDose) {
+        let today = clock.todayEpochDay()
+        guard dose.epochDay == today else {
+            republish()
+            return
+        }
+        Task { [markDoseTaken] in
+            // Swallowed as everywhere else in this feature: the row re-emits through the repository
+            // either way, and there is no retry affordance on either platform.
+            try? await markDoseTaken(
+                scheduleId: dose.scheduleId,
+                epochDay: today,
+                minuteOfDay: dose.minuteOfDay
+            )
+        }
+    }
+
+    /// `MedicationDetailViewModel.kt:105-113`.
     private func confirmDelete() {
         showDeleteConfirm = false
         republish()
@@ -131,7 +182,7 @@ public final class MedicationDetailViewModel {
         navigator.pop()
     }
 
-    /// `MedicationDetailViewModel.kt:79-84`.
+    /// `MedicationDetailViewModel.kt:117-120`.
     ///
     /// The sync drops the pending alarms on the next window pass, exactly as a delete does; the
     /// handler already skips silenced medications.
@@ -154,17 +205,34 @@ public final class MedicationDetailViewModel {
         }
     }
 
-    /// `combine`'s lambda (`MedicationDetailViewModel.kt:38-56`).
+    /// `combine`'s lambda (`MedicationDetailViewModel.kt:53-92`).
     private func republish() {
         guard let loaded else { return }
+        // `MedicationDetailViewModel.kt:56`, `:61` — both the day and the minute per emission, so a
+        // screen that outlives midnight reports the day it is actually in.
+        let todayEpochDay = clock.todayEpochDay()
+        // `MedicationDetailViewModel.kt:57-60` — the history window is re-derived from that day
+        // rather than from the padded query bounds, so a row from tomorrow that the lookahead pulled
+        // in is not drawn today.
+        let ownLogs = loaded.logs.filter {
+            $0.medicationId == medicationId
+                && ((todayEpochDay - historyWindowDays) ... todayEpochDay).contains($0.epochDay)
+        }
+        let todayDoses = loaded.medication.map {
+            TodayDoses.of(
+                medication: $0,
+                logs: ownLogs,
+                todayEpochDay: todayEpochDay,
+                nowMinuteOfDay: clock.minuteOfDayNow()
+            )
+        }
         state = MedicationDetailUiState(
             isLoading: false,
             medication: loaded.medication?.medication,
             schedules: loaded.medication?.schedules ?? [],
-            history: loaded.logs
-                .filter { $0.medicationId == medicationId }
+            history: ownLogs
                 // `compareByDescending { epochDay }.thenByDescending { minuteOfDay }`
-                // (`MedicationDetailViewModel.kt:45`).
+                // (`MedicationDetailViewModel.kt:75`).
                 .sorted { left, right in
                     left.epochDay == right.epochDay
                         ? left.minuteOfDay > right.minuteOfDay
@@ -178,7 +246,14 @@ public final class MedicationDetailViewModel {
                         doseAmount: $0.doseAmount
                     )
                 },
-            showDeleteConfirm: showDeleteConfirm
+            showDeleteConfirm: showDeleteConfirm,
+            // `MedicationDetailViewModel.kt:86-89`.
+            daysOfSupply: TodayDoses.daysOfSupply(
+                stockCount: loaded.medication?.medication.stockCount,
+                schedules: loaded.medication?.schedules ?? []
+            ),
+            pendingDose: todayDoses?.dueDose,
+            todayEpochDay: todayEpochDay
         )
     }
 }

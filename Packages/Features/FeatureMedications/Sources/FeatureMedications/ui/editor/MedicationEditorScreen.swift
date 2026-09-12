@@ -1,31 +1,40 @@
 // Ported from `feature/medications/src/main/kotlin/com/alicansekban/salus/feature/medications/
-// ui/editor/MedicationEditorScreen.kt`.
+// ui/editor/MedicationEditorScreen.kt` in its M15 shape.
 //
 // Material → SwiftUI, per the mapping table in `docs/ios-feature-template.md`:
-//   `TopAppBar`                  → `.navigationTitle(_:)` + `.toolbar { }` on the shell's stack;
-//                                  the back arrow is the stack's own, which pops the very path
-//                                  `Navigator.pop()` mutates. That is why `editor_back` has no
-//                                  reader here (divergence (h)), and `editor_confirm` /
-//                                  `editor_cancel` have none either: the two dialogs they label
-//                                  are `DatePickerDialog` and the time `AlertDialog`, and
-//                                  `SalusDateField` / `SalusTimeField` are the button and its
-//                                  picker in one view, with no OK button to name.
-//   `OutlinedTextField`          → `TextField(…).textFieldStyle(.roundedBorder)`.
-//   `FilterChip` rows            → `ChipFlowLayout` of `SalusChoiceChip`s. Kotlin chunks its chips
-//                                  three to a row to avoid a `FlowRow` dependency
-//                                  (`MedicationEditorScreen.kt:303`); the iOS layout wraps on
-//                                  measured width, which is what that comment settles for.
+//   `SalusTopBar.Pushed(title:subtitle:actions:)`
+//                                → `.navigationTitle(_:)` + `ToolbarItem(placement:
+//                                  .primaryAction)` on the shell's stack; the back arrow is the
+//                                  stack's own, which pops the very path `Navigator.pop()` mutates.
+//                                  That is why `editor_back` had no reader here and is gone with the
+//                                  M15 sweep (divergence (h)). Kotlin's `TextButton` action is a
+//                                  plain `Button` tinted `primary` (spec §2.2), and **the subtitle
+//                                  the pushed bar carries moves into the content's first row**, the
+//                                  rule spec §2.2 states for every pushed screen.
+//   `SalusCard` sections         → the same component, one `View` per card.
+//   `SalusInfoNote`              → the same component; the error banner is Kotlin's, tone and all.
 //   `OutlinedButton` + `DatePickerDialog` / `TimePicker`
-//                                → `SalusDateField` / `SalusTimeField`.
+//                                → `SalusDateField` / `SalusTimeField`, the button and its picker in
+//                                  one view. `editor_confirm` / `editor_cancel` therefore have no
+//                                  reader — they name dialog buttons that do not exist here.
 //   `AlertDialog`                → `.salusConfirmDialog(isPresented:…)`.
 //
-// `isError` has no `TextField` twin, so it is not spelled per field: the banner at the top of the
-// form is the one error surface, and it already names which of the five things is wrong. Kotlin
-// draws both — a red field *and* the banner — and dropping the redundant half is the only visual
-// difference in the port.
+// The five cards are Kotlin's, in Kotlin's order; they live in `MedicationEditorSections.swift`,
+// `MedicationFormGrid.swift`, `DoseTimesSection.swift` and `MedicationStockCard.swift`, split out
+// under the 500-line rule.
 //
-// The 12 items of the body are Kotlin's, in Kotlin's order; the sections themselves live in
-// `MedicationEditorSections.swift` and `DoseTimesSection.swift`, split out under the 500-line rule.
+// **THE DELETE ACTION LEFT THE TOOLBAR.** Until M15 the editor carried a trash `ToolbarItem` for a
+// saved medication; Kotlin's M15 top bar has only "Kaydet" and puts "İlacı Sil" at the foot of the
+// form (`MedicationEditorScreen.kt:96-104`, `:139-148`). This follows, so the one conditional
+// toolbar item this screen had is gone and the trailing slot is constant.
+//
+// **`.primaryAction`, not `.topBarTrailing`.** Spec §2.2 names the trailing slot by its iOS
+// spelling; `ToolbarItemPlacement.topBarTrailing` is iOS-only API and every feature package also
+// builds for the macOS host so `swift test` can run (CLAUDE.md, the `.macOS(.v14)` concession).
+// `.primaryAction` resolves to exactly that slot on iOS, compiles on both, and is what every other
+// feature in the tree already writes (`VitalsScreen.swift:142`, `AppointmentEditorScreen.swift:164`).
+// The one `topBarTrailing` in the tree is the shell's own root toolbar, which is already inside an
+// `#if os(iOS)`.
 
 import SalusDesignSystem
 import SalusReminder
@@ -87,40 +96,29 @@ public struct MedicationEditorRoute: View {
     }
 }
 
-/// The stateless editor (`MedicationEditorScreen.kt:81-256`).
+/// The stateless editor (`MedicationEditorScreen.kt:80-191`).
 struct MedicationEditorScreen: View {
     let state: MedicationEditorUiState
     let onEvent: (MedicationEditorEvent) -> Void
 
     @Environment(\.salusTheme) var theme
-    @Environment(\.locale) var locale
 
     var body: some View {
         // No `Scaffold` twin here: the app shell owns the one navigation stack and its insets.
         content
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(theme.colorScheme.background)
-            .navigationTitle(
-                state.isNew ? MedicationsStrings.editorTitleNew : MedicationsStrings.editorTitleEdit
-            )
+            .navigationTitle(Text(verbatim: title))
+            // `MedicationEditorScreen.kt:96-104` — the one trailing action M15 leaves in the bar.
             .toolbar {
-                // `MedicationEditorScreen.kt:103-113` — the delete action exists only for a
-                // medication that has been saved.
-                if !state.isNew {
-                    ToolbarItem(placement: .primaryAction) {
-                        Button {
-                            onEvent(.deleteClicked)
-                        } label: {
-                            Label(MedicationsStrings.editorDelete, systemImage: "trash")
-                        }
-                    }
-                }
-                // `MedicationEditorScreen.kt:114-116`.
                 ToolbarItem(placement: .primaryAction) {
-                    Button(MedicationsStrings.editorSave) { onEvent(.saveClicked) }
+                    Button { onEvent(.saveClicked) } label: {
+                        Text(verbatim: MedicationsStrings.editorSave)
+                    }
+                    .tint(theme.colorScheme.primary)
                 }
             }
-            // `MedicationEditorScreen.kt:243-255`. The confirm label is the shared `salus_delete`,
+            // `MedicationEditorScreen.kt:170-180`. The confirm label is the shared `salus_delete`,
             // exactly as Kotlin reaches into `core.ui`'s string rather than the feature's own.
             .salusConfirmDialog(
                 isPresented: isDeleteConfirmPresented,
@@ -176,7 +174,7 @@ struct MedicationEditorScreen: View {
         )
     }
 
-    /// `MedicationEditorScreen.kt:119` — Kotlin returns before the form while the medication is
+    /// `MedicationEditorScreen.kt:107` — Kotlin returns before the form while the medication is
     /// still being read, drawing the bar and nothing else. The spinner is what the rest of this
     /// port draws for that same moment (`MedicationsScreen.content`), and it says the screen is
     /// working rather than empty.
@@ -190,67 +188,131 @@ struct MedicationEditorScreen: View {
         }
     }
 
-    /// The scrolling body — the twelve items of `MedicationEditorScreen.kt:121-241`, in order.
+    /// The scrolling body — the subtitle row, the error note and the five cards
+    /// (`MedicationEditorScreen.kt:107-151`).
     private var form: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: SalusSpacing.md) {
+                // Spec §2.2: the subtitle Kotlin hangs under the pushed title moves into the
+                // content's first row, because the system navigation bar has no subtitle slot.
+                Text(verbatim: subtitle)
+                    .font(SalusTypography.bodyMedium.font)
+                    .foregroundStyle(theme.colorScheme.onSurfaceVariant)
+
+                // `MedicationEditorScreen.kt:118-124`.
                 if let error = state.error {
-                    errorBanner(error)
+                    SalusInfoNote(
+                        text: Self.message(of: error),
+                        systemImage: "exclamationmark.triangle",
+                        tone: .warning
+                    )
                 }
-                nameField
-                formSelector
-                strengthRow
-                instructionsField
-                stockRow
-                dateRow
-                scheduleSectionLabel
-                recurrenceSelector
-                recurrenceDetail
-                // `MedicationEditorScreen.kt:236-238` — an as-needed medication has no clock time
-                // to build, so the builder is not drawn at all.
+
+                MedicationBasicsCard(state: state, onEvent: onEvent)
+                MedicationEditorPlanCard(state: state, onEvent: onEvent)
+                MedicationDatesCard(state: state, onEvent: onEvent)
+                // `MedicationEditorScreen.kt:129-135` — an as-needed medication has no clock time to
+                // build, so there is no list of them to build either.
                 if state.recurrence != .asNeeded {
-                    DoseTimesSection(state: state, onEvent: onEvent)
+                    MedicationDoseTimesCard(state: state, onEvent: onEvent)
                 }
-                Spacer()
-                    .frame(height: SalusSpacing.xl)
+                MedicationStockCard(state: state, onEvent: onEvent)
+
+                actions
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(SalusSpacing.lg)
+            .padding(.horizontal, SalusSpacing.lg)
+            .padding(.vertical, SalusSpacing.md)
+            // `Spacer(height = xl)` after the last action (`MedicationEditorScreen.kt:150`).
+            .padding(.bottom, SalusSpacing.xl)
         }
-        // Divergence: iOS-only, with no line in `MedicationEditorScreen.kt` behind it. Every
-        // numeric field here is `.decimalPad` / `.numberPad`, and neither pad draws a return key,
-        // so the keyboard has no "Done" to press — where Compose's number IMEs still carry the
-        // `ImeAction.Next` / `ImeAction.Done` the Kotlin fields declare. The two lines below give
-        // the keyboard the two ways down the platform expects: a tap, and a drag over the form.
-        // Both belong on the `ScrollView` itself; the file comment on
-        // `salusDismissesKeyboardOnTap()` records the layouts that were measured and do nothing.
+        // Divergence: iOS-only, with no line in `MedicationEditorScreen.kt` behind it. Every numeric
+        // field here is `.decimalPad` / `.numberPad`, and neither pad draws a return key, so the
+        // keyboard has no "Done" to press — where Compose's number IMEs still carry the
+        // `ImeAction.Next` / `ImeAction.Done` the Kotlin fields declare. The two lines below give the
+        // keyboard the two ways down the platform expects: a tap, and a drag over the form. Both
+        // belong on the `ScrollView` itself; the file comment on `salusDismissesKeyboardOnTap()`
+        // records the layouts that were measured and do nothing.
         .salusDismissesKeyboardOnTap()
         .scrollDismissesKeyboard(.interactively)
     }
 
-    /// `MedicationEditorScreen.kt:259-273` — the five errors and their five strings.
-    private func errorBanner(_ error: EditorError) -> some View {
-        let message = switch error {
+    /// `MedicationEditorScreen.kt:139-148` — save, then delete for a medication that has one.
+    private var actions: some View {
+        VStack(spacing: SalusSpacing.md) {
+            SalusButton(MedicationsStrings.editorSave) { onEvent(.saveClicked) }
+            if !state.isNew {
+                SalusButton(MedicationsStrings.detailDeleteMedication, variant: .destructive) {
+                    onEvent(.deleteClicked)
+                }
+            }
+        }
+        // `Spacer(height = sm)` before the block (`MedicationEditorScreen.kt:138`).
+        .padding(.top, SalusSpacing.sm)
+    }
+
+    /// `editor_title_new` / `editor_title_edit` (`MedicationEditorScreen.kt:90-92`).
+    private var title: String {
+        state.isNew ? MedicationsStrings.editorTitleNew : MedicationsStrings.editorTitleEdit
+    }
+
+    /// `editor_subtitle_new` / `editor_subtitle_edit` (`MedicationEditorScreen.kt:93-95`).
+    private var subtitle: String {
+        state.isNew ? MedicationsStrings.editorSubtitleNew : MedicationsStrings.editorSubtitleEdit
+    }
+
+    /// `EditorError.messageRes()` (`MedicationEditorScreen.kt:223-229`) — the five errors and their
+    /// five strings.
+    private static func message(of error: EditorError) -> String {
+        switch error {
         case .emptyName: MedicationsStrings.editorErrorEmptyName
         case .endBeforeStart: MedicationsStrings.editorErrorEndBeforeStart
         case .invalidInterval: MedicationsStrings.editorErrorInvalidInterval
         case .noDaysSelected: MedicationsStrings.editorErrorNoDays
         case .noDoseTimes: MedicationsStrings.editorErrorNoTimes
         }
-        return Text(verbatim: message)
-            .font(SalusTypography.bodyMedium.font)
-            .foregroundStyle(theme.colorScheme.error)
     }
 }
 
 // MARK: - Previews
 
-#Preview("Medication editor — new") {
-    NavigationStack {
+/// `MedicationEditorScreen.kt:236-262`.
+private enum PreviewData {
+    static let existing = MedicationEditorUiState(
+        isLoading: false,
+        isNew: false,
+        name: "Metformin",
+        form: .tablet,
+        strengthValueInput: "500",
+        strengthUnitInput: "mg",
+        instructions: "Yemeklerden sonra",
+        stockCountInput: "30",
+        stockThresholdInput: "10",
+        startDateEpochDay: 20600,
+        recurrence: .daily,
+        doseTimes: [
+            DoseTimeUi(existingScheduleId: "s1", minuteOfDay: 9 * 60, amountInput: "1"),
+            DoseTimeUi(existingScheduleId: "s2", minuteOfDay: 21 * 60, amountInput: "0.5")
+        ]
+    )
+}
+
+#Preview("Medication editor — existing") {
+    SalusPreviewPalettes {
+        MedicationEditorScreen(state: PreviewData.existing, onEvent: { _ in })
+    }
+}
+
+// No Kotlin twin: the branches the Kotlin preview does not exercise — a new medication with the
+// stock card collapsed, and a weekly plan whose day chips are drawn.
+#Preview("Medication editor — new, weekly") {
+    SalusPreviewPalettes {
         MedicationEditorScreen(
             state: MedicationEditorUiState(
                 isLoading: false,
                 startDateEpochDay: 20680,
+                recurrence: .daysOfWeek,
+                daysOfWeekMask: 0b1010101,
                 doseTimes: [DoseTimeUi(existingScheduleId: nil, minuteOfDay: 8 * 60, amountInput: "1")]
             ),
             onEvent: { _ in }
@@ -258,26 +320,16 @@ struct MedicationEditorScreen: View {
     }
 }
 
-#Preview("Medication editor — existing, weekly") {
-    NavigationStack {
+#Preview("Medication editor — interval, error") {
+    SalusPreviewPalettes {
         MedicationEditorScreen(
             state: MedicationEditorUiState(
                 isLoading: false,
-                isNew: false,
-                name: "Iron",
-                form: .capsule,
-                strengthValueInput: "500",
-                strengthUnitInput: "mg",
-                stockCountInput: "30",
-                stockThresholdInput: "5",
                 startDateEpochDay: 20680,
-                endDateEpochDay: 20710,
-                recurrence: .daysOfWeek,
-                daysOfWeekMask: 0b1010101,
-                doseTimes: [
-                    DoseTimeUi(existingScheduleId: "s1", minuteOfDay: 9 * 60, amountInput: "1"),
-                    DoseTimeUi(existingScheduleId: "s2", minuteOfDay: 20 * 60, amountInput: "2")
-                ]
+                recurrence: .intervalDays,
+                intervalDaysInput: "0",
+                doseTimes: [DoseTimeUi(existingScheduleId: nil, minuteOfDay: 8 * 60, amountInput: "1")],
+                error: .invalidInterval
             ),
             onEvent: { _ in }
         )
@@ -285,7 +337,7 @@ struct MedicationEditorScreen: View {
 }
 
 #Preview("Medication editor — saved, alarms blocked") {
-    NavigationStack {
+    SalusPreviewPalettes {
         MedicationEditorScreen(
             state: MedicationEditorUiState(
                 isLoading: false,
@@ -299,16 +351,7 @@ struct MedicationEditorScreen: View {
     }
 }
 
-#Preview("Medication editor — error") {
-    NavigationStack {
-        MedicationEditorScreen(
-            state: MedicationEditorUiState(
-                isLoading: false,
-                recurrence: .intervalDays,
-                intervalDaysInput: "0",
-                error: .invalidInterval
-            ),
-            onEvent: { _ in }
-        )
-    }
+#Preview("Medication editor — xxxLarge") {
+    MedicationEditorScreen(state: PreviewData.existing, onEvent: { _ in })
+        .dynamicTypeSize(.xxxLarge)
 }

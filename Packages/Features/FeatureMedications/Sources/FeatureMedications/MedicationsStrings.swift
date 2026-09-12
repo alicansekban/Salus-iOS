@@ -1,44 +1,44 @@
 // The twin of `feature/medications/src/main/res/values/strings.xml` (Turkish, the source
-// language) and `feature/medications/src/main/res/values-en/strings.xml` — all 88 keys
-// `:feature:medications` owns, name and text verbatim apart from the single divergence recorded
-// below, resolved against this package's own bundle exactly as `R.string` resolves against
-// `:feature:medications`.
+// language) and `feature/medications/src/main/res/values-en/strings.xml` — all 113 keys
+// `:feature:medications` owns after the Android M15 sweep (`529a30f`), name and text verbatim
+// apart from the divergences recorded below, resolved against this package's own bundle exactly as
+// `R.string` resolves against `:feature:medications`.
 //
-// ONE KEY DIVERGENCE, deliberate and recorded. `medications_recorded_doses` — the seven-day
-// figure on the list card — replaces an Android key whose name AND whose sentence are built on a
-// word on `BannedHealthClaims.stems` (CLAUDE.md, "Copy and localisation rules"). The substance is
-// the reason, not the scanner: no `MISSED` intake row is ever written, so the ratio counts the
-// doses that were RECORDED and says nothing about the doses that were not. Naming it after
-// treatment behaviour would turn a fact about records into a claim about someone's treatment
-// (spec 7, 12). The replacement says exactly what the number is:
+// TWO KEY-SET DIVERGENCES, deliberate and recorded.
 //
-//   tr  "Son 7 gün kaydedilen doz %%%1$lld"
-//   en  "Recorded doses, last 7 days: %1$lld%%"
+// 1. `medications_title` is KEPT where Android M15 deleted it, and native chrome is the reason: the
+//    system navigation bar labels a pushed screen's back button with the *previous* screen's
+//    `.navigationTitle`, and it is what VoiceOver reads for the root. Compose's custom top bar had
+//    no such need, which is why Android could drop the key when the title moved into the content.
+//    Ruled by iOS-M16 Task 7; the other sixteen keys M15 retired are gone here too.
 //
-// Android owes the mirror edit. Until it lands this is a recorded, temporary divergence — NOT a
-// port mistake to "correct" back to the Android key, which would turn the repo-wide scan red.
+// 2. `medications_count` had no `<plurals>` twin here, so it shipped as two keys
+//    (`medications_count` / `medications_count_one`, divergence (e)). M15 retired the count chip
+//    into the list's own metric tiles, so BOTH are deleted — the plural divergence retires with the
+//    key it was about.
 //
-// This comment does not spell the Android key out, and neither should any other file here:
-// `assertSourcesNameNothingBanned` reads `.swift` comments as well as copy, exactly so that a
-// comment cannot reintroduce the vocabulary a string was cleaned of.
+// This comment does not spell out the banned vocabulary any retired key carried, and neither should
+// any other file here: `assertSourcesNameNothingBanned` reads `.swift` comments as well as copy,
+// exactly so that a comment cannot reintroduce the wording a string was cleaned of.
 //
 // PLACEHOLDER MAPPING, the other place the port is not byte-for-byte. Android's specifiers are
-// Java's; ten keys carry them, and each is rewritten to the Swift spelling of the same argument:
+// Java's; nine keys carry them, and each is rewritten to the Swift spelling of the same argument:
 //
-//   Android      Swift        Keys                                Why
+//   Android      Swift        Keys                                  Why
 //   ---------------------------------------------------------------------------------------------
-//   %1$s         %1$@         medications_low_stock,              `%s` under `String(format:)`
-//   %2$s         %2$@         editor_start_date, editor_end_date, reads a C string pointer. Handed
-//                             notification_dose_title,            a Swift `String` it prints
-//                             notification_dose_text (both args), garbage or crashes; `%@` is the
-//                             notification_dose_text_plain,       object form.
-//                             medication_detail_dose_value,
+//   %1$s         %1$@         medications_overline_today,           `%s` under `String(format:)`
+//   %2$s         %2$@         medications_stock_left,               reads a C string pointer.
+//                             medication_detail_threshold,          Handed a Swift `String` it
+//                             medication_detail_record_now,         prints garbage or crashes;
+//                             notification_dose_title,              `%@` is the object form.
+//                             notification_dose_text (both args),
+//                             notification_dose_text_plain,
 //                             medication_delete_title
-//   %1$d         %1$lld       medications_recorded_doses,         Swift's `Int` is 64-bit and `%d`
-//                             recurrence_every_n_days             reads 32, so a `%d` here is a
-//                                                                 truncation waiting for a bigger
-//                                                                 number. `%lld` is the exact
-//                                                                 width.
+//   %1$d         %1$lld       medications_detail_days_of_supply,    Swift's `Int` is 64-bit and
+//                             medications_detail_per_day,           `%d` reads 32, so a `%d` here
+//                             recurrence_every_n_days               is a truncation waiting for a
+//                                                                   bigger number. `%lld` is the
+//                                                                   exact width.
 //
 // A literal `%%` is neither a Java nor a Swift argument and stays as it is — both platforms print
 // it as one `%`. The sentence around every specifier is unchanged, and `MedicationsStringsTests`
@@ -57,41 +57,59 @@ import SalusCommon
 
 /// The strings `:feature:medications` owns.
 public enum MedicationsStrings {
-    // MARK: - The list screen (9)
+    // MARK: - The list screen (14)
 
+    /// `medications_title` — the only key Android M15 deleted that iOS keeps, and the reason is
+    /// native chrome: the system navigation bar labels a pushed screen's back button with the
+    /// *previous* screen's `.navigationTitle`, so the root still needs one where Compose's custom
+    /// top bar did not. Recorded as an iOS divergence by iOS-M16 Task 7.
     public static var title: String { localized(.title) }
     public static var add: String { localized(.add) }
     public static var emptyTitle: String { localized(.emptyTitle) }
     public static var emptyBody: String { localized(.emptyBody) }
-
-    /// `medications_count` / `medications_count_one` — the header count chip. Android spells this
-    /// key as a `<plurals>` group; Swift's `.xcstrings` has no plural groups, so the two quantities
-    /// Android writes become two keys (divergence (e)), selected here by the count. Both Turkish
-    /// rows are the same sentence; English distinguishes the one.
-    public static func medicationCount(_ count: Int) -> String {
-        let key: Key = count == 1 ? .medicationCountOne : .medicationCount
-        return formatted(key, count)
-    }
-
-    /// `medications_recorded_doses` — "Son 7 gün kaydedilen doz %%%1$lld" / "Recorded doses, last 7 days: %1$lld%%".
-    public static func recordedDoses(percent: Int) -> String {
-        formatted(.recordedDoses, percent)
-    }
-
-    /// `medications_low_stock` — "Stok azaldı: %1$@ kaldı" / "Low stock: %1$@ left".
-    public static func lowStock(remaining: String) -> String {
-        formatted(.lowStock, remaining)
-    }
-
     public static var noSchedule: String { localized(.noSchedule) }
 
-    // MARK: - The editor (29)
+    /// `medications_overline_today` — "BUGÜN • %1$@" / "TODAY • %1$@". Stored upper-case; never
+    /// `uppercased()` at runtime (spec §6).
+    public static func overlineToday(date: String) -> String {
+        formatted(.overlineToday, date)
+    }
+
+    public static var titleRoutine: String { localized(.titleRoutine) }
+    public static var metricActive: String { localized(.metricActive) }
+    public static var metricRecorded: String { localized(.metricRecorded) }
+    public static var metricNext: String { localized(.metricNext) }
+    public static var metricNone: String { localized(.metricNone) }
+    public static var takeNow: String { localized(.takeNow) }
+    public static var fabAdd: String { localized(.fabAdd) }
+    public static var statusAsNeeded: String { localized(.statusAsNeeded) }
+
+    /// `medications_stock_left` — "Stok: %1$@" / "Stock: %1$@".
+    public static func stockLeft(remaining: String) -> String {
+        formatted(.stockLeft, remaining)
+    }
+
+    // MARK: - The editor (38)
 
     public static var editorTitleNew: String { localized(.editorTitleNew) }
     public static var editorTitleEdit: String { localized(.editorTitleEdit) }
-    public static var editorBack: String { localized(.editorBack) }
+    public static var editorSubtitleNew: String { localized(.editorSubtitleNew) }
+    public static var editorSubtitleEdit: String { localized(.editorSubtitleEdit) }
+    public static var editorSectionBasics: String { localized(.editorSectionBasics) }
+    public static var editorSectionDates: String { localized(.editorSectionDates) }
+    public static var editorSectionStock: String { localized(.editorSectionStock) }
+    public static var editorStockTrackingDescription: String { localized(.editorStockTrackingDescription) }
+    public static var editorNamePlaceholder: String { localized(.editorNamePlaceholder) }
+    public static var editorStrengthPlaceholder: String { localized(.editorStrengthPlaceholder) }
+    public static var editorStrengthUnitPlaceholder: String { localized(.editorStrengthUnitPlaceholder) }
+    public static var editorInstructionsPlaceholder: String { localized(.editorInstructionsPlaceholder) }
+    public static var editorStockPlaceholder: String { localized(.editorStockPlaceholder) }
+    public static var editorStockThresholdPlaceholder: String { localized(.editorStockThresholdPlaceholder) }
+    public static var editorStartDateLabel: String { localized(.editorStartDateLabel) }
+    public static var editorEndDateLabel: String { localized(.editorEndDateLabel) }
+    public static var editorStartDatePlaceholder: String { localized(.editorStartDatePlaceholder) }
+    public static var addDoseTime: String { localized(.addDoseTime) }
     public static var editorSave: String { localized(.editorSave) }
-    public static var editorDelete: String { localized(.editorDelete) }
     public static var editorName: String { localized(.editorName) }
     public static var editorForm: String { localized(.editorForm) }
     public static var editorStrength: String { localized(.editorStrength) }
@@ -100,23 +118,12 @@ public enum MedicationsStrings {
     public static var editorStock: String { localized(.editorStock) }
     public static var editorStockThreshold: String { localized(.editorStockThreshold) }
 
-    /// `editor_start_date` — "%1$@ tarihinden itibaren" / "From %1$@".
-    public static func editorStartDate(_ date: String) -> String {
-        formatted(.editorStartDate, date)
-    }
-
-    /// `editor_end_date` — "%1$@ tarihine kadar" / "Until %1$@".
-    public static func editorEndDate(_ date: String) -> String {
-        formatted(.editorEndDate, date)
-    }
-
     public static var editorNoEndDate: String { localized(.editorNoEndDate) }
     public static var editorClearEndDate: String { localized(.editorClearEndDate) }
     public static var editorScheduleSection: String { localized(.editorScheduleSection) }
     public static var editorTimesSection: String { localized(.editorTimesSection) }
     public static var editorIntervalDays: String { localized(.editorIntervalDays) }
     public static var editorDoseAmount: String { localized(.editorDoseAmount) }
-    public static var editorAddTime: String { localized(.editorAddTime) }
     public static var editorRemoveTime: String { localized(.editorRemoveTime) }
     public static var editorConfirm: String { localized(.editorConfirm) }
     public static var editorCancel: String { localized(.editorCancel) }
@@ -137,11 +144,15 @@ public enum MedicationsStrings {
     public static var formCream: String { localized(.formCream) }
     public static var formOther: String { localized(.formOther) }
 
-    // MARK: - The recurrence kinds (5)
+    // MARK: - The recurrence kinds (6)
 
     public static var recurrenceDaily: String { localized(.recurrenceDaily) }
     public static var recurrenceDaysOfWeek: String { localized(.recurrenceDaysOfWeek) }
-    public static var recurrenceInterval: String { localized(.recurrenceInterval) }
+
+    /// The two short labels the M15 segmented control needs: the long names stay on the cards
+    /// (`MedicationEditorSections.kt:398-403`).
+    public static var recurrenceTabDays: String { localized(.recurrenceTabDays) }
+    public static var recurrenceTabInterval: String { localized(.recurrenceTabInterval) }
 
     /// `recurrence_every_n_days` — "%1$lld günde bir" / "Every %1$lld days".
     public static func recurrenceEveryNDays(days: Int) -> String {
@@ -180,26 +191,45 @@ public enum MedicationsStrings {
     public static var notificationActionTaken: String { localized(.notificationActionTaken) }
     public static var notificationActionSnooze: String { localized(.notificationActionSnooze) }
 
-    // MARK: - The detail screen (13)
+    // MARK: - The detail screen (21)
 
     public static var detailTitle: String { localized(.detailTitle) }
     public static var detailMissing: String { localized(.detailMissing) }
-    public static var detailSchedule: String { localized(.detailSchedule) }
-    public static var detailWhen: String { localized(.detailWhen) }
-    public static var detailDose: String { localized(.detailDose) }
+    public static var detailActiveTracking: String { localized(.detailActiveTracking) }
+    public static var detailPlan: String { localized(.detailPlan) }
+    public static var detailSupplyTitle: String { localized(.detailSupplyTitle) }
+    public static var detailMetricTime: String { localized(.detailMetricTime) }
+    public static var detailMetricAmount: String { localized(.detailMetricAmount) }
+    public static var detailRhythm: String { localized(.detailRhythm) }
+    public static var detailRhythmNone: String { localized(.detailRhythmNone) }
+    public static var detailDeleteMedication: String { localized(.detailDeleteMedication) }
+    public static var detailReminderSubtitle: String { localized(.detailReminderSubtitle) }
 
-    /// `medication_detail_dose_value` — "%1$@ birim" / "%1$@ unit(s)".
-    public static func detailDoseValue(amount: String) -> String {
-        formatted(.detailDoseValue, amount)
+    /// `medications_detail_days_of_supply` — "≈ %1$lld gün yetecek" / "≈ %1$lld day(s) left".
+    public static func detailDaysOfSupply(days: Int) -> String {
+        formatted(.detailDaysOfSupply, days)
+    }
+
+    /// `medications_detail_per_day` — "Günde %1$lld kez" / "%1$lld time(s) a day".
+    public static func detailPerDay(times: Int) -> String {
+        formatted(.detailPerDay, times)
+    }
+
+    /// `medication_detail_threshold` — "Uyarı eşiği: %1$@" / "Alert at: %1$@".
+    public static func detailThreshold(amount: String) -> String {
+        formatted(.detailThreshold, amount)
+    }
+
+    /// `medication_detail_record_now` — "Dozu Şimdi Kaydet (%1$@)" / "Record dose now (%1$@)".
+    public static func detailRecordNow(time: String) -> String {
+        formatted(.detailRecordNow, time)
     }
 
     public static var detailInstructions: String { localized(.detailInstructions) }
-    public static var detailSupply: String { localized(.detailSupply) }
     public static var detailStock: String { localized(.detailStock) }
     public static var detailHistory: String { localized(.detailHistory) }
     public static var detailHistoryEmpty: String { localized(.detailHistoryEmpty) }
     public static var detailEdit: String { localized(.detailEdit) }
-    public static var detailDelete: String { localized(.detailDelete) }
 
     // MARK: - The intake statuses (4)
 
@@ -219,10 +249,9 @@ public enum MedicationsStrings {
     public static var deleted: String { localized(.deleted) }
     public static var delete: String { localized(.delete) }
 
-    // MARK: - The per-medication reminder toggle (4)
+    // MARK: - The per-medication reminder toggle (3)
 
     public static var remindersTitle: String { localized(.remindersTitle) }
-    public static var remindersOnDescription: String { localized(.remindersOnDescription) }
     public static var remindersOffDescription: String { localized(.remindersOffDescription) }
     public static var remindersOff: String { localized(.remindersOff) }
 
@@ -239,23 +268,43 @@ public enum MedicationsStrings {
     /// The catalog keys, named once. Internal so the parity test can prove every accessor asks for
     /// a key the catalog really carries — a typo here would otherwise ship the key as the label.
     enum Key: String, CaseIterable {
-        // The list screen (9).
+        // The list screen (14).
         case title = "medications_title"
         case add = "medications_add"
         case emptyTitle = "medications_empty_title"
         case emptyBody = "medications_empty_body"
-        case medicationCount = "medications_count"
-        case medicationCountOne = "medications_count_one"
-        case recordedDoses = "medications_recorded_doses"
-        case lowStock = "medications_low_stock"
         case noSchedule = "medications_no_schedule"
+        case overlineToday = "medications_overline_today"
+        case titleRoutine = "medications_title_routine"
+        case metricActive = "medications_metric_active"
+        case metricRecorded = "medications_metric_recorded"
+        case metricNext = "medications_metric_next"
+        case metricNone = "medications_metric_none"
+        case takeNow = "medications_take_now"
+        case fabAdd = "medications_fab_add"
+        case statusAsNeeded = "medications_status_as_needed"
+        case stockLeft = "medications_stock_left"
 
-        // The editor (29).
+        // The editor (38).
         case editorTitleNew = "editor_title_new"
         case editorTitleEdit = "editor_title_edit"
-        case editorBack = "editor_back"
+        case editorSubtitleNew = "editor_subtitle_new"
+        case editorSubtitleEdit = "editor_subtitle_edit"
+        case editorSectionBasics = "editor_section_basics"
+        case editorSectionDates = "editor_section_dates"
+        case editorSectionStock = "editor_section_stock"
+        case editorStockTrackingDescription = "editor_stock_tracking_desc"
+        case editorNamePlaceholder = "editor_name_placeholder"
+        case editorStrengthPlaceholder = "editor_strength_placeholder"
+        case editorStrengthUnitPlaceholder = "editor_strength_unit_placeholder"
+        case editorInstructionsPlaceholder = "editor_instructions_placeholder"
+        case editorStockPlaceholder = "editor_stock_placeholder"
+        case editorStockThresholdPlaceholder = "editor_stock_threshold_placeholder"
+        case editorStartDateLabel = "editor_start_date_label"
+        case editorEndDateLabel = "editor_end_date_label"
+        case editorStartDatePlaceholder = "editor_start_date_placeholder"
+        case addDoseTime = "medications_add_dose_time"
         case editorSave = "editor_save"
-        case editorDelete = "editor_delete"
         case editorName = "editor_name"
         case editorForm = "editor_form"
         case editorStrength = "editor_strength"
@@ -263,15 +312,12 @@ public enum MedicationsStrings {
         case editorInstructions = "editor_instructions"
         case editorStock = "editor_stock"
         case editorStockThreshold = "editor_stock_threshold"
-        case editorStartDate = "editor_start_date"
-        case editorEndDate = "editor_end_date"
         case editorNoEndDate = "editor_no_end_date"
         case editorClearEndDate = "editor_clear_end_date"
         case editorScheduleSection = "editor_schedule_section"
         case editorTimesSection = "editor_times_section"
         case editorIntervalDays = "editor_interval_days"
         case editorDoseAmount = "editor_dose_amount"
-        case editorAddTime = "editor_add_time"
         case editorRemoveTime = "editor_remove_time"
         case editorConfirm = "editor_confirm"
         case editorCancel = "editor_cancel"
@@ -291,10 +337,11 @@ public enum MedicationsStrings {
         case formCream = "form_cream"
         case formOther = "form_other"
 
-        // The recurrence kinds (5).
+        // The recurrence kinds (6).
         case recurrenceDaily = "recurrence_daily"
         case recurrenceDaysOfWeek = "recurrence_days_of_week"
-        case recurrenceInterval = "recurrence_interval"
+        case recurrenceTabDays = "recurrence_tab_days"
+        case recurrenceTabInterval = "recurrence_tab_interval"
         case recurrenceEveryNDays = "recurrence_every_n_days"
         case recurrenceAsNeeded = "recurrence_as_needed"
 
@@ -314,20 +361,27 @@ public enum MedicationsStrings {
         case notificationActionTaken = "notification_action_taken"
         case notificationActionSnooze = "notification_action_snooze"
 
-        // The detail screen (13).
+        // The detail screen (21).
         case detailTitle = "medication_detail_title"
         case detailMissing = "medication_detail_missing"
-        case detailSchedule = "medication_detail_schedule"
-        case detailWhen = "medication_detail_when"
-        case detailDose = "medication_detail_dose"
-        case detailDoseValue = "medication_detail_dose_value"
+        case detailActiveTracking = "medication_detail_active_tracking"
+        case detailPlan = "medication_detail_plan"
+        case detailSupplyTitle = "medication_detail_supply_title"
+        case detailMetricTime = "medication_detail_metric_time"
+        case detailMetricAmount = "medication_detail_metric_amount"
+        case detailRhythm = "medication_detail_rhythm"
+        case detailRhythmNone = "medication_detail_rhythm_none"
+        case detailDeleteMedication = "medication_detail_delete_medication"
+        case detailReminderSubtitle = "medications_detail_reminder_subtitle"
+        case detailDaysOfSupply = "medications_detail_days_of_supply"
+        case detailPerDay = "medications_detail_per_day"
+        case detailThreshold = "medication_detail_threshold"
+        case detailRecordNow = "medication_detail_record_now"
         case detailInstructions = "medication_detail_instructions"
-        case detailSupply = "medication_detail_supply"
         case detailStock = "medication_detail_stock"
         case detailHistory = "medication_detail_history"
         case detailHistoryEmpty = "medication_detail_history_empty"
         case detailEdit = "medication_detail_edit"
-        case detailDelete = "medication_detail_delete"
 
         // The intake statuses (4).
         case intakeStatusTaken = "intake_status_taken"
@@ -341,9 +395,8 @@ public enum MedicationsStrings {
         case deleted = "medication_deleted"
         case delete = "medications_delete"
 
-        // The per-medication reminder toggle (4).
+        // The per-medication reminder toggle (3).
         case remindersTitle = "medication_reminders_title"
-        case remindersOnDescription = "medication_reminders_on_desc"
         case remindersOffDescription = "medication_reminders_off_desc"
         case remindersOff = "medication_reminders_off"
 

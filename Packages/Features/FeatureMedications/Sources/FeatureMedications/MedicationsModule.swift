@@ -146,6 +146,7 @@ public func makeMedicationsModule(
                 repository: repository,
                 pendingDeletes: pendingDeletes,
                 deleteMedication: deleteMedication,
+                markDoseTaken: makeMarkDoseTakenUseCase(),
                 undoableDelete: undoableDelete,
                 clock: clock
             )
@@ -153,6 +154,7 @@ public func makeMedicationsModule(
         makeMedicationDetailViewModel: detailViewModelFactory(
             repository: repository,
             deleteMedication: deleteMedication,
+            markDoseTaken: makeMarkDoseTakenUseCase(),
             navigator: navigator,
             undoableDelete: undoableDelete,
             reminderScheduler: reminderScheduler,
@@ -186,6 +188,7 @@ public func makeMedicationsModule(
 private func detailViewModelFactory(
     repository: any MedicationRepository,
     deleteMedication: DeleteMedicationUseCase,
+    markDoseTaken: MarkDoseTakenUseCase,
     navigator: Navigator,
     undoableDelete: UndoableDelete,
     reminderScheduler: any ReminderScheduler,
@@ -196,6 +199,7 @@ private func detailViewModelFactory(
             medicationId: medicationId,
             repository: repository,
             deleteMedication: deleteMedication,
+            markDoseTaken: markDoseTaken,
             navigator: navigator,
             undoableDelete: undoableDelete,
             reminderScheduler: reminderScheduler,
