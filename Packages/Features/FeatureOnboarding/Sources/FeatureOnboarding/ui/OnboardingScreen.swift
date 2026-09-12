@@ -227,10 +227,8 @@ struct OnboardingScreen: View {
         VStack(spacing: 0) {
             Spacer().frame(height: SalusSpacing.xxl)
             SalusButton(
-                text: state.primaryLabel,
-                enabled: state.canContinue,
-                trailingSystemImage: state.primarySystemImage,
-                fillsWidth: true
+                state.primaryLabel,
+                enabled: state.canContinue
             ) {
                 primaryTapped()
             }
@@ -351,14 +349,6 @@ extension OnboardingUiState {
             return OnboardingStrings.onboardingAllowNotifications
         }
         return isLastStep ? OnboardingStrings.onboardingFinish : OnboardingStrings.onboardingNext
-    }
-
-    /// Granting a permission is an act of consent, not another step; it gets a tick, not an arrow
-    /// (`primaryIcon()`, `OnboardingScreen.kt:177-180`). `Icons.Filled.CheckCircle` →
-    /// `checkmark.circle.fill`, `Icons.AutoMirrored.Filled.ArrowForward` → `arrow.forward`, which
-    /// SF Symbols mirrors for right-to-left on its own.
-    fileprivate var primarySystemImage: String {
-        step == .notifications ? "checkmark.circle.fill" : "arrow.forward"
     }
 
     /// `skipLabelRes()` (`OnboardingScreen.kt:183-186`).

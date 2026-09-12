@@ -1,31 +1,24 @@
 // Ported from `core/ui/src/main/kotlin/com/alicansekban/salus/core/ui/component/
-// SalusSelectableRow.kt:42-135`.
+// SalusSelectableRow.kt:45-107` in its M15 shape.
 //
-// Material → SwiftUI, and the three places the spelling differs:
+// Material → SwiftUI, and the places the spelling differs:
 //
-//   `Surface(shape = CircleShape, …)`   → a `Button` whose label is drawn over
-//                                         `SalusShapes.pill` — the same hand-drawn capsule
-//                                         `SalusButton` documents, and for the same reason:
-//                                         the row has to *draw* its 88 pt and be hittable across
-//                                         exactly that.
-//   `Modifier.selectable(role =         → `.buttonStyle(.plain)` plus the `.isSelected`
-//    Role.RadioButton)`                   accessibility trait. VoiceOver then announces the row
-//                                         once, selected or not, which is the whole point of
-//                                         Kotlin drawing the radio mark by hand rather than
-//                                         composing a second selectable `RadioButton`
-//                                         (`SalusSelectableRow.kt:99-103`).
-//   `ImageVector`                       → an SF Symbol name, the same mapping `SalusIconBadge`
-//                                         and `SalusButton` make.
+//   `Modifier.selectable(role = Role.RadioButton)` → a `Button` with the `.isSelected` accessibility
+//     trait. VoiceOver then announces the row once, selected or not, which is the whole point of
+//     Kotlin drawing the radio mark by hand (`SalusSelectableRow.kt:60-64`).
+//   `leading` (a `@Composable` slot: a colour swatch or an icon) → `swatch: Color?` /
+//     `systemImage: String?` + `accent`. The two leading shapes the M15 preview draws.
+//   `ImageVector` → an SF Symbol name, the same mapping `SalusIconBadge` makes.
 //
-// The five component dimensions come from `SalusSelectableRowDefaults` (`SalusSelectableRow.kt:127-135`).
+// The component dimensions come from `SalusSelectableRowDefaults` (`SalusSelectableRow.kt:109-114`).
 // They are component values that live in `:core:ui` on Android too — not `design-tokens.md` tokens
 // — so they are spelled here, exactly as `SalusIconBadge`'s 40/22 are.
 
 import SalusDesignSystem
 import SwiftUI
 
-/// Pill-shaped single-choice row: a tinted icon circle, a label, and a radio indicator at the
-/// trailing edge (`SalusSelectableRow.kt:35-41`).
+/// Single-choice row: a leading swatch or icon, a title (+ subtitle), and a radio indicator at the
+/// trailing edge (`SalusSelectableRow.kt:56-68`).
 ///
 /// The whole row is the touch target — a separate radio control would give the user a second,
 /// smaller thing to aim at for the same action. Pass the feature's `accent` to tint the icon
@@ -33,50 +26,64 @@ import SwiftUI
 public struct SalusSelectableRow: View {
     // Internal rather than private: the API test round-trips the selected flag and the accent
     // default, and neither is visible outside this module anyway.
-    let systemImage: String
-    let label: String
-    let isSelected: Bool
+    let title: String
+    let subtitle: String?
+    let swatch: Color?
+    let systemImage: String?
     let accent: FeatureAccent?
-    let onSelected: () -> Void
+    let isSelected: Bool
+    let action: () -> Void
 
     @Environment(\.salusTheme) private var theme
 
     /// - Parameters:
-    ///   - systemImage: SF Symbol name — the iOS twin of Kotlin's `ImageVector`
-    ///     (`SalusSelectableRow.kt:44`).
+    ///   - title: the option's name, in `titleMedium`.
+    ///   - subtitle: an optional supporting line, in `bodySmall`.
+    ///   - swatch: a colour dot for palette rows (`SalusSelectableRowDefaults.SwatchSize`, 24 pt).
+    ///     Mutually exclusive with `systemImage`, exactly as Kotlin's `leading` slot is one view.
+    ///   - systemImage: SF Symbol name for an icon leading — the iOS twin of Kotlin's `ImageVector`.
     ///   - accent: the feature accent that tints the icon circle, or nil for the primary role
-    ///     (`SalusSelectableRow.kt:49`).
+    ///     (`SalusSelectableRow.kt:51-52`).
     public init(
-        systemImage: String,
-        label: String,
-        isSelected: Bool,
+        title: String,
+        subtitle: String? = nil,
+        swatch: Color? = nil,
+        systemImage: String? = nil,
         accent: FeatureAccent? = nil,
-        onSelected: @escaping () -> Void
+        isSelected: Bool,
+        action: @escaping () -> Void
     ) {
+        self.title = title
+        self.subtitle = subtitle
+        self.swatch = swatch
         self.systemImage = systemImage
-        self.label = label
-        self.isSelected = isSelected
         self.accent = accent
-        self.onSelected = onSelected
+        self.isSelected = isSelected
+        self.action = action
     }
 
     public var body: some View {
-        Button(action: onSelected) {
+        Button(action: action) {
             HStack(spacing: SalusSpacing.lg) {
-                iconCircle
-                // `Modifier.weight(1f)` (`SalusSelectableRow.kt:92`).
-                Text(verbatim: label)
-                    .font(SalusTypography.titleMedium.font)
-                    .tracking(SalusTypography.titleMedium.tracking)
-                    .foregroundStyle(colors.onSurface)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                leading
+                // `Modifier.weight(1f)` (`SalusSelectableRow.kt:79`).
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(verbatim: title)
+                        .font(SalusTypography.titleMedium.font)
+                        .tracking(SalusTypography.titleMedium.tracking)
+                        .foregroundStyle(colors.onSurface)
+                    if let subtitle {
+                        Text(verbatim: subtitle)
+                            .font(SalusTypography.bodySmall.font)
+                            .tracking(SalusTypography.bodySmall.tracking)
+                            .foregroundStyle(colors.onSurfaceVariant)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
                 indicator
             }
             .padding(.horizontal, SalusSpacing.lg)
-            // `heightIn(min = SalusSelectableRowDefaults.Height)` on the surface
-            // (`SalusSelectableRow.kt:55-56`), so the capsule draws its full height rather than
-            // reserving dead space around a short label.
-            .frame(maxWidth: .infinity, minHeight: Self.height)
+            .frame(maxWidth: .infinity, minHeight: SalusTouchTarget.min)
             .background(SalusShapes.pill.fill(SalusSelectableRowStyle.container(selected: isSelected, colors: colors)))
             .overlay {
                 if let border = SalusSelectableRowStyle.border(selected: isSelected, colors: colors) {
@@ -86,24 +93,34 @@ public struct SalusSelectableRow: View {
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
-        // Kotlin's `role = Role.RadioButton` (`SalusSelectableRow.kt:57`), which is what makes a
+        // Kotlin's `role = Role.RadioButton` (`SalusSelectableRow.kt:63`), which is what makes a
         // screen reader say "selected" for the row rather than for a control inside it.
         .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
     }
 
-    /// `SalusSelectableRow.kt:75-87` — the icon in its tinted circle.
-    private var iconCircle: some View {
-        SalusShapes.pill
-            .fill(SalusSelectableRowStyle.iconBackground(accent: accent, colors: colors))
-            .frame(width: Self.iconCircleSize, height: Self.iconCircleSize)
-            .overlay {
-                Image(systemName: systemImage)
-                    .font(.system(size: Self.iconSize))
-                    .foregroundStyle(SalusSelectableRowStyle.iconTint(accent: accent, colors: colors))
-            }
-            // `contentDescription = null` (`SalusSelectableRow.kt:83`): the label beside it already
-            // says what the option is.
-            .accessibilityHidden(true)
+    /// The option's own leading visual (`SalusSelectableRow.kt:69`).
+    @ViewBuilder
+    private var leading: some View {
+        if let swatch {
+            // The palette row's colour dot (`SalusSelectableRowDefaults.SwatchSize`).
+            Circle()
+                .fill(swatch)
+                .frame(width: Self.swatchSize, height: Self.swatchSize)
+                .accessibilityHidden(true)
+        } else if let systemImage {
+            // The icon in its tinted circle (`SalusSelectableRow.kt:75-87`).
+            SalusShapes.pill
+                .fill(SalusSelectableRowStyle.iconBackground(accent: accent, colors: colors))
+                .frame(width: Self.iconCircleSize, height: Self.iconCircleSize)
+                .overlay {
+                    Image(systemName: systemImage)
+                        .font(.system(size: Self.iconSize))
+                        .foregroundStyle(SalusSelectableRowStyle.iconTint(accent: accent, colors: colors))
+                }
+                // `contentDescription = null` (`SalusSelectableRow.kt:83`): the label beside it
+                // already says what the option is.
+                .accessibilityHidden(true)
+        }
     }
 
     /// `SalusSelectableRow.kt:104-125` — the radio mark, drawn rather than composed so it stays purely
@@ -127,9 +144,9 @@ public struct SalusSelectableRow: View {
 
     private var colors: SalusColorScheme { theme.colorScheme }
 
-    /// `SalusSelectableRowDefaults` (`SalusSelectableRow.kt:127-135`). Component dimensions, not design
-    /// tokens — Android keeps them in `:core:ui` too, not in `:core:designsystem`.
-    private static let height: CGFloat = 88
+    /// `SalusSelectableRowDefaults` (`SalusSelectableRow.kt:109-114`). Component dimensions, not
+    /// design tokens — Android keeps them in `:core:ui` too, not in `:core:designsystem`.
+    private static let swatchSize: CGFloat = 24
     private static let iconCircleSize: CGFloat = 56
     private static let iconSize: CGFloat = 24
     private static let indicatorSize: CGFloat = 24
@@ -138,15 +155,15 @@ public struct SalusSelectableRow: View {
     private static let selectedBorder: CGFloat = 2
 }
 
-/// The four colour decisions ``SalusSelectableRow`` makes, lifted out of the view so they can be tested
-/// without SwiftUI — the arrangement ``SalusDateFieldState`` sets.
+/// The four colour decisions ``SalusSelectableRow`` makes, lifted out of the view so they can be
+/// tested without SwiftUI — the arrangement ``SalusDateFieldState`` sets.
 enum SalusSelectableRowStyle {
-    /// `SalusSelectableRow.kt:59-63`.
+    /// `SalusSelectableRow.kt:73`.
     static func container(selected: Bool, colors: SalusColorScheme) -> Color {
         selected ? colors.primaryContainer : colors.surfaceVariant
     }
 
-    /// `SalusSelectableRow.kt:64-68` — `null` rather than a transparent colour, because Kotlin passes
+    /// `SalusSelectableRow.kt:74` — `null` rather than a transparent colour, because Kotlin passes
     /// no `BorderStroke` at all for an unselected row.
     static func border(selected: Bool, colors: SalusColorScheme) -> Color? {
         selected ? colors.primary : nil
@@ -162,37 +179,61 @@ enum SalusSelectableRowStyle {
         accent?.container ?? colors.primaryContainer
     }
 
-    /// `SalusSelectableRow.kt:106-110`.
+    /// `SalusSelectableRow.kt:100-104`.
     static func indicatorRing(selected: Bool, colors: SalusColorScheme) -> Color {
         selected ? colors.primary : colors.outlineVariant
     }
 }
 
-#Preview("Option rows") {
+#Preview("Selectable rows") {
     let theme = SalusTheme.resolve(systemIsDark: false)
-    return ZStack {
+    ZStack {
         theme.colorScheme.background
         VStack(spacing: SalusSpacing.lg) {
-            // The two rows of `SalusSelectableRowPreview` (`SalusSelectableRow.kt:137-163`).
             SalusSelectableRow(
+                title: "Classic",
+                subtitle: "The Salus emerald",
+                swatch: theme.colorScheme.primary,
+                isSelected: true
+            ) {}
+            SalusSelectableRow(
+                title: "Rose",
+                swatch: theme.extendedColors.metricDown,
+                isSelected: false
+            ) {}
+            SalusSelectableRow(
+                title: "Kadın",
                 systemImage: "person",
-                label: "Kadın",
-                isSelected: false,
                 accent: theme.extendedColors.cycle,
-                onSelected: {}
-            )
-            SalusSelectableRow(
-                systemImage: "person.fill",
-                label: "Erkek",
-                isSelected: true,
-                accent: theme.extendedColors.vitals,
-                onSelected: {}
-            )
-            // The accent-less row, which Kotlin's preview does not draw.
-            SalusSelectableRow(systemImage: "person.2", label: "Diğer", isSelected: false) {}
+                isSelected: false
+            ) {}
         }
         .padding(SalusSpacing.lg)
     }
     .frame(height: 340)
+    .salusTheme(theme)
+}
+
+#Preview("Selectable rows — dark") {
+    let theme = SalusTheme.resolve(systemIsDark: true)
+    ZStack {
+        theme.colorScheme.background
+        VStack(spacing: SalusSpacing.lg) {
+            SalusSelectableRow(
+                title: "Classic",
+                subtitle: "The Salus emerald",
+                swatch: theme.colorScheme.primary,
+                isSelected: true
+            ) {}
+            SalusSelectableRow(
+                title: "Kadın",
+                systemImage: "person",
+                accent: theme.extendedColors.cycle,
+                isSelected: false
+            ) {}
+        }
+        .padding(SalusSpacing.lg)
+    }
+    .frame(height: 200)
     .salusTheme(theme)
 }

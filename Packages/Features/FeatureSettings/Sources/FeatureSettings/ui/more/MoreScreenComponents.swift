@@ -34,7 +34,15 @@ struct MoreCard: View {
     @Environment(\.salusTheme) private var theme
 
     var body: some View {
-        SalusCard(onTap: onClick, contentPadding: SalusSpacing.lg) {
+        SalusCard(
+            onTap: onClick,
+            contentPadding: EdgeInsets(
+                top: SalusSpacing.lg,
+                leading: SalusSpacing.lg,
+                bottom: SalusSpacing.lg,
+                trailing: SalusSpacing.lg
+            )
+        ) {
             HStack(spacing: SalusSpacing.md) {
                 SalusIconBadge(systemImage: icon, accent: accent)
                 VStack(alignment: .leading, spacing: SalusSpacing.xs) {
@@ -67,7 +75,12 @@ struct MoreToggleCard: View {
     var body: some View {
         SalusCard(
             onTap: enabled ? { onCheckedChange(!checked) } : nil,
-            contentPadding: SalusSpacing.lg
+            contentPadding: EdgeInsets(
+                top: SalusSpacing.lg,
+                leading: SalusSpacing.lg,
+                bottom: SalusSpacing.lg,
+                trailing: SalusSpacing.lg
+            )
         ) {
             HStack(spacing: SalusSpacing.md) {
                 SalusIconBadge(systemImage: icon)

@@ -53,15 +53,15 @@ public struct SalusSectionHeader<Actions: View>: View {
 
     public var body: some View {
         // Zero, matching Compose's `Arrangement.Start` default — the same reasoning as
-        // `SalusScreenHeader`: a trailing button carries its own touch-target padding.
+        // the shell's inline titles: a trailing button carries its own touch-target padding.
         HStack(spacing: 0) {
             // `Text(verbatim:)` because the caller hands over a resolved `String` — the plain
             // initializer would read it back as a `LocalizedStringKey` against the main bundle
             // (the M7 `c726e22` finding).
             Text(verbatim: title)
-                .font(SalusTypography.titleLarge.font)
-                .tracking(SalusTypography.titleLarge.tracking)
-                .foregroundStyle(theme.colorScheme.onSurface)
+                .font(SalusTypography.labelSmall.font)
+                .tracking(SalusTypography.labelSmall.tracking)
+                .foregroundStyle(theme.extendedColors.overline)
                 // `Modifier.weight(1f)` (`SalusSectionHeader.kt:43`).
                 .frame(maxWidth: .infinity, alignment: .leading)
             actions
@@ -82,7 +82,7 @@ extension SalusSectionHeader where Actions == EmptyView {
 
 #Preview("Section header") {
     let theme = SalusTheme.resolve(systemIsDark: false)
-    return ZStack(alignment: .top) {
+    ZStack(alignment: .top) {
         theme.colorScheme.background
         VStack(spacing: 0) {
             SalusSectionHeader(title: "Upcoming") {
@@ -97,5 +97,22 @@ extension SalusSectionHeader where Actions == EmptyView {
         }
     }
     .frame(height: 140)
+    .salusTheme(theme)
+}
+
+#Preview("Section header — dark") {
+    let theme = SalusTheme.resolve(systemIsDark: true)
+    ZStack(alignment: .top) {
+        theme.colorScheme.background
+        VStack(spacing: 0) {
+            SalusSectionHeader(title: "Upcoming") {
+                Button("See all") {}
+                    .buttonStyle(.plain)
+                    .foregroundStyle(theme.colorScheme.primary)
+            }
+            SalusSectionHeader(title: "Notes")
+        }
+    }
+    .frame(height: 100)
     .salusTheme(theme)
 }

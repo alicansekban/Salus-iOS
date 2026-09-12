@@ -19,7 +19,12 @@ struct LockedCallout: View {
     var body: some View {
         VStack {
             Spacer()
-            SalusCard(contentPadding: SalusSpacing.lg) {
+            SalusCard(contentPadding: EdgeInsets(
+                top: SalusSpacing.lg,
+                leading: SalusSpacing.lg,
+                bottom: SalusSpacing.lg,
+                trailing: SalusSpacing.lg
+            )) {
                 SalusIconBadge(systemImage: "lock", accent: theme.extendedColors.trends)
                 Spacer().frame(height: SalusSpacing.md)
                 Text(verbatim: TrendsStrings.lockedTitle)
@@ -33,7 +38,8 @@ struct LockedCallout: View {
                     .foregroundStyle(theme.colorScheme.onSurfaceVariant)
                 Spacer().frame(height: SalusSpacing.lg)
                 SalusButton(
-                    text: TrendsStrings.lockedAction,
+                    TrendsStrings.lockedAction,
+                    size: .medium,
                     accent: theme.extendedColors.trends,
                     action: onUpgrade
                 )

@@ -31,9 +31,9 @@
 import SalusDesignSystem
 import SwiftUI
 
-/// Determinate circular progress ring with a centered label — the shared dose-progress visual used
-/// on Home. Renders on dark surfaces (e.g. the hero gradient band), hence the white defaults
-/// (`SalusProgressRing.kt:22-25`).
+/// Determinate circular progress ring with a centred label — the shared dose-progress visual used
+/// on Home. Track, sweep and label come from the theme (`SalusProgressRing.kt:28-33`), so the ring
+/// reads the same on a card as it does on a hero band.
 public struct SalusProgressRing: View {
     private let progress: Float
     private let label: String
@@ -41,12 +41,13 @@ public struct SalusProgressRing: View {
     private let strokeWidth: CGFloat
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.salusTheme) private var theme
 
     /// - Parameters:
     ///   - progress: the fraction filled, clamped to 0...1 (divergence (c), M14 plan).
-    ///   - label: the centered text, e.g. "3/5" (`SalusProgressRing.kt:48-52`).
+    ///   - label: the centered text, e.g. "3/5" (`SalusProgressRing.kt:63-67`).
     ///   - size: the ring's diameter (`SalusProgressRingDefaults.Size` = 64).
-    ///   - strokeWidth: the ring's stroke width (`SalusProgressRingDefaults.StrokeWidth` = 6).
+    ///   - strokeWidth: the ring's stroke width (`SalusProgressRingDefaults.StrokeWidth` = 8).
     public init(
         progress: Float,
         label: String,
@@ -61,20 +62,24 @@ public struct SalusProgressRing: View {
 
     public var body: some View {
         ZStack {
-            // The track: `trackColor = Color.White.copy(alpha = 0.24f)` (`SalusProgressRing.kt:33`),
-            // drawn as a full circle stroke behind the progress ring.
+            // The track: `trackColor = surfaceContainerHigh` (`SalusProgressRing.kt:40`), drawn as
+            // a full circle stroke behind the progress ring.
             Circle()
-                .stroke(.white.opacity(0.24), lineWidth: strokeWidth)
+                .stroke(theme.colorScheme.surfaceContainerHigh, lineWidth: strokeWidth)
             // The progress: `CircularProgressIndicator(progress = { progress }, …)` with
-            // `color = Color.White` and `strokeCap = StrokeCap.Round` (`SalusProgressRing.kt:40-47`).
-            // Drawn with `trim` because `.progressViewStyle(.circular)` ignores determinate values
-            // on iOS 17 and renders an indeterminate spinner (divergence (j), M14 QA row 1.4).
+            // `color = colorScheme.primary` and `strokeCap = StrokeCap.Round`
+            // (`SalusProgressRing.kt:55-61`). Drawn with `trim` because
+            // `.progressViewStyle(.circular)` ignores determinate values on iOS 17 and renders an
+            // indeterminate spinner (divergence (j), M14 QA row 1.4).
             // The A45 sweep: `.animation(_, value: progress)` animates the trim on `progress`
             // changes; first composition draws the initial value directly (Android's
             // `animateFloatAsState` behaves the same — parity row A45).
             Circle()
                 .trim(from: 0, to: ringSweep)
-                .stroke(.white, style: StrokeStyle(lineWidth: strokeWidth, lineCap: .round))
+                .stroke(
+                    theme.colorScheme.primary,
+                    style: StrokeStyle(lineWidth: strokeWidth, lineCap: .round)
+                )
                 .rotationEffect(.degrees(-90))
                 .animation(
                     reduceMotion ? nil : SalusMotion.entranceAnimation,
@@ -83,13 +88,13 @@ public struct SalusProgressRing: View {
             Text(verbatim: label)
                 .font(SalusTypography.labelLarge.font)
                 .tracking(SalusTypography.labelLarge.tracking)
-                .foregroundStyle(.white)
+                .foregroundStyle(theme.colorScheme.onSurface)
         }
         .frame(width: size, height: size)
     }
 
     /// The animated trim fraction: the twin of `animateFloatAsState` over `progress`
-    /// (`SalusProgressRing.kt:36-41`, parity row A45) — 450 ms emphasized; reduce motion jumps.
+    /// (`SalusProgressRing.kt:46-50`, parity row A45) — 450 ms emphasized; reduce motion jumps.
     private var ringSweep: CGFloat { CGFloat(progress) }
 
     /// Clamps `progress` to 0...1 (divergence (c), M14 plan — Android deferred it).
@@ -100,19 +105,30 @@ public struct SalusProgressRing: View {
     }
 }
 
-/// `object SalusProgressRingDefaults` (`SalusProgressRing.kt:56-59`). Component dimensions, not
+/// `object SalusProgressRingDefaults` (`SalusProgressRing.kt:71-76`). Component dimensions, not
 /// design tokens — Android keeps them in `:core:ui` too, not in `:core:designsystem`.
 public enum SalusProgressRingDefaults {
-    /// `SalusProgressRingDefaults.Size` (`SalusProgressRing.kt:57`).
+    /// `SalusProgressRingDefaults.Size` (`SalusProgressRing.kt:72`).
     public static let size: CGFloat = 64
-    /// `SalusProgressRingDefaults.StrokeWidth` (`SalusProgressRing.kt:58`).
-    public static let strokeWidth: CGFloat = 6
+    /// `SalusProgressRingDefaults.StrokeWidth` (`SalusProgressRing.kt:75`).
+    public static let strokeWidth: CGFloat = 8
 }
 
 #Preview("Progress ring") {
     let theme = SalusTheme.resolve(systemIsDark: false)
-    return ZStack {
-        theme.colorScheme.primary
+    ZStack {
+        theme.colorScheme.surfaceContainerLow
+        SalusProgressRing(progress: 0.6, label: "3/5")
+            .padding(SalusSpacing.lg)
+    }
+    .frame(height: 120)
+    .salusTheme(theme)
+}
+
+#Preview("Progress ring — dark") {
+    let theme = SalusTheme.resolve(systemIsDark: true)
+    ZStack {
+        theme.colorScheme.surfaceContainerLow
         SalusProgressRing(progress: 0.6, label: "3/5")
             .padding(SalusSpacing.lg)
     }

@@ -122,7 +122,12 @@ struct AboutScreen: View {
                 }
 
                 // The privacy card (`AboutScreen.kt:99-111`).
-                SalusCard(contentPadding: SalusSpacing.lg) {
+                SalusCard(contentPadding: EdgeInsets(
+                    top: SalusSpacing.lg,
+                    leading: SalusSpacing.lg,
+                    bottom: SalusSpacing.lg,
+                    trailing: SalusSpacing.lg
+                )) {
                     VStack(alignment: .leading, spacing: SalusSpacing.sm) {
                         Text(verbatim: SettingsStrings.aboutPrivacyTitle)
                             .font(SalusTypography.titleMedium.font)
@@ -166,7 +171,12 @@ private struct PremiumStatusCard: View {
         // is the most natural tap target — it is the thing the user is looking at when they want
         // their premium status, and a trusted user is told "tap your subscription card five times"
         // (`AboutScreen.kt:152-156`).
-        SalusCard(contentPadding: SalusSpacing.lg) {
+        SalusCard(contentPadding: EdgeInsets(
+            top: SalusSpacing.lg,
+            leading: SalusSpacing.lg,
+            bottom: SalusSpacing.lg,
+            trailing: SalusSpacing.lg
+        )) {
             VStack(alignment: .leading, spacing: 0) {
                 Text(verbatim: SettingsStrings.supportPremiumStatusTitle)
                     .font(SalusTypography.titleMedium.font)
@@ -259,7 +269,12 @@ private struct FeatureRow: View {
     private var colors: SalusColorScheme { theme.colorScheme }
 
     var body: some View {
-        SalusCard(contentPadding: SalusSpacing.lg) {
+        SalusCard(contentPadding: EdgeInsets(
+            top: SalusSpacing.lg,
+            leading: SalusSpacing.lg,
+            bottom: SalusSpacing.lg,
+            trailing: SalusSpacing.lg
+        )) {
             HStack(spacing: SalusSpacing.md) {
                 SalusIconBadge(systemImage: systemImage)
                 VStack(alignment: .leading, spacing: SalusSpacing.xs) {

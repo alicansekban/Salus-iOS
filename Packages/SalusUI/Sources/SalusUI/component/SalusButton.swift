@@ -1,243 +1,232 @@
-// Ported from `core/ui/.../component/SalusButton.kt:38-101` in its pre-M15 M14 shape.
+// Ported from `core/ui/src/main/kotlin/com/alicansekban/salus/core/ui/component/
+// SalusButton.kt:38-201` in its M15 shape.
 //
-// The pill is hand-drawn — `.buttonStyle(.plain)` over a `SalusShapes.pill` background — rather
-// than worn as one of SwiftUI's bordered button styles, and the reason is the touch target.
-// Kotlin hangs `heightIn(min = SalusTouchTarget.min)` on the *container*
-// (`SalusButton.kt:67`, passed as the button's own `Modifier` at `:71` and `:86`), so the drawn
-// pill is 48 dp and its clickable surface is the same 48 dp. `.bordered` / `.borderedProminent`
-// size their background to whatever label they are handed and pad around it, so the floor cannot
-// sit on their container: put it on the label and the pill draws 48 plus twice the style's padding,
-// well past the 48 that `design-tokens.md:382` asks for by name ("use 48 to stay identical to
-// Android"). Drawing the capsule ourselves is the one placement that gets both axes right at once,
-// and it is what `SalusEmptyState.swift` did by hand for this very Kotlin button until iOS-M7.
+// The brand button: a pill in every variant and size, labelled `labelLarge`. Four variants and two
+// sizes, decided in one place so every screen draws the same primary / secondary / outlined /
+// destructive vocabulary (`SalusButton.kt:39-46`).
 //
-// The bordered mapping this supersedes had inlined copies, deferred by the M6 plan's ruling 3.
-// **All of them are migrated** (iOS-M7), so no inline pill is left in the tree: the appointment
-// detail's three actions and its maps link (`AppointmentDetailScreen.swift` — `actions` and
-// `OpenMapsButton`, the fourth site the M6 inventory missed), the medication detail's two
-// (`MedicationDetailSections.swift`, `MedicationDetailActions`), and this package's own
-// empty-state action (`SalusEmptyState.swift`), a straight substitution for a hand-drawn pill the
-// component already drew byte for byte. The action blocks pass `fillsWidth: true` for Kotlin's
-// `Modifier.fillMaxWidth()`; the maps link is content width, as Kotlin has it.
+// Width is part of the size. `large` is the 56 pt full-width primary action of a screen; `medium` is
+// the 44 pt button that wraps its own content. The pill is hand-drawn — `.buttonStyle(.plain)` over
+// a `SalusShapes.pill` background — so the drawn capsule and its touch target are the same shape,
+// the reason `SalusPillButton` documented (iOS-M7), carried into the renamed component.
 
 import SalusDesignSystem
 import SwiftUI
 
-/// Fully rounded brand button. `tonal` switches from the filled primary style to the tonal
-/// (container-tinted) style for secondary actions. Pass the feature's `FeatureAccent` to color the
-/// button with that accent instead of the primary role (`SalusButton.kt:29-36`).
-///
-/// Width is the caller's: Kotlin takes a `Modifier`, so whether the pill fills its row is decided
-/// at the call site rather than by the component for every one. Two widths, and only two:
-///
-///   * **content width** (the default) — the capsule is as wide as its label plus
-///     `ButtonDefaults.ContentPadding`, which is what a pill in a column of prose or an empty
-///     state's action wants;
-///   * **`fillsWidth: true`** — the capsule fills the width it is proposed, the twin of a caller
-///     passing `Modifier.fillMaxWidth()` (`CycleScreen.kt:137`).
-///
-/// A bare `.frame(maxWidth: .infinity)` at the call site cannot do the second: nothing in the
-/// label's chain (`HStack` → padding → `frame(minHeight:)` → `background`) is width-greedy, so the
-/// button reports its content width and the outer frame merely centres a text-width capsule in a
-/// full-width slot. The greedy frame has to be *inside*, after the horizontal padding — on the
-/// `HStack` it would overflow the row by `2 × SalusSpacing.xl`.
+/// The brand button: a pill in every variant and size, labelled `labelLarge`.
 public struct SalusButton: View {
-    private let text: String
-    private let enabled: Bool
-    private let tonal: Bool
-    private let accent: FeatureAccent?
+    /// Weight of a button (`SalusButtonVariant`, `SalusButton.kt:43`). `destructive` is reserved
+    /// for actions that delete data — using it for anything else spends the one colour the user
+    /// has learned to stop at.
+    public enum Variant {
+        /// The screen's main action: `primary` fill, `onPrimary` text. In dark mode it carries
+        /// the `accentGlow` wash that separates it from the ground.
+        case primary
+        /// A supporting action: `primaryContainer` fill, `onPrimaryContainer` text.
+        case secondary
+        /// The quiet way out: `cardBorder` stroke, `primary` text, no fill.
+        case outlined
+        /// A delete action: `error` fill, `onError` text.
+        case destructive
+    }
+
+    /// `SalusButtonSize` (`SalusButton.kt:46`). `large` is the full-width primary action of a
+    /// screen; `medium` wraps its own content.
+    public enum Size {
+        /// 56 pt, `fillMaxWidth()` — the screen's primary action (`SalusButton.kt:108-110`).
+        case large
+        /// 44 pt, content width (`SalusButton.kt:112-114`).
+        case medium
+    }
+
+    private let title: String
+    private let variant: Variant
+    private let size: Size
     private let systemImage: String?
-    private let trailingSystemImage: String?
-    private let fillsWidth: Bool
+    private let accent: FeatureAccent?
+    private let enabled: Bool
     private let action: () -> Void
 
+    @Environment(\.salusTheme) private var theme
+
     /// - Parameters:
-    ///   - systemImage: SF Symbol name for the leading icon, which labels the action and leads the
-    ///     text (`SalusButton.kt:34-35`). Kotlin takes an `ImageVector` from `Icons`; the iOS
-    ///     twin of that catalogue is SF Symbols, named rather than referenced.
-    ///   - trailingSystemImage: SF Symbol name for the trailing icon, which "points at what
-    ///     happens next" (`SalusButton.kt:34-35`, `trailingIcon` at `:46`). Unported until
-    ///     iOS-M8 because no caller passed one; the onboarding footer is the first
-    ///     (`OnboardingScreen.kt:145`), so the parameter arrives with it rather than the whole
-    ///     button being reimplemented at the call site. Additive and defaulted, so every existing
-    ///     call site draws exactly what it drew before.
-    ///   - fillsWidth: whether the drawn capsule fills the width it is proposed — the twin of a
-    ///     caller's `Modifier.fillMaxWidth()`. Defaults to `false`, the content-width pill every
-    ///     existing call site draws.
+    ///   - title: the button's label, in `labelLarge`.
+    ///   - variant: the button's weight (`SalusButton.kt:60`).
+    ///   - size: width and height (`SalusButton.kt:61`).
+    ///   - systemImage: SF Symbol name for the leading icon, which labels the action and leads
+    ///     the text (`SalusButton.kt:149-156`). Kotlin takes an `ImageVector` from `Icons`; the
+    ///     iOS twin of that catalogue is SF Symbols, named rather than referenced.
+    ///   - accent: tints the primary variant with a feature's own colour; ignored by the other
+    ///     variants, which carry meaning of their own a feature accent would overwrite
+    ///     (`SalusButton.kt:48-53`).
+    ///   - enabled: `false` dims the button to 0.38 and blocks it (`SalusButton.kt:62`).
     public init(
-        text: String,
-        enabled: Bool = true,
-        tonal: Bool = false,
-        accent: FeatureAccent? = nil,
+        _ title: String,
+        variant: Variant = .primary,
+        size: Size = .large,
         systemImage: String? = nil,
-        trailingSystemImage: String? = nil,
-        fillsWidth: Bool = false,
+        accent: FeatureAccent? = nil,
+        enabled: Bool = true,
         action: @escaping () -> Void
     ) {
-        self.text = text
-        self.enabled = enabled
-        self.tonal = tonal
-        self.accent = accent
+        self.title = title
+        self.variant = variant
+        self.size = size
         self.systemImage = systemImage
-        self.trailingSystemImage = trailingSystemImage
-        self.fillsWidth = fillsWidth
+        self.accent = accent
+        self.enabled = enabled
         self.action = action
     }
 
     public var body: some View {
         Button(action: action) {
-            SalusButtonLabel(
-                text: text,
-                enabled: enabled,
-                tonal: tonal,
-                accent: accent,
-                systemImage: systemImage,
-                trailingSystemImage: trailingSystemImage,
-                fillsWidth: fillsWidth
+            HStack(spacing: SalusSpacing.sm) {
+                if let systemImage {
+                    Image(systemName: systemImage)
+                        .font(.system(size: Self.iconSize))
+                }
+                // `Text(verbatim:)` because `title` is already a resolved string — the plain
+                // initializer would read it as a `LocalizedStringKey` against the main bundle
+                // (the M7 `c726e22` finding).
+                Text(verbatim: title)
+                    .font(SalusTypography.labelLarge.font)
+                    .tracking(SalusTypography.labelLarge.tracking)
+            }
+            .padding(.horizontal, contentPadding)
+            .frame(
+                maxWidth: size == .large ? .infinity : nil,
+                minHeight: size == .large ? Self.largeHeight : Self.mediumHeight
             )
+            .foregroundStyle(contentColor)
+            .background(background)
+            .contentShape(SalusShapes.pill)
         }
         .buttonStyle(.plain)
         // Kotlin passes `enabled` to the button, which swaps in `ButtonDefaults`' disabled colors;
-        // the label draws those colors itself and keeps the flag for everything else it governs
-        // — the tap, VoiceOver's disabled trait, focus.
+        // the label draws those colors itself at 0.38 and keeps the flag for everything else —
+        // the tap, VoiceOver's disabled trait, focus.
         .disabled(!enabled)
     }
-}
 
-/// The drawn pill on its own — everything `SalusButton` shows, minus the `Button`.
-///
-/// Internal rather than public (the renamed `SalusPillLabel`): a system control can wear the same
-/// capsule, because `ShareLink` is the one SwiftUI button the app cannot replace with its own
-/// `Button` + action (there is no public API that presents the share sheet from a closure the way
-/// `Intent.createChooser` does on Android), and it takes a label view. `DoctorReportScreen.swift`
-/// keeps its Share pill byte-for-byte the pill next to it through this label.
-///
-/// The caller is responsible for `.buttonStyle(.plain)` on whatever control wraps it, exactly as
-/// `SalusButton` does, so the system style does not pad a second background around the pill.
-struct SalusButtonLabel: View {
-    private let text: String
-    private let enabled: Bool
-    private let tonal: Bool
-    private let accent: FeatureAccent?
-    private let systemImage: String?
-    private let trailingSystemImage: String?
-    private let fillsWidth: Bool
-
-    @Environment(\.salusTheme) private var theme
-
-    init(
-        text: String,
-        enabled: Bool = true,
-        tonal: Bool = false,
-        accent: FeatureAccent? = nil,
-        systemImage: String? = nil,
-        trailingSystemImage: String? = nil,
-        fillsWidth: Bool = false
-    ) {
-        self.text = text
-        self.enabled = enabled
-        self.tonal = tonal
-        self.accent = accent
-        self.systemImage = systemImage
-        self.trailingSystemImage = trailingSystemImage
-        self.fillsWidth = fillsWidth
+    private var contentPadding: CGFloat {
+        size == .large ? SalusSpacing.xl : SalusSpacing.lg
     }
 
-    var body: some View {
-        HStack(spacing: SalusSpacing.sm) {
-            if let systemImage {
-                Image(systemName: systemImage)
-                    .font(.system(size: Self.iconSize))
-            }
-            // `Text(verbatim:)` because `text` is already resolved — the plain initializer
-            // would look it up as a `LocalizedStringKey` against the main bundle (the M7
-            // `c726e22` finding).
-            Text(verbatim: text)
-                .font(SalusTypography.labelLarge.font)
-                .tracking(SalusTypography.labelLarge.tracking)
-            // `trailingIcon` (`SalusButton.kt:58-65`), the same `ButtonIconSize` and the
-            // same `SalusSpacing.sm` gap the leading icon gets.
-            if let trailingSystemImage {
-                Image(systemName: trailingSystemImage)
-                    .font(.system(size: Self.iconSize))
+    /// The variant's container — spelled per variant rather than left to Material, because its
+    /// default disabled ground is a filled grey, which would give the outlined variant a fill it
+    /// never has (`SalusButton.kt:66-97`). An accent tints only the primary fill.
+    private var containerColor: Color {
+        if !enabled {
+            return colors.onSurface.opacity(Self.disabledContentAlpha)
+        }
+        return switch variant {
+        case .primary: accent?.accent ?? colors.primary
+        case .secondary: colors.primaryContainer
+        case .outlined: Color.clear
+        case .destructive: colors.error
+        }
+    }
+
+    private var contentColor: Color {
+        if !enabled {
+            return colors.onSurface.opacity(Self.disabledContentAlpha)
+        }
+        return switch variant {
+        case .primary: accent?.onAccent ?? colors.onPrimary
+        case .secondary: colors.onPrimaryContainer
+        case .outlined: colors.primary
+        case .destructive: colors.onError
+        }
+    }
+
+    private var background: some View {
+        Group {
+            if variant == .outlined {
+                // `border = BorderStroke(cardBorder)` (`SalusButton.kt:129-136`).
+                SalusShapes.pill.strokeBorder(
+                    enabled ? theme.extendedColors.cardBorder : colors.onSurface.opacity(Self.disabledContentAlpha),
+                    lineWidth: Self.borderWidth
+                )
+            } else {
+                SalusShapes.pill.fill(containerColor)
             }
         }
-        // `ButtonDefaults.ContentPadding`'s 24 dp horizontal, which Kotlin inherits without
-        // naming it — the same `SalusSpacing.xl` the empty state's pill already uses.
-        .padding(.horizontal, SalusSpacing.xl)
-        // `heightIn(min = SalusTouchTarget.min)` (`SalusButton.kt:67`), on the container as
-        // Kotlin has it: the pill *draws* 48 pt and is hittable across exactly that, rather
-        // than drawing short and reserving dead space around itself. The same frame carries
-        // the caller's `fillMaxWidth()`, and it has to be this one: it is the last view before
-        // the capsule background, so a greedy width here is a wide *drawn* pill, where the
-        // same frame on the `HStack` would push the padding past the row's edges.
-        .frame(maxWidth: fillsWidth ? .infinity : nil, minHeight: SalusTouchTarget.min)
-        .foregroundStyle(contentColor)
-        // `shape = CircleShape` (`:73`, `:88`) filled with `containerColor` (`:76`, `:91`).
-        .background(SalusShapes.pill.fill(containerColor))
-        .contentShape(.rect)
+        // The `accentGlow` shadow is what separates the primary action from the ground in dark
+        // mode; in light mode the same wash under a saturated button only reads as a smudge, so
+        // it is dropped (`SalusButton.kt:101-105`). The other variants carry a plain edge at most.
+        .modifier(SalusButtonGlow(
+            isDark: theme.isDark,
+            variant: variant,
+            enabled: enabled,
+            color: theme.extendedColors.accentGlow
+        ))
     }
 
     private var colors: SalusColorScheme { theme.colorScheme }
 
-    /// Kotlin's `containerColor` (`SalusButton.kt:76`, `:91`), with `ButtonDefaults`' own
-    /// values — `primary` filled, `secondaryContainer` tonal — standing in for the `accent == null`
-    /// rows.
-    private var containerColor: Color {
-        guard enabled else { return colors.onSurface.opacity(Self.disabledContainerAlpha) }
-        guard let accent else { return tonal ? colors.secondaryContainer : colors.primary }
-        return tonal ? accent.container : accent.accent
-    }
-
-    /// Kotlin's `contentColor` (`SalusButton.kt:77`, `:92`), with `onPrimary` /
-    /// `onSecondaryContainer` for the `accent == null` rows.
-    private var contentColor: Color {
-        guard enabled else { return colors.onSurface.opacity(Self.disabledContentAlpha) }
-        guard let accent else { return tonal ? colors.onSecondaryContainer : colors.onPrimary }
-        return tonal ? accent.onContainer : accent.onAccent
-    }
-
-    /// Material's disabled button alphas, laid over `onSurface`, which `ButtonDefaults`
-    /// (`buttonColors()` / `filledTonalButtonColors()`) applies for every M3 button and Kotlin
-    /// therefore never spells. A `.plain` button draws its own container, so they are spelled here.
-    /// Material component values, not `design-tokens.md` tokens — the doc carries no disabled row.
-    private static let disabledContainerAlpha = 0.12
-    private static let disabledContentAlpha = 0.38
-
-    /// `private val ButtonIconSize = 18.dp` (`SalusButton.kt:101`) — a Material component
-    /// dimension that lives in the Kotlin file, not a token `design-tokens.md` carries.
+    /// `SalusButtonDefaults` (`SalusButton.kt:161-171`). Component dimensions, not design
+    /// tokens — Android keeps them in `:core:ui` too, not in `:core:designsystem`.
+    private static let largeHeight: CGFloat = 56
+    private static let mediumHeight: CGFloat = 44
     private static let iconSize: CGFloat = 18
+    private static let borderWidth: CGFloat = 1
+    /// `SalusButtonDefaults.GlowElevation` (`SalusButton.kt:166`).
+    private static let glowRadius: CGFloat = 12
+    /// `SalusButtonDefaults.DisabledContentAlpha` (`SalusButton.kt:168`).
+    static let disabledContentAlpha = 0.38
 }
 
-#Preview("Pill buttons") {
+/// The dark-mode `accentGlow` wash that sits under the primary button, as a modifier so the
+/// outlined variant can apply it only over its stroked capsule.
+private struct SalusButtonGlow: ViewModifier {
+    let isDark: Bool
+    let variant: SalusButton.Variant
+    let enabled: Bool
+    let color: Color
+
+    func body(content: Content) -> some View {
+        if variant == .primary, enabled, isDark {
+            content.shadow(color: color, radius: SalusButtonGlowDefaults.radius, x: 0, y: 0)
+        } else {
+            content
+        }
+    }
+}
+
+private enum SalusButtonGlowDefaults {
+    static let radius: CGFloat = 12
+}
+
+#Preview("Buttons") {
     let theme = SalusTheme.resolve(systemIsDark: false)
-    return ZStack {
+    ZStack {
         theme.colorScheme.background
-        VStack(spacing: SalusSpacing.sm) {
-            // The two rows of `SalusButtonPreview` (`SalusButton.kt:104-115`).
-            SalusButton(text: "Log period", systemImage: "plus", action: {})
-            SalusButton(text: "Next", trailingSystemImage: "arrow.forward", action: {})
-            SalusButton(text: "View details", tonal: true, action: {})
-            // The accent and disabled rows, which Kotlin's preview does not draw.
-            SalusButton(text: "Log period", accent: theme.extendedColors.cycle, action: {})
-            SalusButton(
-                text: "View details",
-                tonal: true,
-                accent: theme.extendedColors.cycle,
-                action: {}
-            )
-            SalusButton(text: "Log period", enabled: false, action: {})
-            // The full-width row, which Kotlin's preview does not draw either: the caller that
-            // passes `Modifier.fillMaxWidth()` (`CycleScreen.kt:137`).
-            SalusButton(
-                text: "Log period",
-                accent: theme.extendedColors.cycle,
-                fillsWidth: true,
-                action: {}
-            )
+        VStack(spacing: SalusSpacing.md) {
+            SalusButton("Save", systemImage: "checkmark", action: {})
+            SalusButton("Disabled", enabled: false, action: {})
+            SalusButton("Later", variant: .secondary, action: {})
+            SalusButton("Cancel", variant: .outlined, action: {})
+            SalusButton("Delete", variant: .destructive, action: {})
+            SalusButton("Edit — medium", size: .medium, action: {})
         }
         .padding(SalusSpacing.lg)
     }
-    .frame(height: 480)
+    .frame(height: 420)
+    .salusTheme(theme)
+}
+
+#Preview("Buttons — dark") {
+    let theme = SalusTheme.resolve(systemIsDark: true)
+    ZStack {
+        theme.colorScheme.background
+        VStack(spacing: SalusSpacing.md) {
+            SalusButton("Save", action: {})
+            SalusButton("Disabled", enabled: false, action: {})
+            SalusButton("Later", variant: .secondary, action: {})
+            SalusButton("Delete", variant: .destructive, action: {})
+        }
+        .padding(SalusSpacing.lg)
+    }
+    .frame(height: 360)
     .salusTheme(theme)
 }

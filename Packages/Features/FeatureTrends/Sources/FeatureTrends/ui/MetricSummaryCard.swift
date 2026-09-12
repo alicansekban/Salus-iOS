@@ -31,7 +31,12 @@ struct MetricSummaryCard: View {
     var body: some View {
         let rows = metricSummaryRowsOf(summaries: summaries)
 
-        SalusCard(contentPadding: SalusSpacing.lg) {
+        SalusCard(contentPadding: EdgeInsets(
+            top: SalusSpacing.lg,
+            leading: SalusSpacing.lg,
+            bottom: SalusSpacing.lg,
+            trailing: SalusSpacing.lg
+        )) {
             Text(verbatim: TrendsStrings.summaryTitle)
                 .font(SalusTypography.titleMedium.font)
                 .tracking(SalusTypography.titleMedium.tracking)

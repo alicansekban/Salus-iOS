@@ -1,52 +1,45 @@
 // Ported from `core/ui/src/main/kotlin/com/alicansekban/salus/core/ui/component/
-// SalusAvatar.kt:34-95`.
+// SalusAvatar.kt:34-95` in its M15 shape.
 //
-// Kotlin's composable takes `name`, `size` (defaulting to `SalusAvatarDefaults.Size` = 48) and
-// `gradient` (defaulting to `MaterialTheme.salusColors.hero`). The iOS port keeps the same three
-// knobs, with one deliberate difference: `gradient` is `SalusGradient? = nil` and the hero
-// gradient is resolved from the environment at render time (`SalusAvatar.kt:39`), because the
-// resolved theme travels in the environment rather than as a parameter (CLAUDE.md, design system
-// rules). A caller that wants a non-hero gradient passes it explicitly.
+// Kotlin's composable takes `name`, `size` (defaulting to `SalusAvatarDefaults.Size` = 48),
+// `containerColor` (defaulting to `colorScheme.primaryContainer`) and `contentColor`
+// (defaulting to `colorScheme.onPrimaryContainer`) (`SalusAvatar.kt:36-42`). The M15 avatar sits
+// on `primaryContainer` with `onPrimaryContainer` glyphs — the tinted circle, not the strong
+// primary disc of the M14 port.
 //
-// The initials rule is `SalusAvatar.kt:88-95`: first letters of the first two whitespace-separated
-// words, uppercased; one char if a single word; `nil` for a blank name. The text style switches
-// at `SalusAvatarDefaults.LargeSize` = 72 (`SalusAvatar.kt:62-66`): `titleMedium` below it,
+// The initials rule is `SalusAvatar.kt:87-94`: first letters of the first two whitespace-separated
+// words, uppercased; one char if a single word; `nil` for a blank name. The text style switch is
+// `SalusAvatarDefaults.LargeSize` = 72 (`SalusAvatar.kt:61-65`): `titleMedium` below it,
 // `titleLarge` at or above it.
 
 import SalusDesignSystem
 import SwiftUI
 
-/// Circular avatar filled with the hero gradient, showing the person's initials or a person icon
-/// when no name is available — the shared leading visual for people across Home and Profile
-/// (`SalusAvatar.kt:29-33`).
+/// Circular avatar on `primaryContainer`, showing the person's initials or a person glyph when no
+/// name is available — the shared leading visual for people across Home and Profile
+/// (`SalusAvatar.kt:29-34`).
 public struct SalusAvatar: View {
     private let name: String?
     private let size: CGFloat
-    private let gradient: SalusGradient?
 
     @Environment(\.salusTheme) private var theme
 
     /// - Parameters:
-    ///   - name: the person's name; `nil` or blank draws the person icon (`SalusAvatar.kt:51-57`).
+    ///   - name: the person's name; `nil` or blank draws the person glyph.
     ///   - size: the circle's diameter (`SalusAvatar.kt:38`).
-    ///   - gradient: the fill; `nil` resolves `theme.extendedColors.hero` at render
-    ///     (`SalusAvatar.kt:39`).
     public init(
         name: String?,
-        size: CGFloat = SalusAvatarDefaults.size,
-        gradient: SalusGradient? = nil
+        size: CGFloat = SalusAvatarDefaults.size
     ) {
         self.name = name
         self.size = size
-        self.gradient = gradient
     }
 
     public var body: some View {
-        let resolvedGradient = gradient ?? theme.extendedColors.hero
         let initials = Self.initials(from: name)
 
         Circle()
-            .fill(resolvedGradient.vertical)
+            .fill(theme.colorScheme.primaryContainer)
             .frame(width: size, height: size)
             .overlay {
                 if let initials {
@@ -61,24 +54,24 @@ public struct SalusAvatar: View {
                                 ? SalusTypography.titleLarge.tracking
                                 : SalusTypography.titleMedium.tracking
                         )
-                        .foregroundStyle(.white)
+                        .foregroundStyle(theme.colorScheme.onPrimaryContainer)
                 } else {
-                    // `Icons.Filled.Person` (`SalusAvatar.kt:53`), tinted white and drawn at
-                    // half the avatar's diameter (`SalusAvatar.kt:56`). `person.fill` is the plain
-                    // bust — the closer twin to Material's `Person` than `person.crop.circle.fill`,
-                    // which would draw a person-in-a-circle inside the gradient circle.
+                    // `Icons.Filled.Person` (`SalusAvatar.kt:51-55`), tinted `onPrimaryContainer`
+                    // and drawn at half the avatar's diameter. `person.fill` is the plain bust —
+                    // the closer twin to Material's `Person` than `person.crop.circle.fill`,
+                    // which would draw a person-in-a-circle inside the tinted circle.
                     Image(systemName: "person.fill")
                         .font(.system(size: size / 2))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(theme.colorScheme.onPrimaryContainer)
                 }
             }
-            // `contentDescription = null` (`SalusAvatar.kt:54`): the avatar repeats the name the
+            // `contentDescription = null` (`SalusAvatar.kt:51-55`): the avatar repeats the name the
             // row beside it already says.
             .accessibilityHidden(true)
     }
 
     /// First letters of the first two whitespace-separated words, uppercased; one char if a
-    /// single word; `nil` for a `nil` or blank name (`SalusAvatar.kt:88-95`).
+    /// single word; `nil` for a `nil` or blank name (`SalusAvatar.kt:87-94`).
     /// `nonisolated` so the pure helper is callable from a nonisolated test context.
     nonisolated static func initials(from name: String?) -> String? {
         guard let name else { return nil }
@@ -95,18 +88,33 @@ public struct SalusAvatar: View {
     }
 }
 
-/// `object SalusAvatarDefaults` (`SalusAvatar.kt:72-85`). Component dimensions, not design tokens
+/// `object SalusAvatarDefaults` (`SalusAvatar.kt:71-84`). Component dimensions, not design tokens
 /// — Android keeps them in `:core:ui` too, not in `:core:designsystem`.
 public enum SalusAvatarDefaults {
-    /// `SalusAvatarDefaults.Size` (`SalusAvatar.kt:73`).
+    /// `SalusAvatarDefaults.Size` (`SalusAvatar.kt:72`).
     public static let size: CGFloat = 48
-    /// `SalusAvatarDefaults.LargeSize` (`SalusAvatar.kt:74`).
+    /// `SalusAvatarDefaults.LargeSize` (`SalusAvatar.kt:73`).
     public static let largeSize: CGFloat = 72
 }
 
 #Preview("Avatars") {
     let theme = SalusTheme.resolve(systemIsDark: false)
-    return ZStack {
+    ZStack {
+        theme.colorScheme.surfaceContainerLow
+        HStack(spacing: SalusSpacing.sm) {
+            SalusAvatar(name: "Alican Sekban")
+            SalusAvatar(name: "Ayşe", size: SalusAvatarDefaults.largeSize)
+            SalusAvatar(name: nil)
+        }
+        .padding(SalusSpacing.lg)
+    }
+    .frame(height: 120)
+    .salusTheme(theme)
+}
+
+#Preview("Avatars — dark") {
+    let theme = SalusTheme.resolve(systemIsDark: true)
+    ZStack {
         theme.colorScheme.surfaceContainerLow
         HStack(spacing: SalusSpacing.sm) {
             SalusAvatar(name: "Alican Sekban")

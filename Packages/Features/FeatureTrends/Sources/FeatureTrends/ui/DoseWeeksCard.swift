@@ -59,7 +59,12 @@ struct DoseWeeksCard: View {
                 model.weeks.last?.label ?? ""
             )
 
-            SalusCard(contentPadding: SalusSpacing.lg) {
+            SalusCard(contentPadding: EdgeInsets(
+                top: SalusSpacing.lg,
+                leading: SalusSpacing.lg,
+                bottom: SalusSpacing.lg,
+                trailing: SalusSpacing.lg
+            )) {
                 Text(verbatim: TrendsStrings.doseWeeksTitle)
                     .font(SalusTypography.titleMedium.font)
                     .tracking(SalusTypography.titleMedium.tracking)

@@ -235,8 +235,8 @@ struct AppointmentDetailScreen: View {
     private var actions: some View {
         VStack(spacing: SalusSpacing.md) {
             SalusButton(
-                text: AppointmentsStrings.detailEdit,
-                fillsWidth: true,
+                AppointmentsStrings.detailEdit,
+                size: .large,
                 action: onEdit
             )
 
@@ -244,23 +244,23 @@ struct AppointmentDetailScreen: View {
             // empty view the brief calls for, rather than a button that opens nothing.
             #if canImport(EventKitUI)
                 SalusButton(
-                    text: AppointmentsStrings.addToCalendar,
+                    AppointmentsStrings.addToCalendar,
+                    variant: .secondary,
+                    size: .large,
                     // `canAddToCalendar = state.startEpochMs > 0L` (`:144`), passed straight
                     // through as `enabled` (`:307`) — nothing to propose until the bounds are
                     // derived.
-                    enabled: state.startEpochMs > 0,
-                    tonal: true,
                     systemImage: "calendar",
-                    fillsWidth: true
+                    enabled: state.startEpochMs > 0
                 ) {
                     isAddingToCalendar = true
                 }
             #endif
 
             SalusButton(
-                text: AppointmentsStrings.detailDelete,
-                tonal: true,
-                fillsWidth: true
+                AppointmentsStrings.detailDelete,
+                variant: .secondary,
+                size: .large
             ) {
                 onEvent(.deleteClicked)
             }
@@ -357,8 +357,9 @@ private struct OpenMapsButton: View {
         // (`AppointmentDetailScreen.kt:237-242`) — content width, since Kotlin passes it no
         // `Modifier.fillMaxWidth()` unlike the three in the action block.
         SalusButton(
-            text: AppointmentsStrings.detailOpenMaps,
-            tonal: true,
+            AppointmentsStrings.detailOpenMaps,
+            variant: .secondary,
+            size: .medium,
             systemImage: "map"
         ) {
             guard let url = mapsURL(for: location) else { return }

@@ -278,16 +278,17 @@ struct MedicationDetailActions: View {
         // capsule in a full-width slot (`SalusButton.swift:35-39`).
         VStack(spacing: SalusSpacing.md) {
             SalusButton(
-                text: MedicationsStrings.detailEdit,
-                fillsWidth: true,
+                MedicationsStrings.detailEdit,
+                size: .large,
                 action: onEdit
             )
 
-            // `tonal = true` (`MedicationDetailScreen.kt:344`).
+            // The old `tonal = true` (`MedicationDetailScreen.kt:344`) maps to `.secondary` in the
+            // M15 vocabulary.
             SalusButton(
-                text: MedicationsStrings.detailDelete,
-                tonal: true,
-                fillsWidth: true,
+                MedicationsStrings.detailDelete,
+                variant: .secondary,
+                size: .large,
                 action: onDelete
             )
         }

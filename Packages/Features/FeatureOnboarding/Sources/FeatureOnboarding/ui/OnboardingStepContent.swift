@@ -175,10 +175,10 @@ struct OnboardingStepContent: View {
         VStack(alignment: .leading, spacing: SalusSpacing.lg) {
             ForEach(Sex.allCases, id: \.self) { option in
                 SalusSelectableRow(
+                    title: option.onboardingLabel,
                     systemImage: option.onboardingSystemImage,
-                    label: option.onboardingLabel,
-                    isSelected: state.sex == option,
-                    accent: option.onboardingAccent(theme)
+                    accent: option.onboardingAccent(theme),
+                    isSelected: state.sex == option
                 ) {
                     onEvent(.sexSelected(option))
                 }
@@ -218,7 +218,7 @@ struct OnboardingStepContent: View {
     /// `OnboardingStepContent.kt:180-186` — `SalusCard(contentPadding = 0)` wrapping a
     /// `SalusListItem`, which brings its own insets. The row is inline (see the file header).
     private var benefitCard: some View {
-        SalusCard(contentPadding: 0) {
+        SalusCard(contentPadding: EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)) {
             HStack(spacing: SalusSpacing.lg) {
                 SalusIconBadge(systemImage: "checkmark.seal")
                 VStack(alignment: .leading, spacing: 0) {

@@ -85,7 +85,12 @@ struct VitalsListContent: View {
                 rangeSelector
 
                 if let chart = state.chart {
-                    SalusCard(contentPadding: SalusSpacing.md) {
+                    SalusCard(contentPadding: EdgeInsets(
+                        top: SalusSpacing.md,
+                        leading: SalusSpacing.md,
+                        bottom: SalusSpacing.md,
+                        trailing: SalusSpacing.md
+                    )) {
                         SalusLineChart(
                             model: chart,
                             lineColor: theme.extendedColors.vitals.accent,

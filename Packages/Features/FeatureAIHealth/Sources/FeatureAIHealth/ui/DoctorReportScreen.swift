@@ -225,16 +225,16 @@ private struct ReadyBody: View {
                 }
                 .buttonStyle(.plain)
                 SalusButton(
-                    text: AiHealthStrings.doctorReportPreview,
-                    tonal: true,
+                    AiHealthStrings.doctorReportPreview,
+                    variant: .secondary,
+                    size: .large,
                     systemImage: "list.bullet",
-                    fillsWidth: true,
                     action: onPreview
                 )
                 SalusButton(
-                    text: AiHealthStrings.doctorReportRegenerate,
-                    tonal: true,
-                    fillsWidth: true,
+                    AiHealthStrings.doctorReportRegenerate,
+                    variant: .secondary,
+                    size: .large,
                     action: onRegenerate
                 )
 

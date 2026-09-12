@@ -145,10 +145,10 @@ struct CycleDayScreen: View {
     /// content-width capsule, since the drawn pill has to be widened from inside the component.
     private var saveButton: some View {
         SalusButton(
-            text: CycleStrings.save,
-            enabled: !state.isSaving,
+            CycleStrings.save,
+            size: .large,
             accent: theme.extendedColors.cycle,
-            fillsWidth: true
+            enabled: !state.isSaving
         ) { onEvent(.saveClicked) }
     }
 }

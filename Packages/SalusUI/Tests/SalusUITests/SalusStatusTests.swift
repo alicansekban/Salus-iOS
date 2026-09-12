@@ -32,6 +32,14 @@ struct SalusStatusTests {
         #expect(SalusStatus.error.tint(in: dark) == dark.colorScheme.error)
     }
 
+    /// `SalusStatusChip.kt:58` — `Accent -> MaterialTheme.colorScheme.primary`. The brand tone
+    /// re-uses the primary role rather than an extended token, so it shifts with the palette.
+    @Test("accent is the primary role")
+    func accentIsThePrimaryRole() {
+        #expect(SalusStatus.accent.tint(in: light) == light.colorScheme.primary)
+        #expect(SalusStatus.accent.tint(in: dark) == dark.colorScheme.primary)
+    }
+
     /// The same tint the accent-less `SalusStatusChip(label:)` has drawn since iOS-M2, so the
     /// two ways of asking for a neutral chip cannot diverge.
     @Test("neutral is onSurfaceVariant — the accent-less chip's tint")
@@ -40,12 +48,12 @@ struct SalusStatusTests {
         #expect(SalusStatus.neutral.tint(in: dark) == dark.colorScheme.onSurfaceVariant)
     }
 
-    /// The four tints have to be four *different* colors in either theme, or a status chip
+    /// The five tints have to be five *different* colors in either theme, or a status chip
     /// stops carrying the meaning it is drawn for.
-    @Test("the four statuses are four distinct tints in both themes")
-    func theFourStatusesAreDistinct() {
+    @Test("the five statuses are five distinct tints in both themes")
+    func theFiveStatusesAreDistinct() {
         for theme in [light, dark] {
-            let tints = [SalusStatus.success, .warning, .error, .neutral].map { $0.tint(in: theme) }
+            let tints = [SalusStatus.success, .warning, .error, .neutral, .accent].map { $0.tint(in: theme) }
 
             #expect(Set(tints).count == tints.count)
         }

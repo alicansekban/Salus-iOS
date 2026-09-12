@@ -54,8 +54,8 @@ public struct SalusEmptyState: View {
             // initializer would re-read it as a `LocalizedStringKey` against the main bundle (the
             // M7 `c726e22` finding).
             Text(verbatim: title)
-                .font(SalusTypography.titleLarge.font)
-                .tracking(SalusTypography.titleLarge.tracking)
+                .font(SalusTypography.titleMedium.font)
+                .tracking(SalusTypography.titleMedium.tracking)
                 .foregroundStyle(colors.onSurface)
                 .multilineTextAlignment(.center)
             if let message {
@@ -71,11 +71,9 @@ public struct SalusEmptyState: View {
             }
             if let actionLabel, let onAction {
                 Spacer().frame(height: SalusSpacing.xl)
-                // `SalusButton(text = actionLabel, onClick = onAction)`
-                // (`SalusEmptyState.kt:69`) — the default filled, content-width pill. This was
-                // hand-drawn here until `SalusButton` shipped with iOS-M6; the component draws
-                // the identical capsule, so the copy is gone.
-                SalusButton(text: actionLabel, action: onAction)
+                // `SalusButton(text = actionLabel, onClick = onAction, size = SalusButtonSize.Medium)`
+                // (`SalusEmptyState.kt:69-75`) — the default filled, medium (content-width) button.
+                SalusButton(actionLabel, size: .medium, action: onAction)
             }
         }
         .frame(maxWidth: .infinity)
@@ -85,10 +83,12 @@ public struct SalusEmptyState: View {
     private var colors: SalusColorScheme { theme.colorScheme }
 
     /// `SalusIconBadge(size = LargeSize, iconSize = LargeIconSize)`
-    /// (`SalusEmptyState.kt:45-50`, `SalusIconBadge.kt:31-60`).
+    /// (`SalusEmptyState.kt:45-50`, `SalusIconBadge.kt:31-60`). The M15 tile sits on
+    /// `surfaceContainerHigh` rather than the accent container, so the empty state reads as
+    /// "nothing here yet" instead of as a feature block.
     private var iconBadge: some View {
         Circle()
-            .fill(accent?.container ?? colors.primaryContainer)
+            .fill(colors.surfaceContainerHigh)
             .frame(width: Self.badgeSize, height: Self.badgeSize)
             .overlay {
                 Image(systemName: systemImage)
@@ -110,7 +110,23 @@ public struct SalusEmptyState: View {
 
 #Preview("Empty state") {
     let theme = SalusTheme.resolve(systemIsDark: false)
-    return ZStack {
+    ZStack {
+        theme.colorScheme.background
+        SalusEmptyState(
+            systemImage: "heart.fill",
+            title: "No measurements yet",
+            message: "Add your first measurement to start tracking trends.",
+            accent: theme.extendedColors.vitals,
+            actionLabel: "Add measurement",
+            onAction: {}
+        )
+    }
+    .salusTheme(theme)
+}
+
+#Preview("Empty state — dark") {
+    let theme = SalusTheme.resolve(systemIsDark: true)
+    ZStack {
         theme.colorScheme.background
         SalusEmptyState(
             systemImage: "heart.fill",

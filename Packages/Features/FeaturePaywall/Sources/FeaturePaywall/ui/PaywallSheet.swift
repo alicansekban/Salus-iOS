@@ -176,19 +176,17 @@ private struct PaywallActions: View {
             // button here, so nothing can be fired twice.
             if state.plans.isEmpty {
                 SalusButton(
-                    text: PaywallStrings.retry,
+                    PaywallStrings.retry,
+                    variant: .secondary,
                     enabled: !state.isPurchasing,
-                    tonal: true,
-                    fillsWidth: true,
                     action: { onEvent(.reload) }
                 )
             } else {
                 SalusButton(
-                    text: selected?.hasFreeTrial == true
+                    selected?.hasFreeTrial == true
                         ? PaywallStrings.ctaTrial
                         : PaywallStrings.ctaSubscribe,
                     enabled: !state.isPurchasing,
-                    fillsWidth: true,
                     action: onPurchase
                 )
             }

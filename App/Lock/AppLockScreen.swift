@@ -61,7 +61,7 @@ struct AppLockScreen: View {
                 Spacer().frame(height: SalusSpacing.xl)
                 // `SalusButton(app_lock_unlock, onClick = onUnlockRequest)`
                 // (`AppLockScreen.kt:54-57`) — the retry after a cancelled or failed prompt.
-                SalusButton(text: AppStrings.appLockUnlock, action: onUnlockRequest)
+                SalusButton(AppStrings.appLockUnlock, action: onUnlockRequest)
             }
         }
         // `LaunchedEffect(Unit) { onUnlockRequest() }` (`AppLockScreen.kt:32`).

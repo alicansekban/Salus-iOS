@@ -74,9 +74,9 @@ struct CycleScreen: View {
     /// capsule, since the drawn pill has to be widened from inside the component.
     private var periodButton: some View {
         SalusButton(
-            text: state.hasOpenPeriod ? CycleStrings.periodEnded : CycleStrings.periodStarted,
-            accent: theme.extendedColors.cycle,
-            fillsWidth: true
+            state.hasOpenPeriod ? CycleStrings.periodEnded : CycleStrings.periodStarted,
+            size: .large,
+            accent: theme.extendedColors.cycle
         ) {
             onEvent(state.hasOpenPeriod ? .endPeriodClicked : .startPeriodClicked)
         }

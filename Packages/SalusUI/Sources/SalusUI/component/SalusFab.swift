@@ -1,11 +1,15 @@
-// Ported from `core/ui/.../component/SalusFab.kt:19-35`.
+// Ported from `core/ui/src/main/kotlin/com/alicansekban/salus/core/ui/component/
+// SalusFab.kt:40-64` in its M15 shape.
 
 import SalusDesignSystem
 import SwiftUI
 
 /// Squircle floating action button in the strong primary color. Feature screens place it in a
 /// `ZStack` aligned to `.bottomTrailing`, the twin of Compose's `Box` + `Modifier.align`, per the
-/// single-Scaffold rule (`SalusFab.kt:15-18`).
+/// single-Scaffold rule (`SalusFab.kt:35-38`).
+///
+/// In dark mode the disc gets the same `accentGlow` wash as `SalusButton`'s primary variant,
+/// which is what separates it from the near-black ground (`SalusFab.kt:68-69`).
 public struct SalusFab: View {
     private let systemImage: String
     private let contentDescription: String?
@@ -16,7 +20,7 @@ public struct SalusFab: View {
     /// - Parameters:
     ///   - systemImage: SF Symbol name. Kotlin takes an `ImageVector` from `Icons`; the iOS twin of
     ///     that catalogue is SF Symbols, named rather than referenced.
-    ///   - contentDescription: what VoiceOver announces (`SalusFab.kt:22`).
+    ///   - contentDescription: what VoiceOver announces (`SalusFab.kt:43`).
     public init(systemImage: String, contentDescription: String?, action: @escaping () -> Void) {
         self.systemImage = systemImage
         self.contentDescription = contentDescription
@@ -38,11 +42,19 @@ public struct SalusFab: View {
         .accessibilityLabel(Text(verbatim: contentDescription ?? ""))
     }
 
-    /// `containerColor = primary`, `shape = MaterialTheme.shapes.medium` (`SalusFab.kt:29-31`).
+    /// `containerColor = primary`, `shape = CircleShape` (`SalusFab.kt:52-53`) with the
+    /// `accentGlow` wash underneath (`SalusFab.kt:66-69`). The glow is what separates the disc
+    /// from the ground in both modes — in dark from the near-black screen, in light from the
+    /// tinted background — so it is a `primary`-tinted shadow, not the neutral `salusShadow`.
     private var background: some View {
-        SalusShapes.mediumShape
+        Circle()
             .fill(theme.colorScheme.primary)
-            .salusShadow(.raised, isDark: theme.isDark)
+            .shadow(
+                color: theme.extendedColors.accentGlow,
+                radius: Self.glowRadius,
+                x: 0,
+                y: Self.glowOffsetY
+            )
     }
 
     /// Material's own `FloatingActionButton` container size, which Android inherits without naming
@@ -51,6 +63,9 @@ public struct SalusFab: View {
     /// above `SalusTouchTarget.min`.
     private static let containerSize: CGFloat = 56
     private static let iconSize: CGFloat = 24
+    /// `SalusFabDefaults.GlowElevation` (`SalusFab.kt:72`) — the spread of the accent wash.
+    private static let glowRadius: CGFloat = 12
+    private static let glowOffsetY: CGFloat = 4
 }
 
 #Preview("FAB") {
@@ -61,4 +76,14 @@ public struct SalusFab: View {
     }
     .frame(width: 240, height: 200)
     .salusTheme(SalusTheme.resolve(systemIsDark: false))
+}
+
+#Preview("FAB — dark") {
+    ZStack(alignment: .bottomTrailing) {
+        SalusTheme.resolve(systemIsDark: true).colorScheme.background
+        SalusFab(systemImage: "plus", contentDescription: "Add", action: {})
+            .padding(SalusSpacing.lg)
+    }
+    .frame(width: 240, height: 200)
+    .salusTheme(SalusTheme.resolve(systemIsDark: true))
 }

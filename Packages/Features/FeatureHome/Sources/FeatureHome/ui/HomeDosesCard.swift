@@ -104,8 +104,9 @@ private struct HomeDoseRow: View {
     @ViewBuilder private var trailing: some View {
         if dose.status == .pending {
             SalusButton(
-                text: HomeStrings.takeDose,
-                tonal: true,
+                HomeStrings.takeDose,
+                variant: .secondary,
+                size: .medium,
                 accent: theme.extendedColors.medications
             ) {
                 onEvent(.takeDose(scheduleId: dose.scheduleId, minuteOfDay: dose.minuteOfDay))

@@ -52,18 +52,17 @@ struct SalusSelectableRowTests {
 
     /// The init's argument list, pinned by calling it: `accent` is the one optional knob
     /// (`SalusSelectableRow.kt:49`), and the selected flag round-trips into the accessibility trait the
-    /// row publishes for Kotlin's `Role.RadioButton` (`SalusSelectableRow.kt:57`).
-    @Test("the row is built from an icon, a label, a selected flag and a handler")
+    /// row publishes for Kotlin's `Role.RadioButton` (`SalusSelectableRow.kt:63`).
+    @Test("the row is built from a title, a selected flag and a handler")
     @MainActor
-    func theRowTakesItsFiveArguments() {
+    func theRowTakesItsArguments() {
         let selected = SalusSelectableRow(
+            title: "Kadın",
             systemImage: "person",
-            label: "Kadın",
-            isSelected: true,
             accent: accent,
-            onSelected: {}
-        )
-        let unselected = SalusSelectableRow(systemImage: "person", label: "Erkek", isSelected: false) {}
+            isSelected: true
+        ) {}
+        let unselected = SalusSelectableRow(title: "Erkek", systemImage: "person", isSelected: false) {}
 
         #expect(selected.isSelected)
         #expect(!unselected.isSelected)

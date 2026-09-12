@@ -25,6 +25,7 @@
 // hands back is divided by the same constant. No `Calendar` is constructed, the device's zone
 // cannot shift the day by one, and the user still sees their own locale and calendar in the wheel.
 
+import SalusDesignSystem
 import SalusModel
 import SwiftUI
 
@@ -44,6 +45,8 @@ public struct SalusDateField: View {
     /// What the wheel shows while picking, or nil while it still shows the seed. Every write is a
     /// user gesture, which is what makes it safe to treat as the OK button.
     @State private var draft: Date?
+
+    @Environment(\.salusTheme) private var theme
 
     /// - Parameters:
     ///   - title: the row's label, shown beside the wheel and read by VoiceOver; callers that draw
@@ -75,10 +78,32 @@ public struct SalusDateField: View {
                 seedEpochDay: seedEpochDay
             ) {
             case .placeholder:
-                // Kotlin's `OutlinedButton { Text(vitals_select_date) }`
-                // (`EditorDateField.kt:35-44`). Opening the picker is all it does.
-                Button(placeholder) { isPicking = true }
-                    .buttonStyle(.bordered)
+                // Kotlin's M15 date picker is dressed as a `SalusTextField`: a button on the
+                // same `medium` corners, `surfaceContainerHigh` fill and `cardBorder` border as
+                // the fields around it (`EditorDateField.kt:35-44`, `SalusDateField.kt:69-100`).
+                // Opening the picker is all it does.
+                Button {
+                    isPicking = true
+                } label: {
+                    Text(verbatim: placeholder)
+                        .font(SalusTypography.bodyLarge.font)
+                        .foregroundStyle(theme.colorScheme.onSurfaceVariant)
+                        .frame(
+                            maxWidth: .infinity,
+                            minHeight: SalusDateFieldDefaults.height,
+                            alignment: .leading
+                        )
+                        .padding(.horizontal, SalusDateFieldDefaults.contentInset)
+                }
+                .buttonStyle(.plain)
+                .background(SalusShapes.mediumShape.fill(theme.colorScheme.surfaceContainerHigh))
+                .overlay {
+                    SalusShapes.mediumShape.strokeBorder(
+                        theme.extendedColors.cardBorder,
+                        lineWidth: SalusDateFieldDefaults.borderWidth
+                    )
+                }
+                .contentShape(.rect)
 
             case let .picker(seed):
                 DatePicker(title, selection: draftSelection(seededAt: seed), displayedComponents: .date)
@@ -170,6 +195,15 @@ enum SalusDateFieldBinding {
     }
 }
 
+/// `SalusDateField`'s text-field styling, shared with nothing else in this file. The M15 date row
+/// is dressed as a `SalusTextField` (`SalusDateField.kt:69-100`), so the dimensions match the
+/// field's — 56 pt resting height, `lg` inset, 1 pt border.
+enum SalusDateFieldDefaults {
+    static let height: CGFloat = 56
+    static let contentInset: CGFloat = SalusSpacing.lg
+    static let borderWidth: CGFloat = 1
+}
+
 #Preview("Editor date field") {
     Form {
         SalusDateField(
@@ -187,4 +221,24 @@ enum SalusDateFieldBinding {
             onChange: { _ in }
         )
     }
+}
+
+#Preview("Editor date field — dark") {
+    Form {
+        SalusDateField(
+            title: "Date",
+            epochDay: LocalDate(year: 2026, month: 8, day: 17).epochDay,
+            placeholder: "Select date",
+            seedEpochDay: LocalDate(year: 2026, month: 8, day: 17).epochDay,
+            onChange: { _ in }
+        )
+        SalusDateField(
+            title: "Date",
+            epochDay: nil,
+            placeholder: "Select date",
+            seedEpochDay: LocalDate(year: 2026, month: 8, day: 17).epochDay,
+            onChange: { _ in }
+        )
+    }
+    .preferredColorScheme(.dark)
 }

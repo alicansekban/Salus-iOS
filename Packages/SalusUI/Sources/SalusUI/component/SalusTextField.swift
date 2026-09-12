@@ -116,7 +116,7 @@ public struct SalusTextField: View {
 
     public var body: some View {
         VStack(alignment: .leading, spacing: SalusSpacing.xs) {
-            pill
+            fieldBox
             if SalusTextFieldStyle.showsSupportingText(supportingText) {
                 // `SalusTextField.kt:91-104` — below the pill, inset to the content edge so it
                 // lines up with the value above it.
@@ -130,8 +130,8 @@ public struct SalusTextField: View {
         }
     }
 
-    /// `SalusTextField.kt:48-89` — the capsule, its value and its trailing unit.
-    private var pill: some View {
+    /// `SalusTextField.kt:96-148` — the field's box, its value and its trailing unit.
+    private var fieldBox: some View {
         HStack(spacing: SalusSpacing.sm) {
             field
             if let suffix {
@@ -144,10 +144,16 @@ public struct SalusTextField: View {
         .padding(.horizontal, Self.contentInset)
         .padding(.vertical, SalusSpacing.md)
         .frame(maxWidth: .infinity, minHeight: Self.height, alignment: .leading)
-        .background(SalusShapes.pill.fill(colors.surfaceVariant))
+        // `MaterialTheme.shapes.medium` with a `surfaceContainerHigh` fill (`SalusTextField.kt:102-110`).
+        .background(SalusShapes.mediumShape.fill(colors.surfaceContainerHigh))
         .overlay {
             if let stroke = SalusTextFieldStyle.stroke(isError: isError, colors: colors) {
-                SalusShapes.pill.stroke(stroke, lineWidth: Self.errorStroke)
+                SalusShapes.mediumShape.strokeBorder(stroke, lineWidth: Self.errorStroke)
+            } else {
+                SalusShapes.mediumShape.strokeBorder(
+                    colors.outlineVariant,
+                    lineWidth: Self.errorStroke
+                )
             }
         }
     }

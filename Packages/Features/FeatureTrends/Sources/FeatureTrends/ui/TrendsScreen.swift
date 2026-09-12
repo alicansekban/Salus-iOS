@@ -214,7 +214,7 @@ private struct TimeOfDayCard: View {
                 TrendsStrings.timeOfDayPartSummary(bar.label, bar.valueText(decimals: decimals, locale: locale))
             }
 
-            SalusCard(contentPadding: SalusSpacing.lg) {
+            SalusCard {
                 Text(verbatim: TrendsStrings.timeOfDayTitle)
                     .font(SalusTypography.titleMedium.font)
                     .tracking(SalusTypography.titleMedium.tracking)
@@ -274,7 +274,7 @@ private struct MetricOverlayCard: View {
             // line named with the metric and its real range, exactly as it is drawn.
             let spokenLegend = model.legend.map { legendLine(for: $0) }
 
-            SalusCard(contentPadding: SalusSpacing.lg) {
+            SalusCard {
                 Text(verbatim: TrendsStrings.overlayTitle)
                     .font(SalusTypography.titleMedium.font)
                     .tracking(SalusTypography.titleMedium.tracking)
