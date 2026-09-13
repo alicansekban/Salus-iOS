@@ -245,13 +245,17 @@ Required: **6.9" display** (iPhone 16 Pro Max / 17 Pro Max, 1320×2868 portrait)
 Optional but recommended: 6.5" (1284×2778) for older devices; iPad not needed
 (`TARGETED_DEVICE_FAMILY = 1`).
 
-Final set (2026-09-04): `~/Desktop/salus-store-görseller/ios/01-home.png … 08-more.png`,
-1320×2868 PNG, no alpha, in-app language Turkish, same order as the Play set: 01 home ·
-02 dose alarm · 03 medications · 04 vitals · 05 appointments · 06 AI summary · 07 doctor report ·
-08 more. Upload all eight to the 6.9" slot of the **tr** localization; en-US can reuse the same
-files (App Store Connect offers "use the primary localization's screenshots"). 02, 06 and 07 were
-upscaled from 738×1600 device JPEGs and are slightly soft; re-export from the iPhone at native
-1290×2796 and re-run the framing script if a crisper set is wanted.
+Final set (2026-09-13): `~/Desktop/salus-store-görseller/ios/01-home.png … 08-doctor-report.png`,
+1320×2868 PNG, no alpha, full-bleed (no frame), in-app language Turkish, same order as the Play
+set: 01 home · 02 medications · 03 vitals · 04 appointments · 05 AI summary · 06 more ·
+07 dose alarm · 08 doctor report. 01–06 are M16 reskin captures with the "Ayşe" demo dataset
+(`scripts/dev/seed-store-demo.sh`, described in `salus-android/docs/testing/store-demo-data.md`);
+raw simulator captures (iPhone 17 Pro Max, `xcrun simctl io booted screenshot`) live in
+`raw/ios/`, and the export is only an RGBA→RGB conversion. 07 and 08 were carried over from the
+2026-09-04 set (pre-reskin) and resized from 1284×2778 to 1320×2868 (0.4 % aspect change, not
+visible). The previous eight-image set is kept in `ios-eski/2026-09-13-pre-m15/`. Upload all
+eight to the 6.9" slot of the **tr** localization; en-US can reuse the same files (App Store
+Connect offers "use the primary localization's screenshots").
 
 ### App icon
 
