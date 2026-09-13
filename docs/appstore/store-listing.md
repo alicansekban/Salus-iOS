@@ -350,9 +350,8 @@ The ordered list below documents the path to that submission.
    TestFlight build (App Check DeviceCheck path), check alarms and notifications.
 8. Submit for review; select "Release manually" so the two stores can go live together.
 
-- [ ] `scripts/premium-sandbox-qa.md` run on a device with a sandbox tester (TestFlight build)
-      — not recorded as done in this repo; if it was walked before the 1.0.1 submission, note
-      the date here
+- [x] `scripts/premium-sandbox-qa.md` run on a device with a sandbox tester (TestFlight build)
+      — walked on the 1.0.1 (5) TestFlight build before submission, no findings (2026-09-13)
 - [x] Copy this file's fields into App Store Connect (tr primary, en-US) — 2026-09-13
 - [x] Nutrition labels + age rating + review notes filled in — 2026-09-13
 - [x] Screenshots uploaded (6.9" and 6.5") — 2026-09-13
