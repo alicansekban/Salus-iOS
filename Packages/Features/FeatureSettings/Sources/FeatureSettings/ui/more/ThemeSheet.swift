@@ -8,7 +8,8 @@
 //
 // Material → SwiftUI:
 //   `SalusBottomSheet(title:subtitle:onDismiss:)` → the `salusBottomSheet(isPresented:)` modifier
-//     with `detents: [.medium, .large]` — this sheet's content is taller than a medium sheet, so
+//     with `sizing: .detents([.medium, .large])` — this sheet's content is taller than a medium
+//     sheet, so
 //     it opens at medium and drags up; `onDismissRequest` (the scrim / swipe) is the binding's
 //     `false` edge, which sends `themeSheetDismissed`.
 //   `SalusChoiceTile` × theme mode → the same `SalusChoiceTile` (spec §3.3); the three modes
@@ -58,11 +59,12 @@ struct ThemeSheet: View {
                 ),
                 title: SettingsStrings.themeSheetTitle,
                 subtitle: SettingsStrings.themeSheetSubtitle,
-                // Two detents, not the house `.medium` alone: mode tiles + section header + four
-                // palette rows run past a medium sheet on every iPhone, and further still at a
-                // large Dynamic Type. It opens at `.medium` and drags up to `.large`; the body's
-                // own `ScrollView` (`SalusBottomSheet.swift`) reaches the rest at either height.
-                detents: [.medium, .large]
+                // Two fixed detents, not `.fitted` and not the house `.medium` alone: mode tiles
+                // + section header + four palette rows run past a medium sheet on every iPhone,
+                // and further still at a large Dynamic Type. It opens at `.medium` and drags up
+                // to `.large` (final-review I4); the body's own `ScrollView`
+                // (`SalusBottomSheet.swift`) reaches the rest at either height.
+                sizing: .detents([.medium, .large])
             ) {
                 ThemeSheetContent(state: state, onEvent: onEvent)
             }

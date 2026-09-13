@@ -22,7 +22,7 @@
 //                                       the selectable `SalusChoiceChip`: nothing here is a choice,
 //                                       and a chip that looks pressable invites a tap that does
 //                                       nothing.
-//   `SalusBottomSheet(onDismiss,      → the `salusBottomSheet(isPresented:title:subtitle:detents:content:)`
+//   `SalusBottomSheet(onDismiss,      → the `salusBottomSheet(isPresented:title:subtitle:sizing:content:)`
 //     title) { Text(body) }`            modifier (§9 (d): the sheet is a modifier on this side, not
 //                                       a view), driven by the same `rememberSaveable` boolean,
 //                                       which is `@State` here.
@@ -64,12 +64,16 @@ struct OnboardingWelcomePage: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, SalusSpacing.xl)
-        // `SalusBottomSheet` (`OnboardingPages.kt:110-121`). `.large` rather than `.medium`: the
-        // statement is a full paragraph, and a half sheet would open on its first two lines.
+        // `SalusBottomSheet` (`OnboardingPages.kt:110-121`). Fitting rather than a fixed detent:
+        // the statement is one paragraph, so the sheet is as tall as the paragraph — a half sheet
+        // opened on its first two lines and a `.large` one left empty space under a short
+        // translation. At the largest text sizes the paragraph outgrows the screen; the sheet is
+        // capped at the container's height there and the body's own `ScrollView` reaches the rest
+        // (owner QA round 2, C2).
         .salusBottomSheet(
             isPresented: $isPrivacyShown,
             title: OnboardingStrings.onboardingPrivacyTitle,
-            detents: [.large]
+            sizing: .fitted
         ) {
             Text(verbatim: OnboardingStrings.onboardingPrivacyBody)
                 .font(SalusTypography.bodyMedium.font)

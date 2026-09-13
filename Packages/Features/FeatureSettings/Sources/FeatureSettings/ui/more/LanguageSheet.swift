@@ -8,9 +8,11 @@
 // language underneath, which is the preview a staged sheet would have to fake.
 //
 // Material → SwiftUI: `SalusBottomSheet` → the `salusBottomSheet(isPresented:)` modifier with
-// `detents: [.medium]`; `onDismissRequest` is the binding's `false` edge, which sends
-// `languageSheetDismissed`. The leading `SalusIconBadge(Small, globe)` maps to
-// `SalusIconBadge(systemImage: "globe", size: .small)`.
+// `sizing: .fitted`; `onDismissRequest` is the binding's `false` edge, which sends
+// `languageSheetDismissed`. Fitting is what makes this sheet the twin of its `ModalBottomSheet`,
+// which wraps its content: at `[.medium]` the three rows sat at the top of a half-screen sheet
+// with a large empty area under them (owner QA round 2, C2). The leading
+// `SalusIconBadge(Small, globe)` maps to `SalusIconBadge(systemImage: "globe", size: .small)`.
 
 import SalusDesignSystem
 import SalusModel
@@ -19,7 +21,8 @@ import SwiftUI
 
 /// The language sheet (`LanguageSheet.kt:50-66`). A self-presenting view, the same shape
 /// `ThemeSheet` uses: `MoreScreen` embeds it in a `.background`, and it attaches its own
-/// `salusBottomSheet` (`.medium` detent) driven by the state flag.
+/// `salusBottomSheet` (fitting, so the sheet is exactly its three rows tall) driven by the state
+/// flag.
 struct LanguageSheet: View {
     let state: MoreUiState
     let onEvent: (MoreEvent) -> Void
@@ -38,7 +41,9 @@ struct LanguageSheet: View {
                 ),
                 title: SettingsStrings.languageTitle,
                 subtitle: SettingsStrings.languageSheetSubtitle,
-                detents: [.medium]
+                // Three rows and nothing else: the sheet hugs them the way Kotlin's
+                // `ModalBottomSheet` hugs its column, rather than resting at half the screen.
+                sizing: .fitted
             ) {
                 LanguageSheetContent(state: state, onEvent: onEvent)
             }
