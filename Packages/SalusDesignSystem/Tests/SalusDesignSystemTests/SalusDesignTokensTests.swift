@@ -113,7 +113,13 @@ struct MaterialColorRoleTests {
             (
                 "surfaceContainerHighest", SalusColorScheme.light.surfaceContainerHighest,
                 UInt32(0xFFFFFF)
-            )
+            ),
+            // The bottom sheet's ground (`SalusBottomSheet.kt:66`, `SurfaceContainerLight`
+            // `Color.kt:57`). Pinned by value since owner QA round 3 (D3) asked whether the sheet
+            // ground had drifted from Android's: the two ends were equal, and this is what keeps
+            // them so — the sample list around it had reached for the lowest and the highest and
+            // stepped over the one in between.
+            ("surfaceContainer", SalusColorScheme.light.surfaceContainer, UInt32(0xF1F6F2))
         ] as [ColorSample]
     )
     func lightRole(_ sample: ColorSample) {
@@ -138,7 +144,10 @@ struct MaterialColorRoleTests {
             (
                 "surfaceContainerHighest", SalusColorScheme.dark.surfaceContainerHighest,
                 UInt32(0x243029)
-            )
+            ),
+            // The bottom sheet's ground (`SurfaceContainerDark`, `Color.kt:111`) — the dark half
+            // of the light pin above.
+            ("surfaceContainer", SalusColorScheme.dark.surfaceContainer, UInt32(0x182019))
         ] as [ColorSample]
     )
     func darkRole(_ sample: ColorSample) {

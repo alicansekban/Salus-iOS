@@ -29,6 +29,25 @@
 //
 // The theme is re-applied inside the sheet: a sheet is presented from a new window scene, and
 // nothing about that guarantees the caller's `@Environment(\.salusTheme)` travels with it.
+//
+// **The body pads its header and nothing else, which is the twin exactly.**
+// `SalusBottomSheet.kt:110` calls `content()` bare — only the header `Row` above it takes a
+// padding, and that one is `start = lg, end = sm, bottom = md` (`:72-79`), the trailing step
+// shorter because the close button's own touch target fills it. So the horizontal inset belongs to
+// each piece of content, once: `SalusSelectableRow` pads itself `lg` (`SalusSelectableRow.kt:65`),
+// the theme sheet's mode row pads itself `lg` (`ThemeSheet.kt:83-89`), a `SalusSectionHeader`
+// carries `lg` in its default `contentPadding` (`SalusSectionHeader.kt:40-43`), and the onboarding
+// privacy sheet's bare paragraph applies `lg` at its call site. Giving the slot an inset of its own
+// would double every one of those, and undoing them in four callers to move one number into the
+// component is a divergence from the twin, not a mirror of it. Checked again in owner QA round 3
+// (D3): what reached the sheet's edges was the `surfaceVariant` pill `SalusSelectableRow` drew
+// under its already-inset content, not the content (D1 removed it).
+//
+// The ground is `presentationBackground(theme.colorScheme.surfaceContainer)` and nothing else
+// paints it — no `.background` on the body, no tinted `ScrollView`. The token is Android's byte for
+// byte (light `0xF1F6F2` / dark `0x182019` against `SurfaceContainerLight` / `SurfaceContainerDark`,
+// `Color.kt:57`, `:111`), and no premium palette repaints it: `withPremiumAccent` touches the eight
+// primary/secondary roles only. `SalusDesignTokensTests` pins both halves by value.
 
 import SalusDesignSystem
 import SwiftUI
@@ -159,6 +178,8 @@ private struct SalusBottomSheetBody<C: View>: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             header
+            // No inset of its own: every caller's content carries the screen's `lg` itself, which
+            // is how `SalusBottomSheet.kt:110` hands the slot its content too (the file header).
             // The caller's content scrolls, the header does not. Compose's `ModalBottomSheet`
             // column is scrollable by construction; a SwiftUI sheet clips instead, so content
             // taller than the detent it opened at — the theme sheet's mode tiles plus four
