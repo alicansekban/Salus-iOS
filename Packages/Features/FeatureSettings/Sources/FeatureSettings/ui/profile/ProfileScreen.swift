@@ -241,6 +241,10 @@ struct ProfileScreen: View {
             )
             .padding(.horizontal, SalusSpacing.lg)
         }
+        // The same `Column` padding, vertical half: `lg` above the first field label is the breath
+        // between the identity band and "AD" (`ProfileScreen.kt:127-132`). Without it the label sat
+        // on the band's bottom edge (owner QA round 4).
+        .padding(.top, SalusSpacing.lg)
         .padding(.bottom, SalusSpacing.xl)
     }
 
