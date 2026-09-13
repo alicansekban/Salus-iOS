@@ -308,17 +308,23 @@ the one row set that can force a shell change.
 
 ### 5.1 The theme sheet repaints the bars while it is open (Task 5)
 
-This is the one thing only a device can settle (spec §10, "appearance rebuild timing"): a
-`UITabBar.appearance()` change reaches bars created **after** the call, so the shell repaints the
-two grounds through SwiftUI (`.toolbarBackground`) and everything else through the appearance
-proxy. If any row here fails, the recorded fallback is `.id(theme.isDark)` on the `TabView` in
-`RootView.tabs` — deliberately not taken today, because it rebuilds all five tabs' content on every
-theme change.
+This is the one thing only a device can settle (spec §10, "appearance rebuild timing"). Owner QA
+round 1 found the risk to be real — a `UITabBar.appearance()` / `UINavigationBar.appearance()`
+change reaches only bars created **after** the call, and every bar in the app is made once at
+launch and kept — so the shell no longer relies on the proxy for the live case. It now paints the
+bars three ways at once: `SalusBarRepainter` walks the live window (the tab bar, the current
+stack's navigation bar, any pushed screen's bar, and the sheet's own bar, which is presented while
+the user is tapping) and installs the new appearances on each; `.toolbarBackground` and
+`.toolbarColorScheme` tell SwiftUI what it paints for itself; and the appearance proxies still
+cover bars made after the switch. The `.id(theme.isDark)` fallback is **retired**, not pending —
+it rebuilt all five tabs' content on every theme change and there is nothing left for it to fix.
+A failure in this section is a bug to report, not a trigger for that fallback.
 
 | # | Step | Expect | ☐ |
 |---|---|---|---|
-| 5.1.1 | Ayarlar → Görünüm & Tema, switch Açık → Koyu without leaving the screen | the tab bar's ground darkens **immediately** — no stale near-white bar under a dark app | ☐ |
-| 5.1.2 | Same switch, watching the UNSELECTED tab icons | they move to the dark `onSurfaceVariant` immediately; if they stay light-mode grey until the app is backgrounded and reopened, note it — that is the proxy-timing risk | ☐ |
+| 5.1.1 | Ayarlar → Görünüm & Tema, switch Açık → Koyu without leaving the screen | the tab bar's ground darkens **immediately**, with the sheet still open and without touching the tab bar — no stale near-white bar under a dark app, and no waiting for a tab switch | ☐ |
+| 5.1.2 | Same switch, watching the UNSELECTED tab icons | they move to the dark `onSurfaceVariant` **immediately**, in the same frame as the ground. Staying light-mode grey until a tab switch, a backgrounding or a relaunch is the owner-QA-round-1 B3 regression | ☐ |
+| 5.1.2a | Push a screen first (Ayarlar → Profil, say), then open the theme sheet from it and switch Açık → Koyu | the **pushed** screen's navigation bar — its ground, its title and its back chevron — repaints at once too, not only the tab root's. Back out afterwards: the root's bar is right as well | ☐ |
 | 5.1.3 | Same switch, watching the navigation bar | ground and title follow at once; the bar never shows the old ground behind the new title | ☐ |
 | 5.1.4 | Switch Renk Teması CLASSIC → OCEAN → SUNSET → FOREST with premium on | the selected tab's icon/label follow the palette's `primary` each time, immediately | ☐ |
 | 5.1.5 | Switch mode to Sistem, then flip iOS's own appearance from Control Centre | both bars repaint on return to the app | ☐ |
@@ -393,11 +399,15 @@ Android's numbers and they are the same here; any *new* pair below AA fails
 `SalusColorSchemeContrastTests`. Note only whether either reads as illegible on a device — the
 pairs themselves are a cross-platform decision, not an iOS finding.
 
-**Task 5 — appearance-proxy timing.** §5.1 is the whole of it: the unselected tab-item colour and
-the navigation-bar title font are set on `UITabBar.appearance()` / `UINavigationBar.appearance()`,
-which reach bars created after the call. Nothing automated can run a live theme switch, so §5.1.2
-is the row that decides whether `.id(theme.isDark)` on the `TabView` has to be added. Note what
-actually happens — "repaints at once", "repaints after a tab switch", or "only after relaunch".
+**Task 5 — repainting the live bars.** §5.1 is the whole of it. The appearance proxies reach only
+bars created after the call, which owner QA round 1 confirmed is every bar in the app: they are
+made once at launch and kept. `SalusBarRepainter` now walks the live window on every theme change
+and paints the bars it finds, and `.toolbarColorScheme` tells SwiftUI's own title and chrome
+colours the same news. Nothing automated can run a live theme switch — the walk itself is unit
+tested (`SalusBarRepainterTests`), but every `UIKit` line around it is compiled out of the macOS
+host that runs `swift test` — so §5.1.1, §5.1.2 and §5.1.2a are the rows that settle it. Note what
+actually happens on each: "repaints at once", "repaints after a tab switch", or "only after
+relaunch". The `.id(theme.isDark)` fallback is retired; a failure here is a bug to report.
 
 **Task 5 — a third trailing control beside the shell's own two: closed.** Both screens that used
 to add one have given it up — Task 7 moved Medications' count into the list's own "Aktif ilaç"

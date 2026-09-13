@@ -129,6 +129,11 @@ struct RootView: View {
 
     var body: some View {
         ZStack {
+            // The live half of the bar painting (see the `.onChange` below). Zero-size, silent and
+            // untappable; it exists only to own a `UIWindow` the repaint can walk from. First in
+            // the z-order on purpose — it has nothing to draw, so it has no business sitting over
+            // anything that does.
+            SalusBarRepainter(theme: theme)
             tabs.liveLocale()
             // The gates, in Android's z-order — later is on top. Overlays over the `TabView` and
             // outside every `NavigationStack`, keeping back stacks and deep links intact.
@@ -153,13 +158,16 @@ struct RootView: View {
         // the resolved theme (spec §2.1/§2.2, divergence (c)). `initial: true` so the first paint
         // is right rather than one theme resolution late.
         //
-        // A proxy reaches bars created AFTER the call, so this alone would not repaint a bar that
-        // is already on screen when the theme sheet switches palette (spec §10). What repaints
-        // live is the `.toolbarBackground(_, for:)` pair below and on `tabStack(for:)` — SwiftUI
-        // owns those and re-applies them on every update — so between the two the bar is right at
-        // launch and after a switch. `m16-manual-qa.md` §5 is the device check; the recorded
-        // fallback, deliberately NOT taken, is `.id(theme.isDark)` on the `TabView`, which would
-        // tear down and rebuild all five tabs' content on every theme change.
+        // **A proxy reaches bars created AFTER the call, and this line is now only that half.**
+        // Every tab's navigation bar and the one tab bar are made once and kept, so until owner QA
+        // round 1 a palette switch from the More sheet left all of them — and every pushed
+        // screen's bar — on the old theme until a tab switch made UIKit rebuild one (spec §10,
+        // "appearance rebuild timing"; the risk was real). The bars already on screen are repainted
+        // by `SalusBarRepainter` above, which walks the live window; this proxy install is what
+        // paints the bars made after the switch, and the two are both needed. The recorded
+        // fallback, `.id(theme.isDark)` on the `TabView`, stays NOT taken and is now retired —
+        // it would tear down and rebuild all five tabs' content on every theme change, and there
+        // is nothing left for it to fix. `m16-manual-qa.md` §5.1 is the device check.
         .onChange(of: theme, initial: true) { _, resolved in SalusBarAppearance.apply(resolved) }
         // Out here rather than on the `TabView` so the splash-hold cannot change the `ZStack`'s
         // identity — a branch swapped at the top would tear down every subscription below.
@@ -206,6 +214,12 @@ struct RootView: View {
         // line and the `UITabBarAppearance` the proxy carries can never disagree.
         .toolbarBackground(SalusBarAppearance.colors(for: theme).tabBarGround, for: .tabBar)
         .toolbarBackground(.visible, for: .tabBar)
+        // Which of its two built-in looks SwiftUI paints the bar's own chrome with. The ground
+        // above is a colour and repaints live; the item colours SwiftUI decides for itself do not
+        // follow it unless they are told the scheme changed, and this is the telling. Paired with
+        // the `.toolbarBackground` lines rather than left to `.preferredColorScheme`, which
+        // describes the whole app and not the bar.
+        .toolbarColorScheme(theme.isDark ? .dark : .light, for: .tabBar)
     }
 
     /// One stack per tab, wrapped in the two things every tab shares: the bottom-bar rule and the
@@ -255,6 +269,11 @@ struct RootView: View {
             // tab-bar visibility rule above does. A feature never writes it.
             .toolbarBackground(SalusBarAppearance.colors(for: theme).navigationBarGround, for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
+            // The navigation-bar half of the line on the `TabView`: the title and the items
+            // SwiftUI paints itself follow the theme live only once it is told which scheme the
+            // bar is in. On the STACK, beside the ground it goes with, so it describes the root
+            // and everything the stack pushes.
+            .toolbarColorScheme(theme.isDark ? .dark : .light, for: .navigationBar)
             // The app's one snackbar host, applied *inside* the tab's content region rather than
             // over the whole window. That placement is the whole fix: the tab bar's inset exists
             // only in here, so an overlay laid out against it lands above the bar (and above the

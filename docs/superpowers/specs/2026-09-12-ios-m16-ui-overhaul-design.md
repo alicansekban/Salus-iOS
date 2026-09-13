@@ -466,6 +466,14 @@ Each task: tests + build green before commit; the review package per task as in 
   the call; T5 must verify the theme sheet's live switch repaints the existing bar (re-set
   `standardAppearance`/`scrollEdgeAppearance` on the `UITabBar` through an introspection-free
   path: a `.id(theme)` on the `TabView` is the fallback, recorded if used).
+  **Realised, and closed by owner QA round 1 B3.** Every bar in the app is made once at launch and
+  kept, so the proxies painted none of them on a live switch. The bars on screen are now repainted
+  directly by `SalusBarRepainter`
+  (`Packages/SalusUI/Sources/SalusUI/shell/SalusBarRepainter.swift`), a zero-size view the shell
+  plants that walks the window and its presentation chain on every theme change; `.toolbarBackground`
+  and `.toolbarColorScheme` carry the colours SwiftUI paints for itself, and the proxies keep the
+  bars made after the switch. The `.id(theme)` fallback is **retired, not taken** — it would rebuild
+  all five tabs' content on every theme change.
 - **Component renames touch every feature** — T2 lands the renames with the shell and screens
   still compiling (mechanical rename commits before restyle commits), so T6–T12 start green.
 - **Onboarding rewrite** deletes the 8-step machine and its tests; the Android test twin is

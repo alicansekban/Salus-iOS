@@ -16,13 +16,22 @@
 // keeps the decisions under test (`SalusBarAppearanceTests`); the `UIKit` spelling is covered by
 // the iOS compile in `scripts/build-app.sh` and by the QA sheet.
 //
-// **Appearance-proxy timing** (spec §10). A proxy change reaches bars created *after* the call,
-// so a live theme switch is not repainted by `apply(_:)` alone. The shell therefore also carries
-// `.toolbarBackground(_, for:)` for both bars, which SwiftUI does repaint live; the proxy is what
-// paints the unselected item colour and the title font, which have no SwiftUI spelling.
-// `m16-manual-qa.md` §5 is the check that this holds on a device. If it does not, the recorded
-// fallback is `.id(theme.isDark)` on the `TabView` in `RootView.tabs` — deliberately NOT used
-// today, because it tears down and rebuilds every tab's content on a theme switch.
+// **Appearance-proxy timing** (spec §10), and what it took. A proxy change reaches bars created
+// *after* the call, so `apply(_:)` paints the future and nothing that is already on screen. Owner
+// QA round 1 confirmed the consequence on a device: a palette switch from the More sheet left the
+// tab bar, the current stack's navigation bar and every pushed screen's bar on the old theme until
+// a tab switch made UIKit rebuild one.
+//
+// The live bars are therefore repainted directly, by `SalusBarRepainter` — a zero-size view the
+// shell plants, which walks the window on every theme change and installs the two appearances this
+// file builds onto the bars it finds. `apply(_:)` stays exactly as it is and keeps its own half:
+// bars made after the switch. Alongside both, `RootView` carries `.toolbarBackground(_, for:)` and
+// `.toolbarColorScheme(_, for:)` for each bar, which is how the colours SwiftUI paints for itself
+// (the title, the bar's own chrome) are told the theme moved.
+//
+// The recorded fallback — `.id(theme.isDark)` on the `TabView` in `RootView.tabs` — is retired
+// rather than pending: it was always going to tear down and rebuild every tab's content on a theme
+// switch, and there is nothing left for it to fix. `m16-manual-qa.md` §5.1 is the device check.
 
 import SalusDesignSystem
 import SwiftUI
@@ -113,7 +122,8 @@ public enum SalusBarAppearance {
         }
 
         /// Installs both appearances on the `UIKit` proxies. Called from the shell on every theme
-        /// resolution; see the file note on what a proxy does and does not repaint.
+        /// resolution, and it covers the bars made **after** that call; the ones already on screen
+        /// are ``SalusBarRepainter``'s. See the file note for why it takes both.
         @MainActor
         public static func apply(_ theme: SalusResolvedTheme) {
             let tabBarAppearance = tabBar(for: theme)
