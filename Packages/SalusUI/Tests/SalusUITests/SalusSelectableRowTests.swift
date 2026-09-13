@@ -2,11 +2,13 @@
 // `SalusDateFieldTests` sets: the view itself is only a `#Preview` build, and everything it decides
 // lives in a plain enum beside it.
 //
-// The Kotlin twin makes the same four choices inline
-// (`SalusSelectableRow.kt:51-68, 106-110`): the selected row swaps its surface for
-// `primaryContainer` and gains a border, an accent tints the icon circle, and the radio ring
-// follows the selection.
+// There are three, and the Kotlin twin makes them inline: an accent tints the icon tile
+// (`SalusSelectableRow.kt:51-52`, reaching the `leading` slot's `SalusIconBadge`) and the radio
+// mark follows the selection (`:95-104`). The container/border pair this suite used to pin was
+// never in the twin — owner QA round 3 (D1) removed it from the component, and these two tests
+// with it; `rowsAreTransparent` below is what keeps it gone.
 
+import Foundation
 import SalusDesignSystem
 import Testing
 
@@ -17,19 +19,21 @@ struct SalusSelectableRowTests {
     private let colors = SalusTheme.resolve(systemIsDark: false).colorScheme
     private let accent = SalusTheme.resolve(systemIsDark: false).extendedColors.cycle
 
-    /// `SalusSelectableRow.kt:59-63` — `if (selected) primaryContainer else surfaceVariant`.
-    @Test("the selected row is filled with the primary container, an unselected one with the surface variant")
-    func selectionSwapsTheContainer() {
-        #expect(SalusSelectableRowStyle.container(selected: true, colors: colors) == colors.primaryContainer)
-        #expect(SalusSelectableRowStyle.container(selected: false, colors: colors) == colors.surfaceVariant)
-    }
+    /// `SalusSelectableRow.kt:56-68` is a bare `Row` — no `Surface`, no `background`, no
+    /// `BorderStroke` — so a selected row is told apart from its neighbours by the radio mark
+    /// alone. A regex over the source is the only mechanical hold on that: the fill this pins
+    /// against was a view modifier, not a value a style enum returned, and it came back once
+    /// already when the component was renamed from `SalusOptionRow` (owner QA round 3, D1).
+    @Test("the row paints no ground and no border in either state")
+    func rowsAreTransparent() throws {
+        let source = try String(contentsOf: sourceURL, encoding: .utf8)
+        let body = try #require(source.range(of: "public var body: some View {")).upperBound
+        let leading = try #require(source.range(of: "/// The option's own leading visual")).lowerBound
+        let rowBody = source[body ..< leading]
 
-    /// `SalusSelectableRow.kt:64-68` — the border exists only while selected, which is why the return
-    /// type is optional rather than a transparent colour: a stroke of `.clear` still costs a layer.
-    @Test("only the selected row draws a border")
-    func onlyTheSelectedRowHasABorder() {
-        #expect(SalusSelectableRowStyle.border(selected: true, colors: colors) == colors.primary)
-        #expect(SalusSelectableRowStyle.border(selected: false, colors: colors) == nil)
+        #expect(!rowBody.contains(".background("))
+        #expect(!rowBody.contains(".overlay {"))
+        #expect(!rowBody.contains("stroke("))
     }
 
     /// `SalusSelectableRow.kt:51-52` — `accent?.accent ?: primary` and `accent?.container
@@ -43,11 +47,14 @@ struct SalusSelectableRowTests {
         #expect(SalusSelectableRowStyle.iconBackground(accent: nil, colors: colors) == colors.primaryContainer)
     }
 
-    /// `SalusSelectableRow.kt:106-110` — the ring the hand-drawn radio mark uses.
+    /// `RadioButtonDefaults.colors(selectedColor = primary, unselectedColor = onSurfaceVariant)`
+    /// (`SalusSelectableRow.kt:100-103`) — the ring the hand-drawn radio mark uses. `outlineVariant`
+    /// is the value this pinned until owner QA round 3 (D1); it is a lighter tone than the twin's
+    /// and read as a disabled control beside it.
     @Test("the radio ring follows the selection")
     func theRadioRingFollowsTheSelection() {
         #expect(SalusSelectableRowStyle.indicatorRing(selected: true, colors: colors) == colors.primary)
-        #expect(SalusSelectableRowStyle.indicatorRing(selected: false, colors: colors) == colors.outlineVariant)
+        #expect(SalusSelectableRowStyle.indicatorRing(selected: false, colors: colors) == colors.onSurfaceVariant)
     }
 
     /// The init's argument list, pinned by calling it: `accent` is the one optional knob
@@ -94,5 +101,15 @@ struct SalusSelectableRowTests {
         #expect(classic.locked == false)
         #expect(ocean.locked)
         #expect(!ocean.isSelected)
+    }
+
+    /// The component's own source, reached from this file rather than from a working directory the
+    /// test runner does not promise.
+    private var sourceURL: URL {
+        URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent() // SalusUITests
+            .deletingLastPathComponent() // Tests
+            .deletingLastPathComponent() // SalusUI
+            .appendingPathComponent("Sources/SalusUI/component/SalusSelectableRow.swift")
     }
 }

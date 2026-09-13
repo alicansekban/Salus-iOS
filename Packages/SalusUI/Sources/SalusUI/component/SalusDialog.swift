@@ -167,8 +167,13 @@ private struct SalusDialogPreview: View {
                 VStack(alignment: .leading, spacing: SalusSpacing.lg) {
                     Text(verbatim: "Tema")
                         .font(SalusTypography.headlineSmall.font)
-                    SalusSelectableRow(title: "Açık", systemImage: "paintpalette", isSelected: true) {}
-                    SalusSelectableRow(title: "Koyu", systemImage: "paintpalette", isSelected: false) {}
+                    // The rows stack with no gap of their own: each carries `md` vertical padding
+                    // and draws no ground, so a gap between them would only be empty space
+                    // (`ThemeSheet.kt:114-129`).
+                    VStack(spacing: 0) {
+                        SalusSelectableRow(title: "Açık", systemImage: "paintpalette", isSelected: true) {}
+                        SalusSelectableRow(title: "Koyu", systemImage: "paintpalette", isSelected: false) {}
+                    }
                     SalusButton("İptal", variant: .secondary, size: .medium) { isPresented = false }
                         .frame(maxWidth: .infinity, alignment: .trailing)
                 }

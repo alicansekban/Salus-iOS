@@ -15,9 +15,22 @@
 //     Kotlin swaps `Icon(Lock)` for the `RadioButton` (`SalusSelectableRow.kt:87-99`). A locked
 //     row stays clickable; what the tap does is the caller's decision.
 //
-// The component dimensions come from `SalusSelectableRowDefaults` (`SalusSelectableRow.kt:109-114`).
-// They are component values that live in `:core:ui` on Android too — not `design-tokens.md` tokens
-// — so they are spelled here, exactly as `SalusIconBadge`'s 40/22 are.
+// **The row has no ground of its own, and never had one in Kotlin.** `SalusSelectableRow.kt:56-68`
+// is a bare `Row(fillMaxWidth().defaultMinSize(minHeight = SalusTouchTarget.min).selectable(…)
+// .padding(horizontal = SalusSpacing.lg, vertical = SalusSpacing.md))` with `spacedBy(md)` — no
+// `Surface`, no background, no border, in either state. Until owner QA round 3 (D1) this file drew
+// a `surfaceVariant` pill under every row and a `primaryContainer` fill plus a `primary` stroke
+// under the selected one, carried over from the pre-M16 `SalusOptionRow` it was renamed from while
+// citing Kotlin lines that say something else. The selection is the radio mark alone, as on
+// Android; the rows stack with no gap beyond their own `md` padding; and because each row applies
+// the screen's `lg` itself, the sheet body around them needs no inset of its own.
+//
+// The component dimensions come from `SalusSelectableRowDefaults` (`SalusSelectableRow.kt:109-114`)
+// — `LockSize` 20, `SwatchSize` 24. They are component values that live in `:core:ui` on Android
+// too — not `design-tokens.md` tokens — so they are spelled here, exactly as `SalusIconBadge`'s
+// 40/22 are. The icon tile is the one dimension Kotlin leaves to the caller, `leading` being a slot
+// there: the only caller that passes an icon is the language sheet, at `SalusIconBadge(size =
+// Small, iconSize = SmallIconSize)` (`LanguageSheet.kt:70-76`), and 24/14 is what is drawn here.
 
 import SalusDesignSystem
 import SwiftUI
@@ -79,7 +92,9 @@ public struct SalusSelectableRow: View {
 
     public var body: some View {
         Button(action: action) {
-            HStack(spacing: SalusSpacing.lg) {
+            // `horizontalArrangement = Arrangement.spacedBy(SalusSpacing.md)`
+            // (`SalusSelectableRow.kt:67`).
+            HStack(spacing: SalusSpacing.md) {
                 leading
                 // `Modifier.weight(1f)` (`SalusSelectableRow.kt:79`).
                 VStack(alignment: .leading, spacing: 0) {
@@ -102,14 +117,14 @@ public struct SalusSelectableRow: View {
                 }
                 indicator
             }
+            // `padding(horizontal = SalusSpacing.lg, vertical = SalusSpacing.md)` over
+            // `defaultMinSize(minHeight = SalusTouchTarget.min)` (`SalusSelectableRow.kt:59-65`):
+            // the minimum is the padded row's, so a short row still clears the touch target and a
+            // tall one is not clipped to it. No ground and no border in either state — the row is
+            // transparent on whatever it is drawn over.
             .padding(.horizontal, SalusSpacing.lg)
+            .padding(.vertical, SalusSpacing.md)
             .frame(maxWidth: .infinity, minHeight: SalusTouchTarget.min)
-            .background(SalusShapes.pill.fill(SalusSelectableRowStyle.container(selected: isSelected, colors: colors)))
-            .overlay {
-                if let border = SalusSelectableRowStyle.border(selected: isSelected, colors: colors) {
-                    SalusShapes.pill.stroke(border, lineWidth: Self.selectedBorder)
-                }
-            }
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
@@ -134,7 +149,7 @@ public struct SalusSelectableRow: View {
                 .frame(width: Self.iconCircleSize, height: Self.iconCircleSize)
                 .overlay {
                     Image(systemName: systemImage)
-                        .font(.system(size: Self.iconSize))
+                        .font(.system(size: Self.iconGlyphSize))
                         .foregroundStyle(SalusSelectableRowStyle.iconTint(accent: accent, colors: colors))
                 }
                 // `contentDescription = null` (`SalusSelectableRow.kt:83`): the label beside it
@@ -177,43 +192,43 @@ public struct SalusSelectableRow: View {
     /// `SalusSelectableRowDefaults` (`SalusSelectableRow.kt:109-114`). Component dimensions, not
     /// design tokens — Android keeps them in `:core:ui` too, not in `:core:designsystem`.
     private static let swatchSize: CGFloat = 24
-    private static let iconCircleSize: CGFloat = 56
-    private static let iconSize: CGFloat = 24
+    /// The icon leading is Kotlin's caller-supplied slot, and its one caller is
+    /// `SalusIconBadge(size = SalusIconBadgeDefaults.Small, iconSize = SmallIconSize)`
+    /// (`LanguageSheet.kt:70-76`) — 24 / 14, the same 24 pt box the swatch fills. A larger tile
+    /// (this file drew 56 / 24 until owner QA round 3) is what made an iOS row outgrow the twin's
+    /// 48 pt, since nothing else in the row is that tall.
+    private static let iconCircleSize: CGFloat = SalusIconBadgeDefaults.small
+    private static let iconGlyphSize: CGFloat = SalusIconBadgeDefaults.smallIconSize
     private static let indicatorSize: CGFloat = 24
     private static let indicatorBorder: CGFloat = 2
     private static let indicatorDotSize: CGFloat = 12
-    private static let selectedBorder: CGFloat = 2
     /// `SalusSelectableRowDefaults.LockSize` (`SalusSelectableRow.kt:111`).
     private static let lockSize: CGFloat = 20
 }
 
-/// The four colour decisions ``SalusSelectableRow`` makes, lifted out of the view so they can be
+/// The three colour decisions ``SalusSelectableRow`` makes, lifted out of the view so they can be
 /// tested without SwiftUI — the arrangement ``SalusDateFieldState`` sets.
+///
+/// There is no container or border decision here: the row draws neither
+/// (`SalusSelectableRow.kt:56-68`), so there is nothing for a state to swap.
 enum SalusSelectableRowStyle {
-    /// `SalusSelectableRow.kt:73`.
-    static func container(selected: Bool, colors: SalusColorScheme) -> Color {
-        selected ? colors.primaryContainer : colors.surfaceVariant
-    }
-
-    /// `SalusSelectableRow.kt:74` — `null` rather than a transparent colour, because Kotlin passes
-    /// no `BorderStroke` at all for an unselected row.
-    static func border(selected: Bool, colors: SalusColorScheme) -> Color? {
-        selected ? colors.primary : nil
-    }
-
-    /// `SalusSelectableRow.kt:51`.
+    /// The icon tile's glyph tint — `SalusIconBadge`'s `accent`/`primary` pair, which is what
+    /// Kotlin's `leading` slot hands the badge (`SalusIconBadge.kt:38-44`, `LanguageSheet.kt:70-76`).
     static func iconTint(accent: FeatureAccent?, colors: SalusColorScheme) -> Color {
         accent?.accent ?? colors.primary
     }
 
-    /// `SalusSelectableRow.kt:52`.
+    /// The icon tile's ground, the other half of the same pair.
     static func iconBackground(accent: FeatureAccent?, colors: SalusColorScheme) -> Color {
         accent?.container ?? colors.primaryContainer
     }
 
-    /// `SalusSelectableRow.kt:100-104`.
+    /// `RadioButtonDefaults.colors(selectedColor = primary, unselectedColor = onSurfaceVariant)`
+    /// (`SalusSelectableRow.kt:100-103`). `onSurfaceVariant`, not `outlineVariant`: this file drew
+    /// the lighter outline tone until owner QA round 3 (D1), which read as a disabled control next
+    /// to the twin's.
     static func indicatorRing(selected: Bool, colors: SalusColorScheme) -> Color {
-        selected ? colors.primary : colors.outlineVariant
+        selected ? colors.primary : colors.onSurfaceVariant
     }
 }
 
@@ -224,7 +239,10 @@ private struct SalusSelectableRowPreviewSamples: View {
     @Environment(\.salusTheme) private var theme
 
     var body: some View {
-        VStack(spacing: SalusSpacing.lg) {
+        // No gap between the rows: Android's callers stack them in a plain `Column`
+        // (`ThemeSheet.kt:114-129`, `LanguageSheet.kt:64-79`) and each row's own `md` padding is
+        // the whole separation.
+        VStack(spacing: 0) {
             SalusSelectableRow(
                 title: "Classic",
                 subtitle: "The Salus emerald",
