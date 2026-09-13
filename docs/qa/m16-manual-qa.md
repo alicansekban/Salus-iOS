@@ -169,6 +169,7 @@ profile with no cycle.
 |---|---|---|---|
 | 3.1.1 | Home root: swipe the snapshot card left, then right | it pages one card at a time — doses → Ölçümler → Döngü and back; it never scrolls half a card and never jumps two | ☐ |
 | 3.1.2 | Watch the dots under the card while swiping | exactly three dots; the active one is a stretched pill in the palette's `primary` and it moves with the card, not after it | ☐ |
+| 3.1.2a | Look at the vertical gap between the bottom of the snapshot card and the dots, on **each** of the three pages | the dots sit one `md` step under the card on every page — no empty band between a short card and the dots. The box is the **tallest** page's height, so the doses page (the tallest) has no slack under it at all and the other two sit top-aligned in the same box; a page that ends halfway up a visibly empty box is the owner-QA-round-1 B2 regression | ☐ |
 | 3.1.3 | Swipe the pager while the page is scrolled halfway down | the horizontal swipe pages the card and does **not** scroll the screen; a vertical drag starting on the card scrolls the screen and does not page | ☐ |
 | 3.1.4 | On the doses page, tap "Alındı" | the dose is recorded (the ring's number goes up) and the Medications tab does **not** open; tapping anywhere else on that card opens Medications | ☐ |
 | 3.1.5 | A profile with no cycle tracking | two pages and two dots — never a third, empty card | ☐ |
@@ -294,7 +295,7 @@ by the generic "nothing clipped or overlapping" check of §1.
 | 4.1 | Vitals editors at xxxLarge (Task 8) | each stepper keeps its − and + reachable beside the number, the number itself is not clipped, and the range hint under it wraps instead of truncating. The three blood pressure steppers stack without overlapping | ☐ |
 | 4.2 | Vitals list at xxxLarge (Task 8) | the three type tabs still read (a label may shorten but must not be cut mid-word), the four range chips wrap onto a second line inside the chart card rather than overflowing it, and the three statistics tiles stay on one row or wrap cleanly | ☐ |
 | 4.3 | Appointments list at xxxLarge (Task 9) | the two segmented tabs still read, the "Yeni Randevu Oluştur" extended pill wraps or shortens without clipping its label, and a card's date tile and time/reminder chips stay readable and unwrapped | ☐ |
-| 4.4 | Home at xxxLarge, swiping the snapshot pager through all three pages (Task 6) | the pager box grows with the text (it is `@ScaledMetric`) and **no page is cut at the bottom** — the doses page with an empty state is the tallest and the one to watch; the hero's greeting and date wrap instead of truncating, and the "Tümünü Gör" action stays beside its overline rather than under it | ☐ |
+| 4.4 | Home at xxxLarge, swiping the snapshot pager through all three pages (Task 6) | the pager box is the tallest page's own measured height at this text size, so **no page is cut at the bottom** and no page leaves an empty band above the dots — the doses page with an empty state is the tallest and the one to watch; the hero's greeting and date wrap instead of truncating, and the "Tümünü Gör" action stays beside its overline rather than under it | ☐ |
 | 4.5 | Medications list and editor at xxxLarge (Task 7/9) | the "İlaç ekle" extended pill keeps its label, the three metric tiles ("Aktif ilaç", "Kaydedilen doz", "Sıradaki doz") wrap rather than clip, the eight form tiles keep their labels, and a dose amount's − / + stay reachable beside the number with its range hint wrapping | ☐ |
 
 ---
@@ -418,15 +419,18 @@ sheet empty. Nothing automated can measure a detent. Run §5.3.1 and §5.3.6 onc
 once on the widest device available, and note whether the four palette rows and the three language
 rows are all reachable without the sheet having to be dragged up.
 
-**Tasks 3 and 6 — xxxLarge: the stepper's range hint and the Home pager's fixed height.** Two
-places where the largest text size meets a box that cannot grow with it. (a) `SalusStepperField`
-draws its range hint under the number; §4.1 is the row that says whether it wraps or truncates at
-xxxLarge, and the medication editor's dose amount (§3.2.12) is the second caller. (b) Home's
-snapshot pager is a **fixed** height — `HomePagerDefaults.height`, `@ScaledMetric`-scaled, because
-SwiftUI's `TabView(.page)` has no intrinsic height (spec §9 (p)). The constant was sized against
-the tallest page with a step of slack, but the slack is a judgement: at xxxLarge a page whose card
-holds an empty state can still clip. §4.4 is the row: walk all three pages at xxxLarge and note any page whose
-content is cut at the bottom, not just the worst one.
+**Tasks 3 and 6 — xxxLarge: the stepper's range hint and the Home pager's measured height.**
+(a) `SalusStepperField` draws its range hint under the number; §4.1 is the row that says whether it
+wraps or truncates at xxxLarge, and the medication editor's dose amount (§3.2.12) is the second
+caller. (b) Home's snapshot pager has no intrinsic height of its own — SwiftUI's `TabView(.page)`
+never has (spec §9 (p)) — so since owner QA round 1 it measures a hidden copy of its pages at the
+pager's width and takes the tallest one's natural height. That removes the clipping-and-gap
+judgement the old fixed `HomePagerDefaults.height` carried, but it moves the risk rather than
+deleting it: the measurement is a layout pass behind the first frame
+(`HomePagerDefaults.fallbackHeight` seeds that one pass), and a hidden second copy of three cards
+is laid out on every Home update. §3.1.2a and §4.4 are the rows. Note any visible one-frame jump in
+the box's height on arrival at Home or on a Dynamic Type change, and any page still cut at the
+bottom at xxxLarge.
 
 **Task 13 — the onboarding finish is a race the tests can only half-see.** §2.13 and §2.14 are
 the rows. The completion flag is written from a detached task and the notification prompt is the

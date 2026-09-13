@@ -25,11 +25,19 @@
 // `.scrollTargetBehavior(.viewAligned)`, iOS 17) and giving up the platform's paging physics and
 // its VoiceOver page semantics, for a visual hint the dots already give.
 //
-// DIVERGENCE (b), A FIXED PAGE HEIGHT. Compose's pager measures its tallest page; a SwiftUI `.page`
-// `TabView` has no intrinsic height at all and collapses without one. The height is therefore a
-// named constant in ``HomePagerDefaults`` (never a raw point size inline) and is carried through
-// `@ScaledMetric`, so the box grows with the reader's text size instead of clipping at the larger
-// Dynamic Type steps.
+// DIVERGENCE (b), THE PAGE HEIGHT IS MEASURED HERE RATHER THAN GIVEN BY THE CONTAINER. Compose's
+// pager measures its tallest page; a SwiftUI `.page` `TabView` has no intrinsic height at all and
+// collapses without one, so something has to hand it a number. Until owner QA round 1 that number
+// was a constant (`HomePagerDefaults.height`, 260 pt, `@ScaledMetric`-scaled) — which is a floor as
+// well as a ceiling, and left a page whose card is ~150 pt tall sitting in a 260 pt box with a
+// visible gap between the card and the dots.
+//
+// So the pages are measured instead, the way Compose measures them: a hidden copy of every page is
+// laid out at the pager's own width and at its NATURAL height (``pageMeasuringStack``), each page
+// reports that height through ``HomePagerHeightKey``, the key keeps the largest, and the `TabView`
+// is framed to it. `HomePagerDefaults.fallbackHeight` is what the box uses for the single layout
+// pass before the first measurement lands, and nothing else — in particular the measurement is
+// never clamped up to it, because that clamp was the bug.
 
 import SalusDesignSystem
 import SalusUI
@@ -56,8 +64,12 @@ struct HomeSnapshotPager: View {
     let onOpenCycle: () -> Void
 
     @State private var selection: HomeSnapshotPage = .doses
-    /// Divergence (b): the page box, grown with the reader's text size.
-    @ScaledMetric(relativeTo: .body) private var pageHeight = HomePagerDefaults.height
+    /// Divergence (b): the tallest page's natural height, reported by ``pageMeasuringStack``. Nil
+    /// until the first measurement lands — one layout pass — and never nil again.
+    @State private var measuredHeight: CGFloat?
+    /// Divergence (b): the box for that one pass, grown with the reader's text size so the first
+    /// frame is not wildly wrong at the larger Dynamic Type steps. A seed, never a floor.
+    @ScaledMetric(relativeTo: .body) private var fallbackHeight = HomePagerDefaults.fallbackHeight
 
     /// `buildList { add(Doses); if (state.vitals != null) add(Vitals); if (state.cycle != null)
     /// add(Cycle) }` (`HomePager.kt:77-83`).
@@ -95,7 +107,13 @@ struct HomeSnapshotPager: View {
                 }
             }
             .homePagingStyle()
-            .frame(height: pageHeight)
+            // Divergence (b): the tallest page's own height, not a constant.
+            .frame(height: measuredHeight ?? fallbackHeight)
+            // The measuring copy rides along as a background so that it is proposed exactly the
+            // pager's width — a page measured at any other width would report the wrong number of
+            // wrapped lines. It is `.top`-aligned for the same reason the real pages are, and it
+            // costs nothing in layout: it draws nothing and the frame above is already resolved.
+            .background(alignment: .top) { pageMeasuringStack }
             // A page can leave under the selection when the data behind it does — a profile stops
             // being tracked, a snapshot arrives empty — and a `TabView` whose selection matches no
             // tag draws a blank page. Doses are always in the list (`HomePager.kt:79`), so that is
@@ -109,6 +127,45 @@ struct HomeSnapshotPager: View {
             // `SalusPagerDots(pageCount, currentPage, align(CenterHorizontally))`
             // (`HomePager.kt:119-123`).
             SalusPagerDots(count: pages.count, index: selectedIndex)
+        }
+    }
+
+    /// Divergence (b): a hidden copy of every page, laid out at the pager's width and at its own
+    /// natural height, which is where ``measuredHeight`` comes from.
+    ///
+    /// Outside the `TabView` on purpose — a `.page` `TabView` gives each of its pages the box's
+    /// height, so a page measured *inside* it could only ever report the number it was given.
+    /// `.fixedSize(vertical:)` is what makes the copy answer with its ideal height rather than with
+    /// the height the background was proposed; `.hidden()` keeps it out of the drawing, and the two
+    /// lines under it keep it out of VoiceOver and out of hit testing, so the only thing this
+    /// second copy of the cards contributes is its size.
+    ///
+    /// No `Spacer` here, unlike the real pages: the spacer is what pushes a short card to the top
+    /// of a box that is taller than it, and the whole point of this copy is that it has no such box.
+    private var pageMeasuringStack: some View {
+        ZStack(alignment: .top) {
+            ForEach(pages, id: \.self) { page in
+                content(for: page)
+                    .padding(.horizontal, SalusSpacing.lg)
+                    .background { pageHeightReporter }
+            }
+        }
+        .fixedSize(horizontal: false, vertical: true)
+        .hidden()
+        .accessibilityHidden(true)
+        .allowsHitTesting(false)
+        .onPreferenceChange(HomePagerHeightKey.self) { height in
+            // Zero is "nothing has been laid out yet", not "the tallest page is empty", so it
+            // leaves the seed in place rather than collapsing the box.
+            measuredHeight = height > 0 ? height : nil
+        }
+    }
+
+    /// What one page reports its height with. A background rather than a wrapper, so the reader is
+    /// handed the page's resolved size and cannot influence it.
+    private var pageHeightReporter: some View {
+        GeometryReader { proxy in
+            Color.clear.preference(key: HomePagerHeightKey.self, value: proxy.size.height)
         }
     }
 
@@ -140,6 +197,17 @@ struct HomeSnapshotPager: View {
                     .homeSnapshotPage(label: HomeStrings.pagerCycle)
             }
         }
+    }
+}
+
+/// The tallest page's height, which is what the pager's box is (divergence (b)). `reduce` keeps the
+/// maximum because that is the question — Compose's pager asks its pages the same one
+/// (`HorizontalPager` measures every page and takes the largest).
+private struct HomePagerHeightKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
     }
 }
 
@@ -223,9 +291,16 @@ struct HomeSnapshotCard<Content: View>: View {
 /// The pager's own dimensions — component values, not design tokens, so they live here rather than
 /// in `SalusDesignSystem` (the shape `SalusPagerDotsDefaults` sets).
 enum HomePagerDefaults {
-    /// Divergence (b): the page box at the default text size. Sized against the tallest page — the
-    /// doses card holding a `SalusEmptyState` (a 72 pt badge, `xl` padding either side and a
-    /// `titleMedium` line under the card's own `lg` inset and title row) — with a step of slack, so
-    /// no page clips before `@ScaledMetric` starts growing the box.
-    static let height: CGFloat = 260
+    /// Divergence (b): the page box for the **one** layout pass before the first measurement
+    /// lands, at the default text size. It is a seed, not a size: `HomeSnapshotPager` replaces it
+    /// with the tallest page's own height and never clamps that measurement back up to this
+    /// number — used as a floor it left short pages sitting in a 260 pt box with a gap above the
+    /// dots, which is the bug it is named `fallbackHeight` to keep it from being again.
+    ///
+    /// The value is the old constant unchanged: sized against the tallest page — the doses card
+    /// holding a `SalusEmptyState` (a 72 pt badge, `xl` padding either side and a `titleMedium`
+    /// line under the card's own `lg` inset and title row) — with a step of slack. It is carried
+    /// through `@ScaledMetric` for the same reason it always was, so that the single unmeasured
+    /// frame is not wildly short at the larger Dynamic Type steps.
+    static let fallbackHeight: CGFloat = 260
 }
