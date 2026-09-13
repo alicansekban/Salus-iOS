@@ -309,7 +309,8 @@ in `project.yml`.
       space, boot time and active keyboards are deliberately absent: nothing in our sources or
       in the built binary names them.
 - [x] `ITSAppUsesNonExemptEncryption = false`
-- [x] `MARKETING_VERSION 1.0.0`, `CURRENT_PROJECT_VERSION 1`
+- [x] `MARKETING_VERSION 1.0.0`, `CURRENT_PROJECT_VERSION 1` — since bumped per upload; the
+      build submitted for review on 2026-09-13 is **1.0.1 (5)** (`58d4f6f`, `546c2ce`)
 - [x] `about_privacy_body` says "App Store" on iOS (both locales)
 - [x] Database file `isExcludedFromBackup = true` verified (S-10) — it was **not** set; added in
       `SalusDatabase.excludeFromBackup(at:)`, called from `AppCompositionRoot.openDatabase`, with
@@ -325,6 +326,11 @@ in `project.yml`.
 - [x] Screenshots framed (eight, 6.9", see above)
 
 ## App Store Connect order (2026-09-04)
+
+**Status (2026-09-13):** version **1.0.1 (build 5)** submitted for review with the tr + en-US
+copy above, the What's New (1.0.1) text, the eight 6.9" screenshots (plus the 6.5" twin set)
+and the v3 feature artwork; Android `1.0.0 (versionCode 10)` went to Play review the same day.
+The ordered list below documents the path to that submission.
 
 1. **Xcode → Product → Archive** on `main` (Release, 1.0.0 build 1) → Distribute → App Store
    Connect → Upload. Bump `CURRENT_PROJECT_VERSION` in `project.yml` before every later upload.
@@ -345,7 +351,10 @@ in `project.yml`.
 8. Submit for review; select "Release manually" so the two stores can go live together.
 
 - [ ] `scripts/premium-sandbox-qa.md` run on a device with a sandbox tester (TestFlight build)
-- [ ] Copy this file's fields into App Store Connect (tr primary, en-US)
-- [ ] Nutrition labels + age rating + review notes filled in
-- [ ] Screenshots uploaded (6.9")
-- [ ] Subscriptions attached to version 1.0.0
+      — not recorded as done in this repo; if it was walked before the 1.0.1 submission, note
+      the date here
+- [x] Copy this file's fields into App Store Connect (tr primary, en-US) — 2026-09-13
+- [x] Nutrition labels + age rating + review notes filled in — 2026-09-13
+- [x] Screenshots uploaded (6.9" and 6.5") — 2026-09-13
+- [x] Subscriptions attached to version 1.0.1 — 2026-09-13
+- [x] Submitted for review — 1.0.1 (5), 2026-09-13
