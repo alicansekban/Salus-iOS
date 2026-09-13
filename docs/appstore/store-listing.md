@@ -108,6 +108,23 @@ Kullanım koşulları: https://www.apple.com/legal/internet-services/itunes/dev/
 İlk sürüm. Tansiyon, kan şekeri ve kilo takibi; doz saatinde tam ekran ilaç alarmı; randevu hatırlatıcıları; döngü takibi; Face ID / Touch ID veya PIN kilit. Tüm kayıtlar cihazınızda kalır. İsteğe bağlı Salus Premium: yapay zekâ sağlık özeti, PDF doktor raporu, gelişmiş trendler, premium temalar.
 ```
 
+**What's New (1.0.1)**
+
+```
+Salus yenilendi.
+
+• Baştan tasarlanan arayüz: daha ferah ana sayfa, yeni ilaç, ölçüm ve randevu ekranları, koyu modda daha iyi okunurluk
+• Ana sayfada hatırlatıcı sağlığı kartı: alarmların çalmasını engelleyen bir ayar varsa tek dokunuşla düzeltin
+• İlaç kaydederken hatırlatıcı çalışamayacaksa anında uyarı
+• Görünüm ayarı tek yerde: tema, renk teması ve uygulama dili aynı sayfada
+• Daha kısa ve akıcı ilk kurulum
+• Yumuşak geçişler ve animasyonlar
+• Hakkında ekranı yenilendi
+• Çok sayıda küçük düzeltme ve iyileştirme
+
+Tüm kayıtlarınız cihazınızda kalmaya devam ediyor.
+```
+
 ---
 
 ## English (en-US)
@@ -191,6 +208,23 @@ Contact: alicansekban@hotmail.com
 
 ```
 First release. Blood pressure, glucose and weight tracking; a full-screen alarm at dose time; appointment reminders; cycle tracking; Face ID / Touch ID or PIN lock. Every record stays on your device. Optional Salus Premium: AI health summary, PDF doctor report, advanced trends, premium themes.
+```
+
+**What's New (1.0.1)**
+
+```
+Salus has a fresh look.
+
+• Redesigned interface: a roomier Home, new medication, vitals and appointment screens, better readability in dark mode
+• Reminder health card on Home: if a setting is stopping alarms from firing, fix it with one tap
+• Instant warning when you save a medication whose reminder cannot fire
+• Appearance in one place: theme, color theme and app language on a single sheet
+• Shorter, smoother first-time setup
+• Gentle transitions and animations
+• Redesigned About screen
+• Many small fixes and improvements
+
+Everything you record still stays on your device.
 ```
 
 ---
