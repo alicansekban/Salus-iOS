@@ -255,7 +255,9 @@ raw simulator captures (iPhone 17 Pro Max, `xcrun simctl io booted screenshot`) 
 2026-09-04 set (pre-reskin) and resized from 1284×2778 to 1320×2868 (0.4 % aspect change, not
 visible). The previous eight-image set is kept in `ios-eski/2026-09-13-pre-m15/`. Upload all
 eight to the 6.9" slot of the **tr** localization; en-US can reuse the same files (App Store
-Connect offers "use the primary localization's screenshots").
+Connect offers "use the primary localization's screenshots"). A 6.5" twin of the same eight
+(1284×2778, plain LANCZOS resize) sits in `ios-6.5/` for the 6.5" slot — App Store Connect
+rejects a 1320×2868 file dropped there with "dimensions should be 1242×2688 … or 1284×2778".
 
 ### App icon
 
