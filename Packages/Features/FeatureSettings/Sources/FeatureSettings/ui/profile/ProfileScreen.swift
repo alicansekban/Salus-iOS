@@ -223,14 +223,23 @@ struct ProfileScreen: View {
             SalusDisclaimer(SettingsStrings.profileCaptionReport)
                 .padding(.horizontal, SalusSpacing.lg)
 
-            // `SalusButton(profile_save_changes)` (`ProfileScreen.kt:189-195`) — the full-width
+            // `SalusButton(profile_save_changes)` (`ProfileScreen.kt:212-216`) — the full-width
             // primary action; the toolbar "Kaydet" is its compact twin for the reachable thumb.
+            //
+            // The inset is the twin's and it is the same one every field above carries: Kotlin
+            // pads the enclosing `Column` `SalusSpacing.lg` on all four sides
+            // (`ProfileScreen.kt:127-132`), so the button's pill ends where the fields end. This
+            // file spends that inset per child rather than on the `VStack`, because the identity
+            // band above the form is full-bleed; the button was the one child that had been
+            // missed, and a `size: .large` pill fills whatever width it is given, so it ran to
+            // both screen edges (owner QA round 3, D2).
             SalusButton(
                 SettingsStrings.profileSaveChanges,
                 size: .large,
                 enabled: canSave,
                 action: { onEvent(.saveClicked) }
             )
+            .padding(.horizontal, SalusSpacing.lg)
         }
         .padding(.bottom, SalusSpacing.xl)
     }
