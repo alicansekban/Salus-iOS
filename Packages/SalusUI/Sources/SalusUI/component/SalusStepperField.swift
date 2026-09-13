@@ -36,6 +36,15 @@
 // The minus glyph is `minus` from SF Symbols, so Kotlin's hand-built `MinusIcon` vector
 // (`SalusStepperField.kt:289-311`, a 14 × 2 bar drawn because Material ships `Add` but no
 // `Remove`) has no twin here.
+//
+// **Recorded divergence, spec §9 (z): the suggestion is drawn at a reduced opacity.** Kotlin draws
+// it in the full `onSurfaceVariant` tone (`SalusStepperField.kt:201-206`), which is the same role
+// the range hint under the field already uses — so on screen the suggestion reads as a number the
+// user typed while Save sits disabled, and there is nothing to tell the two apart (owner QA round
+// 2, C1). The tone stays `onSurfaceVariant`; what changes is its alpha, from
+// ``SalusStepperFieldDefaults/suggestionOpacity``. A shared weakness where iOS goes one step
+// further, not a port error — the committed value's colour is untouched, so the contrast between
+// "a suggestion" and "your number" is the whole point of the change.
 
 import SalusDesignSystem
 import SwiftUI
@@ -50,9 +59,9 @@ import SwiftUI
 /// the user to fix in a field that only holds numbers (`SalusStepperField.kt:62-67`).
 ///
 /// `placeholder` says the number on screen is a *suggestion*, not something the user entered: it
-/// is drawn in `onSurfaceVariant` behind an empty field, so the first keystroke starts a fresh
-/// number instead of appending to one nobody typed, and VoiceOver is told as much
-/// (`SalusStepperField.kt:69-74`). `autoFocus` opens the field and its keyboard as the screen
+/// is drawn in a dimmed `onSurfaceVariant` behind an empty field (divergence (z)), so the first
+/// keystroke starts a fresh number instead of appending to one nobody typed, and VoiceOver is told
+/// as much (`SalusStepperField.kt:69-74`). `autoFocus` opens the field and its keyboard as the screen
 /// appears, once per view instance (`:74-77`).
 public struct SalusStepperField: View {
     private let label: String
@@ -162,11 +171,17 @@ public struct SalusStepperField: View {
         ZStack {
             if placeholder, text.isEmpty {
                 // The suggestion sits behind the field at the size and position the real value
-                // would take, dimmed to say it is not one yet (`SalusStepperField.kt:196-208`).
+                // would take, dimmed to say it is not one yet (`SalusStepperField.kt:196-208`) —
+                // and dimmer than Kotlin's, which is divergence (z): the same `onSurfaceVariant`
+                // tone at `suggestionOpacity`, so that a glance separates it from a number the
+                // user typed rather than only a reading of the disabled Save button.
                 Text(verbatim: value)
                     .font(SalusTypography.displaySmall.font)
                     .tracking(SalusTypography.displaySmall.tracking)
-                    .foregroundStyle(theme.colorScheme.onSurfaceVariant)
+                    .foregroundStyle(
+                        theme.colorScheme.onSurfaceVariant
+                            .opacity(SalusStepperFieldDefaults.suggestionOpacity)
+                    )
                     .accessibilityHidden(true)
             }
             // **The prompt is an EXPLICIT empty `Text`, and `nil` is the bug it replaces.** With
@@ -308,6 +323,14 @@ public enum SalusStepperFieldDefaults {
     /// Keeps a one-digit value a comfortable tap target: an intrinsically sized field around "3"
     /// would be a few points wide (`SalusStepperField.kt:283-287`).
     public static let minValueWidth: CGFloat = 64
+    /// How far the suggestion is dimmed below the committed value — divergence (z), with no Kotlin
+    /// twin: Android draws the suggestion at full `onSurfaceVariant`.
+    ///
+    /// 0.45 of `onSurfaceVariant`, which is already the muted role, lands the suggestion a clear
+    /// step below the `− / +` glyphs beside it in both modes while staying above Material's 0.38
+    /// disabled floor — legible as a figure, unmistakable as a placeholder. Lower would start to
+    /// read as unreadable text at `displaySmall`, higher stops separating from the range hint.
+    public static let suggestionOpacity = 0.45
 }
 
 #Preview("Stepper fields") {

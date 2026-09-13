@@ -113,4 +113,15 @@ struct SalusStepperFieldTests {
 
         #expect(text == expected)
     }
+
+    /// Divergence (z), owner QA round 2 C1: the suggestion is drawn at this much of
+    /// `onSurfaceVariant`, where Kotlin draws it at the full tone
+    /// (`SalusStepperField.kt:201-206`). The number itself is a judgement about what reads as a
+    /// placeholder, so what is pinned is the band it has to stay inside — above Material's 0.38
+    /// disabled floor, and far enough below a committed value to be a different thing on sight.
+    @Test("the suggestion is dimmed, and no further than Material's disabled floor")
+    func suggestionOpacityStaysInsideItsBand() {
+        #expect(SalusStepperFieldDefaults.suggestionOpacity >= 0.38)
+        #expect(SalusStepperFieldDefaults.suggestionOpacity < 1)
+    }
 }
