@@ -54,8 +54,7 @@ screen and carry their own contract under the table.
 | Cycle calendar | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
 | Cycle day | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
 | More hub | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
-| Theme sheet | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
-| Language sheet | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
+| Appearance sheet (mode / palette / language) | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
 | Profile | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
 | About | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
 | Reminder Health | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
@@ -314,9 +313,12 @@ by the generic "nothing clipped or overlapping" check of §1.
 
 ## 5. Sheets and the live theme switch
 
-The theme and language sheets (`.medium` detent, swatches, paywall gating, CLASSIC never
-paywalls) are §5.3; the paywall full-screen cover is §5.4. §5.1 is the live theme switch, which is
-the one row set that can force a shell change.
+The merged appearance sheet (mode tiles, palette rows, language tiles; swatches, paywall gating,
+CLASSIC never paywalls) is §5.3; the paywall full-screen cover is §5.4. §5.1 is the live theme
+switch, which is the one row set that can force a shell change. The language picker joined the
+appearance sheet in the 2026-09-13 merge — see
+`salus-android/docs/superpowers/specs/2026-09-13-language-joins-appearance-sheet-design.md` (the
+cross-platform design doc; it supersedes the M16 spec's separate-language-sheet rationale).
 
 ### 5.1 The theme sheet repaints the bars while it is open (Task 5)
 
@@ -358,39 +360,46 @@ A failure in this section is a bug to report, not a trigger for that fallback.
 | 5.2.12 | Profile: look at where the green identity band ends and the "AD" overline begins *(owner QA round 4)* | a clear `lg` (16 pt) breath between the band's bottom edge and the "AD" label — the same gap Android draws above its first field. The label does not sit on the band; the fields below keep their inset and spacing as before | ☐ |
 | 5.2.12 | Every other full-width primary button in the app — the three onboarding pages, the appointment editor's Kaydet/Sil, the appointment detail's Takvime Ekle/Sil, the three vitals editors' Ölçümü Kaydet and Sil, the medication editor and detail actions, the cycle calendar's period button, the cycle day editor's Kaydet, the AI summary's two pinned actions, the doctor report's three, and the paywall CTA | the same: each pill is inset from both screen edges by the screen's own step, in portrait and in landscape. None of them runs edge to edge | ☐ |
 
-### 5.3 The theme and language sheets (Task 10)
+### 5.3 The appearance sheet (mode, palette and language — Task 10 + the 2026-09-13 merge)
 
-The two setting pickers open over the More hub (spec §2.3). Each row is a `SalusSelectableRow`;
-the mode row opens the three-mode sheet and the colour-theme row opens the same sheet, so mode and
-palette share one popup. Both sheets apply their pick live and stay open.
+The one setting picker opens over the More hub (spec §2.3). The mode row and the colour-theme row
+open the sheet at its mode/palette sections; the language row opens the same sheet, whose third
+section (UYGULAMA DİLİ) holds the three language tiles. The mode and palette picks apply live
+with the sheet still open; **a language pick applies live too, but the sheet closes with it** —
+switching the app's language re-renders everything under it (Android recreates the activity and
+lands back on the Home tab, which is that platform's behaviour and is accepted as the shared one).
+The separate language sheet is deleted — the "app language" row sends the same event the two
+appearance rows do.
 
-**Run 5.3.1–5.3.10 in PORTRAIT at the DEFAULT text size first** — that is the configuration most
-of the install base is in, and the one the sheet heights were wrong in. The appearance sheet's
-content (three mode tiles, a section header and four palette rows) is taller than the `.medium`
-detent on every iPhone, so it opens at `.medium`, scrolls inside it and drags up to `.large`. Only
-after that pass, repeat 5.3.1 and 5.3.6 at the largest text size and in landscape.
+**Run 5.3.1–5.3.12 in PORTRAIT at the DEFAULT text size first** — that is the configuration most
+of the install base is in. The sheet's content (three mode tiles, two section headers, four
+palette rows, the language header and three language tiles) decides the sheet's height: it opens
+fitted to that content (≈605 pt on an iPhone 17 Pro Max), so at the default text size every
+section is on screen at once and nothing has to be dragged. Only after that pass, repeat 5.3.1 and
+5.3.7 at the largest text size and in landscape, where the content runs past the screen and the
+sheet's own scroll takes over.
 
 | # | Step | Expect | ☐ |
 |---|---|---|---|
-| 5.3.1 | More hub → Görünüm & Tema *(portrait, default text size)* | the appearance sheet slides up at the medium detent, with a drag handle, a close button and the subtitle "Seçimler anında uygulanır"; the mode tiles (Sistem / Açık / Koyu) fill the top row and the four palette rows sit under "VURGU & RENK PALETİ", each leading with its colour swatch and the CLASSIC row carrying a "Varsayılan" badge | ☐ |
-| 5.3.1d | Look at the four palette rows themselves *(owner QA round 3, D1)* | **every row is transparent** — no pill, no tinted capsule, no outline, on the selected row least of all. The only thing that says which palette is stored is the trailing radio mark: a filled `primary` dot inside a `primary` ring on the selected row, a plain `onSurfaceVariant` ring on the others. The rows sit straight on the sheet's near-white ground with no gap between them beyond their own padding, and each is as tall as a language-sheet row — not taller | ☐ |
+| 5.3.1 | More hub → Tema modu *(portrait, default text size)* | the appearance sheet ("Görünüm ve Dil") slides up at its own content height — all three sections visible at once, the language tiles included, with no drag needed and no empty band under the last tile — with a drag handle, a close button and the subtitle "Seçimler anında uygulanır"; the mode tiles (Sistem / Açık / Koyu) fill the top row and the four palette rows sit under "VURGU & RENK PALETİ", each leading with its colour swatch and the CLASSIC row carrying a "Varsayılan" badge | ☐ |
+| 5.3.1w | **Look at the sheet's left and right edges against the screen** *(the 2026-09-13 merge's own bug)* | the sheet's ground reaches **both screen edges with no gap** — iOS 26's Liquid Glass presentation squeezes short custom-height sheets horizontally, and the merged content runs far past the threshold. Pixel-scan if in doubt: the `surfaceContainer` span at that height is the full screen width (compare x 0..screen on the screenshot, never x ≈11..screen−11) | ☐ |
+| 5.3.1d | Look at the four palette rows themselves *(owner QA round 3, D1)* | **every row is transparent** — no pill, no tinted capsule, no outline, on the selected row least of all. The only thing that says which palette is stored is the trailing radio mark: a filled `primary` dot inside a `primary` ring on the selected row, a plain `onSurfaceVariant` ring on the others. The rows sit straight on the sheet's near-white ground with no gap between them beyond their own padding | ☐ |
 | 5.3.1e | Look at where the rows start and end horizontally | the swatch's left edge lines up under the sheet title and the radio mark's right edge under the close button — the same inset the mode tiles above them have. Nothing in the sheet body runs to the sheet's edges | ☐ |
-| 5.3.1a | On that medium sheet, scroll the content with a drag that starts on a palette row | **every row is reachable without resizing the sheet** — the FOREST row and the gap under it can be scrolled to, and the sheet itself does not move while the content still has somewhere to go | ☐ |
-| 5.3.1b | Drag the sheet's handle upwards | it snaps to full height and the whole list is visible at once; drag it back down and it returns to the medium detent, still open, with the selection unchanged | ☐ |
-| 5.3.1c | Repeat 5.3.1a at the largest text size, then on the smallest device you have (SE) and in landscape | the same: the content scrolls and nothing — least of all the last palette row or the close button — is cut off or unreachable at any of them | ☐ |
+| 5.3.1a | Scroll the sheet's content with a drag that starts on a palette row | at the default text size there is nothing to scroll — the content already fits. Where it does not (the largest text size, a small device, landscape), **every row is reachable without resizing the sheet**: the FOREST row, the "UYGULAMA DİLİ" header and the three language tiles under it can be scrolled to, and the sheet itself does not move while the content still has somewhere to go | ☐ |
+| 5.3.1b | Drag the sheet's handle downwards, then reopen it | it dismisses the way the scrim tap does, with nothing written; reopened, it comes back at the same content height with the selection unchanged | ☐ |
+| 5.3.1c | Repeat 5.3.1a at the largest text size, then on the smallest device you have (SE) and in landscape | the same: the content scrolls and nothing — least of all the language section or the close button — is cut off or unreachable at any of them | ☐ |
 | 5.3.2 | Tap the CLASSIC palette row as a free user | it selects immediately — the stored palette is persisted and the sheet stays open; **no** paywall ever (A60) | ☐ |
 | 5.3.3 | Tap OCEAN / SUNSET / FOREST as a free user | the paywall opens on top and nothing is written; the stored palette is unchanged and the theme sheet is gone (the paywall is a sheet of its own) | ☐ |
 | 5.3.4 | Switch Renk Teması between palettes with premium on | each tap paints the whole app under the open sheet and the row's swatch updates; the sheet stays open until the close button, the swipe or the scrim | ☐ |
-| 5.3.5 | Swipe the appearance sheet down, then reopen | nothing is written on the way out — the stored mode and palette are exactly what they were before the sheet opened | ☐ |
+| 5.3.5 | Swipe the appearance sheet down, then reopen | nothing is written on the way out — the stored mode, palette and language are exactly what they were before the sheet opened | ☐ |
 | 5.3.5a | On the appearance sheet, look at the ground behind the rows *(owner QA round 3, D3)* | it is the near-white `surfaceContainer` in light mode and the same near-black step in dark — one flat ground from the drag handle to the bottom edge, with no tinted band behind the palette rows and no second tone anywhere in the body | ☐ |
-| 5.3.6 | More hub → Uygulama dili *(portrait, default text size)* | the language sheet **hugs its three rows: no empty area below them** — it slides up only as far as header + three `SalusSelectableRow`s (Sistem dili / Türkçe / English) with the subtitle "Seçim anında uygulanır", never to half the screen (owner QA round 2 C2). The drag indicator is still there, the rows fit without scrolling, and the last row clears the home indicator | ☐ |
-| 5.3.6a | Repeat 5.3.6 at the largest text size and in landscape | the sheet still ends just under the last row rather than at a fixed half screen; where the three rows no longer fit, the sheet stops at the screen and the rows scroll inside it — never a row cut off with no way to reach it | ☐ |
-| 5.3.6b | Look at the three language rows *(owner QA round 3, D1)* | transparent like the palette rows — no pill and no selected border — each leading with a small tinted globe tile the size of the palette swatch, and the selected one marked by the radio dot alone. The rows are inset from the sheet's edges by the same step as the sheet title | ☐ |
-| 5.3.7 | Tap Türkçe, then English, then back to Sistem dili | each tap repaints the whole app (the More hub and its labels included) in the chosen language while the sheet stays open; the row's selection follows the pick | ☐ |
-| 5.3.8 | Swipe the language sheet down | the app has already repainted in the last picked language and stays that way; nothing else is written on the way out | ☐ |
-| 5.3.9 | Open both sheets one after the other | only one is ever up at a time; the More hub behind shows the drawn palette (a lapsed subscriber sees CLASSIC here while the sheet still draws their stored OCEAN as selected) | ☐ |
+| 5.3.6 | More hub → Uygulama dili *(portrait, default text size)* | the **same sheet** opens — not a separate language popup: title "Görünüm ve Dil", mode tiles at the top, and scroll to the bottom for the "UYGULAMA DİLİ" header with three language tiles (Sistem dili / Türkçe / English) — the globe over "Sistem dili", 🇹🇷 over "Türkçe" and 🇺🇸 over "English", all three the same size as the mode tiles' icons and the tiles the same height; the tile's own selected state (border + check) marks the stored language | ☐ |
+| 5.3.7 | Tap Türkçe, then English, then back to Sistem dili | each tap repaints the whole app — the More hub and its labels included — in the chosen language, and **the sheet closes with the repaint**; this is expected (Android's activity is recreated for a locale change and iOS matches it). Reopen the sheet after each pick: the tile just chosen is the selected one, and the hub row's value preview reads the same language | ☐ |
+| 5.3.8 | *(largest text size, landscape)* Scroll to the language section | the language section is reachable by scrolling at the largest Dynamic Type — no tile is cut off and none needs the sheet to be dragged | ☐ |
+| 5.3.9 | Open the sheet from Tema modu, close it, then from Renk teması, close it, then from Uygulama dili | the one merged sheet opens from all three rows; the More hub behind shows the drawn palette (a lapsed subscriber sees CLASSIC here while the sheet still draws their stored OCEAN as selected) | ☐ |
 | 5.3.10 | VoiceOver on the appearance sheet | each palette row announces "selected" for the stored pick; the lock glyph on a free user's locked rows is announced by its row's label, not as a separate control | ☐ |
-| 5.3.11 | VoiceOver on the mode tiles (Sistem / Açık / Koyu), then on the language sheet's three rows | each group reads as **one radio set** — swiping moves within it and the chosen one announces "selected" — while each tile and each row stays individually reachable; neither group is read as three unrelated buttons | ☐ |
+| 5.3.11 | VoiceOver on the mode tiles (Sistem / Açık / Koyu), then on the language tiles (Sistem dili / Türkçe / English) | each group reads as **one radio set** — swiping moves within it and the chosen one announces "selected" — while each tile stays individually reachable; neither group is read as three unrelated buttons | ☐ |
+| 5.3.12 | iOS 17/18 device if available | the merged sheet behaves identically — full width, all three sections reachable (the squeeze never existed there; the merge must not regress it) | ☐ |
 
 ### 5.4 The paywall full-screen cover (Task 12)
 
@@ -441,13 +450,15 @@ instance; neither is something a unit test can observe. §3.3.6–§3.3.8 and §
 that settle them. Note in particular whether a value typed and then saved **without** dismissing
 the keyboard is the value that gets stored.
 
-**Task 10 — sheet hosting on a wide layout.** §5.3 is the whole of it: the appearance and
-language pickers are `.medium`-detent sheets presented from the `MoreScreen` body, and a detent is
-a fraction of the *presenting* container. On an iPad-class width, or on an iPhone in landscape, a
-medium detent can leave the palette rows below the fold or, in the other direction, leave half the
-sheet empty. Nothing automated can measure a detent. Run §5.3.1 and §5.3.6 once in landscape and
-once on the widest device available, and note whether the four palette rows and the three language
-rows are all reachable without the sheet having to be dragged up.
+**Task 10 — sheet hosting on a wide layout.** §5.3 is the whole of it: the appearance sheet
+(with its language section, since the 2026-09-13 merge) is presented from the `MoreScreen` body at
+a height measured from its own content, and that measurement is taken inside the *presenting*
+container. On an iPad-class width, or on an iPhone in landscape, the content is shorter per line
+and the screen shallower, so the fitted height can be clamped to the sheet's maximum and leave the
+language section below the fold. Nothing automated can measure it. Run §5.3.1 and §5.3.6 once in
+landscape and once on the widest device available, and note whether the four palette rows and the
+three language tiles are all reachable — on screen, or by scrolling the sheet's content. The merged height is also what keeps the
+sheet full-width on iOS 26 — see §5.3.1w, the merge's own row.
 
 **Tasks 3 and 6 — xxxLarge: the stepper's range hint and the Home pager's measured height.**
 (a) `SalusStepperField` draws its range hint under the number; §4.1 is the row that says whether it
