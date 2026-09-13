@@ -23,10 +23,11 @@
 //                                      `SalusChoiceTile`s and so does `sexOptions` below; the
 //                                      M14-era `Picker(…).pickerStyle(.segmented)` is gone from the
 //                                      app (iOS-M16 §8.3 — content tabs are `SalusSegmentedTabs`).
-//                                      Divergence (b) survives the move as the tiles' glyph:
-//                                      Kotlin picks a per-sex `ImageVector` (`sex.icon()`), SF
-//                                      Symbols has no twin for the three, so all three tiles share
-//                                      one neutral glyph — see `Sex.systemImage` below.
+//                                      The tiles' glyph is divergence (aa): Kotlin picks a per-sex
+//                                      `ImageVector` (`sex.icon()`, `ProfileScreen.kt:259-263`),
+//                                      SF Symbols has no venus/mars/transgender twin, so the tiles
+//                                      draw the Unicode signs `♀ ♂ ⚧` through `SalusSexGlyph` —
+//                                      the one mapping this screen and onboarding page 2 share.
 //   `ContentType.PersonFullName`     → `.textContentType(.name)`, AutoFill's twin of Compose's
 //                                      autofill content type.
 //   `imeAction = ImeAction.Next`     → DROPPED, a recorded divergence. `SalusTextField.swift`'s
@@ -250,7 +251,7 @@ struct ProfileScreen: View {
                 ForEach(Sex.allCases, id: \.self) { option in
                     SalusChoiceTile(
                         label: option.profileLabel,
-                        systemImage: option.systemImage,
+                        glyph: SalusSexGlyph.glyph(for: option),
                         isSelected: state.sex == option,
                         action: { onEvent(.sexSelected(option)) }
                     )
@@ -290,13 +291,6 @@ extension Sex {
         case .male: SettingsStrings.profileSexMale
         case .other: SettingsStrings.profileSexOther
         }
-    }
-
-    /// `Sex.icon()` (`ProfileScreen.kt:211-216`) → a neutral shared glyph: SF Symbols ships no
-    /// female/male/transgender glyph that maps Material's `Female`/`Male`/`Transgender`, so the three
-    /// tiles are distinguished by their text label (exactly as the M14 era segmented control was).
-    fileprivate var systemImage: String {
-        "person.crop.circle"
     }
 }
 

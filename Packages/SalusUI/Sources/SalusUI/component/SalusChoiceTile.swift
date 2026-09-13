@@ -5,21 +5,55 @@
 // tile as "icon + label tile for grids … selected = `primary` border + check badge", and every M16
 // grid that uses one (medication form, sex, theme mode) is a plain icon-over-label. An unused knob
 // is a knob that drifts.
+//
+// **The glyph has two sources, which is divergence (aa) (owner QA round 2, C3.)** Kotlin's is an
+// `ImageVector` and always a Material icon; here it is a ``SalusChoiceTileGlyph`` — an SF Symbol
+// name, or a line of text drawn in the same slot at the same size and tint. The text case exists
+// because SF Symbols ships no venus, mars or transgender glyph, so the sex grid
+// (`ProfileScreen.kt:259-263`, `OnboardingPages.kt:379-383` → `Icons.Outlined.Female / Male /
+// Transgender`) had all three tiles sharing one neutral person symbol and nothing but the label
+// telling them apart. `SalusSexGlyph` is the one place the three Unicode signs are chosen; this
+// component only knows how to draw a string where a symbol would go.
 
 import SalusDesignSystem
 import SwiftUI
+
+/// What a ``SalusChoiceTile`` draws above its label: an SF Symbol, or a Unicode glyph for the signs
+/// SF Symbols has none of (divergence (aa)).
+public enum SalusChoiceTileGlyph: Equatable, Hashable, Sendable {
+    /// SF Symbol name — the iOS twin of Kotlin's `ImageVector`, and what nearly every grid uses.
+    case symbol(String)
+    /// A short line of text — one or two characters — drawn where the symbol would be, at the same
+    /// ``SalusChoiceTileDefaults/iconSize`` and in the same tint. For the glyphs SF Symbols does
+    /// not ship: `♀`, `♂`, `⚧` (see `SalusSexGlyph`). Not a second label slot — the label is below.
+    case text(String)
+}
 
 /// Icon-over-label tile for choice grids (medication form, sex, theme mode). Selection is carried
 /// by the border and a check badge rather than by a fill, so the icon keeps its own colour and the
 /// grid stays readable when several tiles sit side by side (`SalusChoiceTile.kt:47-50`).
 public struct SalusChoiceTile: View {
     private let label: String
-    private let systemImage: String
+    private let glyph: SalusChoiceTileGlyph
     private let isSelected: Bool
     private let action: () -> Void
 
     @Environment(\.salusTheme) private var theme
 
+    /// - Parameter glyph: the SF Symbol or Unicode sign over the label (divergence (aa)).
+    public init(
+        label: String,
+        glyph: SalusChoiceTileGlyph,
+        isSelected: Bool,
+        action: @escaping () -> Void
+    ) {
+        self.label = label
+        self.glyph = glyph
+        self.isSelected = isSelected
+        self.action = action
+    }
+
+    /// The SF Symbol spelling, which is what every grid but the sex one passes.
     /// - Parameter systemImage: SF Symbol name — the iOS twin of Kotlin's `ImageVector`.
     public init(
         label: String,
@@ -27,17 +61,14 @@ public struct SalusChoiceTile: View {
         isSelected: Bool,
         action: @escaping () -> Void
     ) {
-        self.label = label
-        self.systemImage = systemImage
-        self.isSelected = isSelected
-        self.action = action
+        self.init(label: label, glyph: .symbol(systemImage), isSelected: isSelected, action: action)
     }
 
     public var body: some View {
         Button(action: action) {
             // `Arrangement.spacedBy(SalusSpacing.sm)` in a centred column (`SalusChoiceTile.kt:89-93`).
             VStack(spacing: SalusSpacing.sm) {
-                Image(systemName: systemImage)
+                glyphView
                     .font(.system(size: SalusChoiceTileDefaults.iconSize))
                     .foregroundStyle(isSelected ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant)
                     // `contentDescription = null` (`SalusChoiceTile.kt:96`): the label below it
@@ -61,6 +92,22 @@ public struct SalusChoiceTile: View {
         .animation(.easeInOut(duration: SalusMotion.feedbackDurationSeconds), value: isSelected)
         // `Role.RadioButton` (`SalusChoiceTile.kt:86`) — one of a set, and the set is the grid.
         .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
+    }
+
+    /// The two glyph sources in one slot: the font, the tint and the accessibility treatment are
+    /// applied to whichever this answers, so a Unicode sign is the same size and colour as a symbol
+    /// and neither is read out (divergence (aa)).
+    ///
+    /// `Text(verbatim:)` because the glyph is a literal sign, never a localised string — and the
+    /// sign carries U+FE0E in `SalusSexGlyph`, which is what keeps it a glyph in the app's tint
+    /// rather than a colour emoji.
+    @ViewBuilder private var glyphView: some View {
+        switch glyph {
+        case let .symbol(name):
+            Image(systemName: name)
+        case let .text(sign):
+            Text(verbatim: sign)
+        }
     }
 
     /// `border(BorderStroke(borderWidth, borderColor), shape)` (`SalusChoiceTile.kt:85`), whose

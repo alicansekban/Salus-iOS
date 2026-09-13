@@ -13,12 +13,12 @@
 //                                       one place the overline is still drawn by hand.
 //   `Modifier.selectableGroup()`      → `.accessibilityElement(children: .contain)` on the row of
 //                                       tiles; each `SalusChoiceTile` already carries the
-//                                       `isSelected` trait (`SalusChoiceTile.swift:62-64`).
+//                                       `isSelected` trait (`SalusChoiceTile.swift:92-94`).
 //   `Modifier.weight(1f)` ×3          → `.frame(maxWidth: .infinity)` on each tile, which is how
 //                                       three equal columns are spelled in an `HStack`.
 //   `accent = option.accent()`        → DROPPED, and it is the component's gap rather than this
 //                                       page's: `SalusChoiceTile` takes no `accent` on this side
-//                                       (`SalusChoiceTile.swift:24-34`), so the female/cycle and
+//                                       (`SalusChoiceTile.swift:44-65`), so the female/cycle and
 //                                       male/vitals tinting has no call site to arrive through.
 //                                       Adding the parameter is `SalusUI`'s change, not a feature's.
 //   `ContentType.PersonFullName`      → `.textContentType(.name)` behind `#if os(iOS)`, the
@@ -35,8 +35,11 @@
 //                                       page", and it keeps the 56 pt `.large` target the primary
 //                                       has.
 //
-// The three sex glyphs are `ProfileScreen.swift:221-227`'s mapping, reused rather than re-chosen:
-// the sex tiles and the profile editor must not disagree about which glyph means which option.
+// The three sex glyphs are `SalusSexGlyph.glyph(for:)`, `SalusUI`'s one mapping of Kotlin's
+// `Sex.icon()` (`OnboardingPages.kt:379-383`) — reused rather than re-chosen, because the sex tiles
+// here and in the profile editor must not disagree about which glyph means which option. SF Symbols
+// has no venus/mars/transgender sign, so they are the Unicode `♀ ♂ ⚧` (divergence (aa), owner QA
+// round 2 C3).
 
 import SalusDesignSystem
 import SalusModel
@@ -108,7 +111,7 @@ struct OnboardingPersonalPage: View {
                 ForEach(Sex.allCases, id: \.self) { option in
                     SalusChoiceTile(
                         label: option.onboardingLabel,
-                        systemImage: option.onboardingSystemImage,
+                        glyph: SalusSexGlyph.glyph(for: option),
                         isSelected: state.sex == option
                     ) {
                         onEvent(.sexSelected(option))
@@ -206,16 +209,6 @@ extension Sex {
         case .female: OnboardingStrings.onboardingSexFemale
         case .male: OnboardingStrings.onboardingSexMale
         case .other: OnboardingStrings.onboardingSexOther
-        }
-    }
-
-    /// `Sex.icon()` (`OnboardingPages.kt:379-383`), mapped exactly as `ProfileScreen.swift:221-227`
-    /// maps it — the sex tiles and the profile editor must not disagree about the glyphs.
-    var onboardingSystemImage: String {
-        switch self {
-        case .female: "figure.stand.dress"
-        case .male: "figure.stand"
-        case .other: "person.2"
         }
     }
 }

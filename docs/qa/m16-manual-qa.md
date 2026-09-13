@@ -106,6 +106,15 @@ on the screen's ground in the palette, the two glyphs are reachable and distingu
 rendered page itself is unaffected by the theme (a PDF is paper: it stays white in dark mode, which
 is correct and is not a finding).
 
+The **Profile** and **Onboarding — personal details (page 2)** rows both carry the sex grid, and on
+top of the four generic checks a cell is ticked only when this holds (owner QA round 2 C3):
+
+- **Sex tiles** — Kadın, Erkek and Diğer draw **three different signs**, `♀`, `♂` and `⚧`, never one
+  shared person icon. Each is the same size as any other tile glyph, sits centred over its label,
+  and takes the palette's colour: the selected tile's sign is `primary` (emerald / teal / amber /
+  green) and the other two are the muted `onSurfaceVariant` — a sign that stays black, grey or
+  multi-coloured while the tile is selected is the finding, and so is one drawn as a box.
+
 Onboarding is only reachable on a fresh install; its three rows are §2's three pages and can be
 ticked in one walk per palette. Resetting the device (Settings → General → Transfer or Reset
 iPhone → Erase All Content and Settings) is heavy, so prefer deleting the app and reinstalling;
@@ -134,6 +143,7 @@ notification permission can only be asked for once per install.
 | 2.4 | Tap "Başla" | page 2 slides in **from the right** while the cover slides left; header reads "ADIM 2/3", two segments filled, and a back button has appeared | ☐ |
 | 2.5 | Page 2 without choosing a sex | "Devam Et" **and** "Şimdilik Atla" are both dimmed and do nothing; typing a name does not enable them | ☐ |
 | 2.6 | Choose "Kadın", then "Diğer", then "Erkek" | exactly one tile is selected at a time, with the primary edge and the check disc; the cycle note ("Regl ve döngü takibi…") shows for Kadın and Diğer and disappears for Erkek | ☐ |
+| 2.6a | Look at the three glyphs above the labels *(owner QA round 2 C3)* | `♀`, `♂` and `⚧` — three different signs, one per option, at the tile glyph size and in the palette's colours (the selected one `primary`, the other two muted). Never the same icon three times, never a colour emoji, never an empty box | ☐ |
 | 2.7 | Choose a sex, then type "7" in BOY | the field turns red with "50 ile 250 cm arasında bir değer girin." and "Devam Et" dims; clearing the field re-enables it. Same for KİLO with "3" | ☐ |
 | 2.8 | Type "170,5" in BOY (Turkish keyboard comma) | no error — the comma is read as a decimal point | ☐ |
 | 2.9 | Fill name, birth date, height and weight, then tap "Şimdilik Atla" | page 3 arrives; go **back** to page 2 — the name, the birth date, the height and the weight are all cleared and the **sex is still selected** | ☐ |
