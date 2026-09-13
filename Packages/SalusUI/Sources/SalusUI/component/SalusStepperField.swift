@@ -169,9 +169,21 @@ public struct SalusStepperField: View {
                     .foregroundStyle(theme.colorScheme.onSurfaceVariant)
                     .accessibilityHidden(true)
             }
+            // **The prompt is an EXPLICIT empty `Text`, and `nil` is the bug it replaces.** With
+            // `prompt: nil` SwiftUI falls back to the title label as the field's placeholder and
+            // draws it, in the field's own `displaySmall`, whenever `text` is empty — so create
+            // mode showed a huge dimmed "BÜYÜK TANSİYON" on top of the dimmed suggestion above,
+            // both at once. `.labelsHidden()` does not reach that: it hides the label where a
+            // container would lay one out (a `Form` row, a `LabeledContent`), not the placeholder
+            // the field draws inside itself. An empty prompt draws nothing, which leaves the
+            // suggestion overlay as the only thing in an empty field — Kotlin's shape, where the
+            // `decorationBox` draws the suggestion alone and the label lives above the field
+            // (`SalusStepperField.kt:164`, `:199-208`). VoiceOver still names the field: that is
+            // the `accessibilityLabel` below, not the placeholder.
+            //
             // `verbatim:` on the label too: `Text(_:)` with a resolved string is read as a
             // `LocalizedStringKey` against the main bundle (the M7 `c726e22` finding).
-            TextField(text: $text, prompt: nil) { Text(verbatim: label) }
+            TextField(text: $text, prompt: Text(verbatim: "")) { Text(verbatim: label) }
                 .labelsHidden()
                 .textFieldStyle(.plain)
                 .font(SalusTypography.displaySmall.font)
