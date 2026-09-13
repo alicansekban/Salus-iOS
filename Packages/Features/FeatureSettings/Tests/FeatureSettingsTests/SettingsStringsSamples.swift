@@ -1,5 +1,8 @@
 // The ported value table SettingsStringsTests pins. Moved here in M16 Task 10 so the
-// suite stays under the 500-line gate while the M15 delta grows it to 123 keys.
+// suite stays under the 500-line gate; the 2026-09-13 language merge re-pinned it at 122 keys
+// (`language_title`/`language_sheet_subtitle` out with the deleted `LanguageSheet`,
+// `theme_section_language` in with the merged sheet's third section, `theme_sheet_title`
+// re-titled).
 
 import Foundation
 import SalusTesting
@@ -100,7 +103,6 @@ enum SettingsSamplesFirst {
         SettingsStringSample(key: "color_theme_sunset", turkish: "Gün batımı", english: "Sunset"),
         SettingsStringSample(key: "language_english", turkish: "English", english: "English"),
         SettingsStringSample(key: "language_system", turkish: "Sistem dili", english: "System language"),
-        SettingsStringSample(key: "language_title", turkish: "Dil", english: "Language"),
         SettingsStringSample(key: "language_turkish", turkish: "Türkçe", english: "Türkçe"),
         SettingsStringSample(key: "more_cycle", turkish: "Regl Takibi", english: "Cycle tracking"),
         SettingsStringSample(
@@ -360,21 +362,21 @@ enum SettingsSamplesSecond {
             english: "ACCENT & COLOR PALETTE"
         ),
         SettingsStringSample(
+            key: "theme_section_language",
+            turkish: "UYGULAMA DİLİ",
+            english: "APP LANGUAGE"
+        ),
+        SettingsStringSample(
             key: "theme_sheet_subtitle",
             turkish: "Seçimler anında uygulanır",
             english: "Choices apply right away"
         ),
         SettingsStringSample(
             key: "theme_sheet_title",
-            turkish: "Görünüm ve Renk Teması",
-            english: "Appearance & color theme"
+            turkish: "Görünüm ve Dil",
+            english: "Appearance and Language"
         ),
         SettingsStringSample(key: "theme_system", turkish: "Sistem", english: "System"),
-        SettingsStringSample(
-            key: "language_sheet_subtitle",
-            turkish: "Seçim anında uygulanır",
-            english: "Your choice applies right away"
-        ),
         SettingsStringSample(key: "reminder_health_status_error", turkish: "Engelli", english: "Blocked"),
         SettingsStringSample(key: "reminder_health_status_ok", turkish: "Tamam", english: "OK"),
         SettingsStringSample(key: "reminder_health_status_warning", turkish: "Sınırlı", english: "Limited")

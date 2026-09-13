@@ -20,8 +20,9 @@
 //   5. **Effect consumption drains a queue, not a `Channel`** (MoreViewModel div. 4) — the
 //      collector is `.onChange(of: viewModel.pendingEffects)` (`AppointmentEditorScreen.swift:79`).
 //   6. **`effectivePremiumTheme` reads the real three-state `PremiumStatus`** (`isEntitled`).
-//   7. **The theme/language popups are `salusBottomSheet`s (`.medium`), not a `salusDialog`** —
-//      `ThemeSheet`/`LanguageSheet` are their own files (plan ruling 1); `MoreSelectionDialog`
+//   7. **The appearance/language popup is a `salusBottomSheet` (`.fitted` height), not a
+//      `salusDialog`** — `ThemeSheet` is its own file (plan ruling 1; the language picker joined
+//      it as a third section, 2026-09-13 merge); `MoreSelectionDialog`
 //      is retired (M16 Task 10).
 //   8. **`SalusCard`'s content padding is uniform.** Kotlin's cards use
 //      `horizontal = lg, vertical = md` (`MoreScreen.kt:404-412`); `SalusCard` takes one value by
@@ -30,9 +31,9 @@
 //   9. **A language pick applies live through `SalusLocalization`**, the twin of appcompat's
 //      `recreate()`: `RootView` re-identifies the tabs on the change, so this screen is rebuilt in
 //      the new language while the stack and selection survive.
-//   10. **The two setting sheets present from the `MoreScreen` body**, not on the `Route`: they are
-//      tied to `state.isThemeSheetOpen` / `state.isLanguageSheetOpen`, which only the stateless
-//      screen's environment knows. Kotlin's `MoreScreen` draws them the same way (`MoreScreen.kt`).
+//   10. **The one setting sheet presents from the `MoreScreen` body**, not on the `Route`: it is
+//      tied to `state.isThemeSheetOpen`, which only the stateless screen's environment knows.
+//      Kotlin's `MoreScreen` draws it the same way (`MoreScreen.kt`).
 //   11. **The sex chip and PRO badge** (`MoreSections.kt:52-76`) live in the profile card, chipped
 //      exactly as Kotlin draws them — the neutral sex chip + the accent PRO badge when entitled.
 
@@ -256,14 +257,13 @@ struct MoreScreen: View {
         // slot; `.navigationTitle` is still what names the back button of everything this root
         // pushes — Profile, About, Reminder health, Cycle — and what VoiceOver reads.
         .navigationTitle(Text(verbatim: SettingsStrings.moreTitle))
-        // The two setting sheets (plan ruling 1), driven by the state flags rather than two
-        // `@State` values. ThemeSheet and LanguageSheet attach their own `salusBottomSheet`
-        // (`.medium` detent); they sit in a zero-size background so neither presents over the
-        // other, exactly as Kotlin's two independent `if (state.isThemeSheetOpen) { ThemeSheet() }`
-        // blocks draw side by side.
+        // The one setting sheet (plan ruling 1; the language picker joined it as a third section,
+        // 2026-09-13 merge), driven by the state flag rather than a `@State` value. ThemeSheet
+        // attaches its own `salusBottomSheet` (`.fitted` height); it sits in a
+        // zero-size background, exactly as Kotlin's `if (state.isThemeSheetOpen) { ThemeSheet() }`
+        // block draws it.
         .background {
             ThemeSheet(state: state, onEvent: onEvent)
-            LanguageSheet(state: state, onEvent: onEvent)
         }
         // LAST in the chain, and `#if os(iOS)` because the modifier is iOS-only API while every
         // feature package also builds for the macOS test host. Last because SwiftFormat indents

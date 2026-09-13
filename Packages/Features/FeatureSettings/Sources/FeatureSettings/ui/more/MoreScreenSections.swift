@@ -196,10 +196,13 @@ struct MoreSections: View {
                     }
                 }
             )
+            // The language row opens the same merged sheet the two appearance rows above it do —
+            // its language section is the third one in (`MoreSections.kt`'s twin, 2026-09-13
+            // merge).
             SalusListItem(
                 title: SettingsStrings.moreLanguage,
                 systemImage: "globe",
-                onTap: { onEvent(.languageSheetOpened) },
+                onTap: { onEvent(.themeSheetOpened) },
                 trailing: {
                     RowValue(text: SettingsStrings.language(state.language))
                 }

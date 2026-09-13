@@ -5,7 +5,7 @@ import Testing
 @testable import FeatureSettings
 
 /// The twin of Android's `feature/settings/src/main/res/values/strings.xml` (`tr`, the source
-/// language) and `values-en/strings.xml`, and the drift detector between the two locales: all 123
+/// language) and `values-en/strings.xml`, and the drift detector between the two locales: all 122
 /// keys and both of their translations are pinned here.
 ///
 /// The 111 keys split four ways; two (`settings_rate_us*`) are the in-app review row, copied from
@@ -20,7 +20,11 @@ import Testing
 /// and the More row's `settings_support_*`; the about-redesign fix then scrapped the Support screen
 /// and the `settings_support_*` row with it, so those two keys left the catalog.) (The iOS-only
 /// `language_relaunch_note` of iOS-M8 T12 is gone: the language pick applies live through
-/// `SalusLocalization`, so there is no launch to wait for and nothing to say.) `SettingsStrings.swift`'s
+/// `SalusLocalization`, so there is no launch to wait for and nothing to say. The 2026-09-13
+/// language merge — see
+/// `docs/superpowers/specs/2026-09-13-language-joins-appearance-sheet-design.md` — then deleted
+/// `language_title` and `language_sheet_subtitle` with the deleted `LanguageSheet`'s header and
+/// added the merged sheet's `theme_section_language` overline.) `SettingsStrings.swift`'s
 /// header carries the card-by-card mapping and the reason each Android key is kept, dropped or
 /// replaced; this table is where a drift in either direction fails.
 ///
@@ -44,30 +48,18 @@ struct SettingsStringsTests {
     static let samples = SettingsSamples.all
     static let expectedKeys = Set(samples.map(\.key))
 
-    @Test("the catalog holds exactly the 123 keys :feature:settings owns")
+    @Test("the catalog holds exactly the 122 keys :feature:settings owns")
     func catalogHoldsExactlyTheKeys() throws {
         // Pinned as a number as well as a set: a row deleted from the table together with its key
         // from the catalog would otherwise agree with itself and pass.
         //
-        // The arithmetic behind 123, re-derived after the M16 Task 10 sweep: the pre-sweep catalog
-        // held 112 keys. The M15 hub deletes eleven keys that no longer ship (`more_profile`,
-        // `settings_cancel`, `settings_language`, `settings_reminders`, the four
-        // `settings_section_*`, `settings_theme`, `support_title`, `theme_title`) and adds
-        // twenty-two that the Android M15 delta names (`more_section_health/appearance/
-        // notifications/security/app`, `more_theme_mode`, `more_language`, `more_pro_badge`,
-        // `more_premium_cta`, `more_footer`, `theme_sheet_title/subtitle`,
-        // `theme_section_mode/palette`, `theme_default_badge`, `language_sheet_subtitle`,
-        // `profile_height_unit`, `profile_caption_report`, `profile_save_changes`,
-        // `reminder_health_status_ok/warning/error`). Of the Android M15 delta's "24 removed", only
-        // eleven existed on iOS: `more_profile`, `settings_cancel`, `settings_language`,
-        // `settings_reminders`, the four `settings_section_*`, `settings_theme`, `support_title`,
-        // `theme_title` — and `more_title` stays (the root-title ruling). The other thirteen named
-        // removals (`profile_back`, `reminder_health_back`, `settings_back`) had already left, and
-        // the `reminder_health_battery_*`/`exact_*` keys are the iOS-M3 record-keeping divergences.
-        // Of the Android "31 added", nine already existed here (the re-valued `about_features_title`,
-        // `more_section_tracking`, `more_trends`, `profile_birth_date/health_notes/height/name/sex`,
-        // `theme_system`), so twenty-two new keys join. 112 − 11 + 22 = 123.
-        #expect(Self.samples.count == 123)
+        // The arithmetic behind 122, re-derived after the 2026-09-13 language merge: the M16 Task
+        // 10 sweep left 123 keys. The merge — the language picker joins the appearance sheet —
+        // deletes the two keys whose only consumers were the deleted `LanguageSheet`'s header
+        // (`language_title`, `language_sheet_subtitle`), adds the merged sheet's language-section
+        // overline (`theme_section_language`), and re-titles `theme_sheet_title` to "Görünüm ve
+        // Dil" / "Appearance and Language". 123 − 2 + 1 = 122.
+        #expect(Self.samples.count == 122)
 
         try StringCatalogParity.assertKeys(of: Self.loadCatalog(), are: Self.expectedKeys)
     }

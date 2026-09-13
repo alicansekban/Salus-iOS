@@ -6,14 +6,16 @@
 // grid that uses one (medication form, sex, theme mode) is a plain icon-over-label. An unused knob
 // is a knob that drifts.
 //
-// **The glyph has two sources, which is divergence (aa) (owner QA round 2, C3.)** Kotlin's is an
-// `ImageVector` and always a Material icon; here it is a ``SalusChoiceTileGlyph`` — an SF Symbol
-// name, or a line of text drawn in the same slot at the same size and tint. The text case exists
-// because SF Symbols ships no venus, mars or transgender glyph, so the sex grid
-// (`ProfileScreen.kt:259-263`, `OnboardingPages.kt:379-383` → `Icons.Outlined.Female / Male /
-// Transgender`) had all three tiles sharing one neutral person symbol and nothing but the label
-// telling them apart. `SalusSexGlyph` is the one place the three Unicode signs are chosen; this
-// component only knows how to draw a string where a symbol would go.
+// **The glyph has two sources on both platforms.** Here it is a ``SalusChoiceTileGlyph`` — an SF
+// Symbol name, or a line of text drawn in the same slot at the same size and tint; Kotlin spells
+// the same pair as two `SalusChoiceTile` overloads, `icon: ImageVector` and `glyph: String`. Both
+// text cases are shared: the app-language tiles' country flags (the 2026-09-13 merge). What is
+// **divergence (aa) (owner QA round 2, C3)** is only the sex grid, which uses the text slot here —
+// SF Symbols ships no venus, mars or transgender glyph, so all three tiles shared one neutral
+// person symbol — while Kotlin has `Icons.Outlined.Female / Male / Transgender` for it
+// (`ProfileScreen.kt:259-263`, `OnboardingPages.kt:379-383`). `SalusSexGlyph` is the one place the
+// three Unicode signs are chosen; this component only knows how to draw a string where a symbol
+// would go.
 
 import SalusDesignSystem
 import SwiftUI
@@ -24,8 +26,10 @@ public enum SalusChoiceTileGlyph: Equatable, Hashable, Sendable {
     /// SF Symbol name — the iOS twin of Kotlin's `ImageVector`, and what nearly every grid uses.
     case symbol(String)
     /// A short line of text — one or two characters — drawn where the symbol would be, at the same
-    /// ``SalusChoiceTileDefaults/iconSize`` and in the same tint. For the glyphs SF Symbols does
-    /// not ship: `♀`, `♂`, `⚧` (see `SalusSexGlyph`). Not a second label slot — the label is below.
+    /// ``SalusChoiceTileDefaults/iconSize``, and in the same tint unless it is a colour emoji,
+    /// which keeps its own colours. For the glyphs SF Symbols does not ship: `♀`, `♂`, `⚧` (see
+    /// `SalusSexGlyph`) and the app-language tiles' country flags. Not a second label slot — the
+    /// label is below.
     case text(String)
 }
 

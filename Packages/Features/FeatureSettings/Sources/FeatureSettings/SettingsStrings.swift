@@ -175,15 +175,14 @@ public enum SettingsStrings {
     public static var themeSheetSubtitle: String { localized(.themeSheetSubtitle) }
     public static var themeSectionMode: String { localized(.themeSectionMode) }
     public static var themeSectionPalette: String { localized(.themeSectionPalette) }
+    public static var themeSectionLanguage: String { localized(.themeSectionLanguage) }
     public static var themeDefaultBadge: String { localized(.themeDefaultBadge) }
     public static var themeSystem: String { localized(.themeSystem) }
     public static var themeLight: String { localized(.themeLight) }
     public static var themeDark: String { localized(.themeDark) }
 
-    // MARK: - Language sheet
+    // MARK: - Language section (the merged sheet's third section)
 
-    public static var languageTitle: String { localized(.languageTitle) }
-    public static var languageSheetSubtitle: String { localized(.languageSheetSubtitle) }
     public static var languageSystem: String { localized(.languageSystem) }
     public static var languageTurkish: String { localized(.languageTurkish) }
     public static var languageEnglish: String { localized(.languageEnglish) }
@@ -337,7 +336,6 @@ public enum SettingsStrings {
         case colorThemeSunset = "color_theme_sunset"
         case languageEnglish = "language_english"
         case languageSystem = "language_system"
-        case languageTitle = "language_title"
         case languageTurkish = "language_turkish"
         case moreCycle = "more_cycle"
         case moreCycleSubtitle = "more_cycle_subtitle"
@@ -422,10 +420,10 @@ public enum SettingsStrings {
         case themeLight = "theme_light"
         case themeSectionMode = "theme_section_mode"
         case themeSectionPalette = "theme_section_palette"
+        case themeSectionLanguage = "theme_section_language"
         case themeSheetSubtitle = "theme_sheet_subtitle"
         case themeSheetTitle = "theme_sheet_title"
         case themeSystem = "theme_system"
-        case languageSheetSubtitle = "language_sheet_subtitle"
         case supportCode = "support_code"
         case supportCodeUnavailable = "support_code_unavailable"
         case supportCopied = "support_copied"

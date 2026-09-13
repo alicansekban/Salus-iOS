@@ -6,7 +6,10 @@
 // settings + sheets 7, premium 4, doctor report 3, colour themes 6). The three dialog-era cases
 // (`selectingAThemePersistsItAndClosesTheDialog`, `selectingALanguageAppliesTheLocaleAndClosesTheDialog`)
 // were renamed and re-specified by the M15 sheet model — the pick applies under the sheet and the
-// sheet stays open (plan ruling 1 / handover item 5). The two iOS-only cases that pin the effect
+// sheet stays open (plan ruling 1 / handover item 5) — and the 2026-09-13 language merge folded
+// the language-sheet cases into the theme-sheet ones: the "app language" row opens the same
+// sheet, so its open/close row is a theme-sheet row and the `languageSheetDismissed` cases are
+// gone with the event. The two iOS-only cases that pin the effect
 // **queue** — divergence (4), which the Kotlin `Channel` + `LaunchedEffect` collector makes
 // unnecessary there — live in `MoreEffectQueueTests.swift`, so this suite stays the ported table
 // and nothing else. Turbine's `state.test { awaitItem() }` becomes reading `viewModel.state` after
@@ -207,59 +210,40 @@ struct MoreViewModelTests {
         #expect(fixture.preferences.premiumThemeValueSync == .classic)
     }
 
-    /// `MoreViewModelTest.kt:268-281` — the language sheet mirrors the theme sheet: the pick is
-    /// applied under it and the sheet stays open, because the app repainting in the new language is
-    /// the only preview there is.
-    @Test("selecting a language applies the locale and keeps the sheet open")
-    func selectingALanguageAppliesTheLocaleAndKeepsTheSheetOpen() async {
+    /// The 2026-09-13 merge folds the language-sheet open/close tests into the theme-sheet ones:
+    /// the "app language" row now sends `themeSheetOpened`, and the language section is the third
+    /// one in the same sheet — so a language tap applies under it and the sheet stays open, exactly
+    /// like the mode tiles above it.
+    @Test("the language row opens the theme sheet")
+    func theLanguageRowOpensTheThemeSheet() async {
+        let fixture = makeViewModel()
+        await waitUntil("the initial state to load") { !fixture.vm.state.isLoading }
+        #expect(fixture.vm.state.isThemeSheetOpen == false)
+
+        fixture.vm.onEvent(.themeSheetOpened)
+        await waitUntil("the theme sheet to open") { fixture.vm.state.isThemeSheetOpen }
+
+        #expect(fixture.vm.state.isThemeSheetOpen)
+    }
+
+    /// `MoreViewModelTest.kt:268-281`, re-specified by the 2026-09-13 merge: the pick is applied
+    /// under the open sheet and the sheet stays open, because the app repainting in the new
+    /// language is the only preview there is.
+    @Test("a language tap while the sheet is open applies and keeps the sheet open")
+    func aLanguageTapAppliesTheLocaleAndKeepsTheSheetOpen() async {
         let fixture = makeViewModel()
         await waitUntil("the initial state to load") { !fixture.vm.state.isLoading }
 
-        fixture.vm.onEvent(.languageSheetOpened)
-        await waitUntil("the language sheet to open") { fixture.vm.state.isLanguageSheetOpen }
-        #expect(fixture.vm.state.isLanguageSheetOpen)
+        fixture.vm.onEvent(.themeSheetOpened)
+        await waitUntil("the theme sheet to open") { fixture.vm.state.isThemeSheetOpen }
+        #expect(fixture.vm.state.isThemeSheetOpen)
 
         fixture.vm.onEvent(.selectLanguage(.turkish))
         await waitUntil("the locale to apply") { fixture.locale.currentSync == .turkish }
 
         #expect(fixture.locale.currentSync == .turkish)
         #expect(fixture.locale.appliedSync == [.turkish])
-        #expect(fixture.vm.state.isLanguageSheetOpen)
-    }
-
-    /// `MoreViewModelTest.kt:284-297`.
-    @Test("the language sheet opens and closes")
-    func theLanguageSheetOpensAndCloses() async {
-        let fixture = makeViewModel()
-        await waitUntil("the initial state to load") { !fixture.vm.state.isLoading }
-        #expect(fixture.vm.state.isLanguageSheetOpen == false)
-
-        fixture.vm.onEvent(.languageSheetOpened)
-        await waitUntil("the language sheet to open") { fixture.vm.state.isLanguageSheetOpen }
-        #expect(fixture.vm.state.isLanguageSheetOpen)
-
-        fixture.vm.onEvent(.languageSheetDismissed)
-        await waitUntil("the language sheet to close") { !fixture.vm.state.isLanguageSheetOpen }
-
-        #expect(fixture.vm.state.isLanguageSheetOpen == false)
-    }
-
-    /// `MoreViewModelTest.kt:301-313` — dismissing the sheet is not a selection: nothing is applied
-    /// on the way out.
-    @Test("dismissing the language sheet leaves the locale untouched")
-    func dismissingTheLanguageSheetLeavesTheLocaleUntouched() async {
-        let fixture = makeViewModel()
-        await waitUntil("the initial state to load") { !fixture.vm.state.isLoading }
-
-        fixture.vm.onEvent(.languageSheetOpened)
-        await waitUntil("the language sheet to open") { fixture.vm.state.isLanguageSheetOpen }
-
-        fixture.vm.onEvent(.languageSheetDismissed)
-        await waitUntil("the language sheet to close") { !fixture.vm.state.isLanguageSheetOpen }
-
-        #expect(fixture.vm.state.isLanguageSheetOpen == false)
-        #expect(fixture.locale.currentSync == .system)
-        #expect(fixture.locale.appliedSync.isEmpty)
+        #expect(fixture.vm.state.isThemeSheetOpen)
     }
 
     /// `MoreViewModelTest.kt:316-326`.

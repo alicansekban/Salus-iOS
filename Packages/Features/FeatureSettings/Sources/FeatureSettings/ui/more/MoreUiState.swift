@@ -4,9 +4,9 @@
 //
 // The three UDF types keep their Kotlin names and their Kotlin job. Two divergences are recorded in
 // `MoreViewModel.swift`'s header (`appStoreSubscriptionsUrl`, the buffered-effects queue); the
-// state itself follows the M15 twin exactly — the theme and language sheets are two `Bool` flags on
-// the state, driven by their own open/dismiss events, replacing the M14 era single
-// `activeDialog: MoreDialog?`.
+// state itself follows the twin exactly — the appearance sheet (which carries the language section
+// too, 2026-09-13 merge) is one `Bool` flag on the state, driven by its own open/dismiss events,
+// replacing the M14 era single `activeDialog: MoreDialog?`.
 
 import SalusModel
 import SalusPremium
@@ -31,12 +31,10 @@ public struct MoreUiState: Sendable, Equatable {
     public var premiumStatus: PremiumStatus
     public var appLockEnabled: Bool
     public var secureScreenEnabled: Bool
-    /// The appearance sheet — opened by both the mode row and the palette row. It outlives a
-    /// selection on purpose: mode and palette live in the same sheet (`MoreUiState.kt:33-37`).
+    /// The appearance and language sheet — opened by all three appearance rows. It outlives a
+    /// selection on purpose: mode, palette and language live in the same sheet
+    /// (`MoreUiState.kt:33-37`).
     public var isThemeSheetOpen: Bool
-    /// The language sheet — behaves exactly like the appearance sheet: the pick applies live and
-    /// the sheet stays open (`MoreUiState.kt:42-47`).
-    public var isLanguageSheetOpen: Bool
 
     public init(
         isLoading: Bool = true,
@@ -49,8 +47,7 @@ public struct MoreUiState: Sendable, Equatable {
         premiumStatus: PremiumStatus = .free,
         appLockEnabled: Bool = false,
         secureScreenEnabled: Bool = false,
-        isThemeSheetOpen: Bool = false,
-        isLanguageSheetOpen: Bool = false
+        isThemeSheetOpen: Bool = false
     ) {
         self.isLoading = isLoading
         self.profileName = profileName
@@ -63,13 +60,12 @@ public struct MoreUiState: Sendable, Equatable {
         self.appLockEnabled = appLockEnabled
         self.secureScreenEnabled = secureScreenEnabled
         self.isThemeSheetOpen = isThemeSheetOpen
-        self.isLanguageSheetOpen = isLanguageSheetOpen
     }
 }
 
 /// User intents (`MoreUiState.kt:50-86`).
 public enum MoreEvent: Sendable, Equatable {
-    /// Either appearance row was tapped; both open the one theme sheet.
+    /// Any of the three appearance rows was tapped; all open the one merged sheet.
     case themeSheetOpened
     /// The sheet was swiped away, closed or dismissed by its scrim. Nothing is written.
     case themeSheetDismissed
@@ -77,11 +73,8 @@ public enum MoreEvent: Sendable, Equatable {
     /// A colour picked in the theme sheet's palette list. Free users may open the sheet and tap a
     /// locked row; the entitlement check lives in the ViewModel, not in the screen.
     case colorThemeSelected(PremiumTheme)
-    /// The "app language" row was tapped.
-    case languageSheetOpened
-    /// The language sheet was swiped away, closed or dismissed by its scrim.
-    case languageSheetDismissed
-    /// A language picked in the language sheet. Applied immediately and the sheet stays open.
+    /// A language picked in the sheet's language section. Applied immediately and the sheet stays
+    /// open.
     case selectLanguage(AppLanguage)
     /// Sent only after a successful authentication when enabling.
     case setAppLock(Bool)

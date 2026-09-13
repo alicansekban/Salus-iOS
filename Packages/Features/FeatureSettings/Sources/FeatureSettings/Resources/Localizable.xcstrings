@@ -579,23 +579,6 @@
         }
       }
     },
-    "language_title": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Language"
-          }
-        },
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dil"
-          }
-        }
-      }
-    },
     "language_turkish": {
       "extractionState": "manual",
       "localizations": {
@@ -1894,13 +1877,13 @@
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Görünüm ve Renk Teması"
+            "value": "Görünüm ve Dil"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Appearance & color theme"
+            "value": "Appearance and Language"
           }
         }
       }
@@ -1956,6 +1939,23 @@
         }
       }
     },
+    "theme_section_language": {
+      "extractionState": "manual",
+      "localizations": {
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "UYGULAMA DİLİ"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "APP LANGUAGE"
+          }
+        }
+      }
+    },
     "theme_default_badge": {
       "extractionState": "manual",
       "localizations": {
@@ -1969,23 +1969,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Default"
-          }
-        }
-      }
-    },
-    "language_sheet_subtitle": {
-      "extractionState": "manual",
-      "localizations": {
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Seçim anında uygulanır"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Your choice applies right away"
           }
         }
       }
