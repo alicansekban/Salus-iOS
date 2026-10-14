@@ -62,17 +62,24 @@ private struct Context {
 
     /// Rule 6: the latest period with `effectiveFrom <= day`; with none, the earliest period's price.
     func unitCost(on day: Int64) -> Int64 {
-        var chosen = prices.first
-        for period in prices {
-            guard period.effectiveFromEpochDay <= day else { break }
-            chosen = period
-        }
-        return chosen?.unitCostMinor ?? 0
+        SalusSmoking.unitCost(on: day, ascendingPrices: prices)
     }
 
     func day(of epochMs: Int64) -> Int64 {
         epochDay(of: epochMs, in: zone)
     }
+}
+
+/// Rule 6, shared with the milestone scheduler so the two cannot read a price differently: the
+/// latest period with `effectiveFrom <= day`; with none, the earliest period's price; with no period
+/// at all, 0 (contract section 8.5). `ascendingPrices` is sorted by `effectiveFromEpochDay`.
+func unitCost(on day: Int64, ascendingPrices: [PricePeriod]) -> Int64 {
+    var chosen = ascendingPrices.first
+    for period in ascendingPrices {
+        guard period.effectiveFromEpochDay <= day else { break }
+        chosen = period
+    }
+    return chosen?.unitCostMinor ?? 0
 }
 
 // MARK: - Overflow-safe arithmetic
@@ -160,7 +167,7 @@ private func quitSnapshot(_ context: Context) -> SmokingSnapshot {
 /// (contract section 6, `ResolveSlip`). Only an event with no usable link (nil, or an id that names
 /// no attempt) falls back to the latest-starting attempt whose `[start, end)` contains it. Either
 /// way an event before its attempt's start belongs to no attempt: a back-dated entry is not a slip.
-private func groupByOwningAttempt(_ events: [SmokingEvent], attempts: [QuitAttempt]) -> [String: [SmokingEvent]] {
+func groupByOwningAttempt(_ events: [SmokingEvent], attempts: [QuitAttempt]) -> [String: [SmokingEvent]] {
     let attemptsById = Dictionary(attempts.map { ($0.id, $0) }, uniquingKeysWith: { _, last in last })
     var grouped: [String: [SmokingEvent]] = [:]
     for event in events {
