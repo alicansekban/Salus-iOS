@@ -19,21 +19,28 @@ public struct SalusChoiceChip: View {
     private let label: String
     private let isSelected: Bool
     private let systemImage: String?
+    private let accent: FeatureAccent?
     private let action: () -> Void
 
     @Environment(\.salusTheme) private var theme
 
-    /// - Parameter systemImage: SF Symbol name for a leading icon inside the chip
-    ///   (`SalusChoiceChip.kt:101-107`).
+    /// - Parameters:
+    ///   - systemImage: SF Symbol name for a leading icon inside the chip
+    ///     (`SalusChoiceChip.kt:101-107`).
+    ///   - accent: swaps the selected ground and its content for a feature's own container colours,
+    ///     for screens whose picks must not borrow the app chrome's emerald (iOS-M17 Task 10, the
+    ///     twin of Android's `accent`, design review R1). `nil` is the unchanged `primaryContainer`.
     public init(
         label: String,
         isSelected: Bool,
         systemImage: String? = nil,
+        accent: FeatureAccent? = nil,
         action: @escaping () -> Void
     ) {
         self.label = label
         self.isSelected = isSelected
         self.systemImage = systemImage
+        self.accent = accent
         self.action = action
     }
 
@@ -60,7 +67,7 @@ public struct SalusChoiceChip: View {
                     // the row into a paragraph. Material's chip does not wrap either.
                     .lineLimit(1)
             }
-            .foregroundStyle(isSelected ? colors.onPrimaryContainer : colors.onSurfaceVariant)
+            .foregroundStyle(SalusChoiceChipStyle.content(isSelected: isSelected, accent: accent, theme: theme))
             .padding(.horizontal, SalusSpacing.lg)
             // `minHeight`, not `height`: at the larger Dynamic Type sizes the label is taller
             // than the fixed 36 pt and the chip has to grow with it rather than clip.
@@ -75,13 +82,11 @@ public struct SalusChoiceChip: View {
         .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
     }
 
-    private var colors: SalusColorScheme { theme.colorScheme }
-
     @ViewBuilder
     private var background: some View {
         if isSelected {
-            // `if (selected) primaryContainer` (`SalusChoiceChip.kt:60`).
-            SalusShapes.pill.fill(colors.primaryContainer)
+            // `selected -> accent?.container ?: primaryContainer` (`SalusChoiceChip.kt:60-63`).
+            SalusShapes.pill.fill(SalusChoiceChipStyle.container(isSelected: true, accent: accent, theme: theme))
         } else {
             // `border(BorderStroke(if (selected) Transparent else cardBorder))`
             // (`SalusChoiceChip.kt:84-90`). `strokeBorder`, not `stroke`: the edge sits inside
@@ -100,12 +105,43 @@ public struct SalusChoiceChip: View {
     private static let borderWidth: CGFloat = 1
 }
 
+/// The colour resolution of `SalusChoiceChip.kt:62-80`, hoisted out of the view so the accent
+/// fallback is testable without rendering it — the shape `SalusDateTileStyle` sets.
+enum SalusChoiceChipStyle {
+    /// A selected chip's ground: `accent?.container ?: primaryContainer`.
+    static func container(isSelected: Bool, accent: FeatureAccent?, theme: SalusResolvedTheme) -> Color {
+        isSelected ? (accent?.container ?? theme.colorScheme.primaryContainer) : .clear
+    }
+
+    /// The label and icon colour: `accent?.onContainer ?: onPrimaryContainer` while selected,
+    /// `onSurfaceVariant` otherwise.
+    static func content(isSelected: Bool, accent: FeatureAccent?, theme: SalusResolvedTheme) -> Color {
+        guard isSelected else { return theme.colorScheme.onSurfaceVariant }
+        return accent?.onContainer ?? theme.colorScheme.onPrimaryContainer
+    }
+}
+
 #Preview("Choice chips") {
     SalusPreviewPalettes {
         HStack(spacing: SalusSpacing.sm) {
             SalusChoiceChip(label: "Cramps", isSelected: true, action: {})
             SalusChoiceChip(label: "Headache", isSelected: false, action: {})
             SalusChoiceChip(label: "Mood", isSelected: true, systemImage: "face.smiling", action: {})
+        }
+    }
+}
+
+#Preview("Choice chip — feature accent") {
+    SalusPreviewPalettes { AccentChipPreview() }
+}
+
+private struct AccentChipPreview: View {
+    @Environment(\.salusTheme) private var theme
+
+    var body: some View {
+        HStack(spacing: SalusSpacing.sm) {
+            SalusChoiceChip(label: "Coffee", isSelected: true, accent: theme.extendedColors.smoking, action: {})
+            SalusChoiceChip(label: "Stress", isSelected: false, accent: theme.extendedColors.smoking, action: {})
         }
     }
 }
