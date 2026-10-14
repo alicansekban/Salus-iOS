@@ -91,6 +91,11 @@ public func makeSmokingModule(
                 clock: clock,
                 resolveSlip: core.resolveSlip,
                 editEvent: core.editEvent,
+                logSmoked: core.logSmoked,
+                deleteEvent: core.deleteEvent,
+                logNoneToday: core.logNoneToday,
+                switchMode: core.switchMode,
+                snackbar: snackbar,
                 navigator: navigator
             )
         },

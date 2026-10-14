@@ -7,6 +7,7 @@ import SalusCommon
 import SalusNavigation
 import SalusSmoking
 import SalusTesting
+import SalusUI
 import Testing
 
 @testable import FeatureSmoking
@@ -22,6 +23,7 @@ struct MainHarness {
     let clock = FixedSalusClock(now: Date(timeIntervalSince1970: 1_773_133_200))
     let navigator = FakeNavigator()
     let ids = CountingIds()
+    let snackbar = SalusSnackbarController()
     let store: FakeSmokingStore
 
     init(agoMs: Int64 = 42 * dayMs, events: [SmokingEvent] = []) {
@@ -59,13 +61,7 @@ struct MainHarness {
     }
 
     func viewModel() -> SmokingMainViewModel {
-        SmokingMainViewModel(
-            repository: FakeSmokingRepository(store: store, clock: clock),
-            clock: clock,
-            resolveSlip: ResolveSlip(store: store, clock: clock, idGenerator: ids),
-            editEvent: EditEvent(store: store),
-            navigator: navigator.navigator
-        )
+        makeMainViewModel(store: store, clock: clock, ids: ids, snackbar: snackbar, navigator: navigator)
     }
 
     /// A viewmodel that has taken its first snapshot — Android's `subscribe(vm)`.
@@ -89,6 +85,30 @@ struct MainHarness {
             attemptId: "attempt-1"
         )
     }
+}
+
+/// The ViewModel over the real use cases and a fake store; the two harnesses differ only in what
+/// the store holds.
+@MainActor
+func makeMainViewModel(
+    store: FakeSmokingStore,
+    clock: FixedSalusClock,
+    ids: CountingIds,
+    snackbar: SalusSnackbarController,
+    navigator: FakeNavigator
+) -> SmokingMainViewModel {
+    SmokingMainViewModel(
+        repository: FakeSmokingRepository(store: store, clock: clock),
+        clock: clock,
+        resolveSlip: ResolveSlip(store: store, clock: clock, idGenerator: ids),
+        editEvent: EditEvent(store: store),
+        logSmoked: LogSmoked(store: store, clock: clock, idGenerator: ids),
+        deleteEvent: DeleteEvent(store: store),
+        logNoneToday: LogNoneToday(store: store, clock: clock, idGenerator: ids),
+        switchMode: SwitchMode(store: store, clock: clock, idGenerator: ids),
+        snackbar: snackbar,
+        navigator: navigator.navigator
+    )
 }
 
 extension SmokingMainViewModel {

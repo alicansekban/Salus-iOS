@@ -19,6 +19,7 @@ import Testing
 struct SmokingStringsTests {
     static let samples = SmokingStringTable.samples + SmokingMainStringTable.samples
         + SmokingNotificationStringTable.samples + SmokingTimelineStringTable.samples
+        + SmokingReduceStringTable.samples
     static let expectedKeys = Set(samples.map(\.key))
 
     /// Setup's overlines: the step counter and the field labels. Stored upper-case in both locales.
@@ -30,14 +31,16 @@ struct SmokingStringsTests {
         // The main screen's: the hero's caption and the next-stage card's.
         "smoking_hero_overline", "smoking_stage_card_overline",
         // The timeline's: the header card's overline and its two figure labels.
-        "smoking_timeline_overline", "smoking_timeline_done_label", "smoking_timeline_next_label"
+        "smoking_timeline_overline", "smoking_timeline_done_label", "smoking_timeline_next_label",
+        // The REDUCE ring's caption.
+        "smoking_reduce_overline"
     ]
 
-    @Test("the catalog holds exactly the 170 keys :feature:smoking owns so far")
+    @Test("the catalog holds exactly the 200 keys :feature:smoking owns so far")
     func catalogHoldsExactlyTheKeys() throws {
         // Pinned as a number as well as a set: a row deleted from the table together with its key
         // from the catalog would otherwise agree with itself and pass.
-        #expect(Self.samples.count == 170)
+        #expect(Self.samples.count == 200)
 
         try StringCatalogParity.assertKeys(of: Self.loadCatalog(), are: Self.expectedKeys)
     }

@@ -5,6 +5,9 @@
 // between snapshots, here the view's `TimelineView` hands the counters their instant, so the state
 // holds only what the screen has been told. And `isPremium` is not here yet — nothing on this task's
 // screen reads it; the savings-goal and insights cards (plan Task 15) add it with their consumers.
+// A third: Android's `UndoOffered` effect is gone. The ViewModel shows the undo snackbar through the
+// shell's controller itself (see `SmokingMainViewModel`), so no effect has to reach a Route that may
+// already be off screen.
 
 import SalusSmoking
 
@@ -28,6 +31,8 @@ public enum MainSheet: Equatable, Sendable {
     case trigger(eventId: String)
     /// `units` is where the stepper starts.
     case slip(units: Int)
+    /// REDUCE "Bırakmaya hazırım": picks the instant the quit attempt starts.
+    case quitDate
 }
 
 public enum SmokingMainEvent: Equatable, Sendable {
@@ -46,12 +51,36 @@ public enum SmokingMainEvent: Equatable, Sendable {
     case insightsTapped
     case historyTapped
     case settingsTapped
+
+    // MARK: REDUCE
+
+    /// The large "+1": one unit logged now.
+    case plusOne
+    /// The snackbar's "Geri al": removes the entry the +1 wrote, by id.
+    case undoPlusOne(eventId: String)
+    /// "Bugün hiç içmedim": writes the zero marker for today.
+    case noneToday
+    /// "Bırakmaya hazırım": opens the quit-date sheet; nothing is written yet.
+    case readyToQuit
+    case quitDateConfirmed(quitAtMs: Int64)
+    case quitDateDismissed
+    /// The greyed "Bıraktığında seni bekleyenler" card.
+    case timelinePreviewTapped
 }
 
 /// One-shot UI work. Navigation is not here: the ViewModel navigates through the `Navigator`.
 public enum SmokingMainEffect: Equatable, Sendable {
-    /// A refused or failed write; the Route shows ``SmokingStrings/errorGeneric``.
-    case showError
+    /// A refused or failed write; the Route shows the message for the error.
+    case showError(SmokingMainError)
+}
+
+/// Why a write the main screen made was refused, which picks the snackbar's words.
+public enum SmokingMainError: Equatable, Sendable {
+    case generic
+    /// A quit date before the previous attempt ended (contract §8.10).
+    case quitOverlap
+    /// A quit date after "now".
+    case quitFuture
 }
 
 extension QuitSnapshot {

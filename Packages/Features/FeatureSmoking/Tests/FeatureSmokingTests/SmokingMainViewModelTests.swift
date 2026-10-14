@@ -155,7 +155,7 @@ struct SmokingMainViewModelTests {
         vm.onEvent(.slipConfirmed(units: 0, restart: false))
         await waitUntil("the error") { !vm.pendingEffects.isEmpty }
 
-        #expect(vm.consumeEffects() == [.showError])
+        #expect(vm.consumeEffects() == [.showError(.generic)])
         #expect(vm.state.sheet == .slip(units: 1))
         #expect(!vm.state.writing)
         #expect(harness.store.input.events.isEmpty)

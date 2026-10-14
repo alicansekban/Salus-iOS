@@ -32,7 +32,8 @@ public struct SmokingMainRoute: View {
                         case .insightsTapped: onOpenTrends()
                         default: viewModel.onEvent(event)
                         }
-                    }
+                    },
+                    clock: module.clock
                 )
                 // `Channel.receiveAsFlow()` collected in a `LaunchedEffect`, spelled for an
                 // `@Observable` queue: it fires on the drain's own write too, so the empty edge is
@@ -57,8 +58,16 @@ public struct SmokingMainRoute: View {
 
     private func show(_ effect: SmokingMainEffect, on module: SmokingModule) {
         switch effect {
-        case .showError:
-            module.snackbar.show(SnackbarRequest(message: SmokingStrings.errorGeneric))
+        case let .showError(error):
+            module.snackbar.show(SnackbarRequest(message: message(for: error)))
+        }
+    }
+
+    private func message(for error: SmokingMainError) -> String {
+        switch error {
+        case .generic: SmokingStrings.errorGeneric
+        case .quitOverlap: SmokingStrings.mainQuitErrorOverlap
+        case .quitFuture: SmokingStrings.quitSheetFuture
         }
     }
 }

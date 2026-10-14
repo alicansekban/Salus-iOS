@@ -1,7 +1,7 @@
 // Ported from `feature/smoking/src/main/kotlin/com/alicansekban/salus/feature/smoking/ui/main/
 // SmokingMainScreen.kt`.
 //
-// The smoking main screen: the mode's content, the pinned actions below it, and the two sheets
+// The smoking main screen: the mode's content, the pinned actions below it, and the sheets
 // that hang off ``SmokingMainUiState/sheet``. A pushed screen, so the shell has already reserved
 // the insets and the system bar names it.
 //
@@ -12,6 +12,7 @@
 //   `Column(weight(1f))` + pinned `Column`       → a `ScrollView` over a pinned `VStack`.
 //   `SalusIconButtonTone.Neutral`                 → `SalusIconButton`'s default tone.
 
+import SalusCommon
 import SalusDesignSystem
 import SalusSmoking
 import SalusUI
@@ -23,6 +24,8 @@ struct SmokingMainScreen: View {
     let state: SmokingMainUiState
     let onEvent: (SmokingMainEvent) -> Void
     var counterClock: CounterClock = .live
+    /// "Now" for the quit-date sheet; the app's clock on device, a fixed one in a preview.
+    var clock: any SalusClock = SystemSalusClock()
 
     @Environment(\.salusTheme) private var theme
 
@@ -33,8 +36,9 @@ struct SmokingMainScreen: View {
                     switch state.snapshot {
                     case let .quit(quit):
                         QuitContent(quit: quit, counterClock: counterClock, onEvent: onEvent)
-                    // The REDUCE body arrives with its own task.
-                    case nil, .notSetUp, .reduce:
+                    case let .reduce(reduce):
+                        ReduceContent(reduce: reduce, writing: state.writing, onEvent: onEvent)
+                    case nil, .notSetUp:
                         EmptyView()
                     }
                 }
@@ -70,7 +74,7 @@ struct SmokingMainScreen: View {
                 )
             }
         }
-        .mainSheets(state.sheet, writing: state.writing, onEvent: onEvent)
+        .mainSheets(state.sheet, writing: state.writing, clock: clock, onEvent: onEvent)
         // LAST in the chain, and `#if os(iOS)` because the modifier is iOS-only API while every
         // feature package also builds for the macOS test host.
         #if os(iOS)
