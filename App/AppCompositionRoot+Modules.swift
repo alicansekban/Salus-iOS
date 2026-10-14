@@ -16,6 +16,7 @@ import SalusPremium
 import SalusProfile
 import SalusReminder
 import SalusSettings
+import SalusSmoking
 import SalusUI
 import UIKit
 
@@ -364,6 +365,7 @@ struct Infrastructure {
     let preferences: SalusPreferencesDataSource
     let aiUsage: AiUsageDataSource
     let profileRepository: any ProfileRepository
+    let smokingCore: SmokingCoreModule
     let pendingDelete: PendingDeleteController
     let appLockManager: AppLockManager
     let navigator: Navigator

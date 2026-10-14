@@ -19,6 +19,7 @@ import SalusPremium
 import SalusProfile
 import SalusReminder
 import SalusSettings
+import SalusSmoking
 import SalusUI
 import UIKit
 import UserNotifications
@@ -73,6 +74,12 @@ final class AppCompositionRoot {
 
     /// `profileModule`: `single<ProfileRepository> { ProfileRepositoryImpl(get(), get()) }`.
     let profileRepository: any ProfileRepository
+
+    /// `smokingCoreModule` (`core/smoking/.../di/SmokingCoreModule.kt`): the smoking repository and its
+    /// fifteen use cases, built once over one store so every write shares one path. Built with an
+    /// empty change-listener registry; the reminder resync (plan Task 17) adds its listener to
+    /// ``SmokingCoreModule/changeListeners`` and no use case changes. No screen reads it yet.
+    let smokingCore: SmokingCoreModule
 
     /// `appModule` (`AppModules.kt:37-41`): "Outlives every screen: an undo window must survive the
     /// ViewModel of the screen the delete was triggered from."
@@ -211,6 +218,7 @@ final class AppCompositionRoot {
         preferences = infrastructure.preferences
         aiUsage = infrastructure.aiUsage
         profileRepository = infrastructure.profileRepository
+        smokingCore = infrastructure.smokingCore
         pendingDelete = infrastructure.pendingDelete
         appLockManager = infrastructure.appLockManager
         navigator = infrastructure.navigator
@@ -341,6 +349,7 @@ final class AppCompositionRoot {
     /// open is a fatal launch failure — see `openDatabase`.
     private static func makeInfrastructure() -> Infrastructure {
         let clock = SystemSalusClock()
+        let idGenerator = UUIDIdGenerator()
         let database = openDatabase(clock: clock)
         let appLockFlagStore = KeychainAppLockFlagStore()
         // The root's own DAO, so the app builds exactly one over this database (Koin's `get()`).
@@ -354,13 +363,18 @@ final class AppCompositionRoot {
         appLockManager.didUnlock = { [foreground] in foreground.lockGateDidLift() }
         return Infrastructure(
             clock: clock,
-            idGenerator: UUIDIdGenerator(),
+            idGenerator: idGenerator,
             database: database,
             profileDao: profileDao,
             appLockFlagStore: appLockFlagStore,
             preferences: preferences,
             aiUsage: AiUsageDataSource(defaults: .standard),
             profileRepository: makeProfileRepository(profileDao: profileDao, clock: clock),
+            smokingCore: SmokingCoreModule(
+                smokingDao: SmokingDao(database: database),
+                clock: clock,
+                idGenerator: idGenerator
+            ),
             pendingDelete: PendingDeleteController(),
             appLockManager: appLockManager,
             navigator: Navigator(),
