@@ -70,6 +70,20 @@ struct MilestoneSchedulerKindsTests {
         #expect(slipped.flatMap(\.kinds).contains(.stage("h_2w")))
     }
 
+    @Test("a none-today marker inside a back-dated window does not move the stage instants (section 8.14)")
+    func noneTodayMarkerDoesNotMoveStages() {
+        // Start day 0 09:00, now day 9 15:00. A marker (units 0, no attempt link) at day 7 03:00 lies
+        // inside the window; it is no slip, so the plan equals the clean one.
+        let start = milestoneAt(0, 9)
+        let now = milestoneAt(9, 15)
+        let marker = Fixture.smoked("m1", at: milestoneAt(7, 3), units: 0, attempt: nil)
+
+        let clean = milestoneSchedule(milestoneQuitData(start: start, baseline: 10), now: now)
+        let withMarker = milestoneSchedule(milestoneQuitData(start: start, baseline: 10, events: [marker]), now: now)
+
+        #expect(withMarker == clean)
+    }
+
     @Test("a slip delays units and money but not the day milestones")
     func slipDelaysUnitsAndMoneyNotDays() {
         // Same scene. Elapsed 9.25 days.

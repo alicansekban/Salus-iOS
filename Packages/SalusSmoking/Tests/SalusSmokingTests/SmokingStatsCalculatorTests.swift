@@ -191,6 +191,38 @@ struct QuitFigureTests {
         #expect(snapshot.savedMinor == 20000)
     }
 
+    @Test("a none-today marker inside a back-dated quit window is not a slip (section 8.14)")
+    func noneTodayMarkerInsideBackDatedWindowIsNotASlip() throws {
+        // The marker (units 0, no attempt) was logged at 09:00 in REDUCE mode; the user then switched
+        // to QUIT with a quit time of 00:00 that day, so its instant falls inside the new window and
+        // the time-containment fallback must not attach it. 2 days: 2 x 20 = 40 units, 40 000 minor.
+        let marker = Fixture.smoked("marker", at: Fixture.start + 9 * hour, units: 0, attempt: nil)
+        let snapshot = try quitSnapshot(
+            Fixture.quitInput(events: [marker]),
+            now: Fixture.start + 2 * day
+        )
+        #expect(snapshot.slipCount == 0)
+        #expect(snapshot.sinceLastSmokeMs == snapshot.attemptElapsedMs)
+        #expect(snapshot.unitsNotSmoked == 40)
+        #expect(snapshot.savedMinor == 40000)
+        #expect(snapshot.attempts.first?.slipCount == 0)
+    }
+
+    @Test("a none-today marker never costs a VAPE slip day (section 8.14)")
+    func noneTodayMarkerNeverCostsAVapeDay() throws {
+        // Same scene with a vape: a counted marker would take one unit cost (2 000) off day 0.
+        // 2 days x 1 x 2 000 = 4 000 minor, nothing deducted.
+        let marker = Fixture.smoked(
+            "marker", at: Fixture.start + 9 * hour, units: 0, attempt: nil, product: .vape
+        )
+        let snapshot = try quitSnapshot(
+            Fixture.quitInput(baseline: 1, cost: 2000, product: .vape, events: [marker]),
+            now: Fixture.start + 2 * day
+        )
+        #expect(snapshot.savedMinor == 4000)
+        #expect(snapshot.slipCount == 0)
+    }
+
     @Test("a slip larger than the units not smoked clamps units and money at zero")
     func slipLargerThanNotSmoked() throws {
         let slip = Fixture.smoked("s1", at: Fixture.start + 12 * hour, units: 100)

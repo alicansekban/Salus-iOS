@@ -167,10 +167,16 @@ private func quitSnapshot(_ context: Context) -> SmokingSnapshot {
 /// (contract section 6, `ResolveSlip`). Only an event with no usable link (nil, or an id that names
 /// no attempt) falls back to the latest-starting attempt whose `[start, end)` contains it. Either
 /// way an event before its attempt's start belongs to no attempt: a back-dated entry is not a slip.
+///
+/// A "none today" marker (`smoked`, `units == 0`) is never a slip and belongs to no attempt,
+/// whatever its instant (§8.14, twin of Android `AttemptMembership.kt`), so it is dropped before
+/// ownership is decided: the containment fallback must not attach one to an attempt that was
+/// back-dated over it. REDUCE still counts markers per logged day (§3.12, §8.4) and does not read
+/// this grouping.
 func groupByOwningAttempt(_ events: [SmokingEvent], attempts: [QuitAttempt]) -> [String: [SmokingEvent]] {
     let attemptsById = Dictionary(attempts.map { ($0.id, $0) }, uniquingKeysWith: { _, last in last })
     var grouped: [String: [SmokingEvent]] = [:]
-    for event in events {
+    for event in events where !(event.type == .smoked && event.units == 0) {
         let linked = event.attemptId.flatMap { attemptsById[$0] }
         let owner = linked ?? attempts
             .filter { event.occurredAtMs >= $0.startedAtMs && ($0.endedAtMs.map { event.occurredAtMs < $0 } ?? true) }
