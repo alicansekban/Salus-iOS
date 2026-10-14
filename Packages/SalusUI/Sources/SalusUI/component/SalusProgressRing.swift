@@ -142,6 +142,11 @@ public enum SalusProgressRingDefaults {
     public static let size: CGFloat = 64
     /// `SalusProgressRingDefaults.StrokeWidth` (`SalusProgressRing.kt:75`).
     public static let strokeWidth: CGFloat = 8
+    /// The ring a screen's hero shows, with its own content drawn over the middle (iOS-M17 Task 11;
+    /// Android `HeroSize`). An empty `label` then draws nothing visible.
+    public static let heroSize: CGFloat = 168
+    /// Proportioned to ``heroSize``: the default stroke would read as a hairline on it.
+    public static let heroStrokeWidth: CGFloat = 12
 }
 
 #Preview("Progress ring") {

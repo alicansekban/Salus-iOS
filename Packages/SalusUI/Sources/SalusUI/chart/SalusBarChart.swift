@@ -23,6 +23,14 @@
 // `AxisMarks(values:)` labels exactly the values it is given, so the bars' own indices are
 // passed and every tick lands on a real column. The `barAxisLabel` clamping Vico needed
 // (`SalusBarChart.kt:161-164`) has no Swift Charts twin and is dropped.
+//
+// iOS-M17 Task 11 adds two defaulted knobs, the twins of Android's `accent` and
+// `BarChartUiModel.baseline`: the bars take a feature's colour, and a baseline is a dashed
+// `RuleMark` with its caption, drawn over the bars. A chart with a baseline pins its y domain to
+// `0...BarChartRange.maxY` (Vico's `CartesianLayerRangeProvider.fixed`), because Swift Charts would
+// otherwise fit the scale to the marks and could squash the bars against a far-off rule; a chart
+// without one keeps the engine's own range. A bar of 0 draws nothing — a caller leaves an empty
+// slot that way.
 
 #if canImport(Charts)
     import Charts
@@ -35,26 +43,31 @@ import SwiftUI
 public struct SalusBarChart: View {
     private let model: BarChartUiModel
     private let contentDescription: String?
+    private let accent: Color?
 
     @Environment(\.salusTheme) private var theme
 
     /// - Parameters:
     ///   - contentDescription: spoken summary of the chart; a chart is opaque to VoiceOver
     ///     exactly as it is to TalkBack (`SalusBarChart.kt:51-52`).
-    public init(model: BarChartUiModel, contentDescription: String? = nil) {
+    ///   - accent: the bars' colour, handed in by the feature (`SalusUI` knows no feature); `nil`
+    ///     is the `primary` role, as before (iOS-M17 Task 11).
+    public init(model: BarChartUiModel, contentDescription: String? = nil, accent: Color? = nil) {
         self.model = model
         self.contentDescription = contentDescription
+        self.accent = accent
     }
 
     public var body: some View {
         chart
+            .chartYScaleIfSet(BarChartRange.maxY(bars: model.bars, baseline: model.baseline))
             .chartYAxis { yAxis }
             .chartLegend(.hidden)
             .accessibilitySummary(contentDescription)
     }
 
     /// `MaterialTheme.colorScheme.primary` (`SalusBarChart.kt:83`).
-    private var primaryColor: Color { theme.colorScheme.primary }
+    private var primaryColor: Color { accent ?? theme.colorScheme.primary }
 
     /// `MaterialTheme.salusColors.metricDown` (`SalusBarChart.kt:86`) — M15 moved the second
     /// column off `tertiary` onto the rose that means "the other one" app-wide, the same token
@@ -81,8 +94,40 @@ public struct SalusBarChart: View {
                     .cornerRadius(SalusBarChartDefaults.cornerRadius)
                 }
             }
+            baselineRule
         }
         .chartXAxis { xAxis }
+    }
+
+    /// The dashed reference line and its caption, neutral like the line chart's guides but not in
+    /// the accent: the bars carry that. Declared last so it lands over the bars. The caption is
+    /// anchored inwards so a long one does not hang off the trailing edge (Swift Charts drops, not
+    /// clips, an annotation that leaves the chart).
+    @ChartContentBuilder
+    private var baselineRule: some ChartContent {
+        if let baseline = model.baseline {
+            RuleMark(y: .value(Self.ySeriesId, baseline.value))
+                .foregroundStyle(theme.colorScheme.outline)
+                .lineStyle(
+                    StrokeStyle(
+                        lineWidth: SalusBarChartDefaults.baselineWidth,
+                        lineCap: .butt,
+                        dash: SalusBarChartDefaults.baselineDash
+                    )
+                )
+                .annotation(
+                    position: .top,
+                    alignment: .trailing,
+                    overflowResolution: .init(x: .fit(to: .chart), y: .disabled)
+                ) {
+                    if let label = baseline.label {
+                        Text(verbatim: label)
+                            .font(SalusTypography.labelSmall.font)
+                            .tracking(SalusTypography.labelSmall.tracking)
+                            .foregroundStyle(theme.colorScheme.onSurfaceVariant)
+                    }
+                }
+        }
     }
 
     /// The bottom axis turns each bar's index back into the caller's label (`SalusBarChart.kt:89-96`).
@@ -123,9 +168,23 @@ public enum SalusBarChartDefaults {
     /// `columnShape = MaterialTheme.shapes.extraSmall` (`SalusBarChart.kt:87`) — a shape token, so
     /// the radius is read from `SalusShapes` rather than spelled as a number here.
     public static let cornerRadius: CGFloat = SalusShapes.extraSmall
+    /// The baseline rule's stroke (iOS-M17 Task 11) — a guide, thinner than a bar is wide.
+    public static let baselineWidth: CGFloat = 1
+    /// On/off lengths of the baseline's dashes.
+    public static let baselineDash: [CGFloat] = [4, 4]
 }
 
 extension View {
+    /// Pins the y domain to `0...maxY` when there is one; without it the engine keeps its own range.
+    @ViewBuilder
+    fileprivate func chartYScaleIfSet(_ maxY: Double?) -> some View {
+        if let maxY {
+            chartYScale(domain: 0 ... maxY)
+        } else {
+            self
+        }
+    }
+
     /// Replaces the chart's own (unreadable) accessibility tree with one spoken summary, the twin
     /// of `Modifier.semantics { contentDescription = … }` (`SalusBarChart.kt:140-144`). A `nil`
     /// summary leaves the view untouched, exactly as the Kotlin `else` branch does.
@@ -168,6 +227,26 @@ extension View {
                         ],
                         yLabel: { String(format: "%.0f", $0) }
                     )
+                )
+                .frame(height: 200)
+
+                // iOS-M17 Task 11: a feature accent, an empty slot (a 0) and a baseline above every
+                // bar — REDUCE's seven days.
+                SalusBarChart(
+                    model: BarChartUiModel(
+                        bars: [
+                            BarEntry(label: "Mon", value: 8),
+                            BarEntry(label: "Tue", value: 7),
+                            BarEntry(label: "Wed", value: 0),
+                            BarEntry(label: "Thu", value: 7),
+                            BarEntry(label: "Fri", value: 6),
+                            BarEntry(label: "Sat", value: 5),
+                            BarEntry(label: "Sun", value: 6)
+                        ],
+                        yLabel: { String(format: "%.0f", $0) },
+                        baseline: BarBaseline(value: 20, label: "Your old average: 20")
+                    ),
+                    accent: .orange
                 )
                 .frame(height: 200)
             }
