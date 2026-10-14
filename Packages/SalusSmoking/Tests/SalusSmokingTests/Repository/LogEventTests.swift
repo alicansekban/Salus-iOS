@@ -47,6 +47,20 @@ struct LogSmokedTests {
         #expect(events.map(\.units) == [1, 0])
     }
 
+    @Test("undoing the day's first plus one does not bring the none-today marker back (section 8.16)")
+    func undoDoesNotRestoreTheMarker() async throws {
+        try await env.reduceSetUp()
+        try await env.module.logNoneToday()
+        let id = try await env.module.logSmoked(units: 1, atMs: ms("2026-03-10T15:00"))
+        #expect(try await env.input().events.map(\.units) == [1])
+
+        // The undo deletes the entry it names by id; the marker the +1 replaced is not re-created,
+        // the person re-taps "none today".
+        try await env.module.deleteEvent(eventId: id)
+
+        #expect(try await env.input().events.isEmpty)
+    }
+
     @Test("a slip in a quit attempt keeps the attempt open and attaches to it")
     func quitSlipAttaches() async throws {
         try await env.quitSetUp()
