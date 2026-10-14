@@ -3,7 +3,7 @@
 //
 // Koin's `module { … }` becomes a value the composition root builds once and hands down (no
 // container; see `docs/ios-feature-template.md`, "Module factory"). The single Koin `viewModel`
-// registration becomes `makeSetupViewModel`; each later task adds its screen's factory here.
+// registrations become `makeSetupViewModel` and `makeMainViewModel`; each later task adds its screen's factory here.
 //
 // The module carries `clock` and `snackbar` because two things the Android Routes `koinInject` are
 // not reachable from a package any other way: the clock the quit-date sheet checks "future"
@@ -36,6 +36,12 @@ public struct SmokingModule {
     /// `viewModel { parameters -> SmokingSetupViewModel(defaultCurrencyCode = parameters.get(), …) }`.
     /// The currency comes from the locale, which only the composition can read.
     public let makeSetupViewModel: @MainActor (String) -> SmokingSetupViewModel
+
+    /// `viewModel { SmokingMainViewModel(repository = get(), premiumRepository = get(), …) }`.
+    /// The premium repository is not here yet: nothing on the main screen reads it until the goal
+    /// and insights cards (plan Task 15) arrive, which add it with the composition-root change it
+    /// needs (the premium graph is built after the scheduled modules, smoking among them).
+    public let makeMainViewModel: @MainActor () -> SmokingMainViewModel
 }
 
 /// Builds the feature's graph — the twin of `val smokingModule = module { … }`. Every dependency is
@@ -57,6 +63,15 @@ public func makeSmokingModule(
                 defaultCurrencyCode: defaultCurrencyCode,
                 setUpSmoking: core.setUp,
                 clock: clock,
+                navigator: navigator
+            )
+        },
+        makeMainViewModel: {
+            SmokingMainViewModel(
+                repository: core.repository,
+                clock: clock,
+                resolveSlip: core.resolveSlip,
+                editEvent: core.editEvent,
                 navigator: navigator
             )
         }

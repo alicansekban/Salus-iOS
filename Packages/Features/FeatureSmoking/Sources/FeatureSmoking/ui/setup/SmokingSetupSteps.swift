@@ -459,7 +459,9 @@ private struct ReduceDetails: View {
 
 /// A stepper over a whole number in `1…SetupDefaults.maxUnits`. The iOS field owns no range, so
 /// every report it makes is clamped here and answered — the caller contract that comes with it.
-private struct SetupIntStepper: View {
+/// Internal since the slip sheet counts cigarettes over the same range (Android's slip sheet uses
+/// the same `1..200` as the setup).
+struct SetupIntStepper: View {
     let label: String
     let value: Int
     let unit: String

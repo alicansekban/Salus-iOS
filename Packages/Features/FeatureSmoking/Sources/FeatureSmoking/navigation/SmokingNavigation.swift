@@ -52,9 +52,9 @@ extension View {
     ///
     /// `onOpenTrends` and `onOpenReminderHealth` are the cross-feature callbacks: Trends and the
     /// reminder-readiness screen belong to other features, whose keys this one cannot see, so the
-    /// shell fills them in. The main and settings screens will use them; Setup does not, so nothing
-    /// here reads them yet. Only the keys that already have a screen are registered — each later
-    /// task adds its own `navigationDestination` beside the screen it builds.
+    /// shell fills them in. The main screen opens Trends; the settings screen will use the other.
+    /// Only the keys that already have a screen are registered — each later task adds its own
+    /// `navigationDestination` beside the screen it builds.
     public func smokingDestinations(
         onOpenTrends: @escaping () -> Void,
         onOpenReminderHealth: @escaping () -> Void
@@ -63,9 +63,7 @@ extension View {
             SmokingSetupRoute()
         }
         .navigationDestination(for: SmokingKey.self) { _ in
-            // A stand-in so "Başla" and the More row have somewhere to land; the real main screen
-            // replaces this destination (Task 10).
-            SmokingMainPlaceholderRoute()
+            SmokingMainRoute(onOpenTrends: onOpenTrends)
         }
     }
 }

@@ -17,7 +17,7 @@ import Testing
 /// `Packages/`, so this catalog is covered without remembering to copy a test.
 @Suite("FeatureSmoking strings")
 struct SmokingStringsTests {
-    static let samples = SmokingStringTable.samples
+    static let samples = SmokingStringTable.samples + SmokingMainStringTable.samples
     static let expectedKeys = Set(samples.map(\.key))
 
     /// Setup's overlines: the step counter and the field labels. Stored upper-case in both locales.
@@ -25,14 +25,16 @@ struct SmokingStringsTests {
         "smoking_setup_step_of", "smoking_setup_units_per_day", "smoking_setup_pack_price",
         "smoking_setup_pouch_price", "smoking_setup_units_per_pack", "smoking_setup_units_per_pouch",
         "smoking_setup_currency", "smoking_setup_weekly_spend", "smoking_setup_quit_when",
-        "smoking_setup_reason_label", "smoking_setup_daily_limit"
+        "smoking_setup_reason_label", "smoking_setup_daily_limit",
+        // The main screen's: the hero's caption and the next-stage card's.
+        "smoking_hero_overline", "smoking_stage_card_overline"
     ]
 
-    @Test("the catalog holds exactly the 64 keys :feature:smoking owns so far")
+    @Test("the catalog holds exactly the 142 keys :feature:smoking owns so far")
     func catalogHoldsExactlyTheKeys() throws {
         // Pinned as a number as well as a set: a row deleted from the table together with its key
         // from the catalog would otherwise agree with itself and pass.
-        #expect(Self.samples.count == 64)
+        #expect(Self.samples.count == 142)
 
         try StringCatalogParity.assertKeys(of: Self.loadCatalog(), are: Self.expectedKeys)
     }
@@ -102,6 +104,7 @@ struct SmokingStringsTests {
                 == "About ₺400 a week · ₺20.800 a year"
         )
         try #expect(Self.render(catalog, "smoking_setup_quit_today", "tr", "09:30") == "Bugün, 09:30")
+        try Self.expectMainScreenSentences(catalog)
         // `%%` is a literal percent under `String(format:)`, exactly as in Java's `Formatter`.
         try #expect(
             Self.render(catalog, "smoking_setup_limit_suggestion", "tr", 20)

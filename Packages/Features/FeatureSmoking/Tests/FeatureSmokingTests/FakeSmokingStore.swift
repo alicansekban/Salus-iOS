@@ -53,6 +53,7 @@ final class FakeSmokingStore: SmokingStore, @unchecked Sendable {
     private var committedCalls = 0
     private var currentGate: WriteGate?
     private var currentFailure: (any Error)?
+    private var subscribers: [UUID: AsyncStream<SmokingInput>.Continuation] = [:]
 
     init(initial: SmokingInput = FakeSmokingStore.empty) {
         currentInput = initial
@@ -84,6 +85,21 @@ final class FakeSmokingStore: SmokingStore, @unchecked Sendable {
         lock.withLock { currentInput }
     }
 
+    /// The rows now and after every committed write — Android's `inputFlow`, which a fake
+    /// repository folds into snapshots. Keeps only the newest row set, as a `StateFlow` does.
+    func inputStream() -> AsyncStream<SmokingInput> {
+        AsyncStream(bufferingPolicy: .bufferingNewest(1)) { continuation in
+            let id = UUID()
+            lock.withLock {
+                subscribers[id] = continuation
+                continuation.yield(currentInput)
+            }
+            continuation.onTermination = { [weak self] _ in
+                self?.lock.withLock { _ = self?.subscribers.removeValue(forKey: id) }
+            }
+        }
+    }
+
     func mutate<T: Sendable>(_ block: @escaping @Sendable (any SmokingWrites) throws -> T) async throws -> T {
         let (gate, failure, snapshot) = lock.withLock {
             startedCalls += 1
@@ -99,6 +115,9 @@ final class FakeSmokingStore: SmokingStore, @unchecked Sendable {
             lock.withLock {
                 currentInput = writes.input
                 committedCalls += 1
+                for subscriber in subscribers.values {
+                    subscriber.yield(writes.input)
+                }
             }
         }
         return value
