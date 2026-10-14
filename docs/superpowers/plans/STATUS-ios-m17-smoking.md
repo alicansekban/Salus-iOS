@@ -1,6 +1,6 @@
 # STATUS — iOS-M17 smoking cessation
 
-- **Phase:** executing (2026-10-14) — wave 1: Task 1 done and reviewed; Tasks 4 and 8 implementing in `../wt-m17-i4`, `../wt-m17-i8`. Sync points S1–S4 open. Controller: Claude Code desktop (Opus 5.5).
+- **Phase:** executing (2026-10-14) — wave 1: Tasks 1 and 8 done and reviewed; Task 4 implementing in `../wt-m17-i4`. Sync points S1–S4 open. Controller: Claude Code desktop (Opus 5.5).
 - **Plan:** `docs/superpowers/plans/2026-10-14-ios-m17-smoking.md`
 - **Spec:** `docs/superpowers/specs/2026-10-14-ios-m17-smoking-design.md`. It is a delta of `../salus-android/docs/superpowers/specs/2026-09-20-smoking-cessation-design.md`.
 - **Runbook:** `../salus-android/docs/superpowers/plans/2026-10-14-m17-parallel-runbook.md`. The Android twin runs in parallel and owns the contracts.
@@ -22,6 +22,7 @@
 | Task | Commit(s) | Result | Notes |
 |---|---|---|---|
 | 1 — M17 contract sync script | `3f08e3a` | done, review APPROVED (2 deferred minors); `sync-m17-contracts-selftest: 41 passed`; `gates.sh lint` green; no Swift touched (tests 1521 → 1521) | `scripts/dev/sync-m17-contracts.sh [--check\|--status]` copies S3 vectors and S2 `5.json` from the committed `feature/m17-smoking-cessation`; open source = "not yet on branch (sync point open)", exit 0; `--check` exits 1 only on drift; `--status` prints S1–S4 (ruling R2). Red: `FAIL unknown flag exits 2: exit 127, expected 2`. Mutations: drift cmp off, S1 case-sensitive, working-tree read, open-source-fails — each failed named cases. |
+| 8 — `SalusUI` additions, R2 | `a89f324` | done, review APPROVED (4 deferred minors); lint / lint-rules green; test gate **1540 tests, 0 failed, 0 skipped** (+19 on 1521) | `SalusHeatmap` (5 accent steps over `surfaceContainerHigh`, per-cell VoiceOver), `ChartUiModel.markers` + dashed accent `RuleMark` in `SalusLineChart` (`markerColor`), `overflowPermille` + `accent` on `SalusProgressRing`/`SalusProgressBar` (neutral `outlineVariant` lap). Additive. Red: `cannot find type 'ChartMarker'`. Mutations: bucket ceil→floor, marker range exclusive, overflow cap removed, zero guard dropped — each red. Open for owner QA: heatmap cells show no counts (screenshot 08 does). |
 
 ## Ledger rows to fold
 
