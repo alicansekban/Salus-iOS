@@ -27,6 +27,11 @@
 // `animateFloatAsState` behaves the same — it snaps to the initial value on first composition and
 // sweeps on subsequent changes). Reduce-motion jumps instantly (`nil` animation). The struct
 // already clamps `progress` in `init` (divergence (c)), so the sweep animates the clamped value.
+//
+// iOS-M17 Task 8 (design review R2) adds two defaulted knobs, so every existing call site compiles
+// unchanged: `accent` (the sweep's colour, handed in by the feature — `SalusUI` knows no feature)
+// and `overflowPermille` (the excess over a limit, drawn as a neutral second lap in
+// `outlineVariant` over the full accent ring, from 12 o'clock like the sweep — never a hue change).
 
 import SalusDesignSystem
 import SwiftUI
@@ -39,6 +44,8 @@ public struct SalusProgressRing: View {
     private let label: String
     private let size: CGFloat
     private let strokeWidth: CGFloat
+    private let accent: Color?
+    private let overflow: Double
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.salusTheme) private var theme
@@ -48,16 +55,23 @@ public struct SalusProgressRing: View {
     ///   - label: the centered text, e.g. "3/5" (`SalusProgressRing.kt:63-67`).
     ///   - size: the ring's diameter (`SalusProgressRingDefaults.Size` = 64).
     ///   - strokeWidth: the ring's stroke width (`SalusProgressRingDefaults.StrokeWidth` = 8).
+    ///   - accent: the sweep's colour; `nil` is the `primary` role, as before (iOS-M17 Task 8).
+    ///   - overflowPermille: the excess over the limit in permille of one lap, 0 for none. Drawn
+    ///     over the full ring in `outlineVariant`, capped at one lap (design review R2).
     public init(
         progress: Float,
         label: String,
         size: CGFloat = SalusProgressRingDefaults.size,
-        strokeWidth: CGFloat = SalusProgressRingDefaults.strokeWidth
+        strokeWidth: CGFloat = SalusProgressRingDefaults.strokeWidth,
+        accent: Color? = nil,
+        overflowPermille: Int = 0
     ) {
         self.progress = Self.clamped(progress)
         self.label = label
         self.size = size
         self.strokeWidth = strokeWidth
+        self.accent = accent
+        overflow = SalusProgressOverflow.fraction(forPermille: overflowPermille)
     }
 
     public var body: some View {
@@ -77,7 +91,7 @@ public struct SalusProgressRing: View {
             Circle()
                 .trim(from: 0, to: ringSweep)
                 .stroke(
-                    theme.colorScheme.primary,
+                    accent ?? theme.colorScheme.primary,
                     style: StrokeStyle(lineWidth: strokeWidth, lineCap: .round)
                 )
                 .rotationEffect(.degrees(-90))
@@ -85,6 +99,22 @@ public struct SalusProgressRing: View {
                     reduceMotion ? nil : SalusMotion.entranceAnimation,
                     value: progress
                 )
+            // R2: the excess is a neutral second lap over the full accent ring. `outlineVariant`
+            // is deliberately not the track colour, so the lap reads against both the track and
+            // the sweep; it is absent (not a zero-length cap dot) when there is no overflow.
+            if overflow > 0 {
+                Circle()
+                    .trim(from: 0, to: overflow)
+                    .stroke(
+                        theme.colorScheme.outlineVariant,
+                        style: StrokeStyle(lineWidth: strokeWidth, lineCap: .round)
+                    )
+                    .rotationEffect(.degrees(-90))
+                    .animation(
+                        reduceMotion ? nil : SalusMotion.entranceAnimation,
+                        value: overflow
+                    )
+            }
             Text(verbatim: label)
                 .font(SalusTypography.labelLarge.font)
                 .tracking(SalusTypography.labelLarge.tracking)
@@ -116,6 +146,19 @@ public enum SalusProgressRingDefaults {
 
 #Preview("Progress ring") {
     SalusPreviewPalettes {
+        HStack(spacing: SalusSpacing.lg) {
+            SalusProgressRing(progress: 0.6, label: "3/5")
+            // Over the limit (R2): full in the accent, the excess a neutral lap, no hue change.
+            SalusProgressRing(progress: 1, label: "12/10", overflowPermille: 200)
+        }
+    }
+}
+
+#Preview("Progress ring, accessibility3") {
+    HStack(spacing: SalusSpacing.lg) {
+        SalusProgressRing(progress: 1, label: "12/10", overflowPermille: 200)
         SalusProgressRing(progress: 0.6, label: "3/5")
     }
+    .padding(SalusSpacing.lg)
+    .dynamicTypeSize(.accessibility3)
 }

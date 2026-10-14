@@ -32,6 +32,15 @@ enum ChartAxisScale {
         return minDay ... maxDay
     }
 
+    /// The markers worth drawing: those whose day lies inside the plotted x span (inclusive), in the
+    /// order given. A marker outside it is dropped rather than drawn at the edge, because the
+    /// domain is the data's own range (iOS-M17 Task 8, spec §7) — a marker never widens it, and a
+    /// guideline pinned to the edge would claim a day it does not sit on.
+    static func visibleMarkers(for model: ChartUiModel) -> [ChartMarker] {
+        guard let domain = xDomain(for: model) else { return [] }
+        return model.markers.filter { domain.contains($0.xEpochDay) }
+    }
+
     /// The y range, or `nil` when there is nothing to plot. `CartesianLayerRangeProvider.kt:43-51`.
     static func yDomain(for model: ChartUiModel) -> ClosedRange<Float>? {
         let values = (model.points + model.secondaryPoints).map { Double($0.y) }

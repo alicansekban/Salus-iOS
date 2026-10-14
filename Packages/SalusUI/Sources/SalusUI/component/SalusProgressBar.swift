@@ -7,6 +7,11 @@ import SwiftUI
 /// Slim rounded progress bar. `progress` is a fraction in `0 ... 1` and is coerced
 /// (`SalusProgressBar.kt:52`), so a caller that divides by a count it has not validated cannot
 /// draw past the track.
+///
+/// iOS-M17 Task 8 (design review R2) adds two defaulted knobs, so existing call sites compile
+/// unchanged: `accent` replaces the tone's fill colour (the feature hands its accent in —
+/// `SalusUI` knows no feature) and `overflowPermille` draws the excess over a limit as a neutral
+/// lap in `outlineVariant` from the start of the track, over the full fill. Never a hue change.
 public struct SalusProgressBar: View {
     /// Fill colour of the bar (`SalusProgressBar.kt:32`); the track is `surfaceContainerHigh` in
     /// every tone.
@@ -20,12 +25,25 @@ public struct SalusProgressBar: View {
 
     private let progress: Double
     private let tone: Tone
+    private let accent: Color?
+    private let overflow: Double
 
     @Environment(\.salusTheme) private var theme
 
-    public init(progress: Double, tone: Tone = .primary) {
+    /// - Parameters:
+    ///   - accent: overrides the tone's fill colour when set (iOS-M17 Task 8).
+    ///   - overflowPermille: the excess over the limit in permille of the track, 0 for none,
+    ///     capped at the full track.
+    public init(
+        progress: Double,
+        tone: Tone = .primary,
+        accent: Color? = nil,
+        overflowPermille: Int = 0
+    ) {
         self.progress = progress
         self.tone = tone
+        self.accent = accent
+        overflow = SalusProgressOverflow.fraction(forPermille: overflowPermille)
     }
 
     public var body: some View {
@@ -38,10 +56,16 @@ public struct SalusProgressBar: View {
                 SalusShapes.pill
                     .fill(fill)
                     .frame(width: proxy.size.width * clamped)
+                if overflow > 0 {
+                    SalusShapes.pill
+                        .fill(theme.colorScheme.outlineVariant)
+                        .frame(width: proxy.size.width * overflow)
+                }
             }
         }
         .frame(height: SalusProgressBarDefaults.height)
         .animation(.easeInOut(duration: SalusMotion.stateChangeDurationSeconds), value: clamped)
+        .animation(.easeInOut(duration: SalusMotion.stateChangeDurationSeconds), value: overflow)
         // Kotlin draws two bare `Box`es, which TalkBack never focuses: the number beside the bar
         // is what states the metric, and a second unnamed stop would only slow the reader down.
         .accessibilityHidden(true)
@@ -54,7 +78,10 @@ public struct SalusProgressBar: View {
 
     /// `SalusProgressBar.kt:44-51`.
     private var fill: Color {
-        switch tone {
+        if let accent {
+            return accent
+        }
+        return switch tone {
         case .primary: theme.colorScheme.primary
         case .primarySoft: theme.colorScheme.primary.opacity(SalusProgressBarDefaults.softAlpha)
         case .rose: theme.extendedColors.metricDown
@@ -80,6 +107,17 @@ public enum SalusProgressBarDefaults {
             SalusProgressBar(progress: 0.4, tone: .primarySoft)
             SalusProgressBar(progress: 0.8, tone: .rose)
             SalusProgressBar(progress: 1, tone: .warning)
+            // Over the limit (R2): full in the accent, the excess a neutral lap.
+            SalusProgressBar(progress: 1, overflowPermille: 300)
         }
     }
+}
+
+#Preview("Progress bars, accessibility3") {
+    VStack(spacing: SalusSpacing.md) {
+        SalusProgressBar(progress: 1, overflowPermille: 300)
+        SalusProgressBar(progress: 0.65)
+    }
+    .padding(SalusSpacing.lg)
+    .dynamicTypeSize(.accessibility3)
 }

@@ -26,6 +26,11 @@
 // marks in declaration order, so the port is simply to declare the glow's `LineMark` first; the
 // area fill and the line, one Vico layer there, follow it here in that order.
 //
+// iOS-M17 Task 8 (spec §7) adds `ChartUiModel.markers`: a labelled vertical guideline per marker
+// (the quit date on a vitals chart), a dashed `RuleMark` in the accent the feature passes as
+// `markerColor`. It is declared last so it lands over the series, and only markers inside the
+// plotted span are drawn (`ChartAxisScale.visibleMarkers`) — a marker never widens the domain.
+//
 // Vico's press marker (`SalusLineChart.kt:159-178`) has no twin here and this file does not add
 // one: a marker is an interaction rather than a style, and the port has never had it.
 
@@ -37,6 +42,7 @@ import SwiftUI
 public struct SalusLineChart: View {
     private let model: ChartUiModel
     private let lineColor: Color?
+    private let markerColor: Color?
     private let contentDescription: String?
 
     @Environment(\.salusTheme) private var theme
@@ -45,15 +51,20 @@ public struct SalusLineChart: View {
     ///   - lineColor: the primary series' color. `nil` means the primary role, the twin of Kotlin's
     ///     `MaterialTheme.colorScheme.primary` default (`SalusLineChart.kt:35`) — which cannot be a
     ///     Swift default argument because it is read from the environment.
+    ///   - markerColor: the colour of the dashed marker rules and their labels (iOS-M17 Task 8) — the
+    ///     accent of the feature the marker belongs to, passed in because `SalusUI` knows no
+    ///     feature. `nil` means the line colour.
     ///   - contentDescription: spoken summary of the chart (e.g. the latest value); charts are
     ///     opaque to VoiceOver exactly as they are to TalkBack (`SalusLineChart.kt:36`).
     public init(
         model: ChartUiModel,
         lineColor: Color? = nil,
+        markerColor: Color? = nil,
         contentDescription: String? = nil
     ) {
         self.model = model
         self.lineColor = lineColor
+        self.markerColor = markerColor
         self.contentDescription = contentDescription
     }
 
@@ -90,7 +101,38 @@ public struct SalusLineChart: View {
             areaMarks
             primaryMarks
             secondaryMarks
+            markerRules
         }
+    }
+
+    /// One dashed vertical rule per visible marker, its label above the plot, anchored inwards so
+    /// a marker on the last day does not hang off the trailing edge (Swift Charts drops, not
+    /// clips, an annotation that leaves the chart).
+    @ChartContentBuilder
+    private var markerRules: some ChartContent {
+        ForEach(ChartAxisScale.visibleMarkers(for: model), id: \.self) { marker in
+            RuleMark(x: .value(Self.xSeriesId, marker.xEpochDay))
+                .foregroundStyle(markerColor ?? primaryColor)
+                .lineStyle(markerStroke)
+                .annotation(
+                    position: .top,
+                    alignment: .leading,
+                    overflowResolution: .init(x: .fit(to: .chart), y: .disabled)
+                ) {
+                    Text(verbatim: marker.label)
+                        .font(SalusTypography.labelSmall.font)
+                        .tracking(SalusTypography.labelSmall.tracking)
+                        .foregroundStyle(markerColor ?? primaryColor)
+                }
+        }
+    }
+
+    private var markerStroke: StrokeStyle {
+        StrokeStyle(
+            lineWidth: SalusLineChartDefaults.markerWidth,
+            lineCap: .butt,
+            dash: SalusLineChartDefaults.markerDash
+        )
     }
 
     /// The halo, declared **first** so everything else lands on top of it — the order Vico gets by
@@ -234,6 +276,11 @@ public enum SalusLineChartDefaults {
     /// at, directly under the line. M15 took it from 0.28 to 0.24: the halo now carries part of the
     /// brightness the area used to carry alone.
     public static let areaTopAlpha = 0.24
+    /// The marker rule's stroke (iOS-M17 Task 8) — thinner than the line it crosses, so it reads as
+    /// a guide and not as a third series.
+    public static let markerWidth: CGFloat = 1.5
+    /// On/off lengths of the marker rule's dashes (iOS-M17 Task 8).
+    public static let markerDash: [CGFloat] = [4, 4]
 }
 
 extension View {
@@ -310,6 +357,44 @@ extension View {
                 )
             )
             .frame(height: 200)
+
+            // A marker (the quit date): a dashed accent rule with its label. The one outside the
+            // plotted days is dropped, not drawn at the edge.
+            SalusLineChart(
+                model: ChartUiModel(
+                    points: [
+                        ChartPoint(xEpochDay: 20000, y: 72.4),
+                        ChartPoint(xEpochDay: 20003, y: 71.8),
+                        ChartPoint(xEpochDay: 20007, y: 71.1),
+                        ChartPoint(xEpochDay: 20012, y: 70.6)
+                    ],
+                    xLabel: { "\($0 - 20000) d" },
+                    yLabel: { String(format: "%.1f", $0) },
+                    markers: [
+                        ChartMarker(xEpochDay: 20005, label: "Quit"),
+                        ChartMarker(xEpochDay: 20100, label: "Dropped")
+                    ]
+                )
+            )
+            .frame(height: 200)
         }
     }
+}
+
+#Preview("Line chart, accessibility3") {
+    SalusLineChart(
+        model: ChartUiModel(
+            points: [
+                ChartPoint(xEpochDay: 20000, y: 72.4),
+                ChartPoint(xEpochDay: 20007, y: 71.1),
+                ChartPoint(xEpochDay: 20012, y: 70.6)
+            ],
+            xLabel: { "\($0 - 20000) d" },
+            yLabel: { String(format: "%.1f", $0) },
+            markers: [ChartMarker(xEpochDay: 20005, label: "Quit")]
+        )
+    )
+    .frame(height: 240)
+    .padding(SalusSpacing.lg)
+    .dynamicTypeSize(.accessibility3)
 }

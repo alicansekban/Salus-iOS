@@ -24,6 +24,20 @@ public struct ChartPoint: Hashable, Sendable {
     }
 }
 
+/// A labelled vertical guideline at one day, drawn as a dashed rule over the chart (iOS-M17 Task 8,
+/// spec §7 — the quit date on a vitals chart). The x is the same epoch-day axis the points use, so
+/// a feature positions it with the value it already holds. Android's twin is `ChartMarker(x, label)`
+/// in the M17 `:core:ui` task.
+public struct ChartMarker: Hashable, Sendable {
+    public let xEpochDay: Int
+    public let label: String
+
+    public init(xEpochDay: Int, label: String) {
+        self.xEpochDay = xEpochDay
+        self.label = label
+    }
+}
+
 /// `points` is the primary series; `secondaryPoints` is an optional second series rendered
 /// in a secondary color (e.g. diastolic under systolic). Existing single-series call sites
 /// are unaffected by the default (`ChartUiModel.kt:17-20`).
@@ -37,6 +51,9 @@ public struct ChartUiModel: Sendable {
     public let xLabel: @Sendable (Int) -> String
     public let yLabel: @Sendable (Float) -> String
     public let secondaryPoints: [ChartPoint]
+    /// Vertical guidelines (iOS-M17 Task 8). Additive: every existing call site omits it. Only the
+    /// markers whose day falls inside the plotted span are drawn — `ChartAxisScale.visibleMarkers`.
+    public let markers: [ChartMarker]
 
     /// - Parameters:
     ///   - yLabel: defaults to the plain number, the twin of Kotlin's `{ it.toString() }`
@@ -45,11 +62,13 @@ public struct ChartUiModel: Sendable {
         points: [ChartPoint],
         xLabel: @escaping @Sendable (Int) -> String,
         yLabel: @escaping @Sendable (Float) -> String = { String(describing: $0) },
-        secondaryPoints: [ChartPoint] = []
+        secondaryPoints: [ChartPoint] = [],
+        markers: [ChartMarker] = []
     ) {
         self.points = points
         self.xLabel = xLabel
         self.yLabel = yLabel
         self.secondaryPoints = secondaryPoints
+        self.markers = markers
     }
 }
