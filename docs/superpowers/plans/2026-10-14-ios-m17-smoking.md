@@ -54,7 +54,7 @@
   - Key names = Android resource names (snake_case). Final key/value parity is reconciled in the joint close-out (runbook §4).
 - **Previews:** every twin spec §3/§5 state as `#Preview` in light and dark, plus one Dynamic Type `.accessibility3` preview per screen.
 - **Motion:** reduce-motion via `accessibilityReduceMotion`.
-- **Commits:** conventional, English, contiguous, each one builds. Trailer `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`. Status row via `/salus-handover task`.
+- **Commits:** conventional, English, contiguous, each one builds. `Co-Authored-By` trailer naming the model that wrote the commit (the Jev router picks it; the controller passes no `model`). Status row via `/salus-handover task`.
 - **Android repo:** the iOS session **never commits in `../salus-android`** while the Android session runs. Parity-ledger rows found during execution go into this repo's status file under "Ledger rows to fold" (runbook §4).
 
 ## Rulings the planner made (do not re-open)

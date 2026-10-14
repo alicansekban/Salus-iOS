@@ -14,13 +14,13 @@ git. Written 2026-10-14; update it at the end of a milestone and, between tasks,
 
 ## Now
 
-- **M17 smoking cessation** — Android first: spec, Stitch review and plan live on `salus-android`'s branch
-  `feature/m17-smoking-cessation` (not on its `main`). The iOS mirror gets its own plan under
-  `docs/superpowers/plans/` after Android's closed testing; no iOS work has started. Alcohol is a separate milestone.
-- **Agent harness** — hooks, `scripts/dev/gates.sh` and `/salus-gates`, the five area rule files, `CLAUDE.md` /
-  `AGENTS.md`, the Salus agents and `/salus-handover`. Branch `chore/agent-harness` (worktree
-  `Salus/wt-harness-ios`), plan `salus-android/docs/superpowers/plans/2026-10-14-agent-harness.md`, status
-  `docs/superpowers/plans/STATUS-agent-harness.md`; to be fast-forwarded into `main` on the owner's word.
+- **iOS-M17 smoking cessation** — planned and ready to execute. It is built **in parallel with Android** on frozen contracts owned by the Android repo. Branch `m17-smoking` (rebased on `main` after the harness; **not on `main`**):
+  - delta spec `docs/superpowers/specs/2026-10-14-ios-m17-smoking-design.md`;
+  - plan `docs/superpowers/plans/2026-10-14-ios-m17-smoking.md`;
+  - **status `docs/superpowers/plans/STATUS-ios-m17-smoking.md`** (resume from here);
+  - runbook `../salus-android/docs/superpowers/plans/2026-10-14-m17-parallel-runbook.md` (sync points, kickoff prompt §6).
+  - Twin spec and contracts live on `salus-android`'s `feature/m17-smoking-cessation`. Alcohol is a separate milestone.
+- **Agent harness** — done and fast-forwarded into `main` (plan `salus-android/docs/superpowers/plans/2026-10-14-agent-harness.md`, status `docs/superpowers/plans/STATUS-agent-harness.md`).
 
 ## Open items
 
