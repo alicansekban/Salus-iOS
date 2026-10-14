@@ -49,12 +49,12 @@ Every rule names its **enforcement point**. Token values come only from
 - **The shell owns the bars; a feature paints neither.** The tab bar's look and the navigation
   bar's ground, title colour and title font come from `SalusBarAppearance`
   (`Packages/SalusUI/Sources/SalusUI/shell/SalusBarAppearance.swift`), applied once per theme
-  resolution; the tab bar's *visibility* is `App/RootView.swift`'s (the rule above); and the five
+  resolution; the tab bar's *visibility* is `App/RootView.swift`'s (the rule in `architecture.md`); and the five
   tab roots' toolbar — brand tile, principal title, bell, avatar — is `salusRootToolbar(…)`, applied
   in `App/RootNavigationStack.swift` and nowhere else. A feature never writes a toolbar background,
   never writes `.toolbar(…, for: .tabBar)`, and never adds a second bell or avatar. Since iOS-M16
   (spec §2.2) there is **no in-content screen header** at all: `SalusScreenHeader` is deleted and
-  `SalusTopBar` was never ported. — *enforcement: `no_tab_bar_toolbar_in_features` (above) for the
+  `SalusTopBar` was never ported. — *enforcement: `no_tab_bar_toolbar_in_features` (in `architecture.md`) for the
   tab-bar half; review for the rest.*
 - **A pushed screen writes `.navigationTitle` + inline mode + `ToolbarItem` text actions, and
   nothing else.** `.navigationTitle(Text(verbatim: …))`, then

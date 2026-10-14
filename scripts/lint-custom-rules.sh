@@ -178,7 +178,7 @@ check "no_tab_bar_toolbar_in_features" \
     ".toolbar(.hidden, for: .navigationBar, .tabBar)"
 
 # Guard 4: a `Calendar` may only be built in the three sanctioned files — days
-# are `SalusModel.LocalDate` / `epochDay` everywhere else (CLAUDE.md's LocalDate
+# are `SalusModel.LocalDate` / `epochDay` everywhere else (architecture.md's LocalDate
 # rule). Three lines are planted in ONE fixture, and the assertion is that the
 # rule fires EXACTLY twice on it:
 #

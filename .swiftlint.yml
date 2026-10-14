@@ -286,7 +286,7 @@ custom_rules:
 
   # `Calendar` is a day-arithmetic hazard: it carries a time zone AND a user
   # calendar, which is exactly the drift `SalusModel.LocalDate` / `epochDay`
-  # exists to avoid (CLAUDE.md's `LocalDate` rule). Days are `LocalDate` /
+  # exists to avoid (architecture.md's `LocalDate` rule). Days are `LocalDate` /
   # `epochDay` integer math; `Date` stays for absolute instants only. Three
   # production files are sanctioned and no fourth is:
   #   * SalusCommon/SalusClock.swift               — the instant<->day boundary,
@@ -354,7 +354,7 @@ custom_rules:
       - comment
       - doccomment
       - string
-    message: "Days are SalusModel.LocalDate / epochDay. A Calendar may only be built in SalusClock.swift (instant<->day), UserNotificationGateway.swift (UNCalendarNotificationTrigger) and SalusWeekdaySymbols.swift (localized symbols only) — see CLAUDE.md's LocalDate rule."
+    message: "Days are SalusModel.LocalDate / epochDay. A Calendar may only be built in SalusClock.swift (instant<->day), UserNotificationGateway.swift (UNCalendarNotificationTrigger) and SalusWeekdaySymbols.swift (localized symbols only) — see architecture.md's LocalDate rule."
     severity: error
     # The same `--path` warning as above applies verbatim: lint the repo, or
     # pass files positionally. `scripts/lint-custom-rules.sh` proves this rule

@@ -9,7 +9,7 @@ platform, not a decision: each section names the Android construct it replaces. 
 cites a file that ships today — if a citation and the code disagree, the code is right and this
 file is stale.
 
-Binding rules live in `CLAUDE.md`; this file shows the shape they produce.
+Binding rules live in the area rule files under `.claude/rules/`; this file shows the shape they produce.
 
 ---
 
@@ -53,10 +53,10 @@ Four things the Gradle twin does implicitly and SwiftPM does not:
   into the app.
 - **`.macOS(.v14)` is a test-host concession, not a target.** `swift test` cannot run a bundle on a
   simulator, so a package that reaches SwiftUI, GRDB or `Observation` also names macOS. iOS 17
-  stays the ship target. `CLAUDE.md` lists the three qualifying reasons; do not add it for a fourth.
+  stays the ship target. `.claude/rules/architecture.md` lists the three qualifying reasons; do not add it for a fourth.
 - **Features never depend on each other.** A `Feature*` manifest names core packages only. Cross-
   feature navigation is a shell callback (spec §4) — see *Navigation* below.
-- **No new remote dependency.** The allowlist is closed at three (`CLAUDE.md`); a
+- **No new remote dependency.** The allowlist is closed at three (`.claude/rules/architecture.md`); a
   `.package(url:)` line in a feature manifest is a finding.
 
 There is no `settings.gradle.kts` twin to edit, but there *is* an equivalent step: the app links
@@ -232,7 +232,7 @@ while a top-level destination is showing.
   ```
 
   The `#if` is not optional: the modifier is iOS-only API and every feature package also builds for
-  the macOS test host (the `.macOS(.v14)` concession in `CLAUDE.md`), so an unguarded call fails
+  the macOS test host (the `.macOS(.v14)` concession in `.claude/rules/architecture.md`), so an unguarded call fails
   `scripts/test-packages.sh` while the app still builds. **Last** in the chain because SwiftFormat
   indents whatever follows an `#endif` one level deeper, which reads as if those modifiers were
   inside the guard.
@@ -365,7 +365,7 @@ Reference: `navigation/VitalsNavigation.swift:21` (`VitalsKey`), `:26` (`WeightE
 ## Module factory
 
 Koin's `module { }` is a description a container resolves per call site. There is no container
-(`CLAUDE.md`: "the composition root owns the singletons"), so the module is a **value the
+(`.claude/rules/architecture.md`: "the composition root owns the singletons"), so the module is a **value the
 composition root builds once and hands down**:
 
 ```swift
@@ -431,7 +431,7 @@ inside its root view, or a pushed destination would not see it.
 ## Days and dates
 
 A *day* is `SalusModel.LocalDate` and travels as `epochDay`; a `Date` is an absolute instant only.
-The rule and its three carve-outs are in `CLAUDE.md` — what changed in iOS-M7 is the enforcement:
+The rule and its three carve-outs are in `.claude/rules/architecture.md` — what changed in iOS-M7 is the enforcement:
 
 - **This is now mechanical.** `.swiftlint.yml`'s `no_calendar_outside_clock` custom rule (error,
   `included:` the whole tree) rejects a `Calendar` construction, `Calendar.current` /
