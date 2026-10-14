@@ -321,7 +321,7 @@ public enum SmokingStrings {
         case notificationCheer = "smoking_notification_cheer"
         case notificationEveningTitle = "smoking_notification_evening_title"
         case notificationEveningText = "smoking_notification_evening_text"
-        case mainQuitErrorOverlap = "smoking_main_quit_error_overlap"
+        case quitErrorOverlap = "smoking_quit_error_overlap"
         case reduceAdded = "smoking_reduce_added"
         case reduceAtBody = "smoking_reduce_at_body"
         case reduceAtTitle = "smoking_reduce_at_title"

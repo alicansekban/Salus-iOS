@@ -55,6 +55,7 @@ extension SmokingSetupError {
         switch self {
         case .futureDate: SmokingStrings.setupErrorFutureDate
         case .invalid: SmokingStrings.setupErrorInvalid
+        case .overlap: SmokingStrings.quitErrorOverlap
         case .generic: SmokingStrings.errorGeneric
         }
     }

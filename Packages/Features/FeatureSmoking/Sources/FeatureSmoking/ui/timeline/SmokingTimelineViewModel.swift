@@ -119,6 +119,15 @@ public final class SmokingTimelineViewModel {
     /// A refused write: the state is as it was, only the busy flag drops, and the person is told.
     private func failed(_ error: any Error) {
         state.writing = false
-        pendingEffects.append(.showError(error.setupError))
+        pendingEffects.append(.showError(error.timelineError))
+    }
+}
+
+extension Error {
+    /// The timeline's only write is the REDUCE to QUIT switch, so `invalidInput` is the
+    /// attempts-never-overlap refusal (contract section 8.10) and says so in the one overlap
+    /// sentence Main and Settings use (D-M17-ab); everything else reads as in the setup wizard.
+    fileprivate var timelineError: SmokingSetupError {
+        (self as? SmokingError) == .invalidInput ? .overlap : setupError
     }
 }

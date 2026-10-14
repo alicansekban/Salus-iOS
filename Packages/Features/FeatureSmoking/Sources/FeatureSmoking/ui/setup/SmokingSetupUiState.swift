@@ -196,6 +196,9 @@ public enum SmokingSetupEvent: Equatable, Sendable {
 public enum SmokingSetupError: Equatable, Sendable {
     case futureDate
     case invalid
+    /// A quit time before the previous attempt ended (contract section 8.10). The wizard has no
+    /// previous attempt, so only the health timeline's switch-to-quit raises it.
+    case overlap
     case generic
 }
 

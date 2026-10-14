@@ -1633,7 +1633,7 @@
         }
       }
     },
-    "smoking_main_quit_error_overlap" : {
+    "smoking_quit_error_overlap" : {
       "extractionState" : "manual",
       "localizations" : {
         "en" : {

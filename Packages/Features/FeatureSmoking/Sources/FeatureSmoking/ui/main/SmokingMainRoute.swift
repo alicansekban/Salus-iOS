@@ -64,7 +64,7 @@ public struct SmokingMainRoute: View {
     private func message(for error: SmokingMainError) -> String {
         switch error {
         case .generic: SmokingStrings.errorGeneric
-        case .quitOverlap: SmokingStrings.mainQuitErrorOverlap
+        case .quitOverlap: SmokingStrings.quitErrorOverlap
         case .quitFuture: SmokingStrings.quitSheetFuture
         }
     }

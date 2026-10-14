@@ -2,8 +2,8 @@
 // SmokingTimelineUiState.kt`.
 //
 // `ImmutableList` is a plain array. Android's `@StringRes` effect payload becomes the setup
-// wizard's error kind (``SmokingSetupError``): the same three refusals, the same three sentences,
-// resolved by the Route.
+// wizard's error kind (``SmokingSetupError``), resolved by the Route: its three refusals plus the
+// overlap one a switch to QUIT can raise.
 
 import SalusSmoking
 

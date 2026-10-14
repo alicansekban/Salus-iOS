@@ -6,7 +6,7 @@
 enum SmokingReduceStringTable {
     static let samples: [SmokingStringSample] = [
         SmokingStringSample(
-            key: "smoking_main_quit_error_overlap",
+            key: "smoking_quit_error_overlap",
             turkish: "Bu zaman, önceki denemenin bittiği andan önce olamaz.",
             english: "That time can't be before your previous attempt ended."
         ),

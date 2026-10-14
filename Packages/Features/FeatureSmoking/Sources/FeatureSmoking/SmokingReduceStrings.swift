@@ -7,7 +7,7 @@ import Foundation
 extension SmokingStrings {
     // MARK: - Plain strings
 
-    public static var mainQuitErrorOverlap: String { localized(.mainQuitErrorOverlap) }
+    public static var quitErrorOverlap: String { localized(.quitErrorOverlap) }
     public static var reduceAdded: String { localized(.reduceAdded) }
     public static var reduceAtBody: String { localized(.reduceAtBody) }
     public static var reduceAtTitle: String { localized(.reduceAtTitle) }

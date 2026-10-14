@@ -233,7 +233,7 @@ struct SmokingTimelineViewModelTests {
         #expect(harness.store.commits == 0)
     }
 
-    @Test("a quit date before the last attempt ended is refused with its own message")
+    @Test("a quit date before the last attempt ended is refused with the one overlap sentence")
     func dateBeforeTheLastAttemptIsRefused() async {
         let harness = TimelineHarness(reduceClosedAgoMs: 5 * dayMs)
         let vm = await harness.loadedViewModel()
@@ -242,7 +242,7 @@ struct SmokingTimelineViewModelTests {
         vm.onEvent(.quitDateConfirmed(harness.nowMs - 10 * dayMs))
         await waitUntil("the error") { !vm.pendingEffects.isEmpty }
 
-        #expect(vm.consumeEffects() == [.showError(.invalid)])
+        #expect(vm.consumeEffects() == [.showError(.overlap)])
         #expect(vm.state.quitDateSheet)
         #expect(harness.store.commits == 0)
     }
