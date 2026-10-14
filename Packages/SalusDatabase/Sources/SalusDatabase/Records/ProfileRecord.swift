@@ -1,6 +1,6 @@
 // Ported 1:1 from `core/database/.../entity/ProfileEntity.kt`.
 //
-// Two conventions hold for all thirteen records in this directory:
+// Two conventions hold for all eighteen records in this directory:
 //
 // * Property names are the Kotlin property names (`birthDateEpochDay`, not `birthDate`), and
 //   `CodingKeys` carry the Room column names. The column string is the persisted contract; the

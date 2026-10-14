@@ -5,7 +5,7 @@
 // migrate a fresh database up to `"v{n}"`, then read back its tables, columns, indices and
 // foreign keys with the SQLite pragmas and check them against `{n}.json`.
 //
-// Fixtures: `Resources/RoomSchemas/{1,2,3,4}.json`, verbatim copies of the Android export
+// Fixtures: `Resources/RoomSchemas/{1,2,3,4,5}.json`, verbatim copies of the Android export
 // (see the README beside them).
 
 import Foundation
@@ -143,7 +143,16 @@ struct RoomSchemaParityTests {
     private static let isActiveColumnSql = "`is_active` INTEGER NOT NULL, "
     private static let remindersEnabledColumnSql = "`reminders_enabled` INTEGER NOT NULL DEFAULT 1, "
 
-    @Test("the migrated schema matches Room's export", arguments: [1, 2, 3, 4])
+    /// Contract §1's tables, in the order 5.json exports them.
+    private static let smokingTables = [
+        "smoking_plan",
+        "smoking_price_period",
+        "smoking_quit_attempt",
+        "smoking_event",
+        "smoking_savings_goal"
+    ]
+
+    @Test("the migrated schema matches Room's export", arguments: [1, 2, 3, 4, 5])
     func migratedSchemaMatchesRoomExport(version: Int) throws {
         let expected = try Self.loadRoomSchema(version: version)
         #expect(expected.database.version == version)
@@ -210,12 +219,37 @@ struct RoomSchemaParityTests {
         }
     }
 
+    /// `"v5"` is five `CREATE TABLE`s, so it carries the same promise as v1: `v5Statements` must be
+    /// 5.json's `createSql` for the five smoking tables, each followed by its indices, in the
+    /// order the export lists them — which is also the order `MIGRATION_4_5` runs them, the
+    /// attempt table before the event table that references it. Every table 4.json already had
+    /// must come out of the bump untouched, or a one-step migration that only adds tables would
+    /// not be a complete port of it.
+    @Test("the v5 DDL is Room's own, and v5 changes no v4 table")
+    func v5DdlIsRoomsOwnAndChangesNoV4Table() throws {
+        var v4ByTable: [String: String] = [:]
+        for entity in try Self.loadRoomSchema(version: 4).database.entities {
+            v4ByTable[entity.tableName] = entity.resolvedCreateSql
+        }
+
+        let v5Entities = try Self.loadRoomSchema(version: 5).database.entities
+        let added = v5Entities.filter { v4ByTable[$0.tableName] == nil }
+        #expect(added.map(\.tableName) == Self.smokingTables)
+        #expect(SalusMigrations.v5Statements == added.flatMap(\.resolvedCreateStatements))
+
+        for entity in v5Entities {
+            guard let v4 = v4ByTable[entity.tableName] else { continue }
+            #expect(entity.resolvedCreateSql == v4, "\(entity.tableName) DDL differs at v5")
+        }
+        #expect(Set(v5Entities.map(\.tableName)).isSuperset(of: v4ByTable.keys), "v5 drops a table")
+    }
+
     /// The records exist so every feature finds its table already proven. This is the cheap half
     /// of that promise: the column names a record encodes are exactly the table's columns — no
     /// typo in a `CodingKeys` case, no column a record silently forgets.
     @Test("every record's columns are exactly its table's columns")
     func recordColumnsMatchRoomExport() throws {
-        let expected = try Self.loadRoomSchema(version: 4)
+        let expected = try Self.loadRoomSchema(version: 5)
         let columnsByTable = Dictionary(
             uniqueKeysWithValues: expected.database.entities.map { entity in
                 (entity.tableName, Set(entity.fields.map(\.columnName)))
@@ -229,7 +263,7 @@ struct RoomSchemaParityTests {
         for sample in SampleRecords.all {
             let tableColumns = try #require(
                 columnsByTable[sample.tableName],
-                "record for table \(sample.tableName), which 4.json does not declare"
+                "record for table \(sample.tableName), which 5.json does not declare"
             )
             let encoded = try sample.encodedColumns()
             #expect(

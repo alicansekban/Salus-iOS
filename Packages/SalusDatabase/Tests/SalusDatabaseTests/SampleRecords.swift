@@ -1,5 +1,5 @@
-// One populated instance of each of the thirteen records, in an order that satisfies the foreign
-// keys, so `RoomSchemaParityTests` can ask two questions of every table without thirteen
+// One populated instance of each of the eighteen records, in an order that satisfies the foreign
+// keys, so `RoomSchemaParityTests` can ask two questions of every table without eighteen
 // near-identical test functions: does the record encode exactly this table's columns, and does it
 // survive a real insert and read back unchanged?
 //
@@ -48,7 +48,12 @@ enum SampleRecords {
         SampleRecord(cycleEntrySymptom),
         SampleRecord(vitalsMeasurement),
         SampleRecord(reminderAlarm),
-        SampleRecord(aiSummary)
+        SampleRecord(aiSummary),
+        SampleRecord(smokingPlan),
+        SampleRecord(smokingPricePeriod),
+        SampleRecord(smokingQuitAttempt),
+        SampleRecord(smokingEvent),
+        SampleRecord(smokingSavingsGoal)
     ]
 
     static let profile = ProfileRecord(
@@ -196,5 +201,54 @@ enum SampleRecords {
         language: "tr",
         text: "Haftalık özet",
         createdAtEpochMs: 6
+    )
+
+    static let smokingPlan = SmokingPlanRecord(
+        id: "smoking-plan-1",
+        mode: "REDUCE",
+        productType: "CIGARETTE",
+        baselineUnitsPerDay: 20,
+        dailyLimit: 8,
+        currencyCode: "TRY",
+        reason: "Kızım için",
+        notificationsEnabled: true,
+        eveningReminderEnabled: true,
+        createdAtMs: 1_788_000_000_000,
+        tzId: "Europe/Istanbul"
+    )
+
+    static let smokingPricePeriod = SmokingPricePeriodRecord(
+        id: "smoking-price-1",
+        effectiveFromEpochDay: 20685,
+        unitCostMinor: 450
+    )
+
+    static let smokingQuitAttempt = SmokingQuitAttemptRecord(
+        id: "smoking-attempt-1",
+        startedAtMs: 1_788_000_000_000,
+        tzId: "Europe/Istanbul",
+        endedAtMs: 1_788_100_000_000,
+        endReason: "RESTARTED"
+    )
+
+    static let smokingEvent = SmokingEventRecord(
+        id: "smoking-event-1",
+        type: "SMOKED",
+        occurredAtMs: 1_788_050_000_000,
+        tzId: "Europe/Istanbul",
+        epochDay: 20694,
+        units: 2,
+        trigger: "COFFEE",
+        intensity: 4,
+        productType: "CIGARETTE",
+        attemptId: smokingQuitAttempt.id
+    )
+
+    static let smokingSavingsGoal = SmokingSavingsGoalRecord(
+        id: "smoking-goal-1",
+        title: "Bisiklet",
+        targetMinor: 500_000,
+        createdAtMs: 1_788_000_000_000,
+        achievedAtMs: 1_788_200_000_000
     )
 }

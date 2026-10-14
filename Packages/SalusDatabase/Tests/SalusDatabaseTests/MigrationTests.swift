@@ -24,6 +24,15 @@ struct MigrationTests {
 
     private var migrator: DatabaseMigrator { SalusMigrations.makeMigrator(clock: clock) }
 
+    /// Contract §1's five tables, in the order `"v5"` creates them.
+    private static let smokingTables = [
+        "smoking_plan",
+        "smoking_price_period",
+        "smoking_quit_attempt",
+        "smoking_event",
+        "smoking_savings_goal"
+    ]
+
     /// `MigrationTest.kt:31-50`.
     @Test("1 to 2 adds health notes and keeps the seeded profile")
     func oneToTwoAddsHealthNotesAndKeepsTheSeededProfile() throws {
@@ -129,6 +138,62 @@ struct MigrationTests {
         }
     }
 
+    /// `MigrationTest.kt:113-148` (Android `2045f43`): the five smoking tables arrive
+    /// empty and nothing that was there before moves. Proving the tables' *shape* is
+    /// `RoomSchemaParityTests`' job; this is the data half — an upgraded database still holds its
+    /// rows, and the new tables accept a full graph, `smoking_event → smoking_quit_attempt` included.
+    @Test("4 to 5 adds the five smoking tables empty and keeps existing data")
+    func fourToFiveAddsTheSmokingTablesEmptyAndKeepsExistingData() throws {
+        let queue = try DatabaseQueue()
+        try migrator.migrate(queue, upTo: "v4")
+        try queue.write { db in
+            try db.execute(
+                sql: """
+                INSERT INTO medications \
+                (id, profile_id, name, form, color_token, start_date, is_active, created_at, updated_at, \
+                reminders_enabled) \
+                VALUES ('med-1', 'default-profile', 'Aspirin', 'TABLET', 'primary', 0, 1, 1, 1, 0)
+                """
+            )
+        }
+
+        try migrator.migrate(queue, upTo: "v5")
+
+        try queue.write { db in
+            for table in Self.smokingTables {
+                #expect(try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM \(table)") == 0, "\(table) is not empty")
+            }
+            let medication = try #require(try Row.fetchOne(db, sql: "SELECT * FROM medications WHERE id = 'med-1'"))
+            #expect(medication["reminders_enabled"] as Int? == 0)
+            #expect(try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM profiles") == 1)
+
+            try db.execute(
+                sql: """
+                INSERT INTO smoking_quit_attempt (id, started_at_ms, tz_id, ended_at_ms, end_reason) \
+                VALUES ('a-1', 1000, 'Europe/Istanbul', NULL, NULL)
+                """
+            )
+            try db.execute(
+                sql: """
+                INSERT INTO smoking_event \
+                (id, type, occurred_at_ms, tz_id, epoch_day, units, trigger, intensity, product_type, attempt_id) \
+                VALUES ('e-1', 'SMOKED', 2000, 'Europe/Istanbul', 20000, 1, 'COFFEE', 3, 'CIGARETTE', 'a-1')
+                """
+            )
+            // `evening_reminder_enabled` is left out on purpose: the column's DEFAULT 0 is part of
+            // the v5 DDL, so a plan row written without it must not start evening reminders.
+            try db.execute(
+                sql: """
+                INSERT INTO smoking_plan \
+                (id, mode, product_type, baseline_units_per_day, daily_limit, currency_code, reason, \
+                notifications_enabled, created_at_ms, tz_id) \
+                VALUES ('plan-1', 'QUIT', 'CIGARETTE', 20, NULL, 'TRY', NULL, 1, 1000, 'Europe/Istanbul')
+                """
+            )
+            #expect(try Int.fetchOne(db, sql: "SELECT evening_reminder_enabled FROM smoking_plan") == 0)
+        }
+    }
+
     /// Not in the Kotlin test, because Room's `onCreate` callback cannot run twice. GRDB's
     /// migrator decides for itself what still needs applying, and this pins that it decides
     /// correctly: an app that launches twice must not end up with two default profiles.
@@ -145,7 +210,7 @@ struct MigrationTests {
         let after = try queue.read(SchemaSnapshot.init)
         #expect(after == before)
         #expect(after.profileCount == 1)
-        #expect(after.appliedMigrations == ["v1", "v2", "v3", "v4"])
+        #expect(after.appliedMigrations == ["v1", "v2", "v3", "v4", "v5"])
     }
 
     /// The seeded row is what every other table's `profile_id` points at, so it is worth pinning
@@ -246,10 +311,14 @@ struct MigrationTests {
             #expect(try CycleDailyEntryRecord.fetchCount(db) == 0)
             #expect(try CycleEntrySymptomRecord.fetchCount(db) == 0)
             #expect(try VitalsMeasurementRecord.fetchCount(db) == 0)
-            // No foreign key on these three, so they stay — by design, not by omission.
+            // No foreign key to a profile on these, so they stay — by design, not by omission.
             #expect(try SymptomRecord.fetchCount(db) == 1)
             #expect(try ReminderAlarmRecord.fetchCount(db) == 1)
             #expect(try AiSummaryRecord.fetchCount(db) == 1)
+            // The smoking tables belong to no profile (contract §1): single-user, and reset as a
+            // whole by `SmokingDao.resetAll`, never by a profile delete.
+            #expect(try SmokingPlanRecord.fetchCount(db) == 1)
+            #expect(try SmokingEventRecord.fetchCount(db) == 1)
         }
     }
 }

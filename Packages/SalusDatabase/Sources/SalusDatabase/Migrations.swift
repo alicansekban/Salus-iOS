@@ -178,6 +178,44 @@ enum SalusMigrations {
     /// of 1, and the statement is the Kotlin one character for character.
     static let v4Statement = "ALTER TABLE medications ADD COLUMN reminders_enabled INTEGER NOT NULL DEFAULT 1"
 
+    /// 4 → 5 (`Migrations.kt` `MIGRATION_4_5`, Android `2045f43`): smoking cessation, contract §1.
+    /// Five tables, created empty; no existing row changes. Like v1, these are 5.json's `createSql`
+    /// strings verbatim, each table followed by its indices in export order — which puts
+    /// `smoking_quit_attempt` before the `smoking_event` that references it.
+    static let v5Statements: [String] = [
+        """
+        CREATE TABLE IF NOT EXISTS `smoking_plan` (`id` TEXT NOT NULL, `mode` TEXT NOT NULL, \
+        `product_type` TEXT NOT NULL, `baseline_units_per_day` INTEGER NOT NULL, `daily_limit` INTEGER, \
+        `currency_code` TEXT NOT NULL, `reason` TEXT, `notifications_enabled` INTEGER NOT NULL, \
+        `evening_reminder_enabled` INTEGER NOT NULL DEFAULT 0, `created_at_ms` INTEGER NOT NULL, \
+        `tz_id` TEXT NOT NULL, PRIMARY KEY(`id`))
+        """,
+        """
+        CREATE TABLE IF NOT EXISTS `smoking_price_period` (`id` TEXT NOT NULL, \
+        `effective_from_epoch_day` INTEGER NOT NULL, `unit_cost_minor` INTEGER NOT NULL, PRIMARY KEY(`id`))
+        """,
+        """
+        CREATE TABLE IF NOT EXISTS `smoking_quit_attempt` (`id` TEXT NOT NULL, \
+        `started_at_ms` INTEGER NOT NULL, `tz_id` TEXT NOT NULL, `ended_at_ms` INTEGER, \
+        `end_reason` TEXT, PRIMARY KEY(`id`))
+        """,
+        """
+        CREATE TABLE IF NOT EXISTS `smoking_event` (`id` TEXT NOT NULL, `type` TEXT NOT NULL, \
+        `occurred_at_ms` INTEGER NOT NULL, `tz_id` TEXT NOT NULL, `epoch_day` INTEGER NOT NULL, \
+        `units` INTEGER, `trigger` TEXT, `intensity` INTEGER, `product_type` TEXT NOT NULL, \
+        `attempt_id` TEXT, PRIMARY KEY(`id`), FOREIGN KEY(`attempt_id`) REFERENCES \
+        `smoking_quit_attempt`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL )
+        """,
+        "CREATE INDEX IF NOT EXISTS `index_smoking_event_epoch_day` ON `smoking_event` (`epoch_day`)",
+        "CREATE INDEX IF NOT EXISTS `index_smoking_event_attempt_id` ON `smoking_event` (`attempt_id`)",
+        "CREATE INDEX IF NOT EXISTS `index_smoking_event_occurred_at_ms` ON `smoking_event` (`occurred_at_ms`)",
+        """
+        CREATE TABLE IF NOT EXISTS `smoking_savings_goal` (`id` TEXT NOT NULL, `title` TEXT NOT NULL, \
+        `target_minor` INTEGER NOT NULL, `created_at_ms` INTEGER NOT NULL, `achieved_at_ms` INTEGER, \
+        PRIMARY KEY(`id`))
+        """
+    ]
+
     /// Builds the migrator. `eraseDatabaseOnSchemaChange` stays off: this is a health log with no
     /// backend to restore from, so a schema mismatch must fail loudly rather than delete the data.
     ///
@@ -202,6 +240,12 @@ enum SalusMigrations {
 
         migrator.registerMigration("v4") { db in
             try db.execute(sql: v4Statement)
+        }
+
+        migrator.registerMigration("v5") { db in
+            for statement in v5Statements {
+                try db.execute(sql: statement)
+            }
         }
 
         return migrator
