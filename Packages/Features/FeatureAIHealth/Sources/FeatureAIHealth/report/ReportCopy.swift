@@ -126,7 +126,7 @@ private struct TurkishReportCopy: ReportCopy {
     }
 
     func slipsLine(count: Int) -> String {
-        "Bu denemedeki kaçamak sayısı: \(count)"
+        "Bu denemedeki kayma sayısı: \(count)"
     }
 
     func dailyAverageLine(average: String) -> String {

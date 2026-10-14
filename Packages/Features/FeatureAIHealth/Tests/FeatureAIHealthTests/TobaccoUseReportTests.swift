@@ -84,7 +84,7 @@ struct TobaccoUseReportTests {
         #expect(block.status == "Durum: bırakma sürecinde")
         #expect(block.quitDate == "Bırakma tarihi: 11.08.2026")
         #expect(block.duration == "Bırakma tarihinden bu yana: 9 gün")
-        #expect(block.slips == "Bu denemedeki kaçamak sayısı: 2")
+        #expect(block.slips == "Bu denemedeki kayma sayısı: 2")
     }
 
     @Test("a single day reads as one day")
