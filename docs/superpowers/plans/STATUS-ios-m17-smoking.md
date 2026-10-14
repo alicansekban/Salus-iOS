@@ -29,6 +29,7 @@
 | 3 — GRDB migration `v5` + `SmokingDao` (contract §1, §8.6) | `b85f574` | done, review APPROVED; lint / lint-rules green; tests 1540 → **1558** (+18) on its base; SalusDatabase 114 green | Five records + `SmokingDao` (plain struct like `CycleDao`; SQL and order match Android `2045f43`; 5 conflated streams, 11 writes, `resetAll`, `write(_:)` over a `Transaction` with the 5 reads). `5.json` via `sync-m17-contracts.sh`, byte-identical; `RoomSchemaParityTests` v1…v5 in the same commit (no Task 3b). Red: `Fatal error: undefined migration: "v5"`. 10 mutations red. `update*` throws `recordNotFound` where Room no-ops (MedicationDao precedent). |
 | 7 — `SmokingInsightsCalculator` (contract §5, §8.7) | `89b0445` | done, review APPROVED (3 deferred minors); lint / lint-rules green; SalusSmoking 53 → **98** (+45) | `insights(_:nowMs:zone:windowDays:)` and `aiStats(_:fromEpochDay:toEpochDay:zone:) -> SmokingAiStats?` (mode, daysTracked, slipCount, topTriggers, busiestBand, reductionPercent — no currency; field set pinned). `HourBand` `h08_10`…`h22_08` (scoped `identifier_name` disable). Matches Android Kotlin line for line. Red: `cannot find type 'SmokingInsights' in scope`. 10 mutations red. |
 | 6 — repository + use cases (contract §6, §8.10) | `a364d27` | done, review APPROVED (5 deferred minors); lint / lint-rules / build green; SalusSmoking 53 → **138** (+85) on its base | `SmokingRepository` (`observeInput`/`observeSnapshot`/`snapshotNow`), 15 `Sendable` use cases, one GRDB write transaction per use case (double tap decided inside the tx), listeners notified after commit; `SmokingCoreModule` built once in `makeInfrastructure` with an empty `SmokingChangeListeners` registry (Task 17 adds the reminder listener). Observer reads via `SmokingDao.write` (DatabaseQueue: no extra contention). Red: compile error in `SmokingTestEnv.swift`. 12 mutations red. |
+| 5 — `MilestoneCatalog` + `MilestoneScheduler` (contract §4 amended, §8.8, §8.9) | `bd006b6` | done, review APPROVED (1 deferred minor → ledger row D-M17-i-1); lint / lint-rules green; SalusSmoking 53 → **89** (+36) on its base | Latest-instant firing, first-48 h `:early` split keys, quiet hours by wall-clock minute, slip shift, limit (capped at 1000), evening, yearly past 15 y, TRY vs EUR steps. Reviewer mirrored the algorithm: 14/14 golden `scheduleCases` (0fd295f) pass. `groupByOwningAttempt` internal + shared `unitCost(on:ascendingPrices:)`. Red: `cannot find type 'PlannedNotification' in scope`. 12 mutations red. |
 
 ## Ledger rows to fold
 
@@ -36,6 +37,7 @@ Rows for `../salus-android/docs/parity-ledger.md` § M17. The Android session fo
 
 | ID | Area | iOS behaviour | Android behaviour | Why | Mirror? |
 |---|---|---|---|---|---|
+| D-M17-i-1 | Smoking scheduler | `MilestoneScheduler.plan` caps `limit` at `maximumLimit = 1000`; `limit ≤ 0` plans nothing | `take(limit)` over a Long horizon; no cap (`Int.MAX` would build ~7.8×10¹¹ yearly candidates) | iOS Int64 day horizon would wrap; no caller asks for > 64 | Optional: Android adopts the cap, or §8.9 records the reading |
 
 ## Controller rulings
 
