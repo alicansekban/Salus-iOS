@@ -45,11 +45,11 @@ struct SmokingStringsTests {
         "smoking_goal_sheet_amount_label"
     ]
 
-    @Test("the catalog holds exactly the 324 keys :feature:smoking owns so far")
+    @Test("the catalog holds exactly the 325 keys :feature:smoking owns so far")
     func catalogHoldsExactlyTheKeys() throws {
         // Pinned as a number as well as a set: a row deleted from the table together with its key
         // from the catalog would otherwise agree with itself and pass.
-        #expect(Self.samples.count == 324)
+        #expect(Self.samples.count == 325)
 
         try StringCatalogParity.assertKeys(of: Self.loadCatalog(), are: Self.expectedKeys)
     }

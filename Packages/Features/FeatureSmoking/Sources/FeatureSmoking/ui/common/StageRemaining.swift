@@ -1,20 +1,23 @@
-// Ported from `remainingLabel` in `feature/smoking/.../ui/timeline/SmokingTimelineScreen.kt`, which
-// the main screen's next-stage card shares: "n gün kaldı" at the largest unit that fits.
+// Twin of `feature/smoking/.../ui/main/StageTimeLeftText.kt`: "n gün kaldı" for the time left to a
+// health stage, on the rounding every surface shares (`SalusSmoking.StageTimeLeft`, contract
+// section 8.15). Main's stage card, the timeline rows and the stage sheet all read this one type.
 
-/// How much of a stage is left, cut at the largest unit that fits. The unit decides which sentence
-/// the screen speaks, so the choice lives here rather than in a view.
+import SalusSmoking
+
+/// How much of a stage is left: a count rounded up and never below one minute, in the unit that
+/// follows the rounded count ("1 saat", not "60 dk"; "1 gün", not "24 saat"). The unit decides which
+/// sentence the screen speaks, so the choice lives here rather than in a view.
 enum StageRemaining: Equatable {
-    case days(Int64)
+    case days(Int)
     case hours(Int)
     case minutes(Int)
 
-    /// Under a minute (or a clock set behind the start) still reads one minute: zero minutes left
-    /// on a stage that has not unlocked looks like a bug.
     init(remainingMs: Int64) {
-        switch timeLabelOf(remainingMs) {
-        case let .days(days, _, _): self = .days(days)
-        case let .hours(hours, _): self = .hours(hours)
-        case let .minSec(minutes, _): self = .minutes(max(1, minutes))
+        let left = StageTimeLeft.of(remainingMs: remainingMs)
+        switch left.unit {
+        case .days: self = .days(left.count)
+        case .hours: self = .hours(left.count)
+        case .minutes: self = .minutes(left.count)
         }
     }
 

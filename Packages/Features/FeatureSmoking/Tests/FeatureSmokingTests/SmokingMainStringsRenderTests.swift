@@ -23,6 +23,10 @@ extension SmokingStringsTests {
         try #expect(render(catalog, "smoking_stage_card_percent", "tr", 64) == "%64")
         try #expect(render(catalog, "smoking_stage_card_percent", "en", 64) == "64%")
         try #expect(render(catalog, "smoking_stage_remaining_minutes", "en", 7) == "7 min left")
+        // Days is a two-key plural since the unit rolls over to "1 day" at 23 h (contract section 8.15).
+        try #expect(render(catalog, "smoking_stage_remaining_days_one", "en", 1) == "1 day left")
+        try #expect(render(catalog, "smoking_stage_remaining_days", "en", 3) == "3 days left")
+        try #expect(render(catalog, "smoking_stage_remaining_days_one", "tr", 1) == "1 gün kaldı")
         // The timeline header's "done / total" figure.
         try #expect(render(catalog, "smoking_timeline_count", "tr", 4, 10) == "4 / 10")
     }

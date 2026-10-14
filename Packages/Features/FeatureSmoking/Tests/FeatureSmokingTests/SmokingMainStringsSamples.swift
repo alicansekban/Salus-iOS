@@ -334,6 +334,11 @@ enum SmokingMainStringTableTail {
             english: "%lld days left"
         ),
         SmokingStringSample(
+            key: "smoking_stage_remaining_days_one",
+            turkish: "%lld gün kaldı",
+            english: "%lld day left"
+        ),
+        SmokingStringSample(
             key: "smoking_stage_remaining_hours",
             turkish: "%lld saat kaldı",
             english: "%lld h left"

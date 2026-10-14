@@ -4948,6 +4948,23 @@
         }
       }
     },
+    "smoking_stage_remaining_days_one" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld day left"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld gün kaldı"
+          }
+        }
+      }
+    },
     "smoking_stage_remaining_hours" : {
       "extractionState" : "manual",
       "localizations" : {

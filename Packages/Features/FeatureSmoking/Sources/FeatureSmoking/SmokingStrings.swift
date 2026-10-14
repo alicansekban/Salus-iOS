@@ -277,6 +277,7 @@ public enum SmokingStrings {
         case stageH72hStatement = "smoking_stage_h_72h_statement"
         case stageH72hTitle = "smoking_stage_h_72h_title"
         case stageRemainingDays = "smoking_stage_remaining_days"
+        case stageRemainingDaysOne = "smoking_stage_remaining_days_one"
         case stageRemainingHours = "smoking_stage_remaining_hours"
         case stageRemainingMinutes = "smoking_stage_remaining_minutes"
         case timelineAttributionNhs = "smoking_timeline_attribution_nhs"

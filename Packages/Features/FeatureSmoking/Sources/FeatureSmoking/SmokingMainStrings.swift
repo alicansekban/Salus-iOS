@@ -121,9 +121,10 @@ extension SmokingStrings {
         String(format: localized(.stageCardPercent), locale: .current, percent)
     }
 
-    /// `smoking_stage_remaining_days`.
-    public static func stageRemainingDays(_ days: Int64) -> String {
-        String(format: localized(.stageRemainingDays), locale: .current, days)
+    /// `smoking_stage_remaining_days` / `smoking_stage_remaining_days_one`: the two-key plural,
+    /// because the rounded-up rule reads "1 day left" from 23 h on (contract section 8.15).
+    public static func stageRemainingDays(_ days: Int) -> String {
+        String(format: localized(days == 1 ? .stageRemainingDaysOne : .stageRemainingDays), locale: .current, days)
     }
 
     /// `smoking_stage_remaining_hours`.
