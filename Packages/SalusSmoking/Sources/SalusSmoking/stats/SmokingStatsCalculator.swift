@@ -40,6 +40,8 @@ private struct Context {
     let zone: TimeZone
     /// Ascending by effective day, so the lookup below can stop at the first later one.
     let prices: [PricePeriod]
+    /// Each event grouped under the attempt that owns it (rule 3, contract section 8.1).
+    let eventsByAttempt: [String: [SmokingEvent]]
 
     init(input: SmokingInput, plan: SmokingPlan, nowMs: Int64, zone: TimeZone) {
         self.input = input
@@ -47,6 +49,7 @@ private struct Context {
         self.nowMs = nowMs
         self.zone = zone
         prices = input.prices.sorted { $0.effectiveFromEpochDay < $1.effectiveFromEpochDay }
+        eventsByAttempt = groupByOwningAttempt(input.events, attempts: input.attempts)
     }
 
     var baseline: Int64 {
@@ -126,7 +129,7 @@ private func quitSnapshot(_ context: Context) -> SmokingSnapshot {
     let stages = stageProgress(sinceLastSmokeMs: sinceLastSmoke, attemptElapsedMs: elapsed)
 
     let events = context.input.events
-    let cravingsInAttempt = cravings(of: active, in: events).count
+    let cravingsInAttempt = cravings(of: active, in: context).count
     let cravingsAllTime = events.filter { $0.type == .cravingResisted }.count
 
     return .quit(
@@ -152,20 +155,32 @@ private func quitSnapshot(_ context: Context) -> SmokingSnapshot {
     )
 }
 
-/// Rule 3. The stored `attemptId` is authoritative: a restart slip sits exactly on the instant the
-/// old attempt closes and the new one opens, and it stays on the old one (contract §6,
-/// `ResolveSlip`). An event before the start is never a slip, whatever its `attemptId` says.
-private func slips(of attempt: QuitAttempt, in context: Context) -> [SmokingEvent] {
-    context.input.events.filter {
-        $0.type == .smoked && $0.attemptId == attempt.id && $0.occurredAtMs >= attempt.startedAtMs
+/// Rule 3, contract section 8.1. The stored `attemptId` is authoritative: a restart slip sits
+/// exactly on the instant the old attempt closes and the new one opens, and it stays on the old one
+/// (contract section 6, `ResolveSlip`). Only an event with no usable link (nil, or an id that names
+/// no attempt) falls back to the latest-starting attempt whose `[start, end)` contains it. Either
+/// way an event before its attempt's start belongs to no attempt: a back-dated entry is not a slip.
+private func groupByOwningAttempt(_ events: [SmokingEvent], attempts: [QuitAttempt]) -> [String: [SmokingEvent]] {
+    let attemptsById = Dictionary(attempts.map { ($0.id, $0) }, uniquingKeysWith: { _, last in last })
+    var grouped: [String: [SmokingEvent]] = [:]
+    for event in events {
+        let linked = event.attemptId.flatMap { attemptsById[$0] }
+        let owner = linked ?? attempts
+            .filter { event.occurredAtMs >= $0.startedAtMs && ($0.endedAtMs.map { event.occurredAtMs < $0 } ?? true) }
+            .max { $0.startedAtMs < $1.startedAtMs }
+        guard let owner, event.occurredAtMs >= owner.startedAtMs else { continue }
+        grouped[owner.id, default: []].append(event)
     }
+    return grouped
 }
 
-/// Rule 11, with the same membership as a slip.
-private func cravings(of attempt: QuitAttempt, in events: [SmokingEvent]) -> [SmokingEvent] {
-    events.filter {
-        $0.type == .cravingResisted && $0.attemptId == attempt.id && $0.occurredAtMs >= attempt.startedAtMs
-    }
+private func slips(of attempt: QuitAttempt, in context: Context) -> [SmokingEvent] {
+    (context.eventsByAttempt[attempt.id] ?? []).filter { $0.type == .smoked }
+}
+
+/// Rule 11, with the same ownership as a slip.
+private func cravings(of attempt: QuitAttempt, in context: Context) -> [SmokingEvent] {
+    (context.eventsByAttempt[attempt.id] ?? []).filter { $0.type == .cravingResisted }
 }
 
 private func totalUnits(of events: [SmokingEvent]) -> Int64 {
@@ -266,7 +281,7 @@ private func attemptSummaries(_ context: Context) -> [AttemptSummary] {
 
     return ordered.enumerated().map { index, attempt in
         let slips = slips(of: attempt, in: context)
-        let windowEnd = min(attempt.endedAtMs ?? now, now)
+        let windowEnd = attempt.endedAtMs ?? now
         return AttemptSummary(
             id: attempt.id,
             ordinal: index + 1,
@@ -275,7 +290,7 @@ private func attemptSummaries(_ context: Context) -> [AttemptSummary] {
             durationMs: durations[index],
             slipCount: slips.count,
             savedMinor: savedMinor(from: attempt.startedAtMs, to: windowEnd, slips: slips, in: context),
-            cravingsBeaten: cravings(of: attempt, in: context.input.events).count,
+            cravingsBeaten: cravings(of: attempt, in: context).count,
             isLongest: index == longestIndex
         )
     }
@@ -346,7 +361,7 @@ private func goalProgress(_ context: Context, reduceUnitsByDay: [Int64: Int64]? 
         savedToward = quitGoalSavings(goal, in: context)
     }
 
-    let permille = goal.targetMinor > 0 ? Int(min(1000, scaled(savedToward, 1000, by: goal.targetMinor))) : 1000
+    let permille = goal.targetMinor > 0 ? Int(min(1000, scaled(savedToward, 1000, by: goal.targetMinor))) : 0
     return GoalProgress(
         goal: goal,
         savedTowardMinor: savedToward,
@@ -355,18 +370,18 @@ private func goalProgress(_ context: Context, reduceUnitsByDay: [Int64: Int64]? 
     )
 }
 
-/// QUIT: rule 7 restricted to `[max(goal.createdAt, attempt.start), attempt.end ?? now]` for every
-/// attempt overlapping that window, less the slips inside it, floored once at zero. The window's
-/// end is inclusive so a restart slip on the closing instant of the old attempt is deducted from it.
+/// QUIT, contract section 8.2: rule 7 applied to each attempt's own window
+/// `[max(goal.createdAt, attempt.start), attempt.end ?? now]`, including its `max(0, ...)`, and the
+/// goal total is the sum. An attempt whose slips exceed its accrual contributes 0 and never cancels
+/// another attempt's savings; a VAPE slip day is deducted once per attempt. The window's end is
+/// inclusive for slips, so a restart slip on the closing instant of the old attempt is deducted
+/// from it.
 private func quitGoalSavings(_ goal: SavingsGoal, in context: Context) -> Int64 {
-    var money: Int64 = 0
-    var windowSlips: [SmokingEvent] = []
-    for attempt in context.input.attempts {
+    context.input.attempts.reduce(0) { total, attempt in
         let from = max(goal.createdAtMs, attempt.startedAtMs)
-        let to = min(attempt.endedAtMs ?? context.nowMs, context.nowMs)
-        guard to > from else { continue }
-        money = saturatingAdd(money, accruedMoney(from: from, to: to, in: context))
-        windowSlips += slips(of: attempt, in: context).filter { $0.occurredAtMs >= from && $0.occurredAtMs <= to }
+        let to = attempt.endedAtMs ?? context.nowMs
+        guard to > from else { return total }
+        let inWindow = slips(of: attempt, in: context).filter { $0.occurredAtMs >= from && $0.occurredAtMs <= to }
+        return saturatingAdd(total, savedMinor(from: from, to: to, slips: inWindow, in: context))
     }
-    return max(0, money - slipDeduction(windowSlips, in: context))
 }

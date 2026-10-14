@@ -152,6 +152,50 @@ struct GoalTests {
         #expect(snapshot.savedMinor == 60000)
     }
 
+    @Test("QUIT: an attempt whose slips exceed its accrual contributes zero and never cancels another's savings")
+    func goalFloorIsPerAttempt() throws {
+        let restartAt = Fixture.start + 2 * day
+        let a1 = Fixture.attempt("a1", start: Fixture.start, end: restartAt, reason: .restarted)
+        let a2 = Fixture.attempt("a2", start: restartAt)
+        let heavy = Fixture.smoked("s1", at: Fixture.start + day, units: 100, attempt: "a1")
+        let goal = Fixture.goal(target: 1_000_000, createdAt: Fixture.start)
+        let input = Fixture.quitInput(attempts: [a1, a2], events: [heavy], goal: goal)
+        let progress = try #require(try quitSnapshot(input, now: restartAt + 2 * day).goal)
+        // a1: 2 days = 40 000 less 100 000, floored to 0. a2: 2 days = 40 000, kept whole.
+        #expect(progress.savedTowardMinor == 40000)
+    }
+
+    @Test("QUIT VAPE: a slip day is deducted once per attempt window")
+    func goalVapeSlipDayIsPerAttempt() throws {
+        let restartAt = Fixture.midnight(Fixture.day0 + 3) + 10 * hour
+        let a1 = Fixture.attempt("a1", start: Fixture.start, end: restartAt, reason: .restarted)
+        let a2 = Fixture.attempt("a2", start: restartAt)
+        let events = [
+            Fixture.smoked("s1", at: restartAt, attempt: "a1", product: .vape),
+            Fixture.smoked("s2", at: restartAt + 5 * hour, attempt: "a2", product: .vape)
+        ]
+        let goal = Fixture.goal(target: 1_000_000, createdAt: Fixture.start)
+        let input = Fixture.quitInput(
+            baseline: 1,
+            cost: 2000,
+            product: .vape,
+            attempts: [a1, a2],
+            events: events,
+            goal: goal
+        )
+        let progress = try #require(try quitSnapshot(input, now: Fixture.midnight(Fixture.day0 + 5)).goal)
+        // a1: 3 days x 2 000 + 10 h x 2 000 / 24 h (833), less 2 000 = 4 833.
+        // a2: 14 h x 2 000 / 24 h (1 166) + 2 000, less 2 000 for the same slip day = 1 166.
+        #expect(progress.savedTowardMinor == 4833 + 1166)
+    }
+
+    @Test("a goal with a non-positive target shows zero progress")
+    func goalWithoutATargetIsZeroProgress() throws {
+        let goal = Fixture.goal(target: 0, createdAt: Fixture.start)
+        let progress = try #require(try quitSnapshot(Fixture.quitInput(goal: goal), now: Fixture.start + day).goal)
+        #expect(progress.permille == 0)
+    }
+
     @Test("a goal created before nothing accrued is zero progress, not negative")
     func goalCreatedAfterNow() throws {
         let goal = Fixture.goal(target: 1000, createdAt: Fixture.start + 5 * day)

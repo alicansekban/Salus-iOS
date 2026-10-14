@@ -385,3 +385,81 @@ struct CravingAndAttemptTests {
         #expect(snapshot.attempts.map(\.isLongest) == [true, false, false])
     }
 }
+
+@Suite("SmokingStatsCalculator — event ownership (rule 3, contract section 8.1)")
+struct EventOwnershipTests {
+    @Test("an event with no attemptId inside the active attempt is a slip of it")
+    func unlinkedSlipInsideTheActiveAttempt() throws {
+        let unlinked = Fixture.smoked("s1", at: Fixture.start + 12 * hour, attempt: nil)
+        let snapshot = try quitSnapshot(Fixture.quitInput(events: [unlinked]), now: Fixture.start + day)
+        #expect(snapshot.slipCount == 1)
+        #expect(snapshot.sinceLastSmokeMs == 12 * hour)
+        #expect(snapshot.unitsNotSmoked == 19)
+    }
+
+    @Test("an attemptId that names no attempt falls back to time containment")
+    func unknownAttemptIdFallsBackToContainment() throws {
+        let ghost = Fixture.smoked("s1", at: Fixture.start + 12 * hour, attempt: "ghost")
+        let snapshot = try quitSnapshot(Fixture.quitInput(events: [ghost]), now: Fixture.start + day)
+        #expect(snapshot.slipCount == 1)
+    }
+
+    @Test("an unlinked event on a closed attempt's end instant belongs to the attempt that starts there")
+    func unlinkedEventAtTheRestartInstantGoesToTheNewAttempt() throws {
+        let restartAt = Fixture.start + 2 * day
+        let a1 = Fixture.attempt("a1", start: Fixture.start, end: restartAt, reason: .restarted)
+        let a2 = Fixture.attempt("a2", start: restartAt)
+        let unlinked = Fixture.smoked("s1", at: restartAt, attempt: nil)
+        let snapshot = try quitSnapshot(
+            Fixture.quitInput(attempts: [a1, a2], events: [unlinked]),
+            now: restartAt + day
+        )
+        #expect(snapshot.attempts.map(\.slipCount) == [0, 1])
+        #expect(snapshot.slipCount == 1)
+    }
+
+    @Test("an unlinked event inside a closed attempt belongs to it, not to the active one")
+    func unlinkedEventInsideAClosedAttempt() throws {
+        let a1 = Fixture.attempt("a1", start: Fixture.start, end: Fixture.start + 2 * day, reason: .restarted)
+        let a2 = Fixture.attempt("a2", start: Fixture.start + 2 * day)
+        let unlinked = Fixture.smoked("s1", at: Fixture.start + day, attempt: nil)
+        let snapshot = try quitSnapshot(
+            Fixture.quitInput(attempts: [a1, a2], events: [unlinked]),
+            now: Fixture.start + 3 * day
+        )
+        #expect(snapshot.attempts.map(\.slipCount) == [1, 0])
+        #expect(snapshot.slipCount == 0)
+    }
+
+    @Test("an unlinked event on the end instant of a closed attempt with no successor there belongs to nobody")
+    func unlinkedEventAtAnEndInstantWithoutSuccessor() throws {
+        let a1 = Fixture.attempt("a1", start: Fixture.start, end: Fixture.start + day, reason: .restarted)
+        let a2 = Fixture.attempt("a2", start: Fixture.start + 3 * day)
+        let gap = Fixture.smoked("s1", at: Fixture.start + day, attempt: nil)
+        let snapshot = try quitSnapshot(
+            Fixture.quitInput(attempts: [a1, a2], events: [gap]),
+            now: Fixture.start + 4 * day
+        )
+        #expect(snapshot.attempts.map(\.slipCount) == [0, 0])
+    }
+
+    @Test("when two attempts contain an unlinked event the latest-starting one owns it")
+    func latestStartingAttemptWinsContainment() throws {
+        let a1 = Fixture.attempt("a1", start: Fixture.start)
+        let a2 = Fixture.attempt("a2", start: Fixture.start + day)
+        let unlinked = Fixture.smoked("s1", at: Fixture.start + 2 * day, attempt: nil)
+        let snapshot = try quitSnapshot(
+            Fixture.quitInput(attempts: [a1, a2], events: [unlinked]),
+            now: Fixture.start + 3 * day
+        )
+        #expect(snapshot.attempts.map(\.slipCount) == [0, 1])
+    }
+
+    @Test("an unlinked craving inside the active attempt counts for it")
+    func unlinkedCraving() throws {
+        let craving = Fixture.craving("c1", at: Fixture.start + hour, attempt: nil)
+        let snapshot = try quitSnapshot(Fixture.quitInput(events: [craving]), now: Fixture.start + day)
+        #expect(snapshot.cravingsBeaten == 1)
+        #expect(snapshot.attempts.map(\.cravingsBeaten) == [1])
+    }
+}

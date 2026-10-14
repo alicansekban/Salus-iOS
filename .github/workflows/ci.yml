@@ -8,7 +8,7 @@
 #   1. lint.sh               swiftformat --lint, then swiftlint --strict
 #   2. lint-custom-rules.sh  proves each custom rule fires inside its scope
 #                            and stays quiet outside it
-#   3. test-packages.sh      swift test over all 24 packages under Packages/
+#   3. test-packages.sh      swift test over all 25 packages under Packages/
 #   4. build-app.sh          the real iOS build of Salus.xcodeproj
 #
 # It is split into named steps here only because the iOS toolchain has no single

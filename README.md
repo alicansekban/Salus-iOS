@@ -125,7 +125,7 @@ Three things the scripts encode that are easy to get wrong by hand:
   file — can make `scripts/test-packages.sh` fail on a tree that is actually fine, usually as an
   "unable to find" or missing-symbol error for the new file. Found in iOS-M2. The fix is
   `scripts/clean.sh` and a re-run; do not go looking for the bug first.
-- **`swift test` builds for the host, not for iOS.** So 21 of the 25 packages also declare
+- **`swift test` builds for the host, not for iOS.** So 22 of the 25 packages also declare
   `.macOS(.v14)` in their manifest purely to make the host build possible, for one of three
   reasons: they reach SwiftUI, directly (`SalusDesignSystem`, and `SalusNavigation` since its
   `TabBackStacks` holds a `NavigationPath` per tab) or transitively (`SalusUI` and the ten
@@ -133,7 +133,8 @@ Three things the scripts encode that are easy to get wrong by hand:
   manifest naming no macOS platform (SwiftPM reads that as macOS 10.13) cannot satisfy —
   `SalusDatabase` and its four dependents `SalusProfile`, `SalusAI`, `SalusReminder`, `SalusSmoking`; or they
   reach `Observation` — `SalusCommon`, whose `PendingDeleteController` is `@Observable`
-  (iOS 17 / macOS 14), plus its dependents `SalusSettings` and `SalusTesting`. The remaining
-  four — `SalusModel`, `SalusBackup`, `SalusNotifications`, `SalusPremium` — stay
+  (iOS 17 / macOS 14), plus its dependents `SalusSettings`, `SalusTesting` and `SalusPremium`
+  (its `PremiumRepositoryImpl` is `@Observable`). The remaining three — `SalusModel`,
+  `SalusBackup`, `SalusNotifications` — stay
   `[.iOS(.v17)]` alone. iOS 17 stays the ship target; the iOS build of every package is what
   `scripts/build-app.sh` covers.
