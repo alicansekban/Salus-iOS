@@ -5,7 +5,8 @@
 // Where Android asserts on its `UndoOffered` effect and `RecordingSnackbarController`, the snackbar
 // here IS the undo: the ViewModel shows it through the shell's controller itself, with an action
 // that carries the entry's id and holds no reference to the ViewModel, so the tests read
-// `snackbar.current` and press `performAction()`. "The ViewModel is gone" is `vm = nil`.
+// `snackbar.current` and press `performAction()`. "The ViewModel is gone" is ``release(_:)``, which
+// also proves it: a `self` captured by the write or the undo would keep it alive and fail there.
 
 import Foundation
 import SalusCommon
@@ -21,6 +22,14 @@ import Testing
 @Suite("SmokingMainViewModel REDUCE", .timeLimit(.minutes(1)))
 struct SmokingMainReduceViewModelTests {
     let harness = ReduceHarness()
+
+    /// Lets go of the ViewModel and asserts it is deallocated.
+    private static func release(_ vm: inout SmokingMainViewModel?) async {
+        weak var probe = vm
+        vm = nil
+        await Task.yield()
+        #expect(probe == nil, "something in the write or the undo still holds the ViewModel")
+    }
 
     // MARK: +1 and undo
 
@@ -88,7 +97,7 @@ struct SmokingMainReduceViewModelTests {
         await waitUntil("the undo snackbar") { harness.snackbar.current != nil }
 
         // Back was pressed: the screen's ViewModel is released, the shell's snackbar is still up.
-        vm = nil
+        await Self.release(&vm)
         harness.snackbar.performAction()
 
         await waitUntil("the undo ran without the ViewModel") { harness.store.input.events.isEmpty }
@@ -102,7 +111,7 @@ struct SmokingMainReduceViewModelTests {
         vm?.onEvent(.plusOne)
         await waitUntil("the write is started") { harness.store.calls == 1 }
 
-        vm = nil
+        await Self.release(&vm)
         gate.open()
 
         await waitUntil("the entry lands") { harness.store.input.events.count == 1 }
@@ -127,7 +136,7 @@ struct SmokingMainReduceViewModelTests {
         var vm: SmokingMainViewModel? = await harness.subscribedViewModel()
         vm?.onEvent(.plusOne)
         await waitUntil("the undo snackbar") { harness.snackbar.current != nil }
-        vm = nil
+        await Self.release(&vm)
         harness.store.failure = FakeStorageFault()
 
         harness.snackbar.performAction()
