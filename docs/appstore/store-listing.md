@@ -254,6 +254,16 @@ Everything you record still stays on your device.
 | Identifiers → Device ID | Yes — RevenueCat anonymous ID, Firebase App Check attestation | No | No | App Functionality |
 | Everything else (contacts, location, usage data, diagnostics, name, DOB) | Not collected | | | |
 
+Tobacco use (iOS-M17, mirrors the Android data-safety note, parity row D-M17-j): smoking tracking is
+not a new App Privacy row. Tobacco/vape records (units smoked, cravings, triggers, quit date, price,
+reason note) are stored on the device only and nothing is collected from them. An AI summary request
+sends only aggregated numbers from them (mode, days tracked, slip count, busiest time range, trigger
+shares, reduction percentage — no amounts, timestamps or reason note), which the Health row above
+already covers. The Turkish wording, verbatim from Android's Play data-safety note:
+"Tütün/vape kullanım kayıtları (içilen adet, istek anları, tetikleyiciler, bırakma tarihi, fiyat, neden notu) yalnızca cihazda saklanır; AI özeti isteğinde yalnızca toplulaştırılmış sayılar gider (mod, izlenen gün sayısı, kayma sayısı, en yoğun zaman aralığı, tetikleyici payları, azaltma yüzdesi — tutar, zaman damgası ve neden notu yok)."
+The Android repo's `docs/legal/privacy.html` carries the matching "Tütün kullanımı" / "Tobacco use" paragraph;
+updating the Google Sites policy pages the stores link is the owner's step before this release.
+
 Data is **not** used for tracking; no third-party advertising SDK is present.
 "Transient" applies to the health statistics: they are processed for the response and not stored
 server-side by us (Google's Gemini API terms govern their retention — say so in the privacy policy).
