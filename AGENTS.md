@@ -9,6 +9,7 @@
   - read `.claude/rules/planning.md` before editing `**/docs/**`.
 - **Global rules for every harness** — the read-first order (`docs/superpowers/STATUS.md`, the port contract in `../salus-android/docs/`, `docs/ios-feature-template.md`), comments explain why, the gates (`scripts/dev/gates.sh`, `scripts/ci.sh`), handover, the checkout policy, linear history and "commit and push only on the owner's word" — are in `CLAUDE.md`.
 - Planning, status, handover and manual-QA rules: `.claude/rules/planning.md`. Manual QA on a simulator or device is the owner's job; do not drive one.
+- **What Claude's hooks enforce, you enforce yourself** (Codex runs no hooks): no force push (`--force`, `-f`, `--force-with-lease`, a `+` refspec, `--mirror`); no `git merge` without `--ff-only` and no `git pull` without `--ff-only` or `--rebase`; no `git add -f`; never read or write a `*.local.xcconfig`; never hand-edit `Salus.xcodeproj/project.pbxproj` (`xcodegen generate` writes it) or a `RoomSchemas/*.json` under `Packages/SalusDatabase/Tests/` (copied from Android with `cp`).
 
 ## Orchestration contract
 

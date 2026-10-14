@@ -20,7 +20,7 @@ git. Written 2026-10-14; update it at the end of a milestone and, between tasks,
 - **Agent harness** — hooks, `scripts/dev/gates.sh` and `/salus-gates`, the five area rule files, `CLAUDE.md` /
   `AGENTS.md`, the Salus agents and `/salus-handover`. Branch `chore/agent-harness` (worktree
   `Salus/wt-harness-ios`), plan `salus-android/docs/superpowers/plans/2026-10-14-agent-harness.md`, status
-  `docs/superpowers/plans/STATUS-agent-harness.md`; fast-forwarded into `main` on the owner's word.
+  `docs/superpowers/plans/STATUS-agent-harness.md`; to be fast-forwarded into `main` on the owner's word.
 
 ## Open items
 

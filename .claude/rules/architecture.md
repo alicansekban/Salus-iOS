@@ -225,7 +225,7 @@ Settled decisions, layer rules and port-fidelity rules. Every rule names its **e
   `swift test` has no way to grant).*
 - **The Room schema JSONs are copied, not authored, and re-synced on every schema bump.**
   `Packages/SalusDatabase/Tests/SalusDatabaseTests/Resources/RoomSchemas/*.json` are verbatim copies
-  of `salus-android/app/schemas/…`, and `RoomSchemaParityTests` reads them to prove the GRDB
+  of `salus-android/core/database/schemas/com.alicansekban.salus.core.database.SalusDatabase/…`, and `RoomSchemaParityTests` reads them to prove the GRDB
   migrations produce Android's tables, columns and indices. A schema change on either platform means
   re-copying the JSON for the new version **in the same commit** as the migration. — *enforcement:
   `RoomSchemaParityTests`, which fails the moment the two schemas diverge.*

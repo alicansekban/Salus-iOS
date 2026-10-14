@@ -113,9 +113,10 @@ diff. Do not walk the whole checklist again.
     cites the Android source file, and a decision that touches both platforms names its row in
     `../salus-android/docs/parity-ledger.md`. `n/a` when none applies.
 11. **Commits and status row.** English conventional commits ending with the trailer
-    `Co-Authored-By: Claude <model> <noreply@anthropic.com>`, naming the model you actually run on as
-    your system prompt states it (e.g. `Sonnet 5.5`, `Opus 5.5`; the router picks it per task, so never
-    assume it), and the same name in your report; each commit builds; the status row is in the
+    `Co-Authored-By: Claude <model> <noreply@anthropic.com>`, `<model>` being the model the
+    implementer reports on its report's `Model:` line (e.g. `Sonnet 5.5`, so the line reads
+    `Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>`) — not your own model; a trailer that
+    names another model than the report, or none, is a finding; each commit builds; the status row is in the
     milestone's status file, in its own `docs:` commit, at most ~700 characters, in `planning.md`'s
     format. No on-device or visual result is claimed anywhere: manual QA is the owner's, and
     `docs/qa/m<N>-manual-qa.md` carries the rows for a UI change.
@@ -130,11 +131,13 @@ diff. Do not walk the whole checklist again.
   time) and `pgrep`; counting and comparing (sizes, catalog keys) is done with Read and Grep. You
   run no mutation check of your own — that edits the tree; a missing one is a finding.
 - Launch or drive a simulator or a device.
+- Read a `*.local.xcconfig` or any other secret file by any means — Bash `cat` or `grep` included:
+  the hooks below guard the file tools only.
 - Fix what you find, dispatch agents (you have no Agent tool) or ask the owner.
 
 Guard hooks block `git push --force`, a merge that is not a fast-forward, a `git pull` that merges,
-`git add -f`, and any tool touching a `*.local.xcconfig` (reads included). A block means stop and
-report it — never work around a hook.
+`git add -f`, and Edit, Write, MultiEdit, Read and Grep on a `*.local.xcconfig`; they do not see
+what a Bash command reads. A block means stop and report it — never work around a hook.
 
 ## Report
 

@@ -69,7 +69,7 @@ is a question for the controller (`NEEDS_CONTEXT`), never a guess.
      file in a comment where the Swift would otherwise surprise, keep every persisted key and value
      string Android-verbatim, and differ only where the port contract (§6) records a decision.
    - **Room schema.** A schema change on either platform means re-copying the JSON for the new
-     version with `cp` from `../salus-android/app/schemas/…` into
+     version with `cp` from `../salus-android/core/database/schemas/com.alicansekban.salus.core.database.SalusDatabase/` into
      `Packages/SalusDatabase/Tests/SalusDatabaseTests/Resources/RoomSchemas/`, in the same commit as
      the GRDB migration and its test; `RoomSchemaParityTests` must stay green. Never hand-write or
      edit a schema JSON — a hook blocks it.
@@ -110,9 +110,10 @@ is a question for the controller (`NEEDS_CONTEXT`), never a guess.
    skipped or re-run until it passes.
 7. **Code commit.** `git add` your new files, then commit with a pathspec:
    `git commit -m "<type>(<scope>): <subject>" -m "Co-Authored-By: Claude <model> <noreply@anthropic.com>" -- <your paths>`
-   — an English conventional commit whose last line is that trailer, naming the model you actually run
-   on as your system prompt states it (e.g. `Claude Sonnet 5.5`, `Claude Opus 5.5`; the router picks it
-   per task, so never assume it), and the same name in your report. Every commit builds. Never
+   — an English conventional commit whose last line is that trailer, `<model>` being the model you
+   actually run on as your system prompt states it (e.g. `Sonnet 5.5` or `Opus 5.5`, so the line reads
+   `Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>`; the router picks it per task, so never
+   assume it), and the same name on your report's `Model:` line. Every commit builds. Never
    `git commit -a`, never `git add -A`. If a commit fails on `.git/index.lock` (another agent is
    committing), wait briefly and retry a few times, then report `BLOCKED`; never delete the lock,
    and never rebase, reset or stash.
@@ -141,15 +142,18 @@ commit) or disputed (the reason and the evidence) — never skip one.
 - Write `Salus.xcodeproj/project.pbxproj` or a `RoomSchemas/*.json` by hand, touch a
   `*.local.xcconfig` (`App/Secrets.local.xcconfig` holds the machine's keys), or write anything in
   `../salus-android`.
+- Read a `*.local.xcconfig` or any other secret file by any means — Bash `cat`, `grep`, `head` or a
+  copy included: the hooks below guard the file tools only.
 - Add a dependency, a backend, analytics or any networking of ours (`architecture.md`), or set
   `swiftLanguageMode(.v5)`.
 - Dispatch agents (you have no Agent tool) or ask the owner anything.
 - Edit `docs/superpowers/STATUS.md` unless the brief says so.
 
 Guard hooks block `git push --force` and `+` refspecs, a merge that is not a fast-forward, a `git
-pull` that merges, `git add -f`; every tool touching a `*.local.xcconfig` (reads included); a write
-to `Salus.xcodeproj/project.pbxproj`; and a write to `RoomSchemas/*.json` (copy it with `cp`). A
-block means stop and report it — never work around a hook.
+pull` that merges, `git add -f`; Edit, Write, MultiEdit, Read and Grep on a `*.local.xcconfig`; a
+write to `Salus.xcodeproj/project.pbxproj`; and a write to `RoomSchemas/*.json` (copy it with `cp`).
+They do not see what a Bash command reads. A block means stop and report it — never work around a
+hook.
 
 ## Report
 

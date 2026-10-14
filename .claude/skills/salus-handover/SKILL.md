@@ -2,7 +2,7 @@
 name: salus-handover
 description: Write Salus iOS's four handover records in the house format — a task-log row and the Phase line of `docs/superpowers/plans/STATUS-<milestone>.md`, the checkpoint paragraph of `docs/superpowers/STATUS.md`, and a ledger line in `.superpowers/sdd/<plan>/progress.md`. Use after every task's code commit, whenever the phase changes, and before any handover, session end or environment switch.
 argument-hint: <task|phase|checkpoint|ledger>
-allowed-tools: Read, Grep, Edit, Bash(git log:*), Bash(git rev-parse:*), Bash(git commit:*)
+allowed-tools: Read, Grep, Edit, Bash(git log:*), Bash(git rev-parse:*), Bash(git add:*), Bash(git commit:*)
 ---
 
 # /salus-handover — the four handover records, no script (`.claude/rules/planning.md` → "Status and handover")
@@ -63,7 +63,8 @@ ledger is ignored and lives in the Android worktree for this plan, one for both 
 - Never mark another coordinator's work complete; resume by reconciling ledger, status and git — never redispatch a
   finished task.
 - Hashes, test counts and dates live in status files and git, never in `CLAUDE.md` / `AGENTS.md`; `STATUS.md` keeps
-  shipped versions, the rewritten "Now", the open items and the one-line "Gates baseline" — no history.
+  shipped versions, the rewritten "Now", the open items and the one-line "Gates baseline" (its only test count) — no
+  history.
 - Commit the record's file alone, by pathspec. `salus-architect` never commits: the controller commits its edit.
 
 ## What it prints

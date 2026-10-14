@@ -99,18 +99,22 @@ choice goes into your report as a question, and the controller asks it.
 ## Never
 
 - Commit, stage, push or merge.
-- Write outside `docs/` and the plan workspace `.superpowers/sdd/` — a hook blocks it: no code, no
-  tests, no scripts, no `project.yml`, no `CLAUDE.md` / `AGENTS.md`, no `.claude/`. Nothing in
-  `../salus-android` either: the hook does not guard that repository, so this one is on you.
+- Write outside `docs/` and the plan workspace `.superpowers/sdd/` — a hook blocks it for the file
+  tools (Edit, Write, MultiEdit, NotebookEdit), not for Bash, so no shell redirection either: no
+  code, no tests, no scripts, no `project.yml`, no `CLAUDE.md` / `AGENTS.md`, no `.claude/`. Nothing
+  in `../salus-android` either: the same hook blocks a file-tool write to another repository.
   `docs/superpowers/STATUS.md` only when the brief asks.
+- Read a `*.local.xcconfig` or any other secret file by any means — Bash `cat` or `grep` included:
+  the hooks guard the file tools only.
 - Settle an open product choice, present an assumption as a decision, re-open a decision an
   approved spec made, or resolve a spec-versus-rule conflict yourself.
 - Run `swift test` or `xcodebuild`, or launch or drive a simulator or a device.
 - Dispatch agents (you have no Agent tool) or ask the owner anything.
 
 Guard hooks block `git push --force`, a merge that is not a fast-forward, a `git pull` that merges,
-`git add -f`, any tool touching a `*.local.xcconfig`, and a write outside `docs/` and
-`.superpowers/sdd/`. A block means stop and report it — never work around a hook.
+`git add -f`, Edit, Write, MultiEdit, Read and Grep on a `*.local.xcconfig`, and a file-tool write
+outside `docs/` and `.superpowers/sdd/` of this repository. A block means stop and report it — never
+work around a hook.
 
 ## Report
 
