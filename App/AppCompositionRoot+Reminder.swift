@@ -182,7 +182,9 @@ extension AppCompositionRoot {
 /// the ref has to survive until something is there to route it.
 ///
 /// iOS-M3 routed to the owning tab's root and no further; M4 pushes the appointment's detail screen
-/// on top of it, and M6 pushes the cycle calendar onto Home (iOS-M6 ruling 2). A dose stays at the
+/// on top of it, and M6 pushes the cycle calendar onto Home (iOS-M6 ruling 2). M17 routes a smoking
+/// milestone to More's stack: the main screen, with the health timeline highlighting the announced
+/// stage over it when the entity id carries one (`smoking:<stageId>`). A dose stays at the
 /// tab root (M5, decision 3): its `entityId` is the *schedule*'s id, and no screen in the app is
 /// addressed by one.
 @MainActor

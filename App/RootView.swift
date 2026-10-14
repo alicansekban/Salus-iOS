@@ -95,10 +95,11 @@ struct RootView: View {
     /// calendar, so the depth alone identifies it.
     @State private var reminderPushedCycleDepth: Int?
 
-    /// How deep More's stack was left by the smoking screens a tapped milestone notification last
-    /// pushed — the smoking half of the same question. A depth only, like the cycle's: whether the
-    /// notification also pushed the timeline is decided by the same tap that set the depth.
-    @State private var reminderPushedSmokingDepth: Int?
+    /// What the smoking screens left on top of More's stack — a tapped milestone notification's push,
+    /// or the main screen More opened itself — the smoking half of the same "is this still on top?"
+    /// question. Stage and depth both, because a second stage-notification tap is a different
+    /// highlight, not a duplicate.
+    @State private var reminderPushedSmoking: PushedSmokingScreens?
 
     /// `Theme.kt:99-104`. The premium palette is resolved from entitlement via
     /// `effectivePremiumTheme` — a free user draws `.classic`, a lapsed selection survives.
@@ -350,16 +351,31 @@ struct RootView: View {
         }
     }
 
-    /// Pushes the smoking main screen (and the timeline over it), unless a tap already left exactly
-    /// that on top of More's stack — the twin of `pushCycleCalendar`'s guard.
+    /// Brings the smoking screens a milestone notification names to the top of More's stack, and
+    /// nothing more than that: the main screen if it is not already there, the timeline over it
+    /// when the notification announced a stage. A second tap for another stage replaces the older
+    /// highlight instead of stacking a second timeline, and a tap for what is already on top is a
+    /// no-op — the twin of `pushCycleCalendar`'s guard, with the stage as payload.
     private func pushSmoking(stageId: String?) {
-        let depth = backStacks.path(for: .more).count
-        guard reminderPushedSmokingDepth != depth else { return }
-        backStacks.push(AnyNavKey(SmokingKey()))
+        let current = backStacks.path(for: .more).count
+        let known = reminderPushedSmoking.flatMap { $0.depth == current ? $0 : nil }
+        if let known, known.stageId == stageId {
+            return
+        }
+        var depth = current
+        if known?.stageId != nil {
+            backStacks.pop()
+            depth -= 1
+        }
+        if known == nil {
+            backStacks.push(AnyNavKey(SmokingKey()))
+            depth += 1
+        }
         if let stageId {
             backStacks.push(AnyNavKey(SmokingTimelineKey(highlightStageId: stageId)))
+            depth += 1
         }
-        reminderPushedSmokingDepth = depth + (stageId == nil ? 1 : 2)
+        reminderPushedSmoking = PushedSmokingScreens(stageId: stageId, depth: depth)
     }
 
     /// Pushes the appointment's detail, unless that same detail is what the last tap already left on
@@ -429,15 +445,19 @@ struct RootView: View {
             if case .navigate = command, backStacks.selection == .appointments {
                 reminderPushedAppointment = nil
             }
+            // More's memo is seeded like Home's: the More row pushes `SmokingKey` itself, and a
+            // following stage tap must then add only the timeline, not a second main screen. Any
+            // other key clears it.
+            if case let .navigate(key) = command, backStacks.selection == .more {
+                reminderPushedSmoking = key == AnyNavKey(SmokingKey())
+                    ? PushedSmokingScreens(stageId: nil, depth: backStacks.path(for: .more).count + 1)
+                    : nil
+            }
             // Home's memo is seeded rather than only cleared: a Home card pushes `CycleKey` too,
             // and clearing the memo there would leave a following cycle-reminder tap seeing
             // `nil != depth` and pushing a second calendar onto the one the card just opened. This
             // runs before the push below, so `count + 1` is the depth that push will leave —
             // exactly what `pushCycleCalendar` memoizes. Any other key still clears.
-            // More's memo: anything pushed there by a feature is no longer what a tap left.
-            if case .navigate = command, backStacks.selection == .more {
-                reminderPushedSmokingDepth = nil
-            }
             if case let .navigate(key) = command, backStacks.selection == .home {
                 reminderPushedCycleDepth = key == AnyNavKey(CycleKey())
                     ? backStacks.path(for: .home).count + 1
