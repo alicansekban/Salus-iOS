@@ -8,6 +8,7 @@
 // item.
 
 import Foundation
+import SalusCommon
 
 extension SmokingStrings {
     // MARK: - Plain strings
@@ -124,16 +125,36 @@ extension SmokingStrings {
     /// `smoking_stage_remaining_days` / `smoking_stage_remaining_days_one`: the two-key plural,
     /// because the rounded-up rule reads "1 day left" from 23 h on (contract section 8.15).
     public static func stageRemainingDays(_ days: Int) -> String {
-        String(format: localized(days == 1 ? .stageRemainingDaysOne : .stageRemainingDays), locale: .current, days)
+        String(
+            format: localized(days == 1 ? StageRemainingKey.daysOne : StageRemainingKey.days),
+            locale: .current,
+            days
+        )
     }
 
     /// `smoking_stage_remaining_hours`.
     public static func stageRemainingHours(_ hours: Int) -> String {
-        String(format: localized(.stageRemainingHours), locale: .current, hours)
+        String(format: localized(StageRemainingKey.hours), locale: .current, hours)
     }
 
     /// `smoking_stage_remaining_minutes`.
     public static func stageRemainingMinutes(_ minutes: Int) -> String {
-        String(format: localized(.stageRemainingMinutes), locale: .current, minutes)
+        String(format: localized(StageRemainingKey.minutes), locale: .current, minutes)
+    }
+
+    // MARK: - Stage time-left keys
+
+    /// The "n left" keys of a health stage, named once. They sit here and not in
+    /// ``SmokingStrings/Key``, which is at SwiftLint's 300-line `type_body_length`; the parity test
+    /// checks the union of the key enums against the catalog.
+    enum StageRemainingKey: String, CaseIterable {
+        case days = "smoking_stage_remaining_days"
+        case daysOne = "smoking_stage_remaining_days_one"
+        case hours = "smoking_stage_remaining_hours"
+        case minutes = "smoking_stage_remaining_minutes"
+    }
+
+    static func localized(_ key: StageRemainingKey) -> String {
+        SalusLocalization.string(key.rawValue, bundle: .module)
     }
 }

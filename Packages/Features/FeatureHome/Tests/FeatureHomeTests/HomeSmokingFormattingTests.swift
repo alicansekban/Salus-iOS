@@ -15,15 +15,15 @@ struct HomeSmokingFormattingTests {
 
     struct TextRow: Sendable, CustomTestStringConvertible {
         let remainingMs: Int64
-        /// What the card must say, named by the accessor rather than a literal so the row holds in
-        /// both locales.
+        // What the card must say, named by the accessor rather than a literal so the row holds in
+        // both locales.
         let expected: @Sendable () -> String
         let note: String
 
         var testDescription: String { "\(remainingMs) ms → \(note)" }
     }
 
-    // Contract section 8.15: the one rounded-up rule, so the unit follows the rounded count.
+    /// Contract section 8.15: the one rounded-up rule, so the unit follows the rounded count.
     static let textRows: [TextRow] = [
         // A stage seconds away never says zero minutes.
         TextRow(remainingMs: 0, expected: { HomeStrings.smokingNextMinutes(1) }, note: "1 minute"),

@@ -147,9 +147,7 @@ public final class SmokingMainViewModel {
         // Not while its confirm is in flight: the write is already on its way and lands in the
         // trigger sheet, which a vanished slip sheet would leave opening out of nowhere.
         case .slipDismissed:
-            if case .slip = state.sheet, !state.writing {
-                state.sheet = nil
-            }
+            dismissSlipSheet()
 
         case let .triggerSaved(trigger, intensity):
             saveTrigger(trigger: trigger, intensity: intensity)
@@ -175,6 +173,12 @@ public final class SmokingMainViewModel {
         case .noneToday, .plusOne, .quitDateConfirmed, .quitDateDismissed, .readyToQuit, .timelinePreviewTapped,
              .undoPlusOne:
             onReduceEvent(event)
+        }
+    }
+
+    private func dismissSlipSheet() {
+        if case .slip = state.sheet, !state.writing {
+            state.sheet = nil
         }
     }
 

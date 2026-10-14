@@ -84,7 +84,8 @@ struct SmokingStringsTests {
             + SmokingStrings.SettingsKey.allCases.map(\.rawValue)
             + SmokingStrings.CravingKey.allCases.map(\.rawValue)
             + SmokingStrings.GoalKey.allCases.map(\.rawValue)
-        // The five key enums are disjoint: a key two of them claim would collapse in the set below
+            + SmokingStrings.StageRemainingKey.allCases.map(\.rawValue)
+        // The six key enums are disjoint: a key two of them claim would collapse in the set below
         // and hide the overlap, so the list and the set must be the same size.
         #expect(accessorKeys.count == Set(accessorKeys).count)
         #expect(Set(accessorKeys) == catalog.keys)

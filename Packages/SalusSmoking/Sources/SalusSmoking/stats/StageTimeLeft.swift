@@ -48,6 +48,6 @@ public enum StageTimeLeft {
     /// value near `Int64.max`.
     private static func ceilDiv(_ value: Int64, _ divisor: Int64) -> Int {
         guard value > 0 else { return 0 }
-        return Int(value / divisor + (value % divisor == 0 ? 0 : 1))
+        return Int(value / divisor + (value.isMultiple(of: divisor) ? 0 : 1))
     }
 }

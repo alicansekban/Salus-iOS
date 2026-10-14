@@ -58,7 +58,7 @@ struct StageTimeLeftTests {
 
     @Test("a huge remainder does not overflow the rounding")
     func hugeRemainderDoesNotOverflow() {
-        #expect(left(Int64.max).unit == .days)
-        #expect(left(Int64.max).count > 0)
+        // Rounded up: Int64.max is not a whole number of days.
+        #expect(left(Int64.max) == TimeLeft(unit: .days, count: Int(Int64.max / day) + 1))
     }
 }
