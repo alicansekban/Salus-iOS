@@ -364,7 +364,10 @@ extension AppCompositionRoot {
             clock: clock,
             snackbar: infrastructure.snackbar,
             navigator: infrastructure.navigator,
-            reminderScheduler: reminderScheduler
+            reminderScheduler: reminderScheduler,
+            // The settings switch asks the same environment Reminder Health reads, so the two
+            // surfaces can never disagree about the device.
+            reminderEnvironment: reminderBase.environment
         )
         return ScheduledModules(appointments: appointments, medications: medications, cycle: cycle, smoking: smoking)
     }

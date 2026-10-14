@@ -52,6 +52,12 @@ public struct SmokingModule {
     /// `viewModel { parameters -> SmokingTimelineViewModel(highlightStageId = parameters.get(), …) }`.
     /// The id is the stage a link named, or `nil`.
     public let makeTimelineViewModel: @MainActor (String?) -> SmokingTimelineViewModel
+
+    /// `viewModel { SmokingHistoryViewModel(repository = get(), editEvent = get(), deleteEvent = get(), …) }`.
+    public let makeHistoryViewModel: @MainActor () -> SmokingHistoryViewModel
+
+    /// `viewModel { SmokingSettingsViewModel(repository = get(), updatePrice = get(), …) }`.
+    public let makeSettingsViewModel: @MainActor () -> SmokingSettingsViewModel
 }
 
 /// Builds the feature's graph — the twin of `val smokingModule = module { … }`. Every dependency is
@@ -62,7 +68,8 @@ public func makeSmokingModule(
     clock: any SalusClock,
     snackbar: SalusSnackbarController,
     navigator: Navigator,
-    reminderScheduler: any ReminderScheduler
+    reminderScheduler: any ReminderScheduler,
+    reminderEnvironment: any ReminderEnvironment
 ) -> SmokingModule {
     // Koin's `getAll<SmokingChangeListener>()`: every committed smoking write asks the engine to
     // refill its window, so a slip, a reset or a mode switch moves or cancels the milestones.
@@ -106,8 +113,47 @@ public func makeSmokingModule(
                 switchMode: core.switchMode,
                 clock: clock
             )
-        }
+        },
+        makeHistoryViewModel: {
+            SmokingHistoryViewModel(
+                repository: core.repository,
+                editEvent: core.editEvent,
+                deleteEvent: core.deleteEvent,
+                clock: clock
+            )
+        },
+        makeSettingsViewModel: settingsFactory(
+            core: core,
+            clock: clock,
+            navigator: navigator,
+            environment: reminderEnvironment
+        )
     )
+}
+
+/// The settings screen's factory, apart from `makeSmokingModule` to keep that function inside
+/// SwiftLint's body length: it takes the most collaborators of any screen.
+@MainActor
+private func settingsFactory(
+    core: SmokingCoreModule,
+    clock: any SalusClock,
+    navigator: Navigator,
+    environment: any ReminderEnvironment
+) -> @MainActor () -> SmokingSettingsViewModel {
+    {
+        SmokingSettingsViewModel(
+            repository: core.repository,
+            updatePrice: core.updatePrice,
+            updateCurrency: core.updateCurrency,
+            updatePlanFields: core.updatePlanFields,
+            editQuitDate: core.editQuitDate,
+            switchMode: core.switchMode,
+            resetSmoking: core.resetSmoking,
+            environment: environment,
+            clock: clock,
+            navigator: navigator
+        )
+    }
 }
 
 extension EnvironmentValues {

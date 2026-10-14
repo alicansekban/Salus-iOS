@@ -68,7 +68,8 @@ struct SmokingReminderWiringTests {
             clock: real.clock,
             snackbar: SalusSnackbarController(),
             navigator: Navigator(),
-            reminderScheduler: scheduler
+            reminderScheduler: scheduler,
+            reminderEnvironment: AuthorizedEnvironment()
         )
         #expect(scheduler.syncs == 0)
 

@@ -19,7 +19,8 @@ import Testing
 struct SmokingStringsTests {
     static let samples = SmokingStringTable.samples + SmokingMainStringTable.samples
         + SmokingNotificationStringTable.samples + SmokingTimelineStringTable.samples
-        + SmokingReduceStringTable.samples
+        + SmokingReduceStringTable.samples + SmokingHistoryStringTable.samples
+        + SmokingSettingsStringTable.samples
     static let expectedKeys = Set(samples.map(\.key))
 
     /// Setup's overlines: the step counter and the field labels. Stored upper-case in both locales.
@@ -33,14 +34,18 @@ struct SmokingStringsTests {
         // The timeline's: the header card's overline and its two figure labels.
         "smoking_timeline_overline", "smoking_timeline_done_label", "smoking_timeline_next_label",
         // The REDUCE ring's caption.
-        "smoking_reduce_overline"
+        "smoking_reduce_overline",
+        // The history and settings screens': the journey card, the four setting groups and the reason field.
+        "smoking_history_journey_overline", "smoking_settings_section_habit",
+        "smoking_settings_section_notifications", "smoking_settings_section_mode",
+        "smoking_settings_section_data", "smoking_settings_reason_label"
     ]
 
-    @Test("the catalog holds exactly the 200 keys :feature:smoking owns so far")
+    @Test("the catalog holds exactly the 286 keys :feature:smoking owns so far")
     func catalogHoldsExactlyTheKeys() throws {
         // Pinned as a number as well as a set: a row deleted from the table together with its key
         // from the catalog would otherwise agree with itself and pass.
-        #expect(Self.samples.count == 200)
+        #expect(Self.samples.count == 286)
 
         try StringCatalogParity.assertKeys(of: Self.loadCatalog(), are: Self.expectedKeys)
     }
@@ -70,7 +75,10 @@ struct SmokingStringsTests {
 
         // A typo in one of `SmokingStrings.Key`'s raw values does not fail to compile — it ships
         // the key itself as the label. This is the check that catches it.
-        #expect(Set(SmokingStrings.Key.allCases.map(\.rawValue)) == catalog.keys)
+        let accessorKeys = SmokingStrings.Key.allCases.map(\.rawValue)
+            + SmokingStrings.HistoryKey.allCases.map(\.rawValue)
+            + SmokingStrings.SettingsKey.allCases.map(\.rawValue)
+        #expect(Set(accessorKeys) == catalog.keys)
     }
 
     /// Overline strings are stored upper-case, so no call site ever calls `uppercased()` — Turkish
@@ -111,6 +119,7 @@ struct SmokingStringsTests {
         )
         try #expect(Self.render(catalog, "smoking_setup_quit_today", "tr", "09:30") == "Bugün, 09:30")
         try Self.expectMainScreenSentences(catalog)
+        try Self.expectHistoryAndSettingsSentences(catalog)
         // `%%` is a literal percent under `String(format:)`, exactly as in Java's `Formatter`.
         try #expect(
             Self.render(catalog, "smoking_setup_limit_suggestion", "tr", 20)

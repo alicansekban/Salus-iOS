@@ -466,10 +466,13 @@ struct SetupIntStepper: View {
     let value: Int
     let unit: String
     var isSuggestion = false
+    /// The lowest value the field reports. One everywhere except the history editor, where a "none
+    /// today" marker may rest at zero.
+    var minimum = 1
     let onChange: (Int) -> Void
 
     private var bounds: ClosedRange<Int> {
-        1 ... SetupDefaults.maxUnits
+        minimum ... SetupDefaults.maxUnits
     }
 
     var body: some View {
