@@ -64,14 +64,22 @@ repo_top() {
   git -C "$LOC_DIR" rev-parse --show-toplevel 2>/dev/null
 }
 
-# repo_rel ABS — prints ABS relative to repo_top; fails when ABS is in no work tree. Locates ABS
-# itself, so it needs no earlier call.
+# lower TEXT — TEXT with ASCII upper case lowered (bash 3.2 has no ${var,,}).
+lower() {
+  printf '%s' "$1" | LC_ALL=C tr 'A-Z' 'a-z'
+}
+
+# repo_rel ABS — prints ABS relative to repo_top (`.` for the top level itself); fails when ABS is
+# in no work tree. Locates ABS itself, so it needs no earlier call. APFS ignores case, and `pwd -P`
+# keeps the case as typed while git prints the real one, so the top level is matched lower-cased
+# and cut off by its length; the rest keeps the case it was typed in.
 repo_rel() {
   local top
   locate "$1"
   if ! top="$(git -C "$LOC_DIR" rev-parse --show-toplevel 2>/dev/null)" || [ -z "$top" ]; then return 1; fi
-  case "$LOC_PATH" in
-    "$top"/*) printf '%s\n' "${LOC_PATH#"$top"/}" ;;
+  case "$(lower "$LOC_PATH")" in
+    "$(lower "$top")") printf '.\n' ;;
+    "$(lower "$top")"/*) printf '%s\n' "${LOC_PATH:$((${#top} + 1))}" ;;
     *) return 1 ;;
   esac
 }

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# PreToolUse hook for Edit|Write|MultiEdit|Read: keeps agents away from what only the owner
-# touches, or what a tool generates.
+# PreToolUse hook for Edit|Write|MultiEdit|Read|Grep: keeps agents away from what only the owner
+# touches, or what a tool generates. Grep is judged like Read, by its `path`: a secret file blocks,
+# a directory passes.
 #   - any *.local.xcconfig (App/Secrets.local.xcconfig holds the machine's keys): blocked for
 #     every tool, reads included — a secret read into a session is a secret leaked.
 #   - Salus.xcodeproj/project.pbxproj: blocked for writes — `xcodegen generate` writes it from
@@ -33,7 +34,7 @@ block() {
 
 if ! command -v jq >/dev/null 2>&1; then allow_with_warning "jq is not installed"; fi
 input="$(cat)"
-if ! parsed="$(printf '%s' "$input" | jq -r '[.tool_name // "", .tool_input.file_path // ""] | join("\u0001")' 2>/dev/null)"; then
+if ! parsed="$(printf '%s' "$input" | jq -r '[.tool_name // "", .tool_input.file_path // .tool_input.path // .tool_input.notebook_path // ""] | join("\u0001")' 2>/dev/null)"; then
   allow_with_warning "the hook input is not the expected JSON"
 fi
 tool="${parsed%%$'\001'*}"
@@ -46,7 +47,8 @@ case "$path" in
   *) abs="$(normalise "$top/$path")" ;;
 esac
 if ! same_repo "$abs"; then exit 0; fi
-if ! rel="$(repo_rel "$abs")" || [ -z "$rel" ]; then exit 0; fi
+# The path is in this repository: failing to place it must never let it through.
+if ! rel="$(repo_rel "$abs")" || [ -z "$rel" ]; then block "cannot place $path in its work tree — ask the owner"; fi
 rel_lc="$(printf '%s' "$rel" | LC_ALL=C tr 'A-Z' 'a-z')"
 name="${rel_lc##*/}"
 
@@ -54,7 +56,7 @@ case "$name" in
   *.local.xcconfig)
     block "$rel is machine-local secret config — never read or write it; ask the owner, they handle it" ;;
 esac
-if [ "$tool" = Read ]; then exit 0; fi
+if [ "$tool" = Read ] || [ "$tool" = Grep ]; then exit 0; fi
 
 if [ "$rel_lc" = "$PROJECT" ]; then
   block "$rel is generated — edit project.yml and run xcodegen generate instead of writing it"

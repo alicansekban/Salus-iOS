@@ -10,7 +10,8 @@
 # Input it cannot parse is allowed with a warning: a broken hook must not wedge the session.
 set -euo pipefail
 
-# Nested scripts (`sh -c`, `$(…)`) are checked too; the bound only guards against runaway recursion.
+# Nested scripts (`sh -c`, `$(…)`) are checked too, down to this depth; a script nested deeper
+# cannot be checked, so it is blocked rather than let through.
 MAX_DEPTH=4
 
 block() {
@@ -313,7 +314,7 @@ check_eval() { # index of the word after `eval`
 # `sudo git …` are covered without knowing every wrapper.
 # Tagged words are set apart first, so a `"$(…)"` argument keeps its place as one plain word.
 check_simple() { # depth word…
-  local depth=$1 word i=0 n
+  local depth=$1 word i=0 n prog
   shift
   local -a a bodies
   a=()
@@ -327,9 +328,19 @@ check_simple() { # depth word…
   done
   n=${#a[@]}
   while [ "$i" -lt "$n" ]; do
+    # APFS ignores case, so `GIT` runs git: the program name is matched in any case. The option is
+    # scoped to this match only, so options and subcommands stay case-sensitive.
+    shopt -s nocasematch
     case "${a[i]##*/}" in
+      git) prog=git ;;
+      sh|bash|zsh|dash|ksh) prog=shell ;;
+      eval) prog=eval ;;
+      *) prog="" ;;
+    esac
+    shopt -u nocasematch
+    case "$prog" in
       git) check_git $((i + 1)) ;;
-      sh|bash|zsh|dash|ksh) check_shell $((i + 1)) ;;
+      shell) check_shell $((i + 1)) ;;
       eval) check_eval $((i + 1)) ;;
     esac
     i=$((i + 1))
@@ -341,7 +352,7 @@ check_simple() { # depth word…
 check_script() { # script depth
   local line tokens
   local -a words
-  if [ "$2" -gt "$MAX_DEPTH" ]; then return 0; fi
+  if [ "$2" -gt "$MAX_DEPTH" ]; then block "a script nested too deep to check (over $MAX_DEPTH levels)"; fi
   # A failed tokenizer leaves no words, or a cut-off list, which would read as nothing to block.
   # Its status is lost inside `< <(…)`, so the words are captured first and the failure is said.
   if ! tokens="$(printf '%s\n' "$1" | LC_ALL=C awk "$tokenizer")"; then
