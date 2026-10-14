@@ -203,8 +203,10 @@ unchanged by the marker.
 before it ended from Main's quit sheet, from the settings and from the timeline's "Bırakma moduna geç".
 **Expected:** all three show "Bu zaman, önceki denemenin bittiği andan önce olamaz."
 
-4.15 ☐ Open the Sigara screen after "Takibi sıfırla" from a stale entry point (a delivered notification, §11.9).
-**Expected:** Main never shows blank: it replaces itself with the setup wizard, once.
+4.15 ☐ Stale entry point after "Takibi sıfırla" *(Task 23)*. Tap a delivered day, units or money milestone
+notification after a reset (§11.9). **Expected:** Main opens and immediately gives way to the setup wizard
+(Main is replaced, so Back from the setup does not return into an empty Main), once. A stage notification
+behaves differently: see 11.9a.
 
 ---
 
@@ -238,8 +240,8 @@ reads one sentence ("Sigara. Bugün 12 adet, günlük sınır 10, sınırın 2 �
 adet ekle" / "Add one" and stays a 44 pt target; QUIT figures and ring stack, the REDUCE button drops under the
 count; nothing clips; English strings show.
 
-5.11 ☐ Time left on Home *(Task 23)*. See §7.7: Home's "Sonraki aşama" shows the same figure and unit as the
-Main card and the timeline.
+5.11 ☐ Time left on Home *(Task 23)*, with the plan from 7.10. **Expected:** Home's "Sonraki aşama" shows the
+same figure and unit as the Main card, the "Sağlık takvimi" row and its stage sheet.
 
 ---
 
@@ -435,8 +437,10 @@ Health opens.
 10.7 ☐ "Azaltma moduna geç" (QUIT) / "Bırakma moduna geç" (REDUCE). **Expected:** the limit sheet (80 %
 suggestion, note) / the quit-date sheet; the screen turns into the other mode's rows.
 
-10.8 ☐ "Takibi sıfırla". **Expected:** a destructive "Takip sıfırlansın mı?" alert; "Sıfırla" empties everything
-and lands on More (two screens popped), the More row offers the setup again.
+10.8 ☐ "Takibi sıfırla", with Sigara opened from Home and again from More. **Expected:** a destructive "Takip
+sıfırlansın mı?" alert; "Sıfırla" empties everything and the app returns to where smoking was opened (Home or
+More), not to the setup wizard, with no flash and no double pop. Opening "Sigara" again then shows the setup
+wizard, and the More row offers the setup again.
 
 10.9 ☐ Dynamic Type at the largest accessibility size, light and dark, on both screens and all sheets.
 **Expected:** nothing clipped, the sheets scroll.
@@ -476,9 +480,13 @@ entry or "none today" earlier that day, it does not arrive.
 11.8 ☐ Turn the smoking notifications switch off. **Expected:** no milestone notification; the evening reminder
 (REDUCE) is controlled by its own switch only.
 
-11.9 ☐ Stale notification after reset *(Task 23)*. Schedule a milestone notification, reset tracking ("Takibi
-sıfırla"), then tap the delivered notification. **Expected:** the app opens the setup wizard directly; Back from
-the setup does not land on an empty Main; this happens once.
+11.9 ☐ Stale day, units or money notification after reset *(Task 23)*. Schedule such a milestone, reset tracking
+("Takibi sıfırla"), then tap the delivered notification. **Expected:** Main opens and immediately gives way to
+the setup wizard (Main is replaced); Back from the setup does not return into an empty Main; this happens once.
+
+11.9a ☐ Stale stage notification after reset *(Task 23)*. Schedule a stage milestone, reset tracking, then tap
+the delivered stage notification. **Expected:** the "Sağlık takvimi" timeline is on top; Back from the timeline
+goes to the setup wizard (Main is replaced, not left empty underneath).
 
 11.10 ☐ Switch the app language TR ↔ EN between two milestones. **Expected:** each notification is in the language
 the app had at the sync that scheduled it (open the app once after switching to rebake).
@@ -555,7 +563,7 @@ a vitals change and gives no medical advice about smoking. Without smoking set u
 
 ### 14.1 Theme matrix — light and dark under every palette
 
-Mode is Daha Fazla → Görünüm & Tema; the palette is the same sheet's Renk Teması (premium for three of them).
+Mode is Daha Fazla → Görünüm & Tema; the palette is the same sheet's "VURGU & RENK PALETİ" (premium for three of them).
 Tick a cell when the screen is legible at a glance, card edges are visible (dark: a border and no shadow; light:
 a shadow with a faint hairline), the accent follows the smoking amber of that palette rather than staying one
 colour, nothing is clipped, and **nothing is red or pink**.
@@ -574,6 +582,11 @@ colour, nothing is clipped, and **nothing is red or pink**.
 | Home smoking card (QUIT and REDUCE) and the discovery row | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
 | Trends "SİGARA" section | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
 | Doctor report preview with "Tütün kullanımı" | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
+
+14.1b ☐ Live repaint. Open Main and, on top of it, a stage sheet from the timeline; then change mode and palette
+(Daha Fazla → Görünüm & Tema, or the system appearance from Control Centre) and return. **Expected:** Main, the
+timeline and the open stage sheet repaint in the new accent without a relaunch; no stale ground or amber from
+the old palette remains behind the sheet.
 
 14.1a ☐ The SF Symbols were picked by name (`nosign`, `banknote`, `shield`, `hourglass`,
 `figure.mind.and.body`, `cup.and.saucer`, `bolt`, `wineglass`, `fork.knife`, `person.3`, `sparkles`,
@@ -642,6 +655,10 @@ Note what you see; each is a candidate for the fix wave, not a pass or fail by i
   notification; after a slip moved the stages, the highlighted row may differ from the stage the user expects.
   Notification text is baked when it is scheduled (D-M17-i-5): a stale one can fire only if the app was
   suspended or killed mid-sync.
+- **Sheet detents and heights:** the slip and trigger sheet, the quit-date sheet, the stage sheet, the goal
+  sheet and the four settings sheets size to their content; check each at the default text size, at the
+  largest accessibility size, in landscape and on the smallest device you have (the content must scroll with
+  its action reachable), and that the sheet's ground reaches both screen edges.
 - **Keyboard:** the goal sheet (8.2) and the price sheet (10.2) may let the keyboard cover "Kaydet". Note the
   device and text size if so.
 - **No state restoration:** a force quit relaunches at the root (6.11); the craving flow always restarts at

@@ -517,13 +517,13 @@ four, or `SalusSnackbarHost` goes missing — rather than from memory. Today it 
 | --- | --- |
 | Actions | `SalusButton` (variant × size), `SalusIconButton`, `SalusFab`, `SalusExtendedFab` |
 | Containers | `SalusCard`, `SalusHeroBand`, `SalusEmptyState`, `SalusInfoNote`, `SalusDisclaimer` |
-| Rows and pickers | `SalusListItem` (+ `SalusListItemChevron`), `SalusSelectableRow`, `SalusCheckRow`, `SalusChoiceTile`, `SalusChoiceChip`, `ChipFlowLayout` |
+| Rows and pickers | `SalusListItem` (+ `SalusListItemChevron`), `SalusSelectableRow`, `SalusCheckRow`, `SalusChoiceTile` (+ `SalusSexGlyph`), `SalusChoiceChip`, `ChipFlowLayout` |
 | Headers and marks | `SalusSectionHeader`, `SalusAvatar`, `SalusIconBadge`, `SalusStatusChip` (+ `SalusStatus`) |
 | Data display | `SalusMetricTile`, `SalusProgressBar`, `SalusProgressRing`, `SalusPagerDots` |
 | Fields | `SalusTextField`, `SalusStepperField`, `SalusDateField`, `SalusDateTile`, `SalusTimeField` |
 | Navigation-ish | `SalusSegmentedTabs`, `salusRootToolbar(…)` (shell only), `SalusBarAppearance` (shell only) |
 | Modifiers | `.salusBottomSheet(…)`, `.salusDialog(…)`, `.salusConfirmDialog(…)`, `.salusEntrance(index:)`, `.salusDismissesKeyboardOnTap()`, `.salusShadow(_:isDark:)` |
-| Charts | `SalusLineChart`, `SalusBarChart`, `SalusMultiSeriesChart`, `SalusSparkline` |
+| Charts | `SalusLineChart`, `SalusBarChart`, `SalusMultiSeriesChart`, `SalusSparkline`, `SalusHeatmap` |
 | Misc | `SalusWeekdaySymbols`, `SalusSnackbarHost` (shell only), `SalusUIStrings` |
 
 - **A component that needs a new knob gains it in `SalusUI`, with the Kotlin citation** — never a

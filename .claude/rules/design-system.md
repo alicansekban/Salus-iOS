@@ -76,7 +76,8 @@ Every rule names its **enforcement point**. Token values come only from
   `SalusUI` already ships and does not hand-roll a fifth copy of one:
   `SalusAvatar`, `SalusButton`, `SalusExtendedFab`, `SalusFab`, `SalusIconButton`, `SalusCard`,
   `SalusListItem` (+ `SalusListItemChevron`), `SalusSelectableRow`, `SalusCheckRow`,
-  `SalusChoiceChip`, `SalusChoiceTile`, `SalusStatusChip`, `SalusIconBadge`, `SalusHeroBand`,
+  `SalusChoiceChip`, `SalusChoiceTile` (+ `SalusSexGlyph`), `SalusStatusChip` (+ `SalusStatus`),
+  `SalusIconBadge`, `SalusHeroBand`,
   `SalusMetricTile`, `SalusSectionHeader`, `SalusSegmentedTabs`, `SalusPagerDots`,
   `SalusProgressBar`, `SalusProgressRing`, `SalusEmptyState`, `SalusInfoNote`, `SalusDisclaimer`,
   `SalusTextField`, `SalusStepperField`, `SalusDateField`, `SalusDateTile`, `SalusTimeField`,
