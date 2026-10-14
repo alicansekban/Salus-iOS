@@ -48,7 +48,7 @@ struct SettingsStringsTests {
     static let samples = SettingsSamples.all
     static let expectedKeys = Set(samples.map(\.key))
 
-    @Test("the catalog holds exactly the 122 keys :feature:settings owns")
+    @Test("the catalog holds exactly the 126 keys :feature:settings owns")
     func catalogHoldsExactlyTheKeys() throws {
         // Pinned as a number as well as a set: a row deleted from the table together with its key
         // from the catalog would otherwise agree with itself and pass.
@@ -58,8 +58,10 @@ struct SettingsStringsTests {
         // deletes the two keys whose only consumers were the deleted `LanguageSheet`'s header
         // (`language_title`, `language_sheet_subtitle`), adds the merged sheet's language-section
         // overline (`theme_section_language`), and re-titles `theme_sheet_title` to "Görünüm ve
-        // Dil" / "Appearance and Language". 123 − 2 + 1 = 122.
-        #expect(Self.samples.count == 122)
+        // Dil" / "Appearance and Language". 123 − 2 + 1 = 122. iOS-M17 Task 9 adds the four keys of
+        // the More smoking row (`more_smoking`, `more_smoking_subtitle`, `more_smoking_mode_quit`,
+        // `more_smoking_mode_reduce`): 122 + 4 = 126.
+        #expect(Self.samples.count == 126)
 
         try StringCatalogParity.assertKeys(of: Self.loadCatalog(), are: Self.expectedKeys)
     }

@@ -6,6 +6,7 @@ import FeatureMedications
 import FeatureOnboarding
 import FeaturePaywall
 import FeatureSettings
+import FeatureSmoking
 import FeatureTrends
 import FeatureVitals
 import SalusAI
@@ -296,7 +297,8 @@ extension AppCompositionRoot {
             localeController: UserDefaultsAppLocaleController(defaults: .standard),
             premiumRepository: premium.premiumRepository,
             paywallController: premium.paywallController,
-            gateway: premium.paywallModule.gateway
+            gateway: premium.paywallModule.gateway,
+            smokingRepository: infrastructure.smokingCore.repository
         )
     }
 
@@ -349,7 +351,16 @@ extension AppCompositionRoot {
             idGenerator: idGenerator,
             navigator: infrastructure.navigator
         )
-        return ScheduledModules(appointments: appointments, medications: medications, cycle: cycle)
+        // Smoking joins the scheduled modules because its milestone reminders (plan Task 17) arrive
+        // through the same engine; until then it owns no handler, and the module is just the
+        // feature's screens over the core built in `makeInfrastructure`.
+        let smoking = makeSmokingModule(
+            core: infrastructure.smokingCore,
+            clock: clock,
+            snackbar: infrastructure.snackbar,
+            navigator: infrastructure.navigator
+        )
+        return ScheduledModules(appointments: appointments, medications: medications, cycle: cycle, smoking: smoking)
     }
 }
 
@@ -383,6 +394,7 @@ struct ScheduledModules {
     let appointments: AppointmentsModule
     let medications: MedicationsModule
     let cycle: CycleModule
+    let smoking: SmokingModule
 }
 
 /// The feature modules, handed back from `makeFeatureModules` in one piece with the reminder
@@ -393,6 +405,7 @@ struct FeatureModules {
     let appointments: AppointmentsModule
     let medications: MedicationsModule
     let cycle: CycleModule
+    let smoking: SmokingModule
     let settings: SettingsModule
     let home: HomeModule
     let onboarding: OnboardingModule

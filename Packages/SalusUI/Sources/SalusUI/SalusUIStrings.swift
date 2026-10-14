@@ -33,6 +33,9 @@ import SalusCommon
 public enum SalusUIStrings {
     /// `salus_undo` — "Geri al" / "Undo".
     public static var undo: String { localized(Key.undo) }
+    /// `salus_ok` — "Tamam" / "OK". The confirm button of a picker sheet (iOS-M17: the smoking
+    /// quit-date sheet).
+    public static var ok: String { localized(Key.ok) }
     /// `salus_cancel` — "Vazgeç" / "Cancel".
     public static var cancel: String { localized(Key.cancel) }
     /// `salus_delete` — "Sil" / "Delete".
@@ -58,6 +61,7 @@ public enum SalusUIStrings {
     /// a key the catalog really carries — a typo here would otherwise ship the key as the label.
     enum Key {
         static let undo = "salus_undo"
+        static let ok = "salus_ok"
         static let cancel = "salus_cancel"
         static let delete = "salus_delete"
         static let sheetClose = "salus_sheet_close"
@@ -70,6 +74,7 @@ public enum SalusUIStrings {
         /// Every key this type reads, for the test that compares them with the catalog's.
         static let all: Set<String> = [
             undo,
+            ok,
             cancel,
             delete,
             sheetClose,

@@ -41,6 +41,7 @@ import SalusCommon
 import SalusModel
 import SalusPremium
 import SalusProfile
+import SalusSmoking
 
 /// Drives the More tab (`MoreViewModel.kt:26-145`).
 @MainActor
@@ -75,6 +76,7 @@ public final class MoreViewModel {
     private let preferences: any SettingsPreferences
     private let localeController: any AppLocaleController
     private let paywallController: PaywallController
+    private let smokingRepository: any SmokingRepository
 
     /// The collection. Boxed so `deinit` can cancel it — see `CancellationBox`.
     private let observation = CancellationBox()
@@ -86,13 +88,15 @@ public final class MoreViewModel {
         premiumRepository: any PremiumRepository,
         preferences: any SettingsPreferences,
         localeController: any AppLocaleController,
-        paywallController: PaywallController
+        paywallController: PaywallController,
+        smokingRepository: any SmokingRepository
     ) {
         self.profileRepository = profileRepository
         self.premiumRepository = premiumRepository
         self.preferences = preferences
         self.localeController = localeController
         self.paywallController = paywallController
+        self.smokingRepository = smokingRepository
         restartObservation()
     }
 
@@ -193,6 +197,16 @@ public final class MoreViewModel {
 
         case .rateUsClicked:
             pendingEffects.append(.openUrl(Self.appStoreWriteReviewUrl))
+
+        case .smokingClicked:
+            // Read from the repository at the tap rather than from `state`: a plan written a moment
+            // ago must route to the main screen, not back into the wizard, and `state` is only as
+            // fresh as the last emission. A store that cannot be read answers `.notSetUp`, which
+            // opens the setup — whose own write then fails loudly instead of looping.
+            Task { [weak self, smokingRepository] in
+                let isSetUp = await smokingRepository.snapshotNow() != .notSetUp
+                self?.pendingEffects.append(.openSmoking(isSetUp: isSetUp))
+            }
         }
     }
 
@@ -233,13 +247,17 @@ public final class MoreViewModel {
         // `latestOfFour`. The combinator takes no transform, so the Kotlin lambda that builds the
         // `SecondaryState` becomes a `mapped` step here.
         let secondaryState = mapped(
-            latestOfFour(
+            latestOfFive(
                 throwingStream(over: languageHolder.stream),
                 throwingStream(over: premiumRepository.status),
                 throwingStream(over: preferences.premiumTheme),
-                throwingStream(over: themeSheetOpenHolder.stream)
+                throwingStream(over: themeSheetOpenHolder.stream),
+                // Only the mode is shown, and the snapshot is recomputed every minute, so the row's
+                // chip is narrowed to the mode before it joins the state: a minute tick must not
+                // repaint the hub (`MoreViewModel.kt`, `distinctUntilChanged`).
+                throwingStream(over: Self.modes(of: smokingRepository.observeSnapshot()))
             )
-        ) { SecondaryState($0, $1, $2, $3) }
+        ) { SecondaryState($0, $1, $2, $3, $4) }
 
         // `MoreViewModel.kt:60-81` — the top-level combine. `profileRepository.observeProfile()`
         // is already throwing; the three preference streams are re-typed.
@@ -297,8 +315,32 @@ public final class MoreViewModel {
             premiumStatus: secondary.premiumStatus,
             appLockEnabled: appLock,
             secureScreenEnabled: secureScreen,
-            isThemeSheetOpen: secondary.isThemeSheetOpen
+            isThemeSheetOpen: secondary.isThemeSheetOpen,
+            smokingMode: secondary.smokingMode
         )
+    }
+
+    /// The snapshot stream narrowed to the plan's mode, repeats dropped.
+    private static func modes(of snapshots: AsyncStream<SmokingSnapshot>) -> AsyncStream<SmokingMode?> {
+        AsyncStream { continuation in
+            let task = Task {
+                var emitted = false
+                var last: SmokingMode?
+                for await snapshot in snapshots {
+                    let mode: SmokingMode? = switch snapshot {
+                    case .notSetUp: nil
+                    case .quit: .quit
+                    case .reduce: .reduce
+                    }
+                    guard !emitted || mode != last else { continue }
+                    emitted = true
+                    last = mode
+                    continuation.yield(mode)
+                }
+                continuation.finish()
+            }
+            continuation.onTermination = { _ in task.cancel() }
+        }
     }
 
     /// The App Store's account-level subscription page — the platform-mapped twin of Kotlin's
@@ -319,17 +361,20 @@ private struct SecondaryState: Sendable, Equatable {
     let premiumStatus: PremiumStatus
     let premiumTheme: PremiumTheme
     let isThemeSheetOpen: Bool
+    let smokingMode: SmokingMode?
 
     init(
         _ language: AppLanguage,
         _ premiumStatus: PremiumStatus,
         _ premiumTheme: PremiumTheme,
-        _ isThemeSheetOpen: Bool
+        _ isThemeSheetOpen: Bool,
+        _ smokingMode: SmokingMode?
     ) {
         self.language = language
         self.premiumStatus = premiumStatus
         self.premiumTheme = premiumTheme
         self.isThemeSheetOpen = isThemeSheetOpen
+        self.smokingMode = smokingMode
     }
 }
 

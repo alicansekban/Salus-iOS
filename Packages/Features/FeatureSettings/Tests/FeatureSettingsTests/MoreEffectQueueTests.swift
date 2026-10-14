@@ -28,7 +28,8 @@ struct MoreEffectQueueTests {
             premiumRepository: FakePremiumRepository(value: .premium),
             preferences: FakeSettingsPreferences(),
             localeController: FakeAppLocaleController(),
-            paywallController: PaywallController()
+            paywallController: PaywallController(),
+            smokingRepository: FakeSmokingRepository()
         )
     }
 

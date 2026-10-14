@@ -110,6 +110,14 @@ enum SettingsSamplesFirst {
             turkish: "Takvim, tahminler ve belirtiler",
             english: "Calendar, predictions and symptoms"
         ),
+        SettingsStringSample(key: "more_smoking", turkish: "Sigara", english: "Smoking"),
+        SettingsStringSample(
+            key: "more_smoking_subtitle",
+            turkish: "Bırakma ve azaltma takibi, kriz desteği",
+            english: "Quit and cut-down tracking, craving support"
+        ),
+        SettingsStringSample(key: "more_smoking_mode_quit", turkish: "Bırakma Modu", english: "Quit mode"),
+        SettingsStringSample(key: "more_smoking_mode_reduce", turkish: "Azaltma Modu", english: "Cut-down mode"),
         SettingsStringSample(
             key: "more_footer",
             turkish: "Sağlık kayıtların yalnızca bu cihazda saklanır.",

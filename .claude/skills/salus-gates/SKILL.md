@@ -44,7 +44,7 @@ scripts/dev/gates.sh all --baseline 3400
   `pgrep -fl 'xcodebuild|swift-test|swift-build'`: one line per run. A second gates run in the same
   checkout is refused (exit 1, nothing started): the lock is `.salus-run/gates.lock`, a stale one
   (dead pid) is reclaimed.
-- `all` takes several minutes (25 packages, then an `xcodebuild`) and can outlast a 10-minute tool
+- `all` takes several minutes (26 packages, then an `xcodebuild`) and can outlast a 10-minute tool
   call: run it (and `test`, `build`) in the background and wait for the exit.
 - `App/Secrets.local.xcconfig` is optional (`#include?`) and absent in worktrees: `build` works
   without it. Never create it or copy one in.

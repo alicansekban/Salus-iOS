@@ -1,10 +1,12 @@
 // Ported from `core/ui/src/main/kotlin/com/alicansekban/salus/core/ui/component/
 // SalusChoiceTile.kt:53-140`.
 //
-// Kotlin's `subtitle` and `accent` (`SalusChoiceTile.kt:60-61`) are not ported: spec §3.3 names the
-// tile as "icon + label tile for grids … selected = `primary` border + check badge", and every M16
-// grid that uses one (medication form, sex, theme mode) is a plain icon-over-label. An unused knob
-// is a knob that drifts.
+// Kotlin's `subtitle` and `accent` (`SalusChoiceTile.kt:60-61`) were left out until iOS-M17: spec
+// §3.3 names the tile as "icon + label tile for grids … selected = `primary` border + check badge",
+// and every M16 grid that used one (medication form, sex, theme mode) is a plain icon-over-label.
+// The smoking setup is the first caller of both — its mode and product tiles carry a caption and
+// the feature's amber — so the knobs are ported now, with Kotlin's semantics: `accent` recolours
+// the selected border, the icon and the check badge; `subtitle` is a `bodySmall` line under the label.
 //
 // **The glyph has two sources on both platforms.** Here it is a ``SalusChoiceTileGlyph`` — an SF
 // Symbol name, or a line of text drawn in the same slot at the same size and tint; Kotlin spells
@@ -40,20 +42,30 @@ public struct SalusChoiceTile: View {
     private let label: String
     private let glyph: SalusChoiceTileGlyph
     private let isSelected: Bool
+    private let subtitle: String?
+    private let accent: FeatureAccent?
     private let action: () -> Void
 
     @Environment(\.salusTheme) private var theme
 
-    /// - Parameter glyph: the SF Symbol or Unicode sign over the label (divergence (aa)).
+    /// - Parameters:
+    ///   - glyph: the SF Symbol or Unicode sign over the label (divergence (aa)).
+    ///   - subtitle: a caption under the label (`SalusChoiceTile.kt:60`).
+    ///   - accent: recolours the icon, the selected border and the badge for feature-owned grids;
+    ///     `nil` is the primary role (`SalusChoiceTile.kt:61`).
     public init(
         label: String,
         glyph: SalusChoiceTileGlyph,
         isSelected: Bool,
+        subtitle: String? = nil,
+        accent: FeatureAccent? = nil,
         action: @escaping () -> Void
     ) {
         self.label = label
         self.glyph = glyph
         self.isSelected = isSelected
+        self.subtitle = subtitle
+        self.accent = accent
         self.action = action
     }
 
@@ -63,9 +75,23 @@ public struct SalusChoiceTile: View {
         label: String,
         systemImage: String,
         isSelected: Bool,
+        subtitle: String? = nil,
+        accent: FeatureAccent? = nil,
         action: @escaping () -> Void
     ) {
-        self.init(label: label, glyph: .symbol(systemImage), isSelected: isSelected, action: action)
+        self.init(
+            label: label,
+            glyph: .symbol(systemImage),
+            isSelected: isSelected,
+            subtitle: subtitle,
+            accent: accent,
+            action: action
+        )
+    }
+
+    /// The colour of the selected border, the badge and the icon (`SalusChoiceTile.kt:141`).
+    private var selectedColor: Color {
+        accent?.accent ?? theme.colorScheme.primary
     }
 
     public var body: some View {
@@ -74,7 +100,7 @@ public struct SalusChoiceTile: View {
             VStack(spacing: SalusSpacing.sm) {
                 glyphView
                     .font(.system(size: SalusChoiceTileDefaults.iconSize))
-                    .foregroundStyle(isSelected ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant)
+                    .foregroundStyle(isSelected ? selectedColor : theme.colorScheme.onSurfaceVariant)
                     // `contentDescription = null` (`SalusChoiceTile.kt:96`): the label below it
                     // names the choice.
                     .accessibilityHidden(true)
@@ -84,6 +110,13 @@ public struct SalusChoiceTile: View {
                     .tracking(SalusTypography.labelLarge.tracking)
                     .foregroundStyle(theme.colorScheme.onSurface)
                     .multilineTextAlignment(.center)
+                if let subtitle {
+                    Text(verbatim: subtitle)
+                        .font(SalusTypography.bodySmall.font)
+                        .tracking(SalusTypography.bodySmall.tracking)
+                        .foregroundStyle(theme.colorScheme.onSurfaceVariant)
+                        .multilineTextAlignment(.center)
+                }
             }
             .padding(SalusSpacing.md)
             .frame(maxWidth: .infinity, minHeight: SalusTouchTarget.min)
@@ -119,7 +152,7 @@ public struct SalusChoiceTile: View {
     /// inside the tile, and a centred stroke would spill half its width past it.
     private var border: some View {
         SalusShapes.mediumShape.strokeBorder(
-            isSelected ? theme.colorScheme.primary : theme.extendedColors.cardBorder,
+            isSelected ? selectedColor : theme.extendedColors.cardBorder,
             lineWidth: isSelected
                 ? SalusChoiceTileDefaults.selectedBorderWidth
                 : SalusChoiceTileDefaults.borderWidth
@@ -131,12 +164,12 @@ public struct SalusChoiceTile: View {
     private var badge: some View {
         if isSelected {
             SalusShapes.pill
-                .fill(theme.colorScheme.primary)
+                .fill(selectedColor)
                 .frame(width: SalusChoiceTileDefaults.badgeSize, height: SalusChoiceTileDefaults.badgeSize)
                 .overlay {
                     Image(systemName: "checkmark")
                         .font(.system(size: SalusChoiceTileDefaults.badgeIconSize))
-                        .foregroundStyle(theme.colorScheme.onPrimary)
+                        .foregroundStyle(accent?.onAccent ?? theme.colorScheme.onPrimary)
                 }
                 // `contentDescription = null` (`SalusChoiceTile.kt:125`): the selected trait on
                 // the button is what states the selection.
@@ -166,6 +199,16 @@ public enum SalusChoiceTileDefaults {
             SalusChoiceTile(label: "Tablet", systemImage: "pills", isSelected: true) {}
             SalusChoiceTile(label: "Syrup", systemImage: "drop", isSelected: false) {}
             SalusChoiceTile(label: "Injection", systemImage: "syringe", isSelected: false) {}
+        }
+        HStack(spacing: SalusSpacing.md) {
+            SalusChoiceTile(label: "Dark", systemImage: "moon", isSelected: false, subtitle: "Always on") {}
+            SalusChoiceTile(
+                label: "Quit",
+                systemImage: "timer",
+                isSelected: true,
+                subtitle: "Start the counter",
+                accent: SalusTheme.resolve(systemIsDark: false).extendedColors.smoking
+            ) {}
         }
     }
 }

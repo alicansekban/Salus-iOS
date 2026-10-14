@@ -6,6 +6,7 @@ import FeatureMedications
 import FeatureOnboarding
 import FeaturePaywall
 import FeatureSettings
+import FeatureSmoking
 import FeatureTrends
 import FeatureVitals
 import Foundation
@@ -78,7 +79,8 @@ final class AppCompositionRoot {
     /// `smokingCoreModule` (`core/smoking/.../di/SmokingCoreModule.kt`): the smoking repository and its
     /// fifteen use cases, built once over one store so every write shares one path. Built with an
     /// empty change-listener registry; the reminder resync (plan Task 17) adds its listener to
-    /// ``SmokingCoreModule/changeListeners`` and no use case changes. No screen reads it yet.
+    /// ``SmokingCoreModule/changeListeners`` and no use case changes. `smokingModule` below is its
+    /// only screen-side reader so far.
     let smokingCore: SmokingCoreModule
 
     /// `appModule` (`AppModules.kt:37-41`): "Outlives every screen: an undo window must survive the
@@ -124,6 +126,10 @@ final class AppCompositionRoot {
     /// reminder lands on (iOS-M6 rulings 1 and 2). Cycle has no tab of its own in v1, so unlike the
     /// three modules above this one is injected into stacks whose roots belong to nobody.
     let cycleModule: CycleModule
+
+    /// `smokingModule` (`feature/smoking/.../di/SmokingModule.kt`), built once over `smokingCore` and
+    /// injected on the stack that can push its keys — More today (the row), Home with the Home card.
+    let smokingModule: SmokingModule
 
     /// `settingsModule` (`feature/settings/.../di/SettingsModule.kt`), built once and handed to the
     /// More tab through the environment. `settingsModule` is built from local values at
@@ -232,6 +238,7 @@ final class AppCompositionRoot {
         appointmentsModule = modules.appointments
         medicationsModule = modules.medications
         cycleModule = modules.cycle
+        smokingModule = modules.smoking
         settingsModule = modules.settings
         homeModule = modules.home
         onboardingModule = modules.onboarding
@@ -450,6 +457,7 @@ final class AppCompositionRoot {
             appointments: scheduled.appointments,
             medications: scheduled.medications,
             cycle: scheduled.cycle,
+            smoking: scheduled.smoking,
             settings: settings,
             home: makeHomeGraph(
                 infrastructure: infrastructure,

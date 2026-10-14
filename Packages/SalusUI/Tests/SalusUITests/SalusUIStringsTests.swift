@@ -22,9 +22,11 @@ struct SalusUIStringsTests {
     /// The keys `:core:ui` owns. Copied from the XML by name — a new key here means a new
     /// key there, in the same commit. The M15 primitives added four: the sheet's close button and
     /// the stepper's two buttons plus its suggestion state. M16 added the root toolbar's two,
-    /// which the shell speaks for every tab root.
+    /// which the shell speaks for every tab root. iOS-M17 added `salus_ok` for the quit-date sheet's
+    /// confirm button.
     static let expectedKeys: Set = [
         "salus_undo",
+        "salus_ok",
         "salus_cancel",
         "salus_delete",
         "salus_sheet_close",
@@ -54,6 +56,8 @@ struct SalusUIStringsTests {
 
         #expect(catalog.value(of: "salus_undo", in: "tr") == "Geri al")
         #expect(catalog.value(of: "salus_undo", in: "en") == "Undo")
+        #expect(catalog.value(of: "salus_ok", in: "tr") == "Tamam")
+        #expect(catalog.value(of: "salus_ok", in: "en") == "OK")
         #expect(catalog.value(of: "salus_cancel", in: "tr") == "Vazgeç")
         #expect(catalog.value(of: "salus_cancel", in: "en") == "Cancel")
         #expect(catalog.value(of: "salus_delete", in: "tr") == "Sil")

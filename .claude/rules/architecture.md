@@ -32,7 +32,7 @@ Settled decisions, layer rules and port-fidelity rules. Every rule names its **e
   Android `applicationId` — RevenueCat needs the two to be one project). The app ships from
   `Salus.xcodeproj`.
 - **Swift 6 language mode everywhere, strict concurrency from day one**: `SWIFT_VERSION: "6.0"`
-  in `project.yml` and `// swift-tools-version: 6.0` in all 25 manifests. Never downgrade a
+  in `project.yml` and `// swift-tools-version: 6.0` in all 26 manifests. Never downgrade a
   target to Swift 5 mode (`swiftLanguageMode(.v5)`) to silence a `Sendable` error — fix the
   model instead. — *enforcement: `project.yml` + the manifests; a downgrade is visible in the
   diff.*
@@ -158,11 +158,11 @@ Settled decisions, layer rules and port-fidelity rules. Every rule names its **e
 - **`.macOS(.v14)` in a manifest is a test-host concession, not a target.** `swift test` cannot
   run a bundle on an iOS simulator, so a package whose host build cannot succeed under
   `[.iOS(.v17)]` alone also declares `.macOS(.v14)`. **iOS 17 remains the ship target** and never
-  ship-conditions on macOS. There are exactly three reasons a package qualifies, and 22 of the 25
+  ship-conditions on macOS. There are exactly three reasons a package qualifies, and 23 of the 26
   do:
   - **Reaches SwiftUI** — directly (`SalusDesignSystem`, and `SalusNavigation` since its
-    `TabBackStacks` holds one `NavigationPath` per tab) or transitively (`SalusUI` and the ten
-    feature packages). Thirteen packages.
+    `TabBackStacks` holds one `NavigationPath` per tab) or transitively (`SalusUI` and the eleven
+    feature packages). Fourteen packages.
   - **Reaches GRDB** — `SalusDatabase`, plus its dependents `SalusProfile`, `SalusAI`,
     `SalusReminder`, `SalusSmoking`. Five packages. GRDB's own manifest declares a macOS 10.15 floor; a manifest
     that names no macOS platform is read by SwiftPM as macOS 10.13, and the host build fails with

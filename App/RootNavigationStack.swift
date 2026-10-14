@@ -14,6 +14,7 @@ import FeatureCycle
 import FeatureHome
 import FeatureMedications
 import FeatureSettings
+import FeatureSmoking
 import FeatureTrends
 import FeatureVitals
 import SalusNavigation
@@ -120,11 +121,28 @@ struct RootNavigationStack: View {
                         // way `DoctorReportKey` is. The destination is `trendsDestinations()` below.
                         root.navigator.navigate(TrendsKey())
                     },
+                    onOpenSmoking: { isSetUp in
+                        // `FeatureSmoking` owns both keys; the ViewModel read whether a plan exists
+                        // at the tap, so the shell only picks the entry. Registering the
+                        // destinations is `smokingDestinations(…)` below.
+                        if isSetUp {
+                            root.navigator.navigate(SmokingKey())
+                        } else {
+                            root.navigator.navigate(SmokingSetupKey())
+                        }
+                    },
                     appLockPrompt: makeLockPrompt()
                 )
                 .rootToolbar(for: tab, navigator: root.navigator)
                 .settingsDestinations()
                 .cycleDestinations()
+                // The smoking screens are pushed from More's row. The two cross-feature hops are
+                // the ones its main and settings screens will take (plan Tasks 10-13): Trends and
+                // the reminder-readiness screen belong to other features.
+                .smokingDestinations(
+                    onOpenTrends: { root.navigator.navigate(TrendsKey()) },
+                    onOpenReminderHealth: { root.navigator.navigate(ReminderHealthKey()) }
+                )
                 // The AI health destinations — `AiSummaryKey` is pushed from Home, `DoctorReportKey`
                 // from More (this stack), so both register here.
                 .aiHealthDestinations()
@@ -136,6 +154,7 @@ struct RootNavigationStack: View {
             // value set on the root would not reach it.
             .environment(\.settingsModule, root.settingsModule)
             .environment(\.cycleModule, root.cycleModule)
+            .environment(\.smokingModule, root.smokingModule)
             .environment(\.aiHealthModule, root.aiHealthModule)
             .environment(\.trendsModule, root.trendsModule)
 

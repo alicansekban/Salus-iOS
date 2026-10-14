@@ -19,6 +19,7 @@
 import SalusDesignSystem
 import SalusModel
 import SalusPremium
+import SalusSmoking
 import SalusUI
 import SwiftUI
 
@@ -152,11 +153,13 @@ struct MoreSections: View {
                 onTap: { onEvent(.trendsClicked) }
             )
 
+            // The section is no longer cycle's alone: smoking is always here, cycle only for
+            // profiles that track it (`MoreSections.kt`, M17).
+            SalusSectionHeader(
+                title: SettingsStrings.moreSectionTracking,
+                contentPadding: SalusSectionHeaderDefaults.topOnly
+            )
             if state.showCycle {
-                SalusSectionHeader(
-                    title: SettingsStrings.moreSectionTracking,
-                    contentPadding: SalusSectionHeaderDefaults.topOnly
-                )
                 SalusListItem(
                     title: SettingsStrings.moreCycle,
                     subtitle: SettingsStrings.moreCycleSubtitle,
@@ -165,6 +168,23 @@ struct MoreSections: View {
                     onTap: onOpenCycle
                 )
             }
+            // Always visible: without a plan it opens the setup, so the row is also how a person
+            // finds the feature. The chip names the mode once there is one.
+            SalusListItem(
+                title: SettingsStrings.moreSmoking,
+                subtitle: SettingsStrings.moreSmokingSubtitle,
+                systemImage: "smoke",
+                accent: theme.extendedColors.smoking,
+                onTap: { onEvent(.smokingClicked) },
+                trailing: {
+                    HStack(spacing: SalusSpacing.sm) {
+                        if let mode = state.smokingMode {
+                            SalusStatusChip(label: mode.chipLabel, status: .neutral)
+                        }
+                        SalusListItemChevron()
+                    }
+                }
+            )
 
             SalusSectionHeader(
                 title: SettingsStrings.moreSectionAppearance,
@@ -324,6 +344,16 @@ extension Sex {
         case .female: SettingsStrings.profileSexFemale
         case .male: SettingsStrings.profileSexMale
         case .other: SettingsStrings.profileSexOther
+        }
+    }
+}
+
+extension SmokingMode {
+    /// The chip on the smoking row (`MoreSections.kt`, `SmokingMode.labelRes`).
+    fileprivate var chipLabel: String {
+        switch self {
+        case .quit: SettingsStrings.moreSmokingModeQuit
+        case .reduce: SettingsStrings.moreSmokingModeReduce
         }
     }
 }

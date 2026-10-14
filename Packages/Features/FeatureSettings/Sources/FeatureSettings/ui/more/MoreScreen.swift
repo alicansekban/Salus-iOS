@@ -56,7 +56,7 @@ import SwiftUI
 
 /// Owns the ViewModel and wires it to the shell (`MoreScreen.kt:86-162`).
 ///
-/// `onOpenCycle`/`onOpenDoctorReport`/`onOpenTrends` are the cross-feature hops (the shell owns the
+/// `onOpenCycle`/`onOpenDoctorReport`/`onOpenTrends`/`onOpenSmoking` are the cross-feature hops (the shell owns the
 /// keys, the feature cannot); `appLockPrompt` is the shell-owned biometric evaluation the
 /// enable-re-auth interception calls (ruling 4 — the shell owns the `LAContext`).
 ///
@@ -78,6 +78,9 @@ public struct MoreRoute: View {
     let onOpenCycle: () -> Void
     let onOpenDoctorReport: () -> Void
     let onOpenTrends: () -> Void
+    /// The smoking row's hop: the shell pushes the setup when `isSetUp` is false and the main
+    /// screen otherwise, because `FeatureSmoking` owns the keys and this feature cannot see them.
+    let onOpenSmoking: (_ isSetUp: Bool) -> Void
     /// The shell-owned biometric prompt the enable-re-auth interception calls (ruling 4 / div. 2).
     /// `false` is the silence the Kotlin `onAuthenticationSucceeded`-only callback produces on
     /// cancel/failure (`MoreScreen.kt:477-497`).
@@ -87,11 +90,13 @@ public struct MoreRoute: View {
         onOpenCycle: @escaping () -> Void,
         onOpenDoctorReport: @escaping () -> Void,
         onOpenTrends: @escaping () -> Void,
+        onOpenSmoking: @escaping (_ isSetUp: Bool) -> Void,
         appLockPrompt: @escaping @MainActor (String) async -> Bool
     ) {
         self.onOpenCycle = onOpenCycle
         self.onOpenDoctorReport = onOpenDoctorReport
         self.onOpenTrends = onOpenTrends
+        self.onOpenSmoking = onOpenSmoking
         self.appLockPrompt = appLockPrompt
     }
 
@@ -183,6 +188,9 @@ public struct MoreRoute: View {
 
             case .openTrends:
                 onOpenTrends()
+
+            case let .openSmoking(isSetUp):
+                onOpenSmoking(isSetUp)
             }
         }
     }
@@ -291,7 +299,8 @@ struct MoreScreen: View {
                 themeMode: .system,
                 language: .turkish,
                 premiumStatus: .premium,
-                appLockEnabled: true
+                appLockEnabled: true,
+                smokingMode: .quit
             ),
             versionName: "1.0.0",
             appLockAvailable: true,
@@ -317,7 +326,8 @@ struct MoreScreen: View {
                 showCycle: true,
                 themeMode: .system,
                 language: .turkish,
-                appLockEnabled: true
+                appLockEnabled: true,
+                smokingMode: .reduce
             ),
             versionName: "1.0.0",
             appLockAvailable: true,

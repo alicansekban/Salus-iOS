@@ -37,6 +37,24 @@
         }
       }
     },
+    "salus_ok" : {
+      "comment" : "Confirm button of a picker sheet. Android: core/ui values/strings.xml salus_ok.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OK"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tamam"
+          }
+        }
+      }
+    },
     "salus_sheet_close" : {
       "comment" : "Close button in the SalusBottomSheet header. Android: core/ui values/strings.xml salus_sheet_close.",
       "extractionState" : "manual",

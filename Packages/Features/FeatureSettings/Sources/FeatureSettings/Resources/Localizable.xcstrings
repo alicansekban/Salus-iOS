@@ -681,6 +681,74 @@
         }
       }
     },
+    "more_smoking": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Smoking"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sigara"
+          }
+        }
+      }
+    },
+    "more_smoking_mode_quit": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quit mode"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bırakma Modu"
+          }
+        }
+      }
+    },
+    "more_smoking_mode_reduce": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cut-down mode"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Azaltma Modu"
+          }
+        }
+      }
+    },
+    "more_smoking_subtitle": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quit and cut-down tracking, craving support"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bırakma ve azaltma takibi, kriz desteği"
+          }
+        }
+      }
+    },
     "more_trends": {
       "extractionState": "manual",
       "localizations": {

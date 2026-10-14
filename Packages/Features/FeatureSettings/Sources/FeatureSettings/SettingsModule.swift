@@ -26,6 +26,7 @@ import SalusPremium
 import SalusProfile
 import SalusReminder
 import SalusSettings
+import SalusSmoking
 import SwiftUI
 
 /// Everything this feature's views need, built by the composition root.
@@ -76,7 +77,8 @@ public func makeSettingsModule(
     localeController: any AppLocaleController,
     premiumRepository: any PremiumRepository,
     paywallController: PaywallController,
-    gateway: any PurchasesGateway
+    gateway: any PurchasesGateway,
+    smokingRepository: any SmokingRepository
 ) -> SettingsModule {
     // Exactly one More-specific dep is built inside the factory: `SettingsPreferencesImpl` is
     // `internal` to this package, so the app target cannot construct it — the composition root
@@ -105,7 +107,8 @@ public func makeSettingsModule(
                 premiumRepository: premiumRepository,
                 preferences: morePreferences,
                 localeController: localeController,
-                paywallController: paywallController
+                paywallController: paywallController,
+                smokingRepository: smokingRepository
             )
         },
         makeAboutViewModel: {

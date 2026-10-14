@@ -38,7 +38,7 @@ all_dirs="$(find Packages -name Package.swift -not -path '*/.build/*' -exec dirn
 # someone moving the directory.
 if [ -z "$all_dirs" ]; then
     echo "error: found no Package.swift under $REPO_ROOT/Packages" >&2
-    echo "       Expected 25 local packages. Refusing to report success on an" >&2
+    echo "       Expected 26 local packages. Refusing to report success on an" >&2
     echo "       empty set — check the working directory and the checkout." >&2
     exit 2
 fi

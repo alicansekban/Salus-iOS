@@ -132,6 +132,10 @@ public enum SettingsStrings {
     public static var moreCycleSubtitle: String { localized(.moreCycleSubtitle) }
     public static var moreSectionTracking: String { localized(.moreSectionTracking) }
     public static var moreProfileIncomplete: String { localized(.moreProfileIncomplete) }
+    public static var moreSmoking: String { localized(.moreSmoking) }
+    public static var moreSmokingSubtitle: String { localized(.moreSmokingSubtitle) }
+    public static var moreSmokingModeQuit: String { localized(.moreSmokingModeQuit) }
+    public static var moreSmokingModeReduce: String { localized(.moreSmokingModeReduce) }
     public static var moreTrends: String { localized(.moreTrends) }
     public static var moreTrendsSubtitle: String { localized(.moreTrendsSubtitle) }
     public static var moreSectionHealth: String { localized(.moreSectionHealth) }
@@ -352,6 +356,10 @@ public enum SettingsStrings {
         case moreSectionTracking = "more_section_tracking"
         case moreThemeMode = "more_theme_mode"
         case moreTitle = "more_title"
+        case moreSmoking = "more_smoking"
+        case moreSmokingSubtitle = "more_smoking_subtitle"
+        case moreSmokingModeQuit = "more_smoking_mode_quit"
+        case moreSmokingModeReduce = "more_smoking_mode_reduce"
         case moreTrends = "more_trends"
         case moreTrendsSubtitle = "more_trends_subtitle"
         case profileBirthDate = "profile_birth_date"

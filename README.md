@@ -89,7 +89,7 @@ contains no command of its own:
 | `scripts/check-toolchain.sh` | Selects the pinned Xcode and asserts all three tool versions |
 | `scripts/lint.sh` | `swiftformat --lint .` then `swiftlint --strict`, repo-wide from the repo root |
 | `scripts/lint-custom-rules.sh` | Proves each `.swiftlint.yml` **custom** rule still fires, with planted fixtures |
-| `scripts/test-packages.sh` | `swift test` for all 25 packages under `Packages/` (accepts package names to narrow) |
+| `scripts/test-packages.sh` | `swift test` for all 26 packages under `Packages/` (accepts package names to narrow) |
 | `scripts/build-app.sh` | `xcodebuild build` for the `Salus` scheme on a generic iOS Simulator destination |
 | `scripts/ci.sh` | all five, in order — run this before pushing |
 | `scripts/clean.sh` | removes every package's `.build` / `.swiftpm` and this project's DerivedData |
@@ -125,7 +125,7 @@ Three things the scripts encode that are easy to get wrong by hand:
   file — can make `scripts/test-packages.sh` fail on a tree that is actually fine, usually as an
   "unable to find" or missing-symbol error for the new file. Found in iOS-M2. The fix is
   `scripts/clean.sh` and a re-run; do not go looking for the bug first.
-- **`swift test` builds for the host, not for iOS.** So 22 of the 25 packages also declare
+- **`swift test` builds for the host, not for iOS.** So 23 of the 26 packages also declare
   `.macOS(.v14)` in their manifest purely to make the host build possible, for one of three
   reasons: they reach SwiftUI, directly (`SalusDesignSystem`, and `SalusNavigation` since its
   `TabBackStacks` holds a `NavigationPath` per tab) or transitively (`SalusUI` and the ten

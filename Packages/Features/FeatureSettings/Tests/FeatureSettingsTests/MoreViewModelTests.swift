@@ -72,7 +72,8 @@ struct MoreViewModelTests {
             premiumRepository: premiumRepository,
             preferences: preferences,
             localeController: locale,
-            paywallController: paywall
+            paywallController: paywall,
+            smokingRepository: FakeSmokingRepository()
         )
         return (vm, repository, premiumRepository, preferences, locale, paywall)
     }

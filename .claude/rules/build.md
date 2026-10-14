@@ -32,7 +32,7 @@ counts against a baseline; `scripts/ci.sh` stays the single local-equals-CI entr
   that must trip it inside the scope and an identical file outside it, and fails unless the rule
   fired once inside and stayed quiet outside. Add a `check` block to that script in the same commit
   as a new custom rule. — *enforcement: `scripts/lint-custom-rules.sh`, step 3 of `scripts/ci.sh`.*
-- **Test gate:** `swift test` for **all 25 packages** under `Packages/`; the script fails if any
+- **Test gate:** `swift test` for **all 26 packages** under `Packages/`; the script fails if any
   package fails, and fails loudly if it discovers zero packages. — *enforcement:
   `scripts/test-packages.sh`.*
 - **The toolchain is pinned** — Xcode on major.minor, SwiftLint and SwiftFormat exactly — against

@@ -8,7 +8,7 @@
 #   1. lint.sh               swiftformat --lint, then swiftlint --strict
 #   2. lint-custom-rules.sh  proves each custom rule fires inside its scope
 #                            and stays quiet outside it
-#   3. test-packages.sh      swift test over all 25 packages under Packages/
+#   3. test-packages.sh      swift test over all 26 packages under Packages/
 #   4. build-app.sh          the real iOS build of Salus.xcodeproj
 #
 # It is split into named steps here only because the iOS toolchain has no single
@@ -134,7 +134,7 @@ jobs:
         shell: bash
         run: scripts/lint-custom-rules.sh
 
-      # 4/5 — test. `swift test` for ALL 24 local packages, not just the ones
+      # 4/5 — test. `swift test` for ALL 26 local packages, not just the ones
       # with hand-written assertions: the placeholder test targets exist to
       # prove every module still compiles and links, which is the only thing M0
       # can assert about most of them.

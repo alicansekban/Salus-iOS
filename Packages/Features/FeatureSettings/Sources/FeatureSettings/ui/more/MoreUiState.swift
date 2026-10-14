@@ -10,6 +10,7 @@
 
 import SalusModel
 import SalusPremium
+import SalusSmoking
 
 /// The More tab is the app's settings hub: the four data tabs cover everything else, so splitting a
 /// near-empty "More" list from a separate Settings screen only added a hop
@@ -35,6 +36,9 @@ public struct MoreUiState: Sendable, Equatable {
     /// selection on purpose: mode, palette and language live in the same sheet
     /// (`MoreUiState.kt:33-37`).
     public var isThemeSheetOpen: Bool
+    /// The smoking plan's mode, chipped on the row; nil while nothing is set up
+    /// (`MoreUiState.kt`, M17).
+    public var smokingMode: SmokingMode?
 
     public init(
         isLoading: Bool = true,
@@ -47,7 +51,8 @@ public struct MoreUiState: Sendable, Equatable {
         premiumStatus: PremiumStatus = .free,
         appLockEnabled: Bool = false,
         secureScreenEnabled: Bool = false,
-        isThemeSheetOpen: Bool = false
+        isThemeSheetOpen: Bool = false,
+        smokingMode: SmokingMode? = nil
     ) {
         self.isLoading = isLoading
         self.profileName = profileName
@@ -60,6 +65,7 @@ public struct MoreUiState: Sendable, Equatable {
         self.appLockEnabled = appLockEnabled
         self.secureScreenEnabled = secureScreenEnabled
         self.isThemeSheetOpen = isThemeSheetOpen
+        self.smokingMode = smokingMode
     }
 }
 
@@ -93,6 +99,9 @@ public enum MoreEvent: Sendable, Equatable {
     /// the StoreKit sheet: Apple rejects `requestReview` behind a button, and the sheet is the
     /// Home trigger's alone.
     case rateUsClicked
+    /// The smoking row, always visible. Where it leads depends on whether a plan exists, which the
+    /// ViewModel reads at the tap (``MoreEffect/openSmoking(isSetUp:)``).
+    case smokingClicked
 }
 
 /// The one-shot outcomes the screen has to carry out, because only it can reach the system
@@ -110,4 +119,9 @@ public enum MoreEffect: Sendable, Equatable {
     /// shell wires it. Unlike the report there is no entitlement check in front of it — the screen
     /// carries its own lock.
     case openTrends
+    /// Push the smoking feature: its setup when `isSetUp` is false, its main screen otherwise. An
+    /// effect for the same reason ``openTrends`` is one: the keys belong to `FeatureSmoking`, so the
+    /// shell wires the push; the plan lookup stays a ViewModel decision, so the shell needs no
+    /// smoking knowledge beyond the two keys.
+    case openSmoking(isSetUp: Bool)
 }

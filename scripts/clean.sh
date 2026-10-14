@@ -8,8 +8,8 @@
 #
 #   1. `.build` and `.swiftpm` inside every package — SwiftPM's per-package
 #      build directory and its per-package IDE state, written by
-#      `scripts/test-packages.sh` (25 of each, so removing them by hand is 50
-#      paths, ten of them nested one level deeper under `Packages/Features/`).
+#      `scripts/test-packages.sh` (26 of each, so removing them by hand is 52
+#      paths, eleven of them nested one level deeper under `Packages/Features/`).
 #      `.build` also holds the resolved GRDB checkout, so the next
 #      `swift test` re-fetches it; that is the point of a clean, not a
 #      surprise.

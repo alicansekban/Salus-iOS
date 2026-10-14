@@ -12,7 +12,7 @@
 //     framework in the tree — Swift Testing today, XCTest wherever it is still needed — can call
 //     it with its own failure reporting.
 //   * Kotlin's paths are module-relative because Gradle guarantees the working directory
-//     (`BannedHealthClaims.kt:25-27`). SwiftPM guarantees no such thing across 25 packages, so the
+//     (`BannedHealthClaims.kt:25-27`). SwiftPM guarantees no such thing across 26 packages, so the
 //     roots are `URL`s the caller resolves from its own `#filePath`.
 
 import Foundation

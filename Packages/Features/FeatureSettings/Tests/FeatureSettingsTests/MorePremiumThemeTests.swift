@@ -36,7 +36,8 @@ struct MorePremiumThemeTests {
             premiumRepository: premiumRepository,
             preferences: preferences,
             localeController: FakeAppLocaleController(),
-            paywallController: paywall
+            paywallController: paywall,
+            smokingRepository: FakeSmokingRepository()
         )
         return (vm, premiumRepository, preferences, paywall)
     }
