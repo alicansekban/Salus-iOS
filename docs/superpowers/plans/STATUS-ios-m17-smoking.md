@@ -1,6 +1,6 @@
 # STATUS — iOS-M17 smoking cessation
 
-- **Phase:** executing (2026-10-14) — Tasks 1–9, 18, 19, 20, 22 done and reviewed; next wave T10 ∥ T16 ∥ T17. All sync points reached; contract §8.1–§8.13 relayed. Controller: Claude Code desktop (Opus 5.5).
+- **Phase:** paused (2026-10-14, controller usage limit) — Tasks 1–9, 18, 19, 20, 22 done, reviewed and on `m17-smoking`. Tasks 10, 16, 17 were dispatched in `../wt-m17-i10`, `../wt-m17-i16`, `../wt-m17-i17` (branches `m17-i10/16/17` from `9165cee`); their implementers may finish and commit there, but none is reviewed. **Resume:** read the ledger, read each `task-<N>-report.md`, review each branch (review-package from 9165cee), rebase + ff, status row, remove the worktree; then W6 T11 ∥ T13, W7 T12 ∥ T14, W8 T15, T21, close-out. Briefs carry the §4-amended / §8.13 relays via `global-constraints.md` in the SDD workspace.
 - **Plan:** `docs/superpowers/plans/2026-10-14-ios-m17-smoking.md`
 - **Spec:** `docs/superpowers/specs/2026-10-14-ios-m17-smoking-design.md`. It is a delta of `../salus-android/docs/superpowers/specs/2026-09-20-smoking-cessation-design.md`.
 - **Runbook:** `../salus-android/docs/superpowers/plans/2026-10-14-m17-parallel-runbook.md`. The Android twin runs in parallel and owns the contracts.
