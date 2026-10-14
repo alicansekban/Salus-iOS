@@ -1,6 +1,6 @@
 # STATUS — iOS-M17 smoking cessation
 
-- **Phase:** executing (2026-10-14) — wave 1: Tasks 1 and 8 done and reviewed; Task 4 implementing in `../wt-m17-i4`. Sync points S1–S4 open. Controller: Claude Code desktop (Opus 5.5).
+- **Phase:** executing (2026-10-14) — Tasks 1, 8, 20 done and reviewed; Task 4 in fix round 1 (contract §8); Tasks 2, 3 implementing in worktrees. All sync points S1–S4 reached. Controller: Claude Code desktop (Opus 5.5).
 - **Plan:** `docs/superpowers/plans/2026-10-14-ios-m17-smoking.md`
 - **Spec:** `docs/superpowers/specs/2026-10-14-ios-m17-smoking-design.md`. It is a delta of `../salus-android/docs/superpowers/specs/2026-09-20-smoking-cessation-design.md`.
 - **Runbook:** `../salus-android/docs/superpowers/plans/2026-10-14-m17-parallel-runbook.md`. The Android twin runs in parallel and owns the contracts.
@@ -12,10 +12,10 @@
 
 | # | Needed by | Reached on the Android branch at | Synced in |
 |---|---|---|---|
-| S1 | Task 2 | | |
-| S2 | Task 3 (or 3b) | | |
-| S3 | Task 22 | | |
-| S4 | Task 20 | | |
+| S1 | Task 2 | `61f1d68` (checked 2026-10-14) |  |
+| S2 | Task 3 | `2045f43` |  |
+| S3 | Task 22 | `59e88d0` (stats vectors; schedule vectors with Android T5) |  |
+| S4 | Task 20 | `49c42d9` | Task 20 `49005ba` (wraps the script; nothing copied) |
 
 ## Task log
 
@@ -23,6 +23,7 @@
 |---|---|---|---|
 | 1 — M17 contract sync script | `3f08e3a` | done, review APPROVED (2 deferred minors); `sync-m17-contracts-selftest: 41 passed`; `gates.sh lint` green; no Swift touched (tests 1521 → 1521) | `scripts/dev/sync-m17-contracts.sh [--check\|--status]` copies S3 vectors and S2 `5.json` from the committed `feature/m17-smoking-cessation`; open source = "not yet on branch (sync point open)", exit 0; `--check` exits 1 only on drift; `--status` prints S1–S4 (ruling R2). Red: `FAIL unknown flag exits 2: exit 127, expected 2`. Mutations: drift cmp off, S1 case-sensitive, working-tree read, open-source-fails — each failed named cases. |
 | 8 — `SalusUI` additions, R2 | `a89f324` | done, review APPROVED (4 deferred minors); lint / lint-rules green; test gate **1540 tests, 0 failed, 0 skipped** (+19 on 1521) | `SalusHeatmap` (5 accent steps over `surfaceContainerHigh`, per-cell VoiceOver), `ChartUiModel.markers` + dashed accent `RuleMark` in `SalusLineChart` (`markerColor`), `overflowPermille` + `accent` on `SalusProgressRing`/`SalusProgressBar` (neutral `outlineVariant` lap). Additive. Red: `cannot find type 'ChartMarker'`. Mutations: bucket ceil→floor, marker range exclusive, overflow cap removed, zero guard dropped — each red. Open for owner QA: heatmap cells show no counts (screenshot 08 does). |
+| 20 — Dev tooling: smoking shift wrapper | `49005ba` | done, review APPROVED (2 deferred minors); `smoking-shift-selftest: 27 passed`; lint + lint-rules green (no Swift) | `scripts/dev/smoking-shift.sh [--db <path>] <days>` wraps Android's `smoking_shift.py` (S4) on the simulator `salus.db`, `.bak` kept; `--db` for scratch dry runs. Note `docs/testing/smoking-testing.md`. `seed-store-demo.sh` unchanged. Red: `FAIL shift 7 exits 0: exit 127`. Mutations: days>0 check, backup `cp`, constant days — each red. Dry run: Android seeder + shift 30 on a v5 scratch DB moved attempts exactly 30 d. |
 
 ## Ledger rows to fold
 
@@ -42,3 +43,4 @@ Rows for `../salus-android/docs/parity-ledger.md` § M17. The Android session fo
 | R5 | Ruling: Task 16 runs after Task 9 (wave 5), not beside it — its App callbacks need Task 9's navigation keys — cost if wrong: one wave of latency. |
 | R6 | Ruling: at most one FeatureSmoking UI task per parallel wave (W1 T1∥T4∥T8 · W2 T3∥T5∥T7 · W3 T6 · W4 T9∥T19 · W5 T10∥T16∥T18 · then T13, T11, T12, T14, T15, T17 one by one; T2/T3b/T20/T22 when their sync point is reached; T21 last) — they share the catalog, strings enum and main view model — cost if wrong: longer wall clock. |
 | R7 | Ruling: the controller rebases each finished side branch onto `m17-smoking` and fast-forwards; a conflicting rebase goes back to that task's implementer — cost if wrong: one extra resume. |
+| R8–R11 | Ruling: R4 placeholder accent moot (S1 reached before Task 9) · Tasks 2, 3 (with parity, no 3b) and 20 run beside Task 4's review since S1/S2/S4 are reached · Task 4 fix round 1 carries its three minors · contract §8 (added by Android mid-execution) is binding, and every brief now says to read the contract at branch head — cost if wrong: none. |
