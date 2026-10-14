@@ -215,13 +215,13 @@ private struct VapeAmount: View {
     let onEvent: (SmokingSetupEvent) -> Void
 
     @Environment(\.locale) private var locale
-    @Environment(\.salusTheme) private var theme
 
     var body: some View {
         HStack(spacing: SalusSpacing.sm) {
             SalusStatusChip(label: SmokingStrings.setupVapeSelected, status: .neutral, dot: true)
+            // Draws `primary` by inheritance (the shell tints the whole tab view), as Android's
+            // `TextButton` does; amber text on a light surface would be a contrast risk.
             Button(SmokingStrings.setupChangeProduct) { onEvent(.changeProductClicked) }
-                .foregroundStyle(theme.extendedColors.smoking.accent)
             Spacer(minLength: 0)
         }
         SalusCard {
