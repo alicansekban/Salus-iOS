@@ -2,7 +2,7 @@
 //
 // Every token group exposes an `allTokens` dictionary keyed by the token's own name. This
 // file only sums those dictionaries, so a token that is added, removed or renamed changes the
-// total, and the pinning test that asserts 233 fails until the document and the transcription
+// total, and the pinning test that asserts 241 fails until the document and the transcription
 // agree again.
 //
 // Keying by name also catches a duplicated key: two tokens transcribed under one name collapse
@@ -59,7 +59,7 @@ public enum SalusTokens {
         ]
     }
 
-    /// The total number of tokens this package transcribes. The document declares 233.
+    /// The total number of tokens this package transcribes. The document declares 241.
     public static var allTokenCount: Int {
         groupCounts.reduce(0) { $0 + $1.count }
     }

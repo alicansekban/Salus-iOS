@@ -16,7 +16,7 @@
 --smarttabs enabled
 --trimwhitespace always
 # No trailing comma on the last element. Measured both ways before choosing:
-# `always` would have ADDED 110 commas across the 24 Package.swift manifests,
+# `always` would have ADDED 110 commas across the 26 Package.swift manifests,
 # `never` removes 20 from the design-system token tables. The manifests are the
 # majority style, so the formatter follows them. Paired with SwiftLint's
 # `trailing_comma` (mandatory_comma: false) so the two cannot contradict.

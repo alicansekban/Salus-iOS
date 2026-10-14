@@ -7,7 +7,7 @@ import SwiftUI
 // `salus-android/docs/design/design-tokens.md` §4.5.
 //
 // A palette moves two layers, not one: the eight Material accent roles (§4, `SalusPremiumAccents
-// .swift`) and — since §4.6 — the five feature accents and the hero gradient
+// .swift`) and — since §4.6 — the six feature accents and the hero gradient
 // (`SalusPremiumExtendedColors.swift`, mirroring `PremiumExtendedColors.kt`). Everything else,
 // backgrounds and surfaces and outlines and the two status colours, stays where §1/§2/§3.3 put it.
 //
@@ -86,7 +86,7 @@ public enum SalusTheme {
 
     /// The extended colors for a theme and palette (`Theme.kt:97-98`).
     ///
-    /// The palette IS an input: §4.6 gives each premium theme its own five feature accents and
+    /// The palette IS an input: §4.6 gives each premium theme its own six feature accents and
     /// its own hero gradient, so Home, Medications, Vitals and Appointments follow the theme
     /// rather than staying on the brand greens. `success` and `warning` never move
     /// (`premiumExtendedColors`, `PremiumExtendedColors.kt:293-299`).

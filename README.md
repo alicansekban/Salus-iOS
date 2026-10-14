@@ -57,7 +57,7 @@ in the same commit.
 ## Dependencies
 
 The dependency allowlist is closed and is exactly three (`.claude/rules/architecture.md`), each arriving with the
-milestone that needs it. Two of the three have arrived:
+milestone that needs it. All three have arrived:
 
 | Dependency | Version | Declared in | Why |
 | --- | --- | --- | --- |

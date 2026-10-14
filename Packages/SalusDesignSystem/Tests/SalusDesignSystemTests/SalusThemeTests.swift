@@ -200,7 +200,7 @@ struct SalusThemeResolutionTests { @Test("the resolved theme carries the scheme,
         arguments: PremiumTheme.allCases
     )
     func statusColorsUnaffected(_ palette: PremiumTheme) {
-        // §4.6 — a palette repaints the five feature accents (§3) and the hero gradient (§3.5);
+        // §4.6 — a palette repaints the six feature accents (§3) and the hero gradient (§3.5);
         // the status colors (§3.3) are inherited from the brand set so they keep meaning "good"
         // and "careful". Which accents each palette lands on is pinned by
         // `SalusPremiumExtendedColorsTests`.

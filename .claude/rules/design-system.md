@@ -82,8 +82,9 @@ Every rule names its **enforcement point**. Token values come only from
   `SalusTextField`, `SalusStepperField`, `SalusDateField`, `SalusDateTile`, `SalusTimeField`,
   `SalusEntrance` (`.salusEntrance(index:)`), `ChipFlowLayout`, `SalusWeekdaySymbols`,
   `SalusSnackbarHost`, and the three modifiers `.salusBottomSheet(…)`, `.salusDialog(…)`,
-  `.salusConfirmDialog(…)` (+ `.salusDismissesKeyboardOnTap()`). Charts are the four in
-  `SalusUI/chart/`. A component that needs a knob gains it in `SalusUI` with its twin's citation —
+  `.salusConfirmDialog(…)` (+ `.salusDismissesKeyboardOnTap()`). Charts are the five in
+  `SalusUI/chart/` (`SalusLineChart`, `SalusBarChart`, `SalusMultiSeriesChart`, `SalusSparkline`,
+  `SalusHeatmap`). A component that needs a knob gains it in `SalusUI` with its twin's citation —
   never a private copy in a feature. — *review; the list lives in
   `Packages/SalusUI/Sources/SalusUI/component/`, `…/shell/`, `…/snackbar/` and `…/chart/`, which
   is what to re-derive it from — all four, or the snackbar host goes missing.*
