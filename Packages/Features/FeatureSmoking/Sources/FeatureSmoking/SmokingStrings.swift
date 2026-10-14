@@ -113,6 +113,38 @@ public enum SmokingStrings {
         String(format: localized(.setupLimitSuggestion), locale: .current, current)
     }
 
+    // MARK: - Milestone notifications (iOS-M17 Task 17)
+
+    /// `smoking_notification_stage` — "Yeni aşama: %1$s" around a stage title.
+    public static func notificationStage(_ stageTitle: String) -> String {
+        String(format: localized(.notificationStage), locale: .current, stageTitle)
+    }
+
+    /// The two-key plural (spec 9 (h)): `days == 1` reads the English singular.
+    public static func notificationDays(_ days: Int) -> String {
+        String(format: localized(days == 1 ? .notificationDaysOne : .notificationDays), locale: .current, days)
+    }
+
+    /// The two-key plural for a whole number of years.
+    public static func notificationYears(_ years: Int) -> String {
+        String(format: localized(years == 1 ? .notificationYearsOne : .notificationYears), locale: .current, years)
+    }
+
+    /// `smoking_notification_units` — "%1$s adet içmedin".
+    public static func notificationUnits(_ units: String) -> String {
+        String(format: localized(.notificationUnits), locale: .current, units)
+    }
+
+    /// `smoking_notification_money` — "%1$s biriktirdin".
+    public static func notificationMoney(_ amount: String) -> String {
+        String(format: localized(.notificationMoney), locale: .current, amount)
+    }
+
+    public static var notificationStageHint: String { localized(.notificationStageHint) }
+    public static var notificationCheer: String { localized(.notificationCheer) }
+    public static var notificationEveningTitle: String { localized(.notificationEveningTitle) }
+    public static var notificationEveningText: String { localized(.notificationEveningText) }
+
     // MARK: - Keys
 
     /// The catalog keys, named once. Internal so the parity test can prove every accessor asks for
@@ -260,6 +292,17 @@ public enum SmokingStrings {
         case triggerSocial = "smoking_trigger_social"
         case triggerStress = "smoking_trigger_stress"
         case triggerTitle = "smoking_trigger_title"
+        case notificationStage = "smoking_notification_stage"
+        case notificationDays = "smoking_notification_days"
+        case notificationDaysOne = "smoking_notification_days_one"
+        case notificationYears = "smoking_notification_years"
+        case notificationYearsOne = "smoking_notification_years_one"
+        case notificationUnits = "smoking_notification_units"
+        case notificationMoney = "smoking_notification_money"
+        case notificationStageHint = "smoking_notification_stage_hint"
+        case notificationCheer = "smoking_notification_cheer"
+        case notificationEveningTitle = "smoking_notification_evening_title"
+        case notificationEveningText = "smoking_notification_evening_text"
     }
 
     static func localized(_ key: Key) -> String {

@@ -16,11 +16,13 @@ let package = Package(
         .library(name: "FeatureSmoking", targets: ["FeatureSmoking"])
     ],
     dependencies: [
+        .package(path: "../../SalusDatabase"),
         .package(path: "../../SalusDesignSystem"),
         .package(path: "../../SalusUI"),
         .package(path: "../../SalusCommon"),
         .package(path: "../../SalusModel"),
         .package(path: "../../SalusNavigation"),
+        .package(path: "../../SalusReminder"),
         .package(path: "../../SalusSmoking"),
         .package(path: "../../SalusTesting")
     ],
@@ -33,6 +35,7 @@ let package = Package(
                 .product(name: "SalusCommon", package: "SalusCommon"),
                 .product(name: "SalusModel", package: "SalusModel"),
                 .product(name: "SalusNavigation", package: "SalusNavigation"),
+                .product(name: "SalusReminder", package: "SalusReminder"),
                 .product(name: "SalusSmoking", package: "SalusSmoking")
             ],
             resources: [
@@ -43,6 +46,8 @@ let package = Package(
             name: "FeatureSmokingTests",
             dependencies: [
                 "FeatureSmoking",
+                // The milestone-budget test runs the real reminder window over an in-memory ledger.
+                .product(name: "SalusDatabase", package: "SalusDatabase"),
                 .product(name: "SalusTesting", package: "SalusTesting")
             ]
         )

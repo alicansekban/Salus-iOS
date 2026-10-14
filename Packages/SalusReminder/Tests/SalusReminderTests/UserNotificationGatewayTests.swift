@@ -187,6 +187,7 @@ struct UserNotificationGatewayTests {
         #expect(ReminderNotificationCategories.identifier(for: .medicationDose) == "salus.reminder.MEDICATION_DOSE")
         #expect(ReminderNotificationCategories.identifier(for: .appointment) == "salus.reminder.APPOINTMENT")
         #expect(ReminderNotificationCategories.identifier(for: .cyclePeriod) == "salus.reminder.CYCLE_PERIOD")
+        #expect(ReminderNotificationCategories.identifier(for: .smoking) == "salus.reminder.SMOKING")
     }
 
     // MARK: - Trigger

@@ -11,6 +11,7 @@
 
 import SalusCommon
 import SalusNavigation
+import SalusReminder
 import SalusSmoking
 import SalusUI
 import SwiftUI
@@ -33,6 +34,10 @@ public struct SmokingModule {
     /// The app's clock, so the quit-date sheet and the ViewModels agree on "now".
     public let clock: any SalusClock
 
+    /// `single<ReminderHandler>(named(ReminderType.SMOKING.name))`: the milestone notifications
+    /// (plan Task 17), which the composition root appends to the engine's handler registry.
+    public let reminderHandler: SmokingReminderHandler
+
     /// `viewModel { parameters -> SmokingSetupViewModel(defaultCurrencyCode = parameters.get(), …) }`.
     /// The currency comes from the locale, which only the composition can read.
     public let makeSetupViewModel: @MainActor (String) -> SmokingSetupViewModel
@@ -51,13 +56,22 @@ public func makeSmokingModule(
     core: SmokingCoreModule,
     clock: any SalusClock,
     snackbar: SalusSnackbarController,
-    navigator: Navigator
+    navigator: Navigator,
+    reminderScheduler: any ReminderScheduler
 ) -> SmokingModule {
-    SmokingModule(
+    // Koin's `getAll<SmokingChangeListener>()`: every committed smoking write asks the engine to
+    // refill its window, so a slip, a reset or a mode switch moves or cancels the milestones.
+    core.changeListeners.add(SmokingReminderResync(scheduler: reminderScheduler))
+    return SmokingModule(
         core: core,
         navigator: navigator,
         snackbar: snackbar,
         clock: clock,
+        reminderHandler: SmokingReminderHandler(
+            repository: core.repository,
+            clock: clock,
+            strings: SystemSmokingNotificationStrings()
+        ),
         makeSetupViewModel: { defaultCurrencyCode in
             SmokingSetupViewModel(
                 defaultCurrencyCode: defaultCurrencyCode,

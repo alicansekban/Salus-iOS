@@ -78,7 +78,7 @@ final class AppCompositionRoot {
 
     /// `smokingCoreModule` (`core/smoking/.../di/SmokingCoreModule.kt`): the smoking repository and its
     /// fifteen use cases, built once over one store so every write shares one path. Built with an
-    /// empty change-listener registry; the reminder resync (plan Task 17) adds its listener to
+    /// empty change-listener registry; `makeSmokingModule` adds the reminder resync (plan Task 17) to
     /// ``SmokingCoreModule/changeListeners`` and no use case changes. `smokingModule` below is its
     /// only screen-side reader so far.
     let smokingCore: SmokingCoreModule
@@ -424,11 +424,14 @@ final class AppCompositionRoot {
             // `single<ReminderHandler>(named(APPOINTMENT))` (`AppointmentsModule.kt:32-35`) and its
             // `named(MEDICATION)` (`MedicationsModule.kt:35-38`) and `named(CYCLE)`
             // (`CycleModule.kt:37-45`) twins reaching `getAll()` — the registry is what Koin's
-            // qualified lookup becomes here. All three the app owns are now registered.
+            // qualified lookup becomes here. All four the app owns are now registered.
             handlers: debugHandlers(clock: clock) + [
                 scheduled.appointments.reminderHandler,
                 scheduled.medications.reminderHandler,
-                scheduled.cycle.reminderHandler
+                scheduled.cycle.reminderHandler,
+                // `single<ReminderHandler>(named(SMOKING))` — iOS delta D3: the milestone
+                // notifications ride the same window, so the 64-pending budget is shared.
+                scheduled.smoking.reminderHandler
             ]
         )
         // Now that there is a scheduler, everything the module already handed out starts working.

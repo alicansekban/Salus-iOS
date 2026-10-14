@@ -63,6 +63,8 @@ extension RootTab {
         case .medicationDose: .medications
         case .appointment: .appointments
         case .cyclePeriod: .home
+        // Smoking has no tab either: its screens are pushed from More's row (iOS-M17).
+        case .smoking: .more
         }
     }
 }

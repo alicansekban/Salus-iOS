@@ -355,14 +355,16 @@ extension AppCompositionRoot {
             idGenerator: idGenerator,
             navigator: infrastructure.navigator
         )
-        // Smoking joins the scheduled modules because its milestone reminders (plan Task 17) arrive
-        // through the same engine; until then it owns no handler, and the module is just the
-        // feature's screens over the core built in `makeInfrastructure`.
+        // Smoking is a scheduled module because its milestone notifications arrive through the same
+        // engine (iOS delta D3, `ReminderType.smoking`): the module owns the handler, and building
+        // it registers the change listener that asks the scheduler to refill the window after every
+        // smoking write, so the relay is handed in like the other three.
         let smoking = makeSmokingModule(
             core: infrastructure.smokingCore,
             clock: clock,
             snackbar: infrastructure.snackbar,
-            navigator: infrastructure.navigator
+            navigator: infrastructure.navigator,
+            reminderScheduler: reminderScheduler
         )
         return ScheduledModules(appointments: appointments, medications: medications, cycle: cycle, smoking: smoking)
     }

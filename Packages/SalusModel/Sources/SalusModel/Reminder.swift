@@ -13,6 +13,9 @@ public enum ReminderType: String, CaseIterable, Equatable, Hashable, Sendable {
     case medicationDose = "MEDICATION_DOSE"
     case appointment = "APPOINTMENT"
     case cyclePeriod = "CYCLE_PERIOD"
+    /// Smoking-cessation milestone notifications (iOS-M17, contract `smoking-domain-contract.md`
+    /// section 4). Android added the same constant on `feature/m17-smoking-cessation`.
+    case smoking = "SMOKING"
 }
 
 /// The lifecycle of one alarm slot.

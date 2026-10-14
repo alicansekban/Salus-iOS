@@ -55,8 +55,8 @@ extension AppCompositionRoot {
         let notificationCenter = base.notificationCenter
         let environment = base.environment
         let syncState = UserDefaultsReminderSyncStateStore()
-        // `getAll()`: the appointment, medication and cycle handlers, landed with M4, M5 and M6 —
-        // the three the app owns, so the registry is now complete. A Debug build may add one fake
+        // `getAll()`: the appointment, medication, cycle and smoking handlers, landed with M4, M5, M6
+        // and M17 — the four the app owns, so the registry is now complete. A Debug build may add one fake
         // handler alongside — see `debugHandlers`.
         let handlerRegistry = ReminderHandlerRegistry(all: handlers)
         // Hoisted out of the synchronizer's argument list because the alarm dispatcher below reads

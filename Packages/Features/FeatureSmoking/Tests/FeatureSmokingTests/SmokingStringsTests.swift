@@ -17,7 +17,8 @@ import Testing
 /// `Packages/`, so this catalog is covered without remembering to copy a test.
 @Suite("FeatureSmoking strings")
 struct SmokingStringsTests {
-    static let samples = SmokingStringTable.samples + SmokingMainStringTable.samples
+    static let samples = SmokingStringTable.samples + SmokingMainStringTable.samples + SmokingNotificationStringTable
+        .samples
     static let expectedKeys = Set(samples.map(\.key))
 
     /// Setup's overlines: the step counter and the field labels. Stored upper-case in both locales.
@@ -30,11 +31,11 @@ struct SmokingStringsTests {
         "smoking_hero_overline", "smoking_stage_card_overline"
     ]
 
-    @Test("the catalog holds exactly the 142 keys :feature:smoking owns so far")
+    @Test("the catalog holds exactly the 153 keys :feature:smoking owns so far")
     func catalogHoldsExactlyTheKeys() throws {
         // Pinned as a number as well as a set: a row deleted from the table together with its key
         // from the catalog would otherwise agree with itself and pass.
-        #expect(Self.samples.count == 142)
+        #expect(Self.samples.count == 153)
 
         try StringCatalogParity.assertKeys(of: Self.loadCatalog(), are: Self.expectedKeys)
     }

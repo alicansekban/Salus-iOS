@@ -6,6 +6,7 @@ import FeatureMedications
 import FeatureOnboarding
 import FeaturePaywall
 import FeatureSettings
+import FeatureSmoking
 import FeatureTrends
 import FeatureVitals
 import SalusDesignSystem
@@ -93,6 +94,11 @@ struct RootView: View {
     /// One `Int` rather than a pair because `CycleKey` carries no payload: there is only ever one
     /// calendar, so the depth alone identifies it.
     @State private var reminderPushedCycleDepth: Int?
+
+    /// How deep More's stack was left by the smoking screens a tapped milestone notification last
+    /// pushed — the smoking half of the same question. A depth only, like the cycle's: whether the
+    /// notification also pushed the timeline is decided by the same tap that set the depth.
+    @State private var reminderPushedSmokingDepth: Int?
 
     /// `Theme.kt:99-104`. The premium palette is resolved from entitlement via
     /// `effectivePremiumTheme` — a free user draws `.classic`, a lapsed selection survives.
@@ -336,7 +342,24 @@ struct RootView: View {
         // by one — `MedicationDetailKey` wants the medication.
         case .medicationDose:
             break
+        // A milestone opens the main screen, with the health timeline on top of it when the
+        // notification announced a stage, so back lands on the main screen (Android's
+        // `ReminderDeepLink.Smoking`). The stage travels in the entity id.
+        case .smoking:
+            pushSmoking(stageId: SmokingReminderEntity.stageId(of: ref.entityId))
         }
+    }
+
+    /// Pushes the smoking main screen (and the timeline over it), unless a tap already left exactly
+    /// that on top of More's stack — the twin of `pushCycleCalendar`'s guard.
+    private func pushSmoking(stageId: String?) {
+        let depth = backStacks.path(for: .more).count
+        guard reminderPushedSmokingDepth != depth else { return }
+        backStacks.push(AnyNavKey(SmokingKey()))
+        if let stageId {
+            backStacks.push(AnyNavKey(SmokingTimelineKey(highlightStageId: stageId)))
+        }
+        reminderPushedSmokingDepth = depth + (stageId == nil ? 1 : 2)
     }
 
     /// Pushes the appointment's detail, unless that same detail is what the last tap already left on
@@ -411,6 +434,10 @@ struct RootView: View {
             // `nil != depth` and pushing a second calendar onto the one the card just opened. This
             // runs before the push below, so `count + 1` is the depth that push will leave —
             // exactly what `pushCycleCalendar` memoizes. Any other key still clears.
+            // More's memo: anything pushed there by a feature is no longer what a tap left.
+            if case .navigate = command, backStacks.selection == .more {
+                reminderPushedSmokingDepth = nil
+            }
             if case let .navigate(key) = command, backStacks.selection == .home {
                 reminderPushedCycleDepth = key == AnyNavKey(CycleKey())
                     ? backStacks.path(for: .home).count + 1
