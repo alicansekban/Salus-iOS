@@ -41,6 +41,17 @@ enum ChartAxisScale {
         return model.markers.filter { domain.contains($0.xEpochDay) }
     }
 
+    /// The markers worth drawing on a multi-series chart: those whose day lies inside the span all
+    /// the series plot together (inclusive). The plotted period is what the chart was handed, so it
+    /// is read off the points — a day between two series' own ranges still has a place on the shared
+    /// axis — and a model with no points has no period and draws no marker (Android
+    /// `MultiSeriesChartUiModel.visibleMarkers`).
+    static func visibleMarkers(for model: MultiSeriesChartUiModel) -> [ChartMarker] {
+        let days = model.series.flatMap(\.points).map(\.xEpochDay)
+        guard let first = days.min(), let last = days.max() else { return [] }
+        return model.markers.filter { (first ... last).contains($0.xEpochDay) }
+    }
+
     /// The y range, or `nil` when there is nothing to plot. `CartesianLayerRangeProvider.kt:43-51`.
     static func yDomain(for model: ChartUiModel) -> ClosedRange<Float>? {
         let values = (model.points + model.secondaryPoints).map { Double($0.y) }

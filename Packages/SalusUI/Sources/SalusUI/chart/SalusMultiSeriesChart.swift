@@ -27,6 +27,12 @@
 //   2. **No area fill.** Overlapping translucent areas turn into a colour none of the lines actually
 //      is, and the point of this chart is telling the lines apart.
 //
+// iOS-M17 Task 18 adds `MultiSeriesChartUiModel.markers` (the quit day on the Trends overlay; Android
+// `da134b1`): the same labelled dashed `RuleMark` `SalusLineChart` draws, declared after the series so
+// it lands over them, and only for markers inside the span the series plot together
+// (`ChartAxisScale.visibleMarkers(for:)`). The x scale is left to Swift Charts as before: a marker
+// inside the span never widens it.
+//
 // Every reading is marked with a point. That mirrors the Kotlin (`:56-59`): a series holding one
 // reading has no segment to stroke, so without a point it would draw nothing — a blank chart under
 // a legend naming two metrics. `SalusLineChart` escapes this only because its area fill still paints
@@ -44,15 +50,24 @@ import SwiftUI
 /// size it, so every chart in the app stays the same height without a value in a feature.
 public struct SalusMultiSeriesChart: View {
     private let model: MultiSeriesChartUiModel
+    private let markerColor: Color?
     private let contentDescription: String?
 
     @Environment(\.salusTheme) private var theme
 
     /// - Parameters:
+    ///   - markerColor: the colour of the dashed marker rules and their labels — the accent of the
+    ///     feature the marker belongs to, passed in because `SalusUI` knows no feature. `nil` means
+    ///     `onSurfaceVariant`, a neutral that none of the three line roles uses.
     ///   - contentDescription: spoken summary of the chart; a chart is opaque to VoiceOver
     ///     exactly as it is to TalkBack (`SalusMultiSeriesChart.kt:64-65`).
-    public init(model: MultiSeriesChartUiModel, contentDescription: String? = nil) {
+    public init(
+        model: MultiSeriesChartUiModel,
+        markerColor: Color? = nil,
+        contentDescription: String? = nil
+    ) {
         self.model = model
+        self.markerColor = markerColor
         self.contentDescription = contentDescription
     }
 
@@ -68,6 +83,7 @@ public struct SalusMultiSeriesChart: View {
     private var chart: some View {
         Chart {
             seriesMarks
+            markerRules
         }
         .chartXAxis { xAxis }
         // No vertical axis: a number on it could not belong to any of these unit-less series.
@@ -97,6 +113,36 @@ public struct SalusMultiSeriesChart: View {
                 .symbol(Circle())
                 .symbolSize(CGSize(width: Self.pointSize, height: Self.pointSize))
             }
+        }
+    }
+
+    /// One dashed vertical rule per visible marker, its label above the plot, anchored inwards so a
+    /// marker on the last day does not hang off the trailing edge (Swift Charts drops, not clips, an
+    /// annotation that leaves the chart). The styling is `SalusLineChart`'s, so a marker reads the
+    /// same on every chart that takes one.
+    @ChartContentBuilder
+    private var markerRules: some ChartContent {
+        let color = markerColor ?? theme.colorScheme.onSurfaceVariant
+        ForEach(ChartAxisScale.visibleMarkers(for: model), id: \.self) { marker in
+            RuleMark(x: .value(Self.xSeriesId, marker.xEpochDay))
+                .foregroundStyle(color)
+                .lineStyle(
+                    StrokeStyle(
+                        lineWidth: SalusLineChartDefaults.markerWidth,
+                        lineCap: .butt,
+                        dash: SalusLineChartDefaults.markerDash
+                    )
+                )
+                .annotation(
+                    position: .top,
+                    alignment: .leading,
+                    overflowResolution: .init(x: .fit(to: .chart), y: .disabled)
+                ) {
+                    Text(verbatim: marker.label)
+                        .font(SalusTypography.labelSmall.font)
+                        .tracking(SalusTypography.labelSmall.tracking)
+                        .foregroundStyle(color)
+                }
         }
     }
 

@@ -50,12 +50,19 @@ public struct MultiSeriesChartUiModel: Sendable {
     public let series: [ChartSeries]
     /// The caption for an epoch day on the bottom axis, already localized.
     public let xLabel: @Sendable (Int) -> String
+    /// Labelled vertical guidelines (a quit date) on the same epoch-day axis as the points
+    /// (iOS-M17 Task 18; Android `MultiSeriesChartUiModel.markers`). Additive: every existing call
+    /// site omits it. Only the markers inside the span all the series plot together are drawn —
+    /// `ChartAxisScale.visibleMarkers(for:)`.
+    public let markers: [ChartMarker]
 
     public init(
         series: [ChartSeries],
-        xLabel: @escaping @Sendable (Int) -> String
+        xLabel: @escaping @Sendable (Int) -> String,
+        markers: [ChartMarker] = []
     ) {
         self.series = series
         self.xLabel = xLabel
+        self.markers = markers
     }
 }
