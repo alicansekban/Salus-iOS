@@ -1,4 +1,4 @@
-// Twin of `core/smoking/.../di/SmokingCoreModule.kt`: the repository plus the fifteen use cases,
+// Twin of `core/smoking/.../di/SmokingCoreModule.kt`: the repository plus the sixteen use cases,
 // built once over one store, so every use case and the repository's repair share one write path.
 //
 // Koin's `getAll<SmokingChangeListener>()` becomes ``changeListeners``: the composition root builds
@@ -25,6 +25,7 @@ public struct SmokingCoreModule: Sendable {
     public let editEvent: EditEvent
     public let deleteEvent: DeleteEvent
     public let saveSavingsGoal: SaveSavingsGoal
+    public let updateSavingsGoal: UpdateSavingsGoal
     public let markGoalAchieved: MarkGoalAchieved
     public let resetSmoking: ResetSmoking
 
@@ -50,6 +51,7 @@ public struct SmokingCoreModule: Sendable {
         editEvent = EditEvent(store: store)
         deleteEvent = DeleteEvent(store: store)
         saveSavingsGoal = SaveSavingsGoal(store: store, clock: clock, idGenerator: idGenerator)
+        updateSavingsGoal = UpdateSavingsGoal(store: store)
         markGoalAchieved = MarkGoalAchieved(store: store, clock: clock)
         resetSmoking = ResetSmoking(store: store)
     }

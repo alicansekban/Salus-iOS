@@ -121,4 +121,14 @@ extension SavingsGoal {
             achievedAtMs: achievedAtMs
         )
     }
+
+    func edited(title: String, targetMinor: Int64) -> SavingsGoal {
+        SavingsGoal(
+            id: id,
+            title: title,
+            targetMinor: targetMinor,
+            createdAtMs: createdAtMs,
+            achievedAtMs: achievedAtMs
+        )
+    }
 }
