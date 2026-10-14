@@ -14,7 +14,7 @@
 |---|---|---|---|
 | S1 | Task 2 | `61f1d68` (checked 2026-10-14) | Task 2 `8ccb1e6` |
 | S2 | Task 3 | `2045f43` | Task 3 `b85f574` |
-| S3 | Task 22 | `59e88d0` (stats vectors; schedule vectors with Android T5) |  |
+| S3 | Task 22 | `0fd295f` (27 + 14 cases) | Task 22 `dbd907c` |
 | S4 | Task 20 | `49c42d9` | Task 20 `49005ba` (wraps the script; nothing copied) |
 
 ## Task log
@@ -31,6 +31,7 @@
 | 6 — repository + use cases (contract §6, §8.10) | `a364d27` | done, review APPROVED (5 deferred minors); lint / lint-rules / build green; SalusSmoking 53 → **138** (+85) on its base | `SmokingRepository` (`observeInput`/`observeSnapshot`/`snapshotNow`), 15 `Sendable` use cases, one GRDB write transaction per use case (double tap decided inside the tx), listeners notified after commit; `SmokingCoreModule` built once in `makeInfrastructure` with an empty `SmokingChangeListeners` registry (Task 17 adds the reminder listener). Observer reads via `SmokingDao.write` (DatabaseQueue: no extra contention). Red: compile error in `SmokingTestEnv.swift`. 12 mutations red. |
 | 5 — `MilestoneCatalog` + `MilestoneScheduler` (contract §4 amended, §8.8, §8.9) | `bd006b6` | done, review APPROVED (1 deferred minor → ledger row D-M17-i-1); lint / lint-rules green; SalusSmoking 53 → **89** (+36) on its base | Latest-instant firing, first-48 h `:early` split keys, quiet hours by wall-clock minute, slip shift, limit (capped at 1000), evening, yearly past 15 y, TRY vs EUR steps. Reviewer mirrored the algorithm: 14/14 golden `scheduleCases` (0fd295f) pass. `groupByOwningAttempt` internal + shared `unitCost(on:ascendingPrices:)`. Red: `cannot find type 'PlannedNotification' in scope`. 12 mutations red. |
 | 18 — Trends smoking section + quit markers (screen 08) | `2dfa9ce`, `c63f6f1` | done, review APPROVED (3 deferred minors); lint / lint-rules / build green; FeatureTrends 114 → **144** (+30), SalusUI 160 → **165** (+5) | Section hidden without a plan, last under the existing Trends lock, 4 cards + 7-day empty state; "Bıraktın" markers inside the span only. `MultiSeriesChartUiModel.markers` added in SalusUI (own commit, mirrors Android da134b1). 60 keys (58 Android + 2 `_one` twins); heatmap count word "kayıt"/"entries" per §8.12 (Android still "kriz" — row D-M17-i-2). 6 mutations red. |
+| 22 — golden-vector parity (S3) | `dbd907c` | done, review APPROVED (2 deferred minors); lint / lint-rules green; **41/41** vector cases pass (27 snapshot + 14 schedule) on the first run; SalusSmoking 219 → **222** | Vectors via `sync-m17-contracts.sh` (blob identical to Android 0fd295f / branch head); `GoldenVectorTests` decodes with `JSONSerialization`, asserts every §7 key incl. explicit nulls and empty schedules; `fileShape` guards against a vacuous pass. No drift, no ledger row. Mutations M1–M5 each failed named cases. |
 
 ## Ledger rows to fold
 
