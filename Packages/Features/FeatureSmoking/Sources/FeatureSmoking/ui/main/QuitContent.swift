@@ -93,6 +93,8 @@ private enum QuitDefaults {
     static let msPerMinute: Int64 = 60 * 1000
     static let permillePerPercent = 10
     static let permille: Float = 1000
+    /// How far a metric value may shrink before it truncates, so "₺315.000" fits a narrow tile.
+    static let metricMinScale: CGFloat = 0.6
 }
 
 // MARK: - Hero
@@ -124,7 +126,7 @@ private struct QuitHero: View {
                 Text(verbatim: SmokingStrings.heroOverline)
                     .font(SalusTypography.labelSmall.font)
                     .tracking(SalusTypography.labelSmall.tracking)
-                    .foregroundStyle(theme.extendedColors.overline)
+                    .foregroundStyle(theme.colorScheme.onSurfaceVariant)
             }
             .multilineTextAlignment(.center)
             .frame(maxWidth: .infinity)
@@ -299,7 +301,7 @@ private struct MetricCard: View {
                     .tracking(SalusTypography.headlineMedium.tracking)
                     .foregroundStyle(theme.colorScheme.onSurface)
                     .lineLimit(1)
-                    .minimumScaleFactor(0.6)
+                    .minimumScaleFactor(QuitDefaults.metricMinScale)
                 Text(verbatim: label)
                     .font(SalusTypography.bodySmall.font)
                     .tracking(SalusTypography.bodySmall.tracking)
@@ -346,7 +348,7 @@ private struct NextStageCard: View {
                     Text(verbatim: SmokingStrings.stageCardOverline)
                         .font(SalusTypography.labelSmall.font)
                         .tracking(SalusTypography.labelSmall.tracking)
-                        .foregroundStyle(theme.extendedColors.overline)
+                        .foregroundStyle(theme.colorScheme.onSurfaceVariant)
                     if let title = StageCopy.title(of: stage.stageId) {
                         Text(verbatim: title)
                             .font(SalusTypography.titleMedium.font)

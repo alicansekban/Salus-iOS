@@ -157,8 +157,8 @@ struct SmokingMainViewModelTests {
     @Test("saving a trigger lands on the event the slip wrote and no other")
     func triggerLandsOnTheSlip() async throws {
         let earlier = harness.craving(id: "craving-1", atMs: harness.nowMs - dayMs)
-        let harness = MainHarness(events: [earlier])
-        let vm = await harness.subscribedViewModel()
+        let seeded = MainHarness(events: [earlier])
+        let vm = await seeded.subscribedViewModel()
         vm.onEvent(.smokedTapped)
         vm.onEvent(.slipConfirmed(units: 3, restart: false))
         await waitUntil("the trigger sheet") { vm.state.sheet != .slip(units: 1) }
@@ -170,13 +170,14 @@ struct SmokingMainViewModelTests {
         vm.onEvent(.triggerSaved(trigger: .coffee, intensity: 4))
         await waitUntil("the sheet closes") { vm.state.sheet == nil }
 
-        let events = Dictionary(uniqueKeysWithValues: harness.store.input.events.map { ($0.id, $0) })
+        let events = Dictionary(uniqueKeysWithValues: seeded.store.input.events.map { ($0.id, $0) })
         let slip = try #require(events[slipId])
         #expect(slip.trigger == .coffee)
         #expect(slip.intensity == 4)
         #expect(slip.units == 3, "the edit keeps what the slip logged")
-        #expect(slip.occurredAtMs == harness.nowMs)
-        #expect(events["craving-1"]?.trigger == nil, "another event is untouched")
+        #expect(slip.occurredAtMs == seeded.nowMs)
+        let untouched = try #require(events["craving-1"])
+        #expect(untouched.trigger == nil, "another event is untouched")
     }
 
     @Test("a trigger saved after starting over stays on the attempt the slip closed")
