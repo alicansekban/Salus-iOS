@@ -12,7 +12,7 @@
 
 | # | Needed by | Reached on the Android branch at | Synced in |
 |---|---|---|---|
-| S1 | Task 2 | `61f1d68` (checked 2026-10-14) |  |
+| S1 | Task 2 | `61f1d68` (checked 2026-10-14) | Task 2 `8ccb1e6` |
 | S2 | Task 3 | `2045f43` |  |
 | S3 | Task 22 | `59e88d0` (stats vectors; schedule vectors with Android T5) |  |
 | S4 | Task 20 | `49c42d9` | Task 20 `49005ba` (wraps the script; nothing copied) |
@@ -25,6 +25,7 @@
 | 8 — `SalusUI` additions, R2 | `a89f324` | done, review APPROVED (4 deferred minors); lint / lint-rules green; test gate **1540 tests, 0 failed, 0 skipped** (+19 on 1521) | `SalusHeatmap` (5 accent steps over `surfaceContainerHigh`, per-cell VoiceOver), `ChartUiModel.markers` + dashed accent `RuleMark` in `SalusLineChart` (`markerColor`), `overflowPermille` + `accent` on `SalusProgressRing`/`SalusProgressBar` (neutral `outlineVariant` lap). Additive. Red: `cannot find type 'ChartMarker'`. Mutations: bucket ceil→floor, marker range exclusive, overflow cap removed, zero guard dropped — each red. Open for owner QA: heatmap cells show no counts (screenshot 08 does). |
 | 20 — Dev tooling: smoking shift wrapper | `49005ba` | done, review APPROVED (2 deferred minors); `smoking-shift-selftest: 27 passed`; lint + lint-rules green (no Swift) | `scripts/dev/smoking-shift.sh [--db <path>] <days>` wraps Android's `smoking_shift.py` (S4) on the simulator `salus.db`, `.bak` kept; `--db` for scratch dry runs. Note `docs/testing/smoking-testing.md`. `seed-store-demo.sh` unchanged. Red: `FAIL shift 7 exits 0: exit 127`. Mutations: days>0 check, backup `cp`, constant days — each red. Dry run: Android seeder + shift 30 on a v5 scratch DB moved attempts exactly 30 d. |
 | 4 — SalusSmoking package, models, `SmokingStatsCalculator` (contract §2, §3, §8) | `826baf7`, `184ce0f` (fix round 1) | done, review APPROVED after fix round 1; lint / lint-rules green; SalusSmoking 53 + SalusCommon 90 green; full gates before the fix: **1570 tests (1521 + 49), 0 failed**, 25 packages, build green | New package + `epochDay(of:in:)`/`startOfDayMs(epochDay:in:)` in `SalusClock` (P2). One test per §3 rule. Red: `cannot find 'SmokingStatsCalculator' in scope`. 30 mutations red. Fix round 1: QUIT goal floored per attempt (§8.2), unlinked events owned by containment (§8.1, Kotlin `EventsByAttempt`), target ≤ 0 → 0 permille, package count 25 in ci.yml/skill/BannedHealthClaims, README macOS count. |
+| 2 — amber smoking feature accent (S1) | `8ccb1e6` | done, review APPROVED (3 deferred minors); lint / lint-rules green; tests 1540 → **1542** (+2) on its base | `SalusExtendedColors.smoking` for classic/Ocean/Sunset/Forest × light/dark, 32 hexes from Android `61f1d68` / design-tokens §3.1/§3.2/§4.6; pins 241 tokens / 6 sets (rule text updated); hue test ≥ 25° from error (twin of Android's). Red: `(featureAccents.count → 5) == 6`. Mutations: hex +1, red accent, dark hex in light slot, entry removed — each red. Hex-initializer suite moved verbatim (500-line limit); one local `function_parameter_count` exemption. |
 
 ## Ledger rows to fold
 
