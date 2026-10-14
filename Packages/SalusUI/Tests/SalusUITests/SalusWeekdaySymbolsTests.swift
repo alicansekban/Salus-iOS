@@ -54,3 +54,22 @@ struct SalusWeekdaySymbolsTests {
         #expect(symbols == ["M", "T", "W", "T", "F", "S", "S"])
     }
 }
+
+/// iOS-M17 Task 11: the REDUCE week chart labels its bars with the short names ("Pzt", "Mon"),
+/// Android's `TextStyle.SHORT`, where the cycle grid keeps the narrow letters.
+@Suite("SalusWeekdaySymbols short names")
+struct SalusWeekdayShortSymbolsTests {
+    @Test("en_US reads Mon to Sun")
+    func englishShortNames() {
+        let symbols = SalusWeekdaySymbols.shortMondayFirst(locale: Locale(identifier: "en_US"))
+
+        #expect(symbols == ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"])
+    }
+
+    @Test("tr_TR reads Pzt to Paz")
+    func turkishShortNames() {
+        let symbols = SalusWeekdaySymbols.shortMondayFirst(locale: Locale(identifier: "tr_TR"))
+
+        #expect(symbols == ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"])
+    }
+}

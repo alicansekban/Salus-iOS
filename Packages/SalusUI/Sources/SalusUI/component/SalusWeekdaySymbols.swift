@@ -35,9 +35,24 @@ public enum SalusWeekdaySymbols {
     /// - Returns: seven letters, Monday first. Only the calendar's own array is ever returned
     ///   unrotated, and only if Foundation were to answer with something other than seven symbols.
     public static func narrowMondayFirst(locale: Locale) -> [String] {
+        mondayFirst(gregorian(locale).veryShortStandaloneWeekdaySymbols)
+    }
+
+    /// The seven short standalone weekday names in `locale` ("Pzt", "Mon"), Monday first — the twin
+    /// of Kotlin's `DayOfWeek.getDisplayName(TextStyle.SHORT, locale)`. A chart axis, unlike the
+    /// cycle grid, has room for more than a letter. Added for the REDUCE week chart (iOS-M17
+    /// Task 11); the same two properties as above keep it inside this file's carve-out.
+    public static func shortMondayFirst(locale: Locale) -> [String] {
+        mondayFirst(gregorian(locale).shortStandaloneWeekdaySymbols)
+    }
+
+    private static func gregorian(_ locale: Locale) -> Calendar {
         var calendar = Calendar(identifier: .gregorian)
         calendar.locale = locale
-        let symbols = calendar.veryShortStandaloneWeekdaySymbols
+        return calendar
+    }
+
+    private static func mondayFirst(_ symbols: [String]) -> [String] {
         guard symbols.count == LocalDate.daysPerWeek else { return symbols }
         return Array(symbols.dropFirst()) + symbols.prefix(1)
     }
