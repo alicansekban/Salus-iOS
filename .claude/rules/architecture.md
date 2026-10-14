@@ -16,14 +16,15 @@ Settled decisions, layer rules and port-fidelity rules. Every rule names its **e
   milestone that needs it and never before: **GRDB** (iOS-M1/M2 persistence), **`purchases-ios`**
   (RevenueCat, premium), **`firebase-ios-sdk`** (FirebaseAI + FirebaseAppCheck, AI). Charts, PDF,
   crypto and biometrics come from the system. Nothing else is ever added, and the allowlist stays
-  closed at three. The tree today has **exactly two** remote SPM dependencies: **GRDB.swift**,
+  closed at three. The tree today has **exactly three** remote SPM dependencies: **GRDB.swift**,
   pinned `from: "7.11.1"`, declared in `Packages/SalusDatabase/Package.swift` (arrived with
-  iOS-M1), and **`purchases-ios`**, pinned `from: "5.87.1"`, declared in
-  `Packages/SalusPremium/Package.swift` (arrived with iOS-M9). The other 22 manifests still
+  iOS-M1), **`purchases-ios`**, pinned `from: "5.87.1"`, declared in
+  `Packages/SalusPremium/Package.swift` (arrived with iOS-M9), and **`firebase-ios-sdk`**, pinned
+  `from: "12.18.0"`, declared in `Packages/SalusAI/Package.swift`. The other 23 manifests
   declare `dependencies: []` or local `.package(path:)` entries only; the app reaches GRDB
-  transitively, by linking `SalusDatabase`, and `purchases-ios` transitively, by linking
-  `SalusPremium`. A third `.package(url:)` line anywhere is a finding unless it is
-  `firebase-ios-sdk` arriving with its own milestone. — *enforcement: review of every
+  transitively, by linking `SalusDatabase`, `purchases-ios` by linking `SalusPremium`, and
+  `firebase-ios-sdk` by linking `SalusAI`. A fourth `.package(url:)` line anywhere is a
+  finding. — *enforcement: review of every
   `Package.swift` / `project.yml` diff.*
 - Offline-first, local-only: no backend of ours, no analytics, no ad-hoc networking. The
   Android carve-outs (store billing, Firebase AI) arrive with their own milestones and

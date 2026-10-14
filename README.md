@@ -68,7 +68,7 @@ milestone that needs it. Two of the three have arrived:
 The allowlist is now closed at three. Charts, PDF, crypto and biometrics come from the system.
 
 `SalusDatabase` is the only package that names GRDB, `SalusPremium` the only one that names
-`purchases-ios`, and `SalusAI` the only one that names `firebase-ios-sdk`; the other 22 manifests
+`purchases-ios`, and `SalusAI` the only one that names `firebase-ios-sdk`; the other 23 manifests
 declare `dependencies: []` or local `.package(path:)` entries only, and the app reaches all three
 remotes transitively by linking `SalusDatabase`/`SalusPremium`/`SalusAI` (and `FirebaseCore`
 directly, for the `FirebaseApp.configure()` call in `SalusApp.init`).
@@ -128,7 +128,7 @@ Three things the scripts encode that are easy to get wrong by hand:
 - **`swift test` builds for the host, not for iOS.** So 23 of the 26 packages also declare
   `.macOS(.v14)` in their manifest purely to make the host build possible, for one of three
   reasons: they reach SwiftUI, directly (`SalusDesignSystem`, and `SalusNavigation` since its
-  `TabBackStacks` holds a `NavigationPath` per tab) or transitively (`SalusUI` and the ten
+  `TabBackStacks` holds a `NavigationPath` per tab) or transitively (`SalusUI` and the eleven
   feature packages); or they reach GRDB, whose own manifest sets a macOS 10.15 floor that a
   manifest naming no macOS platform (SwiftPM reads that as macOS 10.13) cannot satisfy —
   `SalusDatabase` and its four dependents `SalusProfile`, `SalusAI`, `SalusReminder`, `SalusSmoking`; or they
