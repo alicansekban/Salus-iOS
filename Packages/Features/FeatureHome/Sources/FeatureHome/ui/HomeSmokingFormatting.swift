@@ -20,11 +20,27 @@ enum HomeSmokingFormatting {
     /// the unit following the rounded count, so "3 days left" never promises the stage sooner than
     /// it comes and Home agrees with Main and the timeline for the same snapshot.
     static func nextStageText(remainingMs: Int64) -> String {
+        switch nextStage(remainingMs: remainingMs) {
+        case let .days(count): HomeStrings.smokingNextDays(count)
+        case let .hours(count): HomeStrings.smokingNextHours(count)
+        case let .minutes(count): HomeStrings.smokingNextMinutes(count)
+        }
+    }
+
+    /// The unit and count ``nextStageText(remainingMs:)`` speaks, as a value a test can compare:
+    /// the accessors read the catalog, which a package test does not compile.
+    enum NextStage: Equatable, Sendable {
+        case days(Int)
+        case hours(Int)
+        case minutes(Int)
+    }
+
+    static func nextStage(remainingMs: Int64) -> NextStage {
         let left = StageTimeLeft.of(remainingMs: remainingMs)
         return switch left.unit {
-        case .days: HomeStrings.smokingNextDays(left.count)
-        case .hours: HomeStrings.smokingNextHours(left.count)
-        case .minutes: HomeStrings.smokingNextMinutes(left.count)
+        case .days: .days(left.count)
+        case .hours: .hours(left.count)
+        case .minutes: .minutes(left.count)
         }
     }
 

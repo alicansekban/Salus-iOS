@@ -126,7 +126,8 @@ public final class SmokingTimelineViewModel {
 extension Error {
     /// The timeline's only write is the REDUCE to QUIT switch, so `invalidInput` is the
     /// attempts-never-overlap refusal (contract section 8.10) and says so in the one overlap
-    /// sentence Main and Settings use (D-M17-ab); everything else reads as in the setup wizard.
+    /// sentence Main and Settings use (Android 94bf78e, d1aef51); everything else reads as in the
+    /// setup wizard.
     fileprivate var timelineError: SmokingSetupError {
         (self as? SmokingError) == .invalidInput ? .overlap : setupError
     }

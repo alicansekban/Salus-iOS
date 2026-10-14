@@ -191,8 +191,10 @@ public final class SmokingMainViewModel {
     /// A plan is gone while this screen is the top of the stack: a milestone notification tapped
     /// after "Takibi sıfırla" pushes Main over a reset app. The screen swaps itself for the setup the
     /// way the setup swaps itself for this screen (pop, then push), so back from the setup does not
-    /// return into an empty body. Once only, and only on a snapshot that really is `notSetUp`:
-    /// before the first snapshot there is nothing to decide.
+    /// return into an empty body. The Route sends the event only while Main is on top
+    /// (``planMissingSignal(isOnScreen:snapshot:)``), because a covered Main's ViewModel is still
+    /// alive and a pop would remove the covering screen. Here: once only, and only on a snapshot
+    /// that really is `notSetUp`; before the first snapshot there is nothing to decide.
     private func replaceWithSetup() {
         guard !replacedWithSetup, state.snapshot == .notSetUp else { return }
         replacedWithSetup = true

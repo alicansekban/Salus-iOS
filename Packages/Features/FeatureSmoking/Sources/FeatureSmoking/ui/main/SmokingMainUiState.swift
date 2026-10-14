@@ -3,10 +3,9 @@
 //
 // Two shape differences from the Kotlin state. `liveNowMs` is gone: Android's ViewModel moves it
 // between snapshots, here the view's `TimelineView` hands the counters their instant, so the state
-// holds only what the screen has been told. A second: Android's `UndoOffered` effect is gone. The ViewModel shows the
-// undo snackbar through the
-// shell's controller itself (see `SmokingMainViewModel`), so no effect has to reach a Route that may
-// already be off screen.
+// holds only what the screen has been told. A second: Android's `UndoOffered` effect is gone. The
+// ViewModel shows the undo snackbar through the shell's controller itself (see
+// `SmokingMainViewModel`), so no effect has to reach a Route that may already be off screen.
 
 import SalusSmoking
 

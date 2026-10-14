@@ -89,4 +89,25 @@ struct SmokingMainPlanMissingTests {
 
         #expect(harness.navigator.commandLog.isEmpty)
     }
+
+    /// The Route reports the missing plan only while Main is on top: SwiftUI keeps a covered view
+    /// alive (Settings over Main, the timeline over Main), and a pop from a covered Main would remove
+    /// the wrong screen. What is not testable here: that `onAppear` / `onDisappear` really fire as
+    /// the stack covers and uncovers Main, and that `.task(id:)` re-runs on the edge. Both are
+    /// SwiftUI's; the predicate they feed is pinned below, and QA walks the two stack cases.
+    @Test("the route reports the missing plan only while Main is on screen and has no plan")
+    func routeReportsOnlyWhileOnScreen() {
+        #expect(planMissingSignal(isOnScreen: true, snapshot: .notSetUp))
+        #expect(!planMissingSignal(isOnScreen: false, snapshot: .notSetUp))
+        #expect(!planMissingSignal(isOnScreen: true, snapshot: nil))
+        #expect(!planMissingSignal(isOnScreen: false, snapshot: nil))
+    }
+
+    @Test("a plan on screen is not reported")
+    func routeIgnoresAPlan() async {
+        let harness = MainHarness()
+        let vm = await harness.subscribedViewModel()
+
+        #expect(!planMissingSignal(isOnScreen: true, snapshot: vm.state.snapshot))
+    }
 }

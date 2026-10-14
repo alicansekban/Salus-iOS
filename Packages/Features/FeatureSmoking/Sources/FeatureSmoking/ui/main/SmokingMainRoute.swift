@@ -6,6 +6,7 @@
 // is off screen or the app is in the background.
 
 import SalusCommon
+import SalusSmoking
 import SalusUI
 import SwiftUI
 
@@ -18,6 +19,11 @@ public struct SmokingMainRoute: View {
     @Environment(\.smokingModule) private var module
 
     @State private var viewModel: SmokingMainViewModel?
+
+    /// Whether Main is the top screen of its stack. SwiftUI keeps a covered view alive, so the
+    /// ViewModel of a Main under Settings or the timeline is still observing snapshots; Android only
+    /// composes the top entry.
+    @State private var isOnScreen = false
 
     public init(onOpenTrends: @escaping () -> Void) {
         self.onOpenTrends = onOpenTrends
@@ -40,11 +46,15 @@ public struct SmokingMainRoute: View {
                         show(effect, on: module)
                     }
                 }
-                // A plan that is gone while this screen is on show (a stale notification after a
+                .onAppear { isOnScreen = true }
+                .onDisappear { isOnScreen = false }
+                // A plan that is gone while this screen is on top (a stale notification after a
                 // reset) has nothing to draw, so the ViewModel swaps it for the setup. Keyed on the
-                // fact, not on the snapshot, so the minute-by-minute re-emissions do not repeat it.
-                .task(id: viewModel.state.snapshot == .notSetUp) {
-                    if viewModel.state.snapshot == .notSetUp {
+                // fact "on top and no plan", not on the snapshot, so the minute-by-minute
+                // re-emissions do not repeat it, and a covered Main (Settings, the timeline over it)
+                // stays silent until it is uncovered.
+                .task(id: planMissingSignal(isOnScreen: isOnScreen, snapshot: viewModel.state.snapshot)) {
+                    if planMissingSignal(isOnScreen: isOnScreen, snapshot: viewModel.state.snapshot) {
                         viewModel.onEvent(.planMissing)
                     }
                 }
@@ -76,4 +86,10 @@ public struct SmokingMainRoute: View {
         case .quitFuture: SmokingStrings.quitSheetFuture
         }
     }
+}
+
+/// Whether the Route should tell the ViewModel the plan is missing: Main is the top screen and its
+/// snapshot says there is no plan. Nothing before the first snapshot, and nothing while covered.
+func planMissingSignal(isOnScreen: Bool, snapshot: SmokingSnapshot?) -> Bool {
+    isOnScreen && snapshot == .notSetUp
 }

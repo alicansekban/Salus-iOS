@@ -41,6 +41,32 @@ struct HomeSmokingFormattingTests {
         TextRow(remainingMs: 3 * day + 1, expected: { HomeStrings.smokingNextDays(4) }, note: "4 days")
     ]
 
+    struct StageRow: Sendable {
+        let remainingMs: Int64
+        let expected: HomeSmokingFormatting.NextStage
+    }
+
+    static let stageRows: [StageRow] = [
+        StageRow(remainingMs: 0, expected: .minutes(1)),
+        StageRow(remainingMs: minute + 1, expected: .minutes(2)),
+        StageRow(remainingMs: 59 * minute, expected: .minutes(59)),
+        StageRow(remainingMs: 59 * minute + 30000, expected: .hours(1)),
+        StageRow(remainingMs: hour + 1, expected: .hours(2)),
+        StageRow(remainingMs: 23 * hour, expected: .hours(23)),
+        StageRow(remainingMs: 23 * hour + 59 * minute, expected: .days(1)),
+        StageRow(remainingMs: day, expected: .days(1)),
+        StageRow(remainingMs: 2 * day + 23 * hour, expected: .days(3)),
+        StageRow(remainingMs: 3 * day, expected: .days(3)),
+        StageRow(remainingMs: 3 * day + 1, expected: .days(4))
+    ]
+
+    /// The typed value pins the count, which the accessor rows cannot: `swift test` does not compile
+    /// the catalog, so an accessor answers its key whatever the count is.
+    @Test("the next stage's unit and rounded-up count come from the shared rule (StageTimeLeft)", arguments: stageRows)
+    func nextStage(row: StageRow) {
+        #expect(HomeSmokingFormatting.nextStage(remainingMs: row.remainingMs) == row.expected)
+    }
+
     @Test("the next stage reads on the shared rounded-up rule (StageTimeLeft)", arguments: textRows)
     func nextStageText(row: TextRow) {
         #expect(HomeSmokingFormatting.nextStageText(remainingMs: row.remainingMs) == row.expected())
