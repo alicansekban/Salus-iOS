@@ -71,7 +71,10 @@ struct SmokingMainViewModelTests {
         vm.onEvent(.smokedTapped)
 
         vm.onEvent(.slipConfirmed(units: 1, restart: true))
+        // Two independent hops: the snapshot stream delivers the new attempt, the write's own
+        // completion opens the trigger sheet. Either can land first, so the test waits for both.
         await waitUntil("the new attempt") { (try? vm.quit().attemptId) != "attempt-1" }
+        await waitUntil("the trigger sheet") { if case .trigger = vm.state.sheet { true } else { false } }
 
         let attempts = harness.store.input.attempts
         #expect(attempts.count == 2)
