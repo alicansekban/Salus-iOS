@@ -65,5 +65,8 @@ extension View {
         .navigationDestination(for: SmokingKey.self) { _ in
             SmokingMainRoute(onOpenTrends: onOpenTrends)
         }
+        .navigationDestination(for: SmokingTimelineKey.self) { key in
+            SmokingTimelineRoute(highlightStageId: key.highlightStageId)
+        }
     }
 }

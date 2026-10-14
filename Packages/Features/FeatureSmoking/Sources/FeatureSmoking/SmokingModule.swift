@@ -3,7 +3,8 @@
 //
 // Koin's `module { … }` becomes a value the composition root builds once and hands down (no
 // container; see `docs/ios-feature-template.md`, "Module factory"). The single Koin `viewModel`
-// registrations become `makeSetupViewModel` and `makeMainViewModel`; each later task adds its screen's factory here.
+// registrations become `makeSetupViewModel`, `makeMainViewModel` and `makeTimelineViewModel`; each
+// later task adds its screen's factory here.
 //
 // The module carries `clock` and `snackbar` because two things the Android Routes `koinInject` are
 // not reachable from a package any other way: the clock the quit-date sheet checks "future"
@@ -47,6 +48,10 @@ public struct SmokingModule {
     /// and insights cards (plan Task 15) arrive, which add it with the composition-root change it
     /// needs (the premium graph is built after the scheduled modules, smoking among them).
     public let makeMainViewModel: @MainActor () -> SmokingMainViewModel
+
+    /// `viewModel { parameters -> SmokingTimelineViewModel(highlightStageId = parameters.get(), …) }`.
+    /// The id is the stage a link named, or `nil`.
+    public let makeTimelineViewModel: @MainActor (String?) -> SmokingTimelineViewModel
 }
 
 /// Builds the feature's graph — the twin of `val smokingModule = module { … }`. Every dependency is
@@ -87,6 +92,14 @@ public func makeSmokingModule(
                 resolveSlip: core.resolveSlip,
                 editEvent: core.editEvent,
                 navigator: navigator
+            )
+        },
+        makeTimelineViewModel: { highlightStageId in
+            SmokingTimelineViewModel(
+                highlightStageId: highlightStageId,
+                repository: core.repository,
+                switchMode: core.switchMode,
+                clock: clock
             )
         }
     )

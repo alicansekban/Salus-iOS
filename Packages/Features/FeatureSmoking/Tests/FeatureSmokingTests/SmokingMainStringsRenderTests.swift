@@ -23,5 +23,7 @@ extension SmokingStringsTests {
         try #expect(render(catalog, "smoking_stage_card_percent", "tr", 64) == "%64")
         try #expect(render(catalog, "smoking_stage_card_percent", "en", 64) == "64%")
         try #expect(render(catalog, "smoking_stage_remaining_minutes", "en", 7) == "7 min left")
+        // The timeline header's "done / total" figure.
+        try #expect(render(catalog, "smoking_timeline_count", "tr", 4, 10) == "4 / 10")
     }
 }

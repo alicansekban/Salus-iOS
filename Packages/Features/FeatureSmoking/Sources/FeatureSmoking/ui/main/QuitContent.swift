@@ -374,13 +374,8 @@ private struct NextStageCard: View {
         }
     }
 
+    /// Shared with the health timeline's rows (``StageRemaining``).
     private var remainingText: String {
-        switch timeLabelOf(remainingMs) {
-        case let .days(days, _, _): SmokingStrings.stageRemainingDays(days)
-        case let .hours(hours, _): SmokingStrings.stageRemainingHours(hours)
-        // Under a minute left still reads "1 dk": zero minutes left on a stage that has not
-        // unlocked looks like a bug.
-        case let .minSec(minutes, _): SmokingStrings.stageRemainingMinutes(max(1, minutes))
-        }
+        StageRemaining(remainingMs: remainingMs).text
     }
 }

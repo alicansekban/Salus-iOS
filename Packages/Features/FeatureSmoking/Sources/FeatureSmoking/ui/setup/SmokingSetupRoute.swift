@@ -50,7 +50,8 @@ public struct SmokingSetupRoute: View {
 }
 
 extension SmokingSetupError {
-    fileprivate var message: String {
+    /// The snackbar sentence for each kind; the health timeline's quit-date refusals reuse it.
+    var message: String {
         switch self {
         case .futureDate: SmokingStrings.setupErrorFutureDate
         case .invalid: SmokingStrings.setupErrorInvalid

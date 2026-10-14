@@ -201,7 +201,8 @@ extension SmokingSetupUiState {
 }
 
 extension Error {
-    fileprivate var setupError: SmokingSetupError {
+    /// Also the health timeline's switch-to-quit refusals: the same three kinds, the same sentences.
+    var setupError: SmokingSetupError {
         switch self as? SmokingError {
         case .futureQuitDate: .futureDate
         case .invalidInput, .notSetUp: .invalid

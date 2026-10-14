@@ -6,6 +6,8 @@
 // so a stage cannot be added to the catalog without its words. `@StringRes` ids become the typed
 // `SmokingStrings.Key`, so the lookup stays in the one place that names catalog keys.
 
+import SalusSmoking
+
 enum StageCopy {
     static func title(of stageId: String) -> String? {
         titleKey(of: stageId).map(SmokingStrings.localized)
@@ -14,6 +16,37 @@ enum StageCopy {
     static func statement(of stageId: String) -> String? {
         statementKey(of: stageId).map(SmokingStrings.localized)
     }
+
+    /// The short chip on a stage ("WHO", "NHS").
+    static func sourceLabel(of source: HealthStageSource) -> String {
+        switch source {
+        case .who: SmokingStrings.timelineSourceWho
+        case .nhs: SmokingStrings.timelineSourceNhs
+        }
+    }
+
+    /// The full attribution line of a source, shown on the stage's detail sheet.
+    static func attribution(of source: HealthStageSource) -> String {
+        switch source {
+        case .who: SmokingStrings.timelineAttributionWho
+        case .nhs: SmokingStrings.timelineAttributionNhs
+        }
+    }
+
+    /// The threshold of a stage as its title spells it ("20 dakika" from "20 dakika · Nabız ve
+    /// tansiyon"). The contract titles all lead with it, so a header that names the next threshold
+    /// reuses those words instead of a second set of strings that could drift from them. A title
+    /// with no separator is returned whole.
+    static func thresholdLabel(of title: String) -> String {
+        title.components(separatedBy: titleSeparator).first ?? title
+    }
+
+    /// ``thresholdLabel(of:)`` for a stage id; `nil` for an id outside the catalog.
+    static func threshold(of stageId: String) -> String? {
+        title(of: stageId).map(thresholdLabel(of:))
+    }
+
+    private static let titleSeparator = " · "
 
     private static func titleKey(of stageId: String) -> SmokingStrings.Key? {
         switch stageId {
