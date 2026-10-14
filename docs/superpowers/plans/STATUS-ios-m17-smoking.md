@@ -13,7 +13,7 @@
 | # | Needed by | Reached on the Android branch at | Synced in |
 |---|---|---|---|
 | S1 | Task 2 | `61f1d68` (checked 2026-10-14) | Task 2 `8ccb1e6` |
-| S2 | Task 3 | `2045f43` |  |
+| S2 | Task 3 | `2045f43` | Task 3 `b85f574` |
 | S3 | Task 22 | `59e88d0` (stats vectors; schedule vectors with Android T5) |  |
 | S4 | Task 20 | `49c42d9` | Task 20 `49005ba` (wraps the script; nothing copied) |
 
@@ -26,6 +26,7 @@
 | 20 — Dev tooling: smoking shift wrapper | `49005ba` | done, review APPROVED (2 deferred minors); `smoking-shift-selftest: 27 passed`; lint + lint-rules green (no Swift) | `scripts/dev/smoking-shift.sh [--db <path>] <days>` wraps Android's `smoking_shift.py` (S4) on the simulator `salus.db`, `.bak` kept; `--db` for scratch dry runs. Note `docs/testing/smoking-testing.md`. `seed-store-demo.sh` unchanged. Red: `FAIL shift 7 exits 0: exit 127`. Mutations: days>0 check, backup `cp`, constant days — each red. Dry run: Android seeder + shift 30 on a v5 scratch DB moved attempts exactly 30 d. |
 | 4 — SalusSmoking package, models, `SmokingStatsCalculator` (contract §2, §3, §8) | `826baf7`, `184ce0f` (fix round 1) | done, review APPROVED after fix round 1; lint / lint-rules green; SalusSmoking 53 + SalusCommon 90 green; full gates before the fix: **1570 tests (1521 + 49), 0 failed**, 25 packages, build green | New package + `epochDay(of:in:)`/`startOfDayMs(epochDay:in:)` in `SalusClock` (P2). One test per §3 rule. Red: `cannot find 'SmokingStatsCalculator' in scope`. 30 mutations red. Fix round 1: QUIT goal floored per attempt (§8.2), unlinked events owned by containment (§8.1, Kotlin `EventsByAttempt`), target ≤ 0 → 0 permille, package count 25 in ci.yml/skill/BannedHealthClaims, README macOS count. |
 | 2 — amber smoking feature accent (S1) | `8ccb1e6` | done, review APPROVED (3 deferred minors); lint / lint-rules green; tests 1540 → **1542** (+2) on its base | `SalusExtendedColors.smoking` for classic/Ocean/Sunset/Forest × light/dark, 32 hexes from Android `61f1d68` / design-tokens §3.1/§3.2/§4.6; pins 241 tokens / 6 sets (rule text updated); hue test ≥ 25° from error (twin of Android's). Red: `(featureAccents.count → 5) == 6`. Mutations: hex +1, red accent, dark hex in light slot, entry removed — each red. Hex-initializer suite moved verbatim (500-line limit); one local `function_parameter_count` exemption. |
+| 3 — GRDB migration `v5` + `SmokingDao` (contract §1, §8.6) | `b85f574` | done, review APPROVED; lint / lint-rules green; tests 1540 → **1558** (+18) on its base; SalusDatabase 114 green | Five records + `SmokingDao` (plain struct like `CycleDao`; SQL and order match Android `2045f43`; 5 conflated streams, 11 writes, `resetAll`, `write(_:)` over a `Transaction` with the 5 reads). `5.json` via `sync-m17-contracts.sh`, byte-identical; `RoomSchemaParityTests` v1…v5 in the same commit (no Task 3b). Red: `Fatal error: undefined migration: "v5"`. 10 mutations red. `update*` throws `recordNotFound` where Room no-ops (MedicationDao precedent). |
 
 ## Ledger rows to fold
 
