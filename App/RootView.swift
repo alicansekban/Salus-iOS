@@ -329,6 +329,9 @@ struct RootView: View {
     /// entity id on both platforms, and iOS spends it.
     private func openTappedReminder() {
         guard let ref = root.reminderOpenRouter.consume() else { return }
+        // A tapped notification can arrive while the craving cover is up; the push below would land
+        // under it, where nobody sees it. Close the cover first.
+        root.smokingModule.cravingPresenter.dismiss()
         backStacks.switchTopLevel(RootTab.hosting(ref.type))
         switch ref.type {
         case .appointment:

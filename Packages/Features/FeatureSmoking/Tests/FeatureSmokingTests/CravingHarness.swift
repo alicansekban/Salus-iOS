@@ -3,7 +3,7 @@
 // earlier with two cravings already beaten (or a REDUCE plan), the real calculator over it, and a
 // recording navigator.
 //
-// The clock never moves by itself, so a case that wants time to pass says so: `advance(bySeconds:)`
+// The clock never moves by itself, so a case that wants time to pass says so: `setClock(secondsAfterStart:)`
 // moves the fixed clock, and the ViewModel only learns of it through `refreshClock()` — which is
 // also all the screen's ticker does.
 
@@ -112,8 +112,9 @@ struct CravingHarness {
         return vm
     }
 
-    /// Moves the fixed clock `seconds` past where the screen began. The ViewModel has not looked yet.
-    func advance(bySeconds seconds: Int64) {
+    /// Sets the fixed clock to `seconds` past where the screen began — an absolute time, not a step.
+    /// The ViewModel has not looked yet.
+    func setClock(secondsAfterStart seconds: Int64) {
         clock.advanceTo(Date(timeIntervalSince1970: Double(nowMs) / 1000 + Double(seconds)))
     }
 

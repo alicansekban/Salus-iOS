@@ -62,6 +62,9 @@ struct CravingScreen: View {
             }
         }
         .cravingSheets(state.sheet, writing: state.writing, onEvent: onEvent)
+        // VoiceOver's two-finger Z: the same way out as the close button, through the same guard in
+        // the ViewModel (a full-screen cover has no swipe or back of its own).
+        .accessibilityAction(.escape) { onEvent(.closeTapped) }
         // LAST in the chain, and `#if os(iOS)` because the modifier is iOS-only API while every
         // feature package also builds for the macOS test host.
         #if os(iOS)

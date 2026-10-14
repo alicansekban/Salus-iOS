@@ -23,7 +23,7 @@ struct CravingWriteTests {
     @Test("passed writes one craving, stamped now, and shows the count")
     func passedWritesOne() async throws {
         let vm = await harness.readyViewModel()
-        harness.advance(bySeconds: 90)
+        harness.setClock(secondsAfterStart: 90)
         vm.refreshClock()
 
         vm.onEvent(.passedTapped)
@@ -84,7 +84,7 @@ struct CravingWriteTests {
     @Test("passed after the timer ran out still writes, and only then")
     func passedAfterTheTimer() async throws {
         let vm = await harness.readyViewModel()
-        harness.advance(bySeconds: 6 * 60)
+        harness.setClock(secondsAfterStart: 6 * 60)
         vm.refreshClock()
         #expect(vm.state.completed)
         #expect(harness.store.commits == 0)
@@ -168,7 +168,7 @@ struct CravingWriteTests {
     @Test("closing early writes nothing and leaves")
     func closingEarly() async {
         let vm = await harness.readyViewModel()
-        harness.advance(bySeconds: 40)
+        harness.setClock(secondsAfterStart: 40)
         vm.refreshClock()
 
         vm.onEvent(.closeTapped)
@@ -192,6 +192,20 @@ struct CravingWriteTests {
         #expect(harness.navigator.commandLog.isEmpty)
         gate.open()
         await waitUntil("the craving is logged") { vm.state.logged }
+    }
+
+    @Test("a second tap on close does not send a second pop")
+    func doubleCloseLeavesOnce() async {
+        let vm = await harness.readyViewModel()
+
+        vm.onEvent(.closeTapped)
+        vm.onEvent(.closeTapped)
+        await waitUntil("the screen is left") { !harness.navigator.commandLog.isEmpty }
+        for _ in 0 ..< 20 {
+            await Task.yield()
+        }
+
+        #expect(harness.navigator.commandLog == [.pop])
     }
 
     @Test("the ViewModel is released once the screen is left")

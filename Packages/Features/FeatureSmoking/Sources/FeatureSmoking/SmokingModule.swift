@@ -3,9 +3,8 @@
 //
 // Koin's `module { … }` becomes a value the composition root builds once and hands down (no
 // container; see `docs/ios-feature-template.md`, "Module factory"). The single Koin `viewModel`
-// registrations become `makeSetupViewModel`, `makeMainViewModel`, `makeTimelineViewModel` and `makeCravingViewModel`;
-// each
-// later task adds its screen's factory here.
+// registrations become `makeSetupViewModel`, `makeMainViewModel`, `makeTimelineViewModel` and
+// `makeCravingViewModel`; each later task adds its screen's factory here.
 //
 // The module carries `clock` and `snackbar` because two things the Android Routes `koinInject` are
 // not reachable from a package any other way: the clock the quit-date sheet checks "future"
@@ -116,17 +115,7 @@ public func makeSmokingModule(
                 navigator: navigator
             )
         },
-        makeCravingViewModel: {
-            CravingViewModel(
-                repository: core.repository,
-                clock: clock,
-                logCravingResisted: core.logCravingResisted,
-                logSmoked: core.logSmoked,
-                resolveSlip: core.resolveSlip,
-                editEvent: core.editEvent,
-                navigator: navigator
-            )
-        },
+        makeCravingViewModel: cravingFactory(core: core, clock: clock, navigator: navigator),
         cravingPresenter: SmokingCravingPresenter(),
         makeTimelineViewModel: { highlightStageId in
             SmokingTimelineViewModel(
@@ -151,6 +140,27 @@ public func makeSmokingModule(
             environment: reminderEnvironment
         )
     )
+}
+
+/// The craving flow's factory, apart from `makeSmokingModule` for the same reason as the settings
+/// screen's below: the function is at SwiftLint's body length.
+@MainActor
+private func cravingFactory(
+    core: SmokingCoreModule,
+    clock: any SalusClock,
+    navigator: Navigator
+) -> @MainActor () -> CravingViewModel {
+    {
+        CravingViewModel(
+            repository: core.repository,
+            clock: clock,
+            logCravingResisted: core.logCravingResisted,
+            logSmoked: core.logSmoked,
+            resolveSlip: core.resolveSlip,
+            editEvent: core.editEvent,
+            navigator: navigator
+        )
+    }
 }
 
 /// The settings screen's factory, apart from `makeSmokingModule` to keep that function inside

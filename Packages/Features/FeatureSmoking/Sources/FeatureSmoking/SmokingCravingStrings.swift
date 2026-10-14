@@ -1,6 +1,5 @@
 // The accessors for the keys `:feature:smoking` owns on the craving flow — an extension of
-// ``SmokingStrings`` so the enum itself stays inside SwiftLint's 300-line `type_body_length`. The key
-// names are in `SmokingStrings.Key`.
+// ``SmokingStrings`` so the enum itself stays inside SwiftLint's 300-line `type_body_length`.
 //
 // The keys are their own enum, ``CravingKey``, beside the accessors: `SmokingStrings.Key` is at
 // SwiftLint's 300-line `type_body_length`, which the nested enum counts towards. The parity test

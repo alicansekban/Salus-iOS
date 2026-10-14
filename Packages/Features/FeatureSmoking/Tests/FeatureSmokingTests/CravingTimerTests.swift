@@ -35,7 +35,7 @@ struct CravingTimerTests {
     func followsTheClock() async {
         let vm = await harness.readyViewModel()
 
-        harness.advance(bySeconds: 100)
+        harness.setClock(secondsAfterStart: 100)
         vm.refreshClock()
 
         #expect(vm.state.remainingMs == 200_000)
@@ -44,12 +44,12 @@ struct CravingTimerTests {
     @Test("backgrounding does not stop the timer: the first read after coming back catches up")
     func backgroundingCatchesUp() async {
         let vm = await harness.readyViewModel()
-        harness.advance(bySeconds: 30)
+        harness.setClock(secondsAfterStart: 30)
         vm.refreshClock()
 
-        // The app is in the background for two minutes: the ticker is not running, nothing reads the
+        // The app is in the background for two and a half minutes: the ticker is not running, nothing reads the
         // clock, and the state is as it was.
-        harness.advance(bySeconds: 180)
+        harness.setClock(secondsAfterStart: 180)
         #expect(vm.state.remainingMs == 270_000)
 
         // Foreground again: one read, and the time spent away is in it.
@@ -61,7 +61,7 @@ struct CravingTimerTests {
     func sixMinutesAwayCompletes() async {
         let vm = await harness.readyViewModel()
 
-        harness.advance(bySeconds: 6 * 60)
+        harness.setClock(secondsAfterStart: 6 * 60)
         vm.refreshClock()
 
         #expect(vm.state.remainingMs == 0)
@@ -74,7 +74,7 @@ struct CravingTimerTests {
     @Test("a ViewModel recreated after termination starts afresh and writes nothing")
     func recreatedAfterTerminationWritesNothing() async {
         let first = await harness.readyViewModel()
-        harness.advance(bySeconds: 6 * 60)
+        harness.setClock(secondsAfterStart: 6 * 60)
         first.refreshClock()
         #expect(first.state.completed)
 
@@ -91,7 +91,7 @@ struct CravingTimerTests {
     func clockSetBack() async {
         let vm = await harness.readyViewModel()
 
-        harness.advance(bySeconds: -60)
+        harness.setClock(secondsAfterStart: -60)
         vm.refreshClock()
 
         #expect(vm.state.elapsedMs == 0)
@@ -101,7 +101,7 @@ struct CravingTimerTests {
     @Test("the ticker stops once the five minutes are up")
     func tickerStopsAtTheEnd() async {
         let vm = await harness.readyViewModel()
-        harness.advance(bySeconds: 300)
+        harness.setClock(secondsAfterStart: 300)
 
         await vm.runClock()
 
@@ -111,7 +111,7 @@ struct CravingTimerTests {
     @Test("the ticker reads the clock as soon as it starts")
     func tickerReadsFirst() async {
         let vm = await harness.readyViewModel()
-        harness.advance(bySeconds: 100)
+        harness.setClock(secondsAfterStart: 100)
 
         let ticker = Task { await vm.runClock() }
         await waitUntil("the first read") { vm.state.elapsedMs == 100_000 }
@@ -144,7 +144,7 @@ struct CravingTimerTests {
     func nineSecondsIsTheOutBreath() async {
         let vm = await harness.readyViewModel()
 
-        harness.advance(bySeconds: 9)
+        harness.setClock(secondsAfterStart: 9)
         vm.refreshClock()
 
         #expect(vm.state.phase == .exhale)
@@ -154,7 +154,7 @@ struct CravingTimerTests {
     func rhythmRestarts() async {
         let vm = await harness.readyViewModel()
 
-        harness.advance(bySeconds: 14)
+        harness.setClock(secondsAfterStart: 14)
         vm.refreshClock()
 
         #expect(vm.state.phase == .inhale)
@@ -189,11 +189,11 @@ struct CravingTimerTests {
         let vm = await harness.readyViewModel()
         #expect(vm.state.line == vm.state.lines[0])
 
-        harness.advance(bySeconds: 8)
+        harness.setClock(secondsAfterStart: 8)
         vm.refreshClock()
         #expect(vm.state.line == vm.state.lines[1])
 
-        harness.advance(bySeconds: 16)
+        harness.setClock(secondsAfterStart: 16)
         vm.refreshClock()
         #expect(vm.state.line == vm.state.lines[2])
     }

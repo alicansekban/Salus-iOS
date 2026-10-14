@@ -52,6 +52,9 @@ public final class CravingViewModel {
     /// in REDUCE, which has no attempt.
     private var cravingsBeaten: Int?
 
+    /// Whether the flow has asked to be left.
+    private var left = false
+
     /// The snapshot observation, held so `deinit` can cancel it — a `CancellationBox` because a
     /// `@MainActor` class cannot read its own stored properties from `deinit` in Swift 6.0.
     private let observation = CancellationBox()
@@ -277,7 +280,11 @@ public final class CravingViewModel {
         }
     }
 
+    /// Once. A second tap on the close button, or a trigger sheet and the close button racing, must
+    /// not send a second `.pop`: the shell would apply it to whatever screen is under the cover.
     private func leave() {
+        guard !left else { return }
+        left = true
         state.sheet = nil
         navigator.pop()
     }
