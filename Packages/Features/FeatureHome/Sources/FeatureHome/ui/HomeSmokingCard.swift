@@ -124,13 +124,7 @@ private struct SmokingQuitCard: View {
 
     /// "3 gün" and its siblings; nil once every stage is done.
     private var nextStageText: String? {
-        guard let remainingMs = quit.nextStageRemainingMs else { return nil }
-        let (unit, count) = HomeSmokingFormatting.nextStageUnit(remainingMs: remainingMs)
-        return switch unit {
-        case .days: HomeStrings.smokingNextDays(count)
-        case .hours: HomeStrings.smokingNextHours(count)
-        case .minutes: HomeStrings.smokingNextMinutes(count)
-        }
+        quit.nextStageRemainingMs.map { HomeSmokingFormatting.nextStageText(remainingMs: $0) }
     }
 
     private var spoken: String {

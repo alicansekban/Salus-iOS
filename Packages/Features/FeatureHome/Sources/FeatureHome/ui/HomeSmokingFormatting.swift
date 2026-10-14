@@ -1,5 +1,6 @@
 // The display rules of the smoking card that have no catalog string of their own, ported from
-// `HomeSmokingCards.kt` (`nextStageUnit`, `formatWholeMoney`, `percentText`).
+// `HomeSmokingCards.kt` (`formatWholeMoney`, `percentText`) and the next-stage text over
+// `StageTimeLeft`, the shared time-left rule.
 //
 // Android keeps its money formatter private to its smoking feature and copies the reading here;
 // this is the same copy for the same reason — a feature never imports another. The one
@@ -9,33 +10,22 @@
 // Kotlin answers two for anything unknown as well.
 
 import Foundation
+import SalusSmoking
 
 enum HomeSmokingFormatting {
-    enum NextStageUnit: Equatable, Sendable {
-        case days
-        case hours
-        case minutes
-    }
-
-    private static let msPerMinute: Int64 = 60000
-    private static let msPerHour: Int64 = 3_600_000
-    private static let msPerDay: Int64 = 86_400_000
     private static let defaultFractionDigits = 2
 
-    /// The coarsest unit that still reads as a count, rounded up: "3 days left" never promises the
-    /// stage sooner than it comes. At least one minute, so a stage seconds away does not say zero.
-    static func nextStageUnit(remainingMs: Int64) -> (NextStageUnit, Int) {
-        if remainingMs >= msPerDay {
-            return (.days, ceilDiv(remainingMs, msPerDay))
+    /// "3 gün" and its siblings. The rounding is the one every smoking surface shares
+    /// (`StageTimeLeft`, contract section 8.15): a count rounded up, never below one minute, with
+    /// the unit following the rounded count, so "3 days left" never promises the stage sooner than
+    /// it comes and Home agrees with Main and the timeline for the same snapshot.
+    static func nextStageText(remainingMs: Int64) -> String {
+        let left = StageTimeLeft.of(remainingMs: remainingMs)
+        return switch left.unit {
+        case .days: HomeStrings.smokingNextDays(left.count)
+        case .hours: HomeStrings.smokingNextHours(left.count)
+        case .minutes: HomeStrings.smokingNextMinutes(left.count)
         }
-        if remainingMs >= msPerHour {
-            return (.hours, ceilDiv(remainingMs, msPerHour))
-        }
-        return (.minutes, max(ceilDiv(remainingMs, msPerMinute), 1))
-    }
-
-    private static func ceilDiv(_ value: Int64, _ divisor: Int64) -> Int {
-        Int((value + divisor - 1) / divisor)
     }
 
     /// `minor` in `currencyCode` for `locale`, rounded half up to whole units ("₺3.150").
