@@ -155,6 +155,10 @@ struct RootView: View {
             if gates.holdsSplash {
                 SplashHoldCover()
             }
+            // The smoking craving flow, a full-screen cover along the same lines (iOS-M17 Task 12);
+            // see `SmokingCravingHost` for why it is the shell's. Driven by the module's presenter,
+            // which `observeNavigationCommands` feeds.
+            SmokingCravingHost()
             // The paywall, above the TabView and outside every NavigationStack — the same z-order
             // the gates use. Driven by `paywallController.request`.
             PaywallHost()
@@ -438,6 +442,12 @@ struct RootView: View {
     /// touches the stack.
     private func observeNavigationCommands() async {
         for await command in root.navigator.commands {
+            // The craving flow is a full-screen cover, not a stack entry: its presenter takes the
+            // key (and the `pop` that leaves it) before any back stack or memo below sees the
+            // command, so neither is disturbed by a screen that is not on them.
+            if root.smokingModule.cravingPresenter.consume(command) {
+                continue
+            }
             // Anything a feature pushes onto the appointments stack invalidates that stack's memo:
             // it is now that key on top, not what a reminder put there. A pop needs no line — it
             // moves the depth the memo is matched against, so it can never leave a stale match

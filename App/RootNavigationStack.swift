@@ -192,7 +192,8 @@ struct RootNavigationStack: View {
                     // The smoking card's three hops. `FeatureSmoking` names the keys and `FeatureHome`
                     // cannot import it, so the shell pushes them onto THIS stack (Back returns to
                     // Home) — which is why `smokingDestinations(…)` and the smoking module appear
-                    // below. The craving key's destination arrives with the craving screen.
+                    // below. The craving key is the exception: it is not pushed onto any stack but
+                    // presented as a full-screen cover by `SmokingCravingHost`.
                     onOpenSmoking: { root.navigator.navigate(SmokingKey()) },
                     onOpenSmokingSetup: { root.navigator.navigate(SmokingSetupKey()) },
                     onOpenCraving: { root.navigator.navigate(SmokingCravingKey(source: "home")) }

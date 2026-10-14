@@ -3,7 +3,8 @@
 //
 // Koin's `module { … }` becomes a value the composition root builds once and hands down (no
 // container; see `docs/ios-feature-template.md`, "Module factory"). The single Koin `viewModel`
-// registrations become `makeSetupViewModel`, `makeMainViewModel` and `makeTimelineViewModel`; each
+// registrations become `makeSetupViewModel`, `makeMainViewModel`, `makeTimelineViewModel` and `makeCravingViewModel`;
+// each
 // later task adds its screen's factory here.
 //
 // The module carries `clock` and `snackbar` because two things the Android Routes `koinInject` are
@@ -48,6 +49,15 @@ public struct SmokingModule {
     /// and insights cards (plan Task 15) arrive, which add it with the composition-root change it
     /// needs (the premium graph is built after the scheduled modules, smoking among them).
     public let makeMainViewModel: @MainActor () -> SmokingMainViewModel
+
+    /// `viewModel { CravingViewModel(repository = get(), clock = get(), …) }`. A new one per
+    /// presentation of the cover: its start instant is the moment it is made, so a closed flow never
+    /// leaves a stale timer behind.
+    public let makeCravingViewModel: @MainActor () -> CravingViewModel
+
+    /// Which craving key is on screen as a full-screen cover. The shell hands every navigation
+    /// command to it before the back stacks, so Main and Home reach the cover along one path.
+    public let cravingPresenter: SmokingCravingPresenter
 
     /// `viewModel { parameters -> SmokingTimelineViewModel(highlightStageId = parameters.get(), …) }`.
     /// The id is the stage a link named, or `nil`.
@@ -106,6 +116,18 @@ public func makeSmokingModule(
                 navigator: navigator
             )
         },
+        makeCravingViewModel: {
+            CravingViewModel(
+                repository: core.repository,
+                clock: clock,
+                logCravingResisted: core.logCravingResisted,
+                logSmoked: core.logSmoked,
+                resolveSlip: core.resolveSlip,
+                editEvent: core.editEvent,
+                navigator: navigator
+            )
+        },
+        cravingPresenter: SmokingCravingPresenter(),
         makeTimelineViewModel: { highlightStageId in
             SmokingTimelineViewModel(
                 highlightStageId: highlightStageId,

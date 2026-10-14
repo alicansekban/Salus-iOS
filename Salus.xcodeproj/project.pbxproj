@@ -47,6 +47,7 @@
 		B08C36EA11ED996DB0731323 /* SalusSettings in Frameworks */ = {isa = PBXBuildFile; productRef = 57D3E1D1FDC2AE9506EA16BD /* SalusSettings */; };
 		B188A1539DA23C3F506EFCB9 /* FeatureTrends in Frameworks */ = {isa = PBXBuildFile; productRef = D035E34CA3269229C5C5AD05 /* FeatureTrends */; };
 		B1AB01B38B995823C20C59CD /* LockPrompting.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC743CA17A5881148ADB706C /* LockPrompting.swift */; };
+		BBD31F5F707E7C4086B120AC /* SmokingCravingHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = 685BF806D3AECF574CE1F9AD /* SmokingCravingHost.swift */; };
 		C2326DF7EB01BFBC5283C249 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3682A16DBF8B254394C1B404 /* RootView.swift */; };
 		C9CA768F60D2F662068FC166 /* SalusUI in Frameworks */ = {isa = PBXBuildFile; productRef = 886E308EC0BDC87438F00E5C /* SalusUI */; };
 		CDED585704408706415DDCC0 /* RootView+Previews.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5F9D30994E04E2DA784C2A9 /* RootView+Previews.swift */; };
@@ -82,6 +83,7 @@
 		4C21605CC5C2E2D933AFE62F /* DebugReminderHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugReminderHandler.swift; sourceTree = "<group>"; };
 		4F54D86E0A2A967EA71D0327 /* SalusCommon */ = {isa = PBXFileReference; lastKnownFileType = folder; name = SalusCommon; path = Packages/SalusCommon; sourceTree = SOURCE_ROOT; };
 		5750E2711750521385F3A9B7 /* RootView+Locale.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RootView+Locale.swift"; sourceTree = "<group>"; };
+		685BF806D3AECF574CE1F9AD /* SmokingCravingHost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SmokingCravingHost.swift; sourceTree = "<group>"; };
 		69A1B55BADFFC2D672DBFB8E /* Salus.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Salus.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		6A163935FC35E7AA1B312E8E /* Secrets.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.xcconfig; sourceTree = "<group>"; };
 		6F9E9049E82ED2E281E9C07E /* AiHealthLanguageProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AiHealthLanguageProvider.swift; sourceTree = "<group>"; };
@@ -230,6 +232,7 @@
 				814D8ECF9C6A2402529D7DF1 /* Salus.entitlements */,
 				F703871BE6F4C3CF92AA8959 /* SalusApp.swift */,
 				6A163935FC35E7AA1B312E8E /* Secrets.xcconfig */,
+				685BF806D3AECF574CE1F9AD /* SmokingCravingHost.swift */,
 				B2E78EA7B704B8A1333B32A6 /* WindowPurchaseHost.swift */,
 			);
 			path = App;
@@ -401,6 +404,7 @@
 				CDED585704408706415DDCC0 /* RootView+Previews.swift in Sources */,
 				C2326DF7EB01BFBC5283C249 /* RootView.swift in Sources */,
 				B049FC0314FE8C521DE31994 /* SalusApp.swift in Sources */,
+				BBD31F5F707E7C4086B120AC /* SmokingCravingHost.swift in Sources */,
 				7A7E19B0A72C770F33130FD3 /* WindowPurchaseHost.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

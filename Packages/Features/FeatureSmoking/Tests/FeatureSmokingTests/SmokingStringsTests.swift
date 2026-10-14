@@ -20,7 +20,7 @@ struct SmokingStringsTests {
     static let samples = SmokingStringTable.samples + SmokingMainStringTable.samples
         + SmokingNotificationStringTable.samples + SmokingTimelineStringTable.samples
         + SmokingReduceStringTable.samples + SmokingHistoryStringTable.samples
-        + SmokingSettingsStringTable.samples
+        + SmokingSettingsStringTable.samples + SmokingCravingStringTable.samples
     static let expectedKeys = Set(samples.map(\.key))
 
     /// Setup's overlines: the step counter and the field labels. Stored upper-case in both locales.
@@ -41,11 +41,11 @@ struct SmokingStringsTests {
         "smoking_settings_section_data", "smoking_settings_reason_label"
     ]
 
-    @Test("the catalog holds exactly the 285 keys :feature:smoking owns so far")
+    @Test("the catalog holds exactly the 305 keys :feature:smoking owns so far")
     func catalogHoldsExactlyTheKeys() throws {
         // Pinned as a number as well as a set: a row deleted from the table together with its key
         // from the catalog would otherwise agree with itself and pass.
-        #expect(Self.samples.count == 285)
+        #expect(Self.samples.count == 305)
 
         try StringCatalogParity.assertKeys(of: Self.loadCatalog(), are: Self.expectedKeys)
     }
@@ -78,6 +78,7 @@ struct SmokingStringsTests {
         let accessorKeys = SmokingStrings.Key.allCases.map(\.rawValue)
             + SmokingStrings.HistoryKey.allCases.map(\.rawValue)
             + SmokingStrings.SettingsKey.allCases.map(\.rawValue)
+            + SmokingStrings.CravingKey.allCases.map(\.rawValue)
         #expect(Set(accessorKeys) == catalog.keys)
     }
 
