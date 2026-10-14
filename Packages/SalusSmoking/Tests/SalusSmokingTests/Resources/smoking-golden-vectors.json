@@ -1,0 +1,3534 @@
+{
+  "version": 1,
+  "snapshotCases": [
+    {
+      "name": "not_set_up_no_plan",
+      "nowMs": 1773126000000,
+      "zone": "Europe/Istanbul",
+      "input": {
+        "plan": null,
+        "prices": [],
+        "attempts": [],
+        "events": [],
+        "goal": null
+      },
+      "expected": {
+        "kind": "NOT_SET_UP"
+      }
+    },
+    {
+      "name": "not_set_up_quit_plan_without_active_attempt",
+      "nowMs": 1773126000000,
+      "zone": "Europe/Istanbul",
+      "input": {
+        "plan": {
+          "id": "plan-1",
+          "mode": "QUIT",
+          "productType": "CIGARETTE",
+          "baselineUnitsPerDay": 10,
+          "dailyLimit": null,
+          "currencyCode": "TRY",
+          "reason": null,
+          "notificationsEnabled": true,
+          "eveningReminderEnabled": false,
+          "createdAtMs": 1767247200000,
+          "tzId": "Europe/Istanbul"
+        },
+        "prices": [
+          {
+            "id": "price-2026-03-01",
+            "effectiveFromEpochDay": 20513,
+            "unitCostMinor": 1000
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a1",
+            "startedAtMs": 1772312400000,
+            "tzId": "Europe/Istanbul",
+            "endedAtMs": 1772658000000,
+            "endReason": "RESTARTED"
+          }
+        ],
+        "events": [],
+        "goal": null
+      },
+      "expected": {
+        "kind": "NOT_SET_UP"
+      }
+    },
+    {
+      "name": "quit_day_0",
+      "nowMs": 1772344800000,
+      "zone": "Europe/Istanbul",
+      "input": {
+        "plan": {
+          "id": "plan-1",
+          "mode": "QUIT",
+          "productType": "CIGARETTE",
+          "baselineUnitsPerDay": 10,
+          "dailyLimit": null,
+          "currencyCode": "TRY",
+          "reason": null,
+          "notificationsEnabled": true,
+          "eveningReminderEnabled": false,
+          "createdAtMs": 1767247200000,
+          "tzId": "Europe/Istanbul"
+        },
+        "prices": [
+          {
+            "id": "price-2026-03-01",
+            "effectiveFromEpochDay": 20513,
+            "unitCostMinor": 1000
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a1",
+            "startedAtMs": 1772344800000,
+            "tzId": "Europe/Istanbul",
+            "endedAtMs": null,
+            "endReason": null
+          }
+        ],
+        "events": [],
+        "goal": null
+      },
+      "expected": {
+        "kind": "QUIT",
+        "attemptElapsedMs": 0,
+        "sinceLastSmokeMs": 0,
+        "slipCount": 0,
+        "unitsNotSmoked": 0,
+        "savedMinor": 0,
+        "timeRegainedMinutes": 0,
+        "cravingsBeaten": 0,
+        "nextStageId": "h_20m",
+        "nextStagePermille": 0
+      }
+    },
+    {
+      "name": "quit_42_days_one_slip",
+      "nowMs": 1775988000000,
+      "zone": "Europe/Istanbul",
+      "input": {
+        "plan": {
+          "id": "plan-1",
+          "mode": "QUIT",
+          "productType": "CIGARETTE",
+          "baselineUnitsPerDay": 20,
+          "dailyLimit": null,
+          "currencyCode": "TRY",
+          "reason": null,
+          "notificationsEnabled": true,
+          "eveningReminderEnabled": false,
+          "createdAtMs": 1767247200000,
+          "tzId": "Europe/Istanbul"
+        },
+        "prices": [
+          {
+            "id": "price-2026-03-01",
+            "effectiveFromEpochDay": 20513,
+            "unitCostMinor": 1000
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a1",
+            "startedAtMs": 1772341200000,
+            "tzId": "Europe/Istanbul",
+            "endedAtMs": null,
+            "endReason": null
+          }
+        ],
+        "events": [
+          {
+            "id": "s1",
+            "type": "SMOKED",
+            "occurredAtMs": 1773248400000,
+            "tzId": "Europe/Istanbul",
+            "epochDay": 20523,
+            "units": 3,
+            "trigger": null,
+            "intensity": null,
+            "productType": "CIGARETTE",
+            "attemptId": "a1"
+          }
+        ],
+        "goal": null
+      },
+      "expected": {
+        "kind": "QUIT",
+        "attemptElapsedMs": 3646800000,
+        "sinceLastSmokeMs": 2739600000,
+        "slipCount": 1,
+        "unitsNotSmoked": 841,
+        "savedMinor": 841166,
+        "timeRegainedMinutes": 9251,
+        "cravingsBeaten": 0,
+        "nextStageId": "h_1y",
+        "nextStagePermille": 86
+      }
+    },
+    {
+      "name": "quit_slips_cost_the_price_of_their_own_day",
+      "nowMs": 1772830800000,
+      "zone": "Europe/Istanbul",
+      "input": {
+        "plan": {
+          "id": "plan-1",
+          "mode": "QUIT",
+          "productType": "CIGARETTE",
+          "baselineUnitsPerDay": 10,
+          "dailyLimit": null,
+          "currencyCode": "TRY",
+          "reason": null,
+          "notificationsEnabled": true,
+          "eveningReminderEnabled": false,
+          "createdAtMs": 1767247200000,
+          "tzId": "Europe/Istanbul"
+        },
+        "prices": [
+          {
+            "id": "price-2026-03-01",
+            "effectiveFromEpochDay": 20513,
+            "unitCostMinor": 1000
+          },
+          {
+            "id": "price-2026-03-04",
+            "effectiveFromEpochDay": 20516,
+            "unitCostMinor": 1500
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a1",
+            "startedAtMs": 1772312400000,
+            "tzId": "Europe/Istanbul",
+            "endedAtMs": null,
+            "endReason": null
+          }
+        ],
+        "events": [
+          {
+            "id": "s1",
+            "type": "SMOKED",
+            "occurredAtMs": 1772434800000,
+            "tzId": "Europe/Istanbul",
+            "epochDay": 20514,
+            "units": 2,
+            "trigger": null,
+            "intensity": null,
+            "productType": "CIGARETTE",
+            "attemptId": "a1"
+          },
+          {
+            "id": "s2",
+            "type": "SMOKED",
+            "occurredAtMs": 1772694000000,
+            "tzId": "Europe/Istanbul",
+            "epochDay": 20517,
+            "units": 1,
+            "trigger": null,
+            "intensity": null,
+            "productType": "CIGARETTE",
+            "attemptId": "a1"
+          }
+        ],
+        "goal": null
+      },
+      "expected": {
+        "kind": "QUIT",
+        "attemptElapsedMs": 518400000,
+        "sinceLastSmokeMs": 136800000,
+        "slipCount": 2,
+        "unitsNotSmoked": 57,
+        "savedMinor": 71500,
+        "timeRegainedMinutes": 627
+      }
+    },
+    {
+      "name": "quit_money_is_floored_per_day_not_once",
+      "nowMs": 1772532000000,
+      "zone": "Europe/Istanbul",
+      "input": {
+        "plan": {
+          "id": "plan-1",
+          "mode": "QUIT",
+          "productType": "CIGARETTE",
+          "baselineUnitsPerDay": 7,
+          "dailyLimit": null,
+          "currencyCode": "TRY",
+          "reason": null,
+          "notificationsEnabled": true,
+          "eveningReminderEnabled": false,
+          "createdAtMs": 1767247200000,
+          "tzId": "Europe/Istanbul"
+        },
+        "prices": [
+          {
+            "id": "price-2026-03-01",
+            "effectiveFromEpochDay": 20513,
+            "unitCostMinor": 1000
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a1",
+            "startedAtMs": 1772341200000,
+            "tzId": "Europe/Istanbul",
+            "endedAtMs": null,
+            "endReason": null
+          }
+        ],
+        "events": [],
+        "goal": null
+      },
+      "expected": {
+        "kind": "QUIT",
+        "attemptElapsedMs": 190800000,
+        "sinceLastSmokeMs": 190800000,
+        "slipCount": 0,
+        "unitsNotSmoked": 15,
+        "savedMinor": 15457,
+        "timeRegainedMinutes": 165,
+        "nextStageId": "h_72h",
+        "nextStagePermille": 736
+      }
+    },
+    {
+      "name": "quit_price_period_after_start_uses_earliest_price",
+      "nowMs": 1772571600000,
+      "zone": "Europe/Istanbul",
+      "input": {
+        "plan": {
+          "id": "plan-1",
+          "mode": "QUIT",
+          "productType": "CIGARETTE",
+          "baselineUnitsPerDay": 5,
+          "dailyLimit": null,
+          "currencyCode": "TRY",
+          "reason": null,
+          "notificationsEnabled": true,
+          "eveningReminderEnabled": false,
+          "createdAtMs": 1767247200000,
+          "tzId": "Europe/Istanbul"
+        },
+        "prices": [
+          {
+            "id": "price-2026-03-03",
+            "effectiveFromEpochDay": 20515,
+            "unitCostMinor": 2000
+          },
+          {
+            "id": "price-2026-03-05",
+            "effectiveFromEpochDay": 20517,
+            "unitCostMinor": 9000
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a1",
+            "startedAtMs": 1772312400000,
+            "tzId": "Europe/Istanbul",
+            "endedAtMs": null,
+            "endReason": null
+          }
+        ],
+        "events": [],
+        "goal": null
+      },
+      "expected": {
+        "kind": "QUIT",
+        "attemptElapsedMs": 259200000,
+        "slipCount": 0,
+        "unitsNotSmoked": 15,
+        "savedMinor": 30000
+      }
+    },
+    {
+      "name": "quit_vape_deducts_one_unit_cost_per_slip_day",
+      "nowMs": 1773176400000,
+      "zone": "Europe/Istanbul",
+      "input": {
+        "plan": {
+          "id": "plan-1",
+          "mode": "QUIT",
+          "productType": "VAPE",
+          "baselineUnitsPerDay": 1,
+          "dailyLimit": null,
+          "currencyCode": "TRY",
+          "reason": null,
+          "notificationsEnabled": true,
+          "eveningReminderEnabled": false,
+          "createdAtMs": 1767247200000,
+          "tzId": "Europe/Istanbul"
+        },
+        "prices": [
+          {
+            "id": "price-2026-03-01",
+            "effectiveFromEpochDay": 20513,
+            "unitCostMinor": 1200
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a1",
+            "startedAtMs": 1772312400000,
+            "tzId": "Europe/Istanbul",
+            "endedAtMs": null,
+            "endReason": null
+          }
+        ],
+        "events": [
+          {
+            "id": "s1",
+            "type": "SMOKED",
+            "occurredAtMs": 1772690400000,
+            "tzId": "Europe/Istanbul",
+            "epochDay": 20517,
+            "units": 1,
+            "trigger": null,
+            "intensity": null,
+            "productType": "VAPE",
+            "attemptId": "a1"
+          },
+          {
+            "id": "s2",
+            "type": "SMOKED",
+            "occurredAtMs": 1772704800000,
+            "tzId": "Europe/Istanbul",
+            "epochDay": 20517,
+            "units": 1,
+            "trigger": null,
+            "intensity": null,
+            "productType": "VAPE",
+            "attemptId": "a1"
+          },
+          {
+            "id": "s3",
+            "type": "SMOKED",
+            "occurredAtMs": 1772733600000,
+            "tzId": "Europe/Istanbul",
+            "epochDay": 20517,
+            "units": 1,
+            "trigger": null,
+            "intensity": null,
+            "productType": "VAPE",
+            "attemptId": "a1"
+          },
+          {
+            "id": "s4",
+            "type": "SMOKED",
+            "occurredAtMs": 1772971200000,
+            "tzId": "Europe/Istanbul",
+            "epochDay": 20520,
+            "units": 1,
+            "trigger": null,
+            "intensity": null,
+            "productType": "VAPE",
+            "attemptId": "a1"
+          }
+        ],
+        "goal": null
+      },
+      "expected": {
+        "kind": "QUIT",
+        "attemptElapsedMs": 864000000,
+        "sinceLastSmokeMs": 205200000,
+        "slipCount": 4,
+        "unitsNotSmoked": 6,
+        "savedMinor": 9600,
+        "timeRegainedMinutes": null,
+        "nextStageId": "h_72h",
+        "nextStagePermille": 791
+      }
+    },
+    {
+      "name": "quit_heated_deducts_every_slip_unit",
+      "nowMs": 1773176400000,
+      "zone": "Europe/Istanbul",
+      "input": {
+        "plan": {
+          "id": "plan-1",
+          "mode": "QUIT",
+          "productType": "HEATED",
+          "baselineUnitsPerDay": 1,
+          "dailyLimit": null,
+          "currencyCode": "TRY",
+          "reason": null,
+          "notificationsEnabled": true,
+          "eveningReminderEnabled": false,
+          "createdAtMs": 1767247200000,
+          "tzId": "Europe/Istanbul"
+        },
+        "prices": [
+          {
+            "id": "price-2026-03-01",
+            "effectiveFromEpochDay": 20513,
+            "unitCostMinor": 1200
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a1",
+            "startedAtMs": 1772312400000,
+            "tzId": "Europe/Istanbul",
+            "endedAtMs": null,
+            "endReason": null
+          }
+        ],
+        "events": [
+          {
+            "id": "s1",
+            "type": "SMOKED",
+            "occurredAtMs": 1772690400000,
+            "tzId": "Europe/Istanbul",
+            "epochDay": 20517,
+            "units": 1,
+            "trigger": null,
+            "intensity": null,
+            "productType": "HEATED",
+            "attemptId": "a1"
+          },
+          {
+            "id": "s2",
+            "type": "SMOKED",
+            "occurredAtMs": 1772704800000,
+            "tzId": "Europe/Istanbul",
+            "epochDay": 20517,
+            "units": 1,
+            "trigger": null,
+            "intensity": null,
+            "productType": "HEATED",
+            "attemptId": "a1"
+          },
+          {
+            "id": "s3",
+            "type": "SMOKED",
+            "occurredAtMs": 1772733600000,
+            "tzId": "Europe/Istanbul",
+            "epochDay": 20517,
+            "units": 1,
+            "trigger": null,
+            "intensity": null,
+            "productType": "HEATED",
+            "attemptId": "a1"
+          },
+          {
+            "id": "s4",
+            "type": "SMOKED",
+            "occurredAtMs": 1772971200000,
+            "tzId": "Europe/Istanbul",
+            "epochDay": 20520,
+            "units": 1,
+            "trigger": null,
+            "intensity": null,
+            "productType": "HEATED",
+            "attemptId": "a1"
+          }
+        ],
+        "goal": null
+      },
+      "expected": {
+        "kind": "QUIT",
+        "slipCount": 4,
+        "unitsNotSmoked": 6,
+        "savedMinor": 7200,
+        "timeRegainedMinutes": 66
+      }
+    },
+    {
+      "name": "quit_clock_set_back_before_the_start_is_all_zero",
+      "nowMs": 1772917200000,
+      "zone": "Europe/Istanbul",
+      "input": {
+        "plan": {
+          "id": "plan-1",
+          "mode": "QUIT",
+          "productType": "CIGARETTE",
+          "baselineUnitsPerDay": 10,
+          "dailyLimit": null,
+          "currencyCode": "TRY",
+          "reason": null,
+          "notificationsEnabled": true,
+          "eveningReminderEnabled": false,
+          "createdAtMs": 1767247200000,
+          "tzId": "Europe/Istanbul"
+        },
+        "prices": [
+          {
+            "id": "price-2026-03-01",
+            "effectiveFromEpochDay": 20513,
+            "unitCostMinor": 1000
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a1",
+            "startedAtMs": 1773090000000,
+            "tzId": "Europe/Istanbul",
+            "endedAtMs": null,
+            "endReason": null
+          }
+        ],
+        "events": [],
+        "goal": null
+      },
+      "expected": {
+        "kind": "QUIT",
+        "attemptElapsedMs": 0,
+        "sinceLastSmokeMs": 0,
+        "slipCount": 0,
+        "unitsNotSmoked": 0,
+        "savedMinor": 0,
+        "timeRegainedMinutes": 0,
+        "nextStageId": "h_20m",
+        "nextStagePermille": 0
+      }
+    },
+    {
+      "name": "quit_dst_spring_forward_day_in_berlin",
+      "nowMs": 1774864800000,
+      "zone": "Europe/Berlin",
+      "input": {
+        "plan": {
+          "id": "plan-1",
+          "mode": "QUIT",
+          "productType": "CIGARETTE",
+          "baselineUnitsPerDay": 10,
+          "dailyLimit": null,
+          "currencyCode": "TRY",
+          "reason": null,
+          "notificationsEnabled": true,
+          "eveningReminderEnabled": false,
+          "createdAtMs": 1767254400000,
+          "tzId": "Europe/Berlin"
+        },
+        "prices": [
+          {
+            "id": "price-2026-03-01",
+            "effectiveFromEpochDay": 20513,
+            "unitCostMinor": 1000
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a1",
+            "startedAtMs": 1774695600000,
+            "tzId": "Europe/Berlin",
+            "endedAtMs": null,
+            "endReason": null
+          }
+        ],
+        "events": [],
+        "goal": null
+      },
+      "expected": {
+        "kind": "QUIT",
+        "attemptElapsedMs": 169200000,
+        "sinceLastSmokeMs": 169200000,
+        "slipCount": 0,
+        "unitsNotSmoked": 19,
+        "savedMinor": 19583,
+        "nextStageId": "h_48h",
+        "nextStagePermille": 979
+      }
+    },
+    {
+      "name": "quit_dst_fall_back_day_in_berlin",
+      "nowMs": 1793012400000,
+      "zone": "Europe/Berlin",
+      "input": {
+        "plan": {
+          "id": "plan-1",
+          "mode": "QUIT",
+          "productType": "CIGARETTE",
+          "baselineUnitsPerDay": 10,
+          "dailyLimit": null,
+          "currencyCode": "TRY",
+          "reason": null,
+          "notificationsEnabled": true,
+          "eveningReminderEnabled": false,
+          "createdAtMs": 1767254400000,
+          "tzId": "Europe/Berlin"
+        },
+        "prices": [
+          {
+            "id": "price-2026-10-01",
+            "effectiveFromEpochDay": 20727,
+            "unitCostMinor": 1000
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a1",
+            "startedAtMs": 1792836000000,
+            "tzId": "Europe/Berlin",
+            "endedAtMs": null,
+            "endReason": null
+          }
+        ],
+        "events": [],
+        "goal": null
+      },
+      "expected": {
+        "kind": "QUIT",
+        "attemptElapsedMs": 176400000,
+        "slipCount": 0,
+        "unitsNotSmoked": 20,
+        "savedMinor": 20416,
+        "nextStageId": "h_72h",
+        "nextStagePermille": 680
+      }
+    },
+    {
+      "name": "quit_back_dated_events_are_not_slips",
+      "nowMs": 1773262800000,
+      "zone": "Europe/Istanbul",
+      "input": {
+        "plan": {
+          "id": "plan-1",
+          "mode": "QUIT",
+          "productType": "CIGARETTE",
+          "baselineUnitsPerDay": 10,
+          "dailyLimit": null,
+          "currencyCode": "TRY",
+          "reason": null,
+          "notificationsEnabled": true,
+          "eveningReminderEnabled": false,
+          "createdAtMs": 1767247200000,
+          "tzId": "Europe/Istanbul"
+        },
+        "prices": [
+          {
+            "id": "price-2026-03-01",
+            "effectiveFromEpochDay": 20513,
+            "unitCostMinor": 1000
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a1",
+            "startedAtMs": 1773090000000,
+            "tzId": "Europe/Istanbul",
+            "endedAtMs": null,
+            "endReason": null
+          }
+        ],
+        "events": [
+          {
+            "id": "detached",
+            "type": "SMOKED",
+            "occurredAtMs": 1773086400000,
+            "tzId": "Europe/Istanbul",
+            "epochDay": 20521,
+            "units": 1,
+            "trigger": null,
+            "intensity": null,
+            "productType": "CIGARETTE",
+            "attemptId": null
+          },
+          {
+            "id": "stale-link",
+            "type": "SMOKED",
+            "occurredAtMs": 1773082800000,
+            "tzId": "Europe/Istanbul",
+            "epochDay": 20521,
+            "units": 1,
+            "trigger": null,
+            "intensity": null,
+            "productType": "CIGARETTE",
+            "attemptId": "a1"
+          }
+        ],
+        "goal": null
+      },
+      "expected": {
+        "kind": "QUIT",
+        "attemptElapsedMs": 172800000,
+        "sinceLastSmokeMs": 172800000,
+        "slipCount": 0,
+        "unitsNotSmoked": 20,
+        "savedMinor": 20000,
+        "nextStageId": "h_72h",
+        "nextStagePermille": 666
+      }
+    },
+    {
+      "name": "quit_slips_above_not_smoked_clamp_to_zero",
+      "nowMs": 1772398800000,
+      "zone": "Europe/Istanbul",
+      "input": {
+        "plan": {
+          "id": "plan-1",
+          "mode": "QUIT",
+          "productType": "CIGARETTE",
+          "baselineUnitsPerDay": 10,
+          "dailyLimit": null,
+          "currencyCode": "TRY",
+          "reason": null,
+          "notificationsEnabled": true,
+          "eveningReminderEnabled": false,
+          "createdAtMs": 1767247200000,
+          "tzId": "Europe/Istanbul"
+        },
+        "prices": [
+          {
+            "id": "price-2026-03-01",
+            "effectiveFromEpochDay": 20513,
+            "unitCostMinor": 500
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a1",
+            "startedAtMs": 1772312400000,
+            "tzId": "Europe/Istanbul",
+            "endedAtMs": null,
+            "endReason": null
+          }
+        ],
+        "events": [
+          {
+            "id": "s1",
+            "type": "SMOKED",
+            "occurredAtMs": 1772355600000,
+            "tzId": "Europe/Istanbul",
+            "epochDay": 20513,
+            "units": 15,
+            "trigger": null,
+            "intensity": null,
+            "productType": "CIGARETTE",
+            "attemptId": "a1"
+          }
+        ],
+        "goal": null
+      },
+      "expected": {
+        "kind": "QUIT",
+        "attemptElapsedMs": 86400000,
+        "sinceLastSmokeMs": 43200000,
+        "slipCount": 1,
+        "unitsNotSmoked": 0,
+        "savedMinor": 0,
+        "timeRegainedMinutes": 0,
+        "nextStageId": "h_48h",
+        "nextStagePermille": 250
+      }
+    },
+    {
+      "name": "quit_stage_counting_again_after_a_slip_at_day_100",
+      "nowMs": 1776718800000,
+      "zone": "Europe/Istanbul",
+      "input": {
+        "plan": {
+          "id": "plan-1",
+          "mode": "QUIT",
+          "productType": "CIGARETTE",
+          "baselineUnitsPerDay": 10,
+          "dailyLimit": null,
+          "currencyCode": "TRY",
+          "reason": null,
+          "notificationsEnabled": true,
+          "eveningReminderEnabled": false,
+          "createdAtMs": 1767247200000,
+          "tzId": "Europe/Istanbul"
+        },
+        "prices": [
+          {
+            "id": "price-2026-01-01",
+            "effectiveFromEpochDay": 20454,
+            "unitCostMinor": 1000
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a1",
+            "startedAtMs": 1767214800000,
+            "tzId": "Europe/Istanbul",
+            "endedAtMs": null,
+            "endReason": null
+          }
+        ],
+        "events": [
+          {
+            "id": "s1",
+            "type": "SMOKED",
+            "occurredAtMs": 1775854800000,
+            "tzId": "Europe/Istanbul",
+            "epochDay": 20554,
+            "units": 1,
+            "trigger": null,
+            "intensity": null,
+            "productType": "CIGARETTE",
+            "attemptId": "a1"
+          }
+        ],
+        "goal": null
+      },
+      "expected": {
+        "kind": "QUIT",
+        "attemptElapsedMs": 9504000000,
+        "sinceLastSmokeMs": 864000000,
+        "slipCount": 1,
+        "unitsNotSmoked": 1099,
+        "savedMinor": 1099000,
+        "timeRegainedMinutes": 12089,
+        "nextStageId": "h_2w",
+        "nextStagePermille": 714
+      }
+    },
+    {
+      "name": "quit_year_stage_counting_again_after_a_slip_at_day_100",
+      "nowMs": 1801774800000,
+      "zone": "Europe/Istanbul",
+      "input": {
+        "plan": {
+          "id": "plan-1",
+          "mode": "QUIT",
+          "productType": "CIGARETTE",
+          "baselineUnitsPerDay": 10,
+          "dailyLimit": null,
+          "currencyCode": "TRY",
+          "reason": null,
+          "notificationsEnabled": true,
+          "eveningReminderEnabled": false,
+          "createdAtMs": 1767247200000,
+          "tzId": "Europe/Istanbul"
+        },
+        "prices": [
+          {
+            "id": "price-2026-01-01",
+            "effectiveFromEpochDay": 20454,
+            "unitCostMinor": 1000
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a1",
+            "startedAtMs": 1767214800000,
+            "tzId": "Europe/Istanbul",
+            "endedAtMs": null,
+            "endReason": null
+          }
+        ],
+        "events": [
+          {
+            "id": "s1",
+            "type": "SMOKED",
+            "occurredAtMs": 1775854800000,
+            "tzId": "Europe/Istanbul",
+            "epochDay": 20554,
+            "units": 1,
+            "trigger": null,
+            "intensity": null,
+            "productType": "CIGARETTE",
+            "attemptId": "a1"
+          }
+        ],
+        "goal": null
+      },
+      "expected": {
+        "kind": "QUIT",
+        "attemptElapsedMs": 34560000000,
+        "sinceLastSmokeMs": 25920000000,
+        "slipCount": 1,
+        "unitsNotSmoked": 3999,
+        "savedMinor": 3999000,
+        "nextStageId": "h_1y",
+        "nextStagePermille": 821
+      }
+    },
+    {
+      "name": "quit_goal_created_mid_attempt",
+      "nowMs": 1773176400000,
+      "zone": "Europe/Istanbul",
+      "input": {
+        "plan": {
+          "id": "plan-1",
+          "mode": "QUIT",
+          "productType": "CIGARETTE",
+          "baselineUnitsPerDay": 10,
+          "dailyLimit": null,
+          "currencyCode": "TRY",
+          "reason": null,
+          "notificationsEnabled": true,
+          "eveningReminderEnabled": false,
+          "createdAtMs": 1767247200000,
+          "tzId": "Europe/Istanbul"
+        },
+        "prices": [
+          {
+            "id": "price-2026-03-01",
+            "effectiveFromEpochDay": 20513,
+            "unitCostMinor": 1000
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a1",
+            "startedAtMs": 1772312400000,
+            "tzId": "Europe/Istanbul",
+            "endedAtMs": null,
+            "endReason": null
+          }
+        ],
+        "events": [
+          {
+            "id": "before-goal",
+            "type": "SMOKED",
+            "occurredAtMs": 1772431200000,
+            "tzId": "Europe/Istanbul",
+            "epochDay": 20514,
+            "units": 5,
+            "trigger": null,
+            "intensity": null,
+            "productType": "CIGARETTE",
+            "attemptId": "a1"
+          },
+          {
+            "id": "in-goal",
+            "type": "SMOKED",
+            "occurredAtMs": 1772863200000,
+            "tzId": "Europe/Istanbul",
+            "epochDay": 20519,
+            "units": 2,
+            "trigger": null,
+            "intensity": null,
+            "productType": "CIGARETTE",
+            "attemptId": "a1"
+          }
+        ],
+        "goal": {
+          "id": "goal-1",
+          "title": "Trip",
+          "targetMinor": 100000,
+          "createdAtMs": 1772701200000,
+          "achievedAtMs": null
+        }
+      },
+      "expected": {
+        "kind": "QUIT",
+        "attemptElapsedMs": 864000000,
+        "sinceLastSmokeMs": 313200000,
+        "slipCount": 2,
+        "unitsNotSmoked": 93,
+        "savedMinor": 93000,
+        "timeRegainedMinutes": 1023,
+        "goalSavedTowardMinor": 53000,
+        "nextStageId": "h_2w",
+        "nextStagePermille": 258
+      }
+    },
+    {
+      "name": "quit_goal_spans_an_attempt_restart",
+      "nowMs": 1773522000000,
+      "zone": "Europe/Istanbul",
+      "input": {
+        "plan": {
+          "id": "plan-1",
+          "mode": "QUIT",
+          "productType": "CIGARETTE",
+          "baselineUnitsPerDay": 10,
+          "dailyLimit": null,
+          "currencyCode": "TRY",
+          "reason": null,
+          "notificationsEnabled": true,
+          "eveningReminderEnabled": false,
+          "createdAtMs": 1767247200000,
+          "tzId": "Europe/Istanbul"
+        },
+        "prices": [
+          {
+            "id": "price-2026-03-01",
+            "effectiveFromEpochDay": 20513,
+            "unitCostMinor": 1000
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a1",
+            "startedAtMs": 1772312400000,
+            "tzId": "Europe/Istanbul",
+            "endedAtMs": 1773176400000,
+            "endReason": "RESTARTED"
+          },
+          {
+            "id": "a2",
+            "startedAtMs": 1773176400000,
+            "tzId": "Europe/Istanbul",
+            "endedAtMs": null,
+            "endReason": null
+          }
+        ],
+        "events": [
+          {
+            "id": "trigger",
+            "type": "SMOKED",
+            "occurredAtMs": 1773176400000,
+            "tzId": "Europe/Istanbul",
+            "epochDay": 20523,
+            "units": 1,
+            "trigger": null,
+            "intensity": null,
+            "productType": "CIGARETTE",
+            "attemptId": "a1"
+          },
+          {
+            "id": "c1",
+            "type": "CRAVING_RESISTED",
+            "occurredAtMs": 1772521200000,
+            "tzId": "Europe/Istanbul",
+            "epochDay": 20515,
+            "units": null,
+            "trigger": "STRESS",
+            "intensity": 3,
+            "productType": "CIGARETTE",
+            "attemptId": "a1"
+          },
+          {
+            "id": "c2",
+            "type": "CRAVING_RESISTED",
+            "occurredAtMs": 1773298800000,
+            "tzId": "Europe/Istanbul",
+            "epochDay": 20524,
+            "units": null,
+            "trigger": "STRESS",
+            "intensity": 3,
+            "productType": "CIGARETTE",
+            "attemptId": "a2"
+          }
+        ],
+        "goal": {
+          "id": "goal-1",
+          "title": "Trip",
+          "targetMinor": 200000,
+          "createdAtMs": 1772744400000,
+          "achievedAtMs": null
+        }
+      },
+      "expected": {
+        "kind": "QUIT",
+        "attemptElapsedMs": 345600000,
+        "sinceLastSmokeMs": 345600000,
+        "slipCount": 0,
+        "unitsNotSmoked": 40,
+        "savedMinor": 40000,
+        "timeRegainedMinutes": 440,
+        "cravingsBeaten": 1,
+        "goalSavedTowardMinor": 89000,
+        "nextStageId": "h_2w",
+        "nextStagePermille": 285
+      }
+    },
+    {
+      "name": "quit_goal_floor_is_per_attempt",
+      "nowMs": 1772658000000,
+      "zone": "Europe/Istanbul",
+      "input": {
+        "plan": {
+          "id": "plan-1",
+          "mode": "QUIT",
+          "productType": "CIGARETTE",
+          "baselineUnitsPerDay": 10,
+          "dailyLimit": null,
+          "currencyCode": "TRY",
+          "reason": null,
+          "notificationsEnabled": true,
+          "eveningReminderEnabled": false,
+          "createdAtMs": 1769893200000,
+          "tzId": "Europe/Istanbul"
+        },
+        "prices": [
+          {
+            "id": "price-2026-03-01",
+            "effectiveFromEpochDay": 20513,
+            "unitCostMinor": 1000
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a1",
+            "startedAtMs": 1772312400000,
+            "tzId": "Europe/Istanbul",
+            "endedAtMs": 1772398800000,
+            "endReason": "RESTARTED"
+          },
+          {
+            "id": "a2",
+            "startedAtMs": 1772398800000,
+            "tzId": "Europe/Istanbul",
+            "endedAtMs": null,
+            "endReason": null
+          }
+        ],
+        "events": [
+          {
+            "id": "s1",
+            "type": "SMOKED",
+            "occurredAtMs": 1772355600000,
+            "tzId": "Europe/Istanbul",
+            "epochDay": 20513,
+            "units": 14,
+            "trigger": null,
+            "intensity": null,
+            "productType": "CIGARETTE",
+            "attemptId": "a1"
+          },
+          {
+            "id": "trigger",
+            "type": "SMOKED",
+            "occurredAtMs": 1772398800000,
+            "tzId": "Europe/Istanbul",
+            "epochDay": 20514,
+            "units": 1,
+            "trigger": null,
+            "intensity": null,
+            "productType": "CIGARETTE",
+            "attemptId": "a1"
+          }
+        ],
+        "goal": {
+          "id": "goal-1",
+          "title": "Trip",
+          "targetMinor": 200000,
+          "createdAtMs": 1772312400000,
+          "achievedAtMs": null
+        }
+      },
+      "expected": {
+        "kind": "QUIT",
+        "attemptElapsedMs": 259200000,
+        "sinceLastSmokeMs": 259200000,
+        "slipCount": 0,
+        "unitsNotSmoked": 30,
+        "savedMinor": 30000,
+        "timeRegainedMinutes": 330,
+        "cravingsBeaten": 0,
+        "nextStageId": "h_2w",
+        "nextStagePermille": 214,
+        "goalSavedTowardMinor": 30000
+      }
+    },
+    {
+      "name": "quit_20_years_60_a_day_10000_minor_no_overflow",
+      "nowMs": 1767225600000,
+      "zone": "UTC",
+      "input": {
+        "plan": {
+          "id": "plan-1",
+          "mode": "QUIT",
+          "productType": "CIGARETTE",
+          "baselineUnitsPerDay": 60,
+          "dailyLimit": null,
+          "currencyCode": "TRY",
+          "reason": null,
+          "notificationsEnabled": true,
+          "eveningReminderEnabled": false,
+          "createdAtMs": 1767258000000,
+          "tzId": "UTC"
+        },
+        "prices": [
+          {
+            "id": "price-2006-01-01",
+            "effectiveFromEpochDay": 13149,
+            "unitCostMinor": 10000
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a1",
+            "startedAtMs": 1136073600000,
+            "tzId": "UTC",
+            "endedAtMs": null,
+            "endReason": null
+          }
+        ],
+        "events": [],
+        "goal": null
+      },
+      "expected": {
+        "kind": "QUIT",
+        "attemptElapsedMs": 631152000000,
+        "sinceLastSmokeMs": 631152000000,
+        "slipCount": 0,
+        "unitsNotSmoked": 438300,
+        "savedMinor": 4383000000,
+        "timeRegainedMinutes": 4821300,
+        "nextStageId": null,
+        "nextStagePermille": null
+      }
+    },
+    {
+      "name": "reduce_no_data_days_excluded_and_zero_marker_counts",
+      "nowMs": 1774008000000,
+      "zone": "Europe/Istanbul",
+      "input": {
+        "plan": {
+          "id": "plan-1",
+          "mode": "REDUCE",
+          "productType": "CIGARETTE",
+          "baselineUnitsPerDay": 20,
+          "dailyLimit": 10,
+          "currencyCode": "TRY",
+          "reason": null,
+          "notificationsEnabled": true,
+          "eveningReminderEnabled": false,
+          "createdAtMs": 1773122400000,
+          "tzId": "Europe/Istanbul"
+        },
+        "prices": [
+          {
+            "id": "price-2026-03-10",
+            "effectiveFromEpochDay": 20522,
+            "unitCostMinor": 100
+          },
+          {
+            "id": "price-2026-03-18",
+            "effectiveFromEpochDay": 20530,
+            "unitCostMinor": 200
+          }
+        ],
+        "attempts": [],
+        "events": [
+          {
+            "id": "e1",
+            "type": "SMOKED",
+            "occurredAtMs": 1773910800000,
+            "tzId": "Europe/Istanbul",
+            "epochDay": 20531,
+            "units": 5,
+            "trigger": null,
+            "intensity": null,
+            "productType": "CIGARETTE",
+            "attemptId": null
+          },
+          {
+            "id": "e2",
+            "type": "SMOKED",
+            "occurredAtMs": 1773910800000,
+            "tzId": "Europe/Istanbul",
+            "epochDay": 20531,
+            "units": 7,
+            "trigger": null,
+            "intensity": null,
+            "productType": "CIGARETTE",
+            "attemptId": null
+          },
+          {
+            "id": "e3",
+            "type": "SMOKED",
+            "occurredAtMs": 1773738000000,
+            "tzId": "Europe/Istanbul",
+            "epochDay": 20529,
+            "units": 25,
+            "trigger": null,
+            "intensity": null,
+            "productType": "CIGARETTE",
+            "attemptId": null
+          },
+          {
+            "id": "e4",
+            "type": "SMOKED",
+            "occurredAtMs": 1773565200000,
+            "tzId": "Europe/Istanbul",
+            "epochDay": 20527,
+            "units": 0,
+            "trigger": null,
+            "intensity": null,
+            "productType": "CIGARETTE",
+            "attemptId": null
+          },
+          {
+            "id": "e5",
+            "type": "SMOKED",
+            "occurredAtMs": 1773306000000,
+            "tzId": "Europe/Istanbul",
+            "epochDay": 20524,
+            "units": 5,
+            "trigger": null,
+            "intensity": null,
+            "productType": "CIGARETTE",
+            "attemptId": null
+          },
+          {
+            "id": "e6",
+            "type": "SMOKED",
+            "occurredAtMs": 1772960400000,
+            "tzId": "Europe/Istanbul",
+            "epochDay": 20520,
+            "units": 0,
+            "trigger": null,
+            "intensity": null,
+            "productType": "CIGARETTE",
+            "attemptId": null
+          },
+          {
+            "id": "c1",
+            "type": "CRAVING_RESISTED",
+            "occurredAtMs": 1773644400000,
+            "tzId": "Europe/Istanbul",
+            "epochDay": 20528,
+            "units": null,
+            "trigger": "STRESS",
+            "intensity": 3,
+            "productType": "CIGARETTE",
+            "attemptId": null
+          },
+          {
+            "id": "c2",
+            "type": "CRAVING_RESISTED",
+            "occurredAtMs": 1773817200000,
+            "tzId": "Europe/Istanbul",
+            "epochDay": 20530,
+            "units": null,
+            "trigger": "STRESS",
+            "intensity": 3,
+            "productType": "CIGARETTE",
+            "attemptId": null
+          }
+        ],
+        "goal": {
+          "id": "goal-1",
+          "title": "Trip",
+          "targetMinor": 5000,
+          "createdAtMs": 1773730800000,
+          "achievedAtMs": null
+        }
+      },
+      "expected": {
+        "kind": "REDUCE",
+        "todayUnits": 0,
+        "weekReductionUnits": 28,
+        "weekSavedMinor": 3600,
+        "savedSinceSetupMinor": 5100,
+        "goalSavedTowardMinor": 1600
+      }
+    },
+    {
+      "name": "reduce_today_zero_marker",
+      "nowMs": 1774008000000,
+      "zone": "Europe/Istanbul",
+      "input": {
+        "plan": {
+          "id": "plan-1",
+          "mode": "REDUCE",
+          "productType": "CIGARETTE",
+          "baselineUnitsPerDay": 10,
+          "dailyLimit": 5,
+          "currencyCode": "TRY",
+          "reason": null,
+          "notificationsEnabled": true,
+          "eveningReminderEnabled": false,
+          "createdAtMs": 1772344800000,
+          "tzId": "Europe/Istanbul"
+        },
+        "prices": [
+          {
+            "id": "price-2026-03-01",
+            "effectiveFromEpochDay": 20513,
+            "unitCostMinor": 100
+          }
+        ],
+        "attempts": [],
+        "events": [
+          {
+            "id": "e1",
+            "type": "SMOKED",
+            "occurredAtMs": 1773997200000,
+            "tzId": "Europe/Istanbul",
+            "epochDay": 20532,
+            "units": 0,
+            "trigger": null,
+            "intensity": null,
+            "productType": "CIGARETTE",
+            "attemptId": null
+          }
+        ],
+        "goal": null
+      },
+      "expected": {
+        "kind": "REDUCE",
+        "weekReductionUnits": 10,
+        "weekSavedMinor": 1000,
+        "savedSinceSetupMinor": 1000,
+        "todayUnits": 0
+      }
+    },
+    {
+      "name": "reduce_today_at_the_limit",
+      "nowMs": 1774008000000,
+      "zone": "Europe/Istanbul",
+      "input": {
+        "plan": {
+          "id": "plan-1",
+          "mode": "REDUCE",
+          "productType": "CIGARETTE",
+          "baselineUnitsPerDay": 10,
+          "dailyLimit": 5,
+          "currencyCode": "TRY",
+          "reason": null,
+          "notificationsEnabled": true,
+          "eveningReminderEnabled": false,
+          "createdAtMs": 1772344800000,
+          "tzId": "Europe/Istanbul"
+        },
+        "prices": [
+          {
+            "id": "price-2026-03-01",
+            "effectiveFromEpochDay": 20513,
+            "unitCostMinor": 100
+          }
+        ],
+        "attempts": [],
+        "events": [
+          {
+            "id": "e1",
+            "type": "SMOKED",
+            "occurredAtMs": 1773997200000,
+            "tzId": "Europe/Istanbul",
+            "epochDay": 20532,
+            "units": 5,
+            "trigger": null,
+            "intensity": null,
+            "productType": "CIGARETTE",
+            "attemptId": null
+          }
+        ],
+        "goal": null
+      },
+      "expected": {
+        "kind": "REDUCE",
+        "weekReductionUnits": 5,
+        "weekSavedMinor": 500,
+        "savedSinceSetupMinor": 500,
+        "todayUnits": 5
+      }
+    },
+    {
+      "name": "reduce_today_over_the_limit_from_two_events",
+      "nowMs": 1774008000000,
+      "zone": "Europe/Istanbul",
+      "input": {
+        "plan": {
+          "id": "plan-1",
+          "mode": "REDUCE",
+          "productType": "CIGARETTE",
+          "baselineUnitsPerDay": 10,
+          "dailyLimit": 5,
+          "currencyCode": "TRY",
+          "reason": null,
+          "notificationsEnabled": true,
+          "eveningReminderEnabled": false,
+          "createdAtMs": 1772344800000,
+          "tzId": "Europe/Istanbul"
+        },
+        "prices": [
+          {
+            "id": "price-2026-03-01",
+            "effectiveFromEpochDay": 20513,
+            "unitCostMinor": 100
+          }
+        ],
+        "attempts": [],
+        "events": [
+          {
+            "id": "e1",
+            "type": "SMOKED",
+            "occurredAtMs": 1773997200000,
+            "tzId": "Europe/Istanbul",
+            "epochDay": 20532,
+            "units": 4,
+            "trigger": null,
+            "intensity": null,
+            "productType": "CIGARETTE",
+            "attemptId": null
+          },
+          {
+            "id": "e2",
+            "type": "SMOKED",
+            "occurredAtMs": 1773997200000,
+            "tzId": "Europe/Istanbul",
+            "epochDay": 20532,
+            "units": 5,
+            "trigger": null,
+            "intensity": null,
+            "productType": "CIGARETTE",
+            "attemptId": null
+          }
+        ],
+        "goal": null
+      },
+      "expected": {
+        "kind": "REDUCE",
+        "weekReductionUnits": 1,
+        "weekSavedMinor": 100,
+        "savedSinceSetupMinor": 100,
+        "todayUnits": 9
+      }
+    },
+    {
+      "name": "reduce_today_above_baseline_reduces_nothing",
+      "nowMs": 1774008000000,
+      "zone": "Europe/Istanbul",
+      "input": {
+        "plan": {
+          "id": "plan-1",
+          "mode": "REDUCE",
+          "productType": "CIGARETTE",
+          "baselineUnitsPerDay": 10,
+          "dailyLimit": 5,
+          "currencyCode": "TRY",
+          "reason": null,
+          "notificationsEnabled": true,
+          "eveningReminderEnabled": false,
+          "createdAtMs": 1772344800000,
+          "tzId": "Europe/Istanbul"
+        },
+        "prices": [
+          {
+            "id": "price-2026-03-01",
+            "effectiveFromEpochDay": 20513,
+            "unitCostMinor": 100
+          }
+        ],
+        "attempts": [],
+        "events": [
+          {
+            "id": "e1",
+            "type": "SMOKED",
+            "occurredAtMs": 1773997200000,
+            "tzId": "Europe/Istanbul",
+            "epochDay": 20532,
+            "units": 12,
+            "trigger": null,
+            "intensity": null,
+            "productType": "CIGARETTE",
+            "attemptId": null
+          }
+        ],
+        "goal": null
+      },
+      "expected": {
+        "kind": "REDUCE",
+        "weekReductionUnits": 0,
+        "weekSavedMinor": 0,
+        "savedSinceSetupMinor": 0,
+        "todayUnits": 12
+      }
+    },
+    {
+      "name": "reduce_first_week_after_setup",
+      "nowMs": 1773334800000,
+      "zone": "Europe/Istanbul",
+      "input": {
+        "plan": {
+          "id": "plan-1",
+          "mode": "REDUCE",
+          "productType": "CIGARETTE",
+          "baselineUnitsPerDay": 5,
+          "dailyLimit": 3,
+          "currencyCode": "TRY",
+          "reason": null,
+          "notificationsEnabled": true,
+          "eveningReminderEnabled": false,
+          "createdAtMs": 1773122400000,
+          "tzId": "Europe/Istanbul"
+        },
+        "prices": [
+          {
+            "id": "price-2026-03-10",
+            "effectiveFromEpochDay": 20522,
+            "unitCostMinor": 400
+          }
+        ],
+        "attempts": [],
+        "events": [
+          {
+            "id": "e1",
+            "type": "SMOKED",
+            "occurredAtMs": 1773133200000,
+            "tzId": "Europe/Istanbul",
+            "epochDay": 20522,
+            "units": 3,
+            "trigger": null,
+            "intensity": null,
+            "productType": "CIGARETTE",
+            "attemptId": null
+          }
+        ],
+        "goal": null
+      },
+      "expected": {
+        "kind": "REDUCE",
+        "todayUnits": 0,
+        "weekReductionUnits": 2,
+        "weekSavedMinor": 800,
+        "savedSinceSetupMinor": 800
+      }
+    },
+    {
+      "name": "reduce_event_keeps_the_day_of_its_own_time_zone",
+      "nowMs": 1773986400000,
+      "zone": "Asia/Tokyo",
+      "input": {
+        "plan": {
+          "id": "plan-1",
+          "mode": "REDUCE",
+          "productType": "CIGARETTE",
+          "baselineUnitsPerDay": 10,
+          "dailyLimit": 5,
+          "currencyCode": "TRY",
+          "reason": null,
+          "notificationsEnabled": true,
+          "eveningReminderEnabled": false,
+          "createdAtMs": 1772344800000,
+          "tzId": "Europe/Istanbul"
+        },
+        "prices": [
+          {
+            "id": "price-2026-03-01",
+            "effectiveFromEpochDay": 20513,
+            "unitCostMinor": 100
+          }
+        ],
+        "attempts": [],
+        "events": [
+          {
+            "id": "late",
+            "type": "SMOKED",
+            "occurredAtMs": 1773952200000,
+            "tzId": "Europe/Istanbul",
+            "epochDay": 20531,
+            "units": 3,
+            "trigger": null,
+            "intensity": null,
+            "productType": "CIGARETTE",
+            "attemptId": null
+          }
+        ],
+        "goal": null
+      },
+      "expected": {
+        "kind": "REDUCE",
+        "todayUnits": 0,
+        "weekReductionUnits": 7,
+        "weekSavedMinor": 700,
+        "savedSinceSetupMinor": 700
+      }
+    }
+  ],
+  "scheduleCases": [
+    {
+      "name": "not_set_up_plans_nothing",
+      "nowMs": 1773133200000,
+      "zone": "Europe/Istanbul",
+      "input": {
+        "plan": null,
+        "prices": [],
+        "attempts": [],
+        "events": [],
+        "goal": null
+      },
+      "expected": []
+    },
+    {
+      "name": "quit_notifications_off_plans_nothing",
+      "nowMs": 1772344800000,
+      "zone": "Europe/Istanbul",
+      "input": {
+        "plan": {
+          "id": "plan-1",
+          "mode": "QUIT",
+          "productType": "CIGARETTE",
+          "baselineUnitsPerDay": 20,
+          "dailyLimit": null,
+          "currencyCode": "TRY",
+          "reason": null,
+          "notificationsEnabled": false,
+          "eveningReminderEnabled": false,
+          "createdAtMs": 1769893200000,
+          "tzId": "Europe/Istanbul"
+        },
+        "prices": [
+          {
+            "id": "price-2026-03-01",
+            "effectiveFromEpochDay": 20513,
+            "unitCostMinor": 1000
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a1",
+            "startedAtMs": 1772344800000,
+            "tzId": "Europe/Istanbul",
+            "endedAtMs": null,
+            "endReason": null
+          }
+        ],
+        "events": [],
+        "goal": null
+      },
+      "expected": []
+    },
+    {
+      "name": "quit_without_an_active_attempt_plans_nothing",
+      "nowMs": 1772517600000,
+      "zone": "Europe/Istanbul",
+      "input": {
+        "plan": {
+          "id": "plan-1",
+          "mode": "QUIT",
+          "productType": "CIGARETTE",
+          "baselineUnitsPerDay": 20,
+          "dailyLimit": null,
+          "currencyCode": "TRY",
+          "reason": null,
+          "notificationsEnabled": true,
+          "eveningReminderEnabled": false,
+          "createdAtMs": 1769893200000,
+          "tzId": "Europe/Istanbul"
+        },
+        "prices": [
+          {
+            "id": "price-2026-03-01",
+            "effectiveFromEpochDay": 20513,
+            "unitCostMinor": 1000
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a1",
+            "startedAtMs": 1772344800000,
+            "tzId": "Europe/Istanbul",
+            "endedAtMs": 1772431200000,
+            "endReason": "SWITCHED_TO_REDUCE"
+          }
+        ],
+        "events": [],
+        "goal": null
+      },
+      "expected": []
+    },
+    {
+      "name": "reduce_evening_off_plans_nothing",
+      "nowMs": 1773133200000,
+      "zone": "Europe/Istanbul",
+      "input": {
+        "plan": {
+          "id": "plan-1",
+          "mode": "REDUCE",
+          "productType": "CIGARETTE",
+          "baselineUnitsPerDay": 20,
+          "dailyLimit": 15,
+          "currencyCode": "TRY",
+          "reason": null,
+          "notificationsEnabled": true,
+          "eveningReminderEnabled": false,
+          "createdAtMs": 1769893200000,
+          "tzId": "Europe/Istanbul"
+        },
+        "prices": [
+          {
+            "id": "price-2026-03-01",
+            "effectiveFromEpochDay": 20513,
+            "unitCostMinor": 1000
+          }
+        ],
+        "attempts": [],
+        "events": [
+          {
+            "id": "e1",
+            "type": "SMOKED",
+            "occurredAtMs": 1773129600000,
+            "tzId": "Europe/Istanbul",
+            "epochDay": 20522,
+            "units": 4,
+            "trigger": null,
+            "intensity": null,
+            "productType": "CIGARETTE",
+            "attemptId": null
+          }
+        ],
+        "goal": null
+      },
+      "expected": []
+    },
+    {
+      "name": "reduce_evening_today_and_the_next_six_days",
+      "nowMs": 1773133200000,
+      "zone": "Europe/Istanbul",
+      "input": {
+        "plan": {
+          "id": "plan-1",
+          "mode": "REDUCE",
+          "productType": "CIGARETTE",
+          "baselineUnitsPerDay": 20,
+          "dailyLimit": 15,
+          "currencyCode": "TRY",
+          "reason": null,
+          "notificationsEnabled": false,
+          "eveningReminderEnabled": true,
+          "createdAtMs": 1769893200000,
+          "tzId": "Europe/Istanbul"
+        },
+        "prices": [
+          {
+            "id": "price-2026-03-01",
+            "effectiveFromEpochDay": 20513,
+            "unitCostMinor": 1000
+          }
+        ],
+        "attempts": [],
+        "events": [
+          {
+            "id": "e1",
+            "type": "SMOKED",
+            "occurredAtMs": 1773129600000,
+            "tzId": "Europe/Istanbul",
+            "epochDay": 20522,
+            "units": 4,
+            "trigger": null,
+            "intensity": null,
+            "productType": "CIGARETTE",
+            "attemptId": null
+          }
+        ],
+        "goal": null
+      },
+      "expected": [
+        {
+          "key": "r:plan-1:2026-03-10",
+          "triggerAtMs": 1773163800000,
+          "kinds": [
+            "EVENING:20522"
+          ]
+        },
+        {
+          "key": "r:plan-1:2026-03-11",
+          "triggerAtMs": 1773250200000,
+          "kinds": [
+            "EVENING:20523"
+          ]
+        },
+        {
+          "key": "r:plan-1:2026-03-12",
+          "triggerAtMs": 1773336600000,
+          "kinds": [
+            "EVENING:20524"
+          ]
+        },
+        {
+          "key": "r:plan-1:2026-03-13",
+          "triggerAtMs": 1773423000000,
+          "kinds": [
+            "EVENING:20525"
+          ]
+        },
+        {
+          "key": "r:plan-1:2026-03-14",
+          "triggerAtMs": 1773509400000,
+          "kinds": [
+            "EVENING:20526"
+          ]
+        },
+        {
+          "key": "r:plan-1:2026-03-15",
+          "triggerAtMs": 1773595800000,
+          "kinds": [
+            "EVENING:20527"
+          ]
+        },
+        {
+          "key": "r:plan-1:2026-03-16",
+          "triggerAtMs": 1773682200000,
+          "kinds": [
+            "EVENING:20528"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "reduce_evening_at_20_30_skips_today",
+      "nowMs": 1773163800000,
+      "zone": "Europe/Istanbul",
+      "input": {
+        "plan": {
+          "id": "plan-1",
+          "mode": "REDUCE",
+          "productType": "CIGARETTE",
+          "baselineUnitsPerDay": 20,
+          "dailyLimit": 15,
+          "currencyCode": "TRY",
+          "reason": null,
+          "notificationsEnabled": true,
+          "eveningReminderEnabled": true,
+          "createdAtMs": 1769893200000,
+          "tzId": "Europe/Istanbul"
+        },
+        "prices": [
+          {
+            "id": "price-2026-03-01",
+            "effectiveFromEpochDay": 20513,
+            "unitCostMinor": 1000
+          }
+        ],
+        "attempts": [],
+        "events": [],
+        "goal": null
+      },
+      "expected": [
+        {
+          "key": "r:plan-1:2026-03-11",
+          "triggerAtMs": 1773250200000,
+          "kinds": [
+            "EVENING:20523"
+          ]
+        },
+        {
+          "key": "r:plan-1:2026-03-12",
+          "triggerAtMs": 1773336600000,
+          "kinds": [
+            "EVENING:20524"
+          ]
+        },
+        {
+          "key": "r:plan-1:2026-03-13",
+          "triggerAtMs": 1773423000000,
+          "kinds": [
+            "EVENING:20525"
+          ]
+        },
+        {
+          "key": "r:plan-1:2026-03-14",
+          "triggerAtMs": 1773509400000,
+          "kinds": [
+            "EVENING:20526"
+          ]
+        },
+        {
+          "key": "r:plan-1:2026-03-15",
+          "triggerAtMs": 1773595800000,
+          "kinds": [
+            "EVENING:20527"
+          ]
+        },
+        {
+          "key": "r:plan-1:2026-03-16",
+          "triggerAtMs": 1773682200000,
+          "kinds": [
+            "EVENING:20528"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "quit_day_0_kinds_merge_per_local_day",
+      "nowMs": 1772344800000,
+      "zone": "Europe/Istanbul",
+      "input": {
+        "plan": {
+          "id": "plan-1",
+          "mode": "QUIT",
+          "productType": "CIGARETTE",
+          "baselineUnitsPerDay": 20,
+          "dailyLimit": null,
+          "currencyCode": "TRY",
+          "reason": null,
+          "notificationsEnabled": true,
+          "eveningReminderEnabled": true,
+          "createdAtMs": 1769893200000,
+          "tzId": "Europe/Istanbul"
+        },
+        "prices": [
+          {
+            "id": "price-2026-03-01",
+            "effectiveFromEpochDay": 20513,
+            "unitCostMinor": 1000
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a1",
+            "startedAtMs": 1772344800000,
+            "tzId": "Europe/Istanbul",
+            "endedAtMs": null,
+            "endReason": null
+          }
+        ],
+        "events": [],
+        "goal": null
+      },
+      "expected": [
+        {
+          "key": "q:a1:2026-03-01:early",
+          "triggerAtMs": 1772346000000,
+          "kinds": [
+            "STAGE:h_20m"
+          ]
+        },
+        {
+          "key": "q:a1:2026-03-01",
+          "triggerAtMs": 1772388000000,
+          "kinds": [
+            "STAGE:h_12h"
+          ]
+        },
+        {
+          "key": "q:a1:2026-03-02",
+          "triggerAtMs": 1772431200000,
+          "kinds": [
+            "DAYS:1"
+          ]
+        },
+        {
+          "key": "q:a1:2026-03-03:early",
+          "triggerAtMs": 1772517600000,
+          "kinds": [
+            "STAGE:h_48h"
+          ]
+        },
+        {
+          "key": "q:a1:2026-03-03",
+          "triggerAtMs": 1772560800000,
+          "kinds": [
+            "MONEY:50000"
+          ]
+        },
+        {
+          "key": "q:a1:2026-03-04",
+          "triggerAtMs": 1772604000000,
+          "kinds": [
+            "STAGE:h_72h",
+            "DAYS:3"
+          ]
+        },
+        {
+          "key": "q:a1:2026-03-06",
+          "triggerAtMs": 1772776800000,
+          "kinds": [
+            "UNITS:100",
+            "MONEY:100000"
+          ]
+        },
+        {
+          "key": "q:a1:2026-03-08",
+          "triggerAtMs": 1772949600000,
+          "kinds": [
+            "DAYS:7"
+          ]
+        },
+        {
+          "key": "q:a1:2026-03-13",
+          "triggerAtMs": 1773424800000,
+          "kinds": [
+            "MONEY:250000"
+          ]
+        },
+        {
+          "key": "q:a1:2026-03-15",
+          "triggerAtMs": 1773554400000,
+          "kinds": [
+            "STAGE:h_2w",
+            "DAYS:14"
+          ]
+        },
+        {
+          "key": "q:a1:2026-03-26",
+          "triggerAtMs": 1774504800000,
+          "kinds": [
+            "UNITS:500",
+            "MONEY:500000"
+          ]
+        },
+        {
+          "key": "q:a1:2026-03-31",
+          "triggerAtMs": 1774936800000,
+          "kinds": [
+            "STAGE:h_1mo",
+            "DAYS:30"
+          ]
+        },
+        {
+          "key": "q:a1:2026-04-20",
+          "triggerAtMs": 1776664800000,
+          "kinds": [
+            "UNITS:1000",
+            "MONEY:1000000"
+          ]
+        },
+        {
+          "key": "q:a1:2026-04-30",
+          "triggerAtMs": 1777528800000,
+          "kinds": [
+            "DAYS:60"
+          ]
+        },
+        {
+          "key": "q:a1:2026-06-09",
+          "triggerAtMs": 1780984800000,
+          "kinds": [
+            "DAYS:100"
+          ]
+        },
+        {
+          "key": "q:a1:2026-07-04",
+          "triggerAtMs": 1783144800000,
+          "kinds": [
+            "MONEY:2500000"
+          ]
+        },
+        {
+          "key": "q:a1:2026-08-28",
+          "triggerAtMs": 1787896800000,
+          "kinds": [
+            "DAYS:180"
+          ]
+        },
+        {
+          "key": "q:a1:2026-11-06",
+          "triggerAtMs": 1793944800000,
+          "kinds": [
+            "UNITS:5000",
+            "MONEY:5000000"
+          ]
+        },
+        {
+          "key": "q:a1:2027-03-01",
+          "triggerAtMs": 1803880800000,
+          "kinds": [
+            "STAGE:h_1y",
+            "DAYS:365"
+          ]
+        },
+        {
+          "key": "q:a1:2027-07-14",
+          "triggerAtMs": 1815544800000,
+          "kinds": [
+            "MONEY:10000000"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "quit_instant_exactly_at_now_is_already_reached",
+      "nowMs": 1772604000000,
+      "zone": "Europe/Istanbul",
+      "input": {
+        "plan": {
+          "id": "plan-1",
+          "mode": "QUIT",
+          "productType": "CIGARETTE",
+          "baselineUnitsPerDay": 20,
+          "dailyLimit": null,
+          "currencyCode": "TRY",
+          "reason": null,
+          "notificationsEnabled": true,
+          "eveningReminderEnabled": false,
+          "createdAtMs": 1769893200000,
+          "tzId": "Europe/Istanbul"
+        },
+        "prices": [
+          {
+            "id": "price-2026-03-01",
+            "effectiveFromEpochDay": 20513,
+            "unitCostMinor": 1000
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a1",
+            "startedAtMs": 1772344800000,
+            "tzId": "Europe/Istanbul",
+            "endedAtMs": null,
+            "endReason": null
+          }
+        ],
+        "events": [],
+        "goal": null
+      },
+      "expected": [
+        {
+          "key": "q:a1:2026-03-06",
+          "triggerAtMs": 1772776800000,
+          "kinds": [
+            "UNITS:100",
+            "MONEY:100000"
+          ]
+        },
+        {
+          "key": "q:a1:2026-03-08",
+          "triggerAtMs": 1772949600000,
+          "kinds": [
+            "DAYS:7"
+          ]
+        },
+        {
+          "key": "q:a1:2026-03-13",
+          "triggerAtMs": 1773424800000,
+          "kinds": [
+            "MONEY:250000"
+          ]
+        },
+        {
+          "key": "q:a1:2026-03-15",
+          "triggerAtMs": 1773554400000,
+          "kinds": [
+            "STAGE:h_2w",
+            "DAYS:14"
+          ]
+        },
+        {
+          "key": "q:a1:2026-03-26",
+          "triggerAtMs": 1774504800000,
+          "kinds": [
+            "UNITS:500",
+            "MONEY:500000"
+          ]
+        },
+        {
+          "key": "q:a1:2026-03-31",
+          "triggerAtMs": 1774936800000,
+          "kinds": [
+            "STAGE:h_1mo",
+            "DAYS:30"
+          ]
+        },
+        {
+          "key": "q:a1:2026-04-20",
+          "triggerAtMs": 1776664800000,
+          "kinds": [
+            "UNITS:1000",
+            "MONEY:1000000"
+          ]
+        },
+        {
+          "key": "q:a1:2026-04-30",
+          "triggerAtMs": 1777528800000,
+          "kinds": [
+            "DAYS:60"
+          ]
+        },
+        {
+          "key": "q:a1:2026-06-09",
+          "triggerAtMs": 1780984800000,
+          "kinds": [
+            "DAYS:100"
+          ]
+        },
+        {
+          "key": "q:a1:2026-07-04",
+          "triggerAtMs": 1783144800000,
+          "kinds": [
+            "MONEY:2500000"
+          ]
+        },
+        {
+          "key": "q:a1:2026-08-28",
+          "triggerAtMs": 1787896800000,
+          "kinds": [
+            "DAYS:180"
+          ]
+        },
+        {
+          "key": "q:a1:2026-11-06",
+          "triggerAtMs": 1793944800000,
+          "kinds": [
+            "UNITS:5000",
+            "MONEY:5000000"
+          ]
+        },
+        {
+          "key": "q:a1:2027-03-01",
+          "triggerAtMs": 1803880800000,
+          "kinds": [
+            "STAGE:h_1y",
+            "DAYS:365"
+          ]
+        },
+        {
+          "key": "q:a1:2027-07-14",
+          "triggerAtMs": 1815544800000,
+          "kinds": [
+            "MONEY:10000000"
+          ]
+        },
+        {
+          "key": "q:a1:2028-02-29",
+          "triggerAtMs": 1835416800000,
+          "kinds": [
+            "DAYS:730"
+          ]
+        },
+        {
+          "key": "q:a1:2029-02-28",
+          "triggerAtMs": 1866952800000,
+          "kinds": [
+            "DAYS:1095"
+          ]
+        },
+        {
+          "key": "q:a1:2030-02-28",
+          "triggerAtMs": 1898488800000,
+          "kinds": [
+            "DAYS:1460"
+          ]
+        },
+        {
+          "key": "q:a1:2031-02-28",
+          "triggerAtMs": 1930024800000,
+          "kinds": [
+            "STAGE:h_5y",
+            "DAYS:1825"
+          ]
+        },
+        {
+          "key": "q:a1:2032-02-28",
+          "triggerAtMs": 1961560800000,
+          "kinds": [
+            "DAYS:2190"
+          ]
+        },
+        {
+          "key": "q:a1:2033-02-27",
+          "triggerAtMs": 1993096800000,
+          "kinds": [
+            "DAYS:2555"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "quit_eur_late_start_quiet_hours_move_to_08_next_day",
+      "nowMs": 1772394600000,
+      "zone": "Europe/Istanbul",
+      "input": {
+        "plan": {
+          "id": "plan-1",
+          "mode": "QUIT",
+          "productType": "CIGARETTE",
+          "baselineUnitsPerDay": 10,
+          "dailyLimit": null,
+          "currencyCode": "EUR",
+          "reason": null,
+          "notificationsEnabled": true,
+          "eveningReminderEnabled": false,
+          "createdAtMs": 1769893200000,
+          "tzId": "Europe/Istanbul"
+        },
+        "prices": [
+          {
+            "id": "price-2026-03-01",
+            "effectiveFromEpochDay": 20513,
+            "unitCostMinor": 40
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a1",
+            "startedAtMs": 1772394600000,
+            "tzId": "Europe/Istanbul",
+            "endedAtMs": null,
+            "endReason": null
+          }
+        ],
+        "events": [],
+        "goal": null
+      },
+      "expected": [
+        {
+          "key": "q:a1:2026-03-02:early",
+          "triggerAtMs": 1772427600000,
+          "kinds": [
+            "STAGE:h_20m"
+          ]
+        },
+        {
+          "key": "q:a1:2026-03-02",
+          "triggerAtMs": 1772437800000,
+          "kinds": [
+            "STAGE:h_12h"
+          ]
+        },
+        {
+          "key": "q:a1:2026-03-03",
+          "triggerAtMs": 1772514000000,
+          "kinds": [
+            "DAYS:1"
+          ]
+        },
+        {
+          "key": "q:a1:2026-03-04",
+          "triggerAtMs": 1772600400000,
+          "kinds": [
+            "STAGE:h_48h"
+          ]
+        },
+        {
+          "key": "q:a1:2026-03-05",
+          "triggerAtMs": 1772686800000,
+          "kinds": [
+            "STAGE:h_72h",
+            "DAYS:3"
+          ]
+        },
+        {
+          "key": "q:a1:2026-03-09",
+          "triggerAtMs": 1773032400000,
+          "kinds": [
+            "DAYS:7"
+          ]
+        },
+        {
+          "key": "q:a1:2026-03-12",
+          "triggerAtMs": 1773291600000,
+          "kinds": [
+            "UNITS:100"
+          ]
+        },
+        {
+          "key": "q:a1:2026-03-14",
+          "triggerAtMs": 1773474600000,
+          "kinds": [
+            "MONEY:5000"
+          ]
+        },
+        {
+          "key": "q:a1:2026-03-16",
+          "triggerAtMs": 1773637200000,
+          "kinds": [
+            "STAGE:h_2w",
+            "DAYS:14"
+          ]
+        },
+        {
+          "key": "q:a1:2026-03-27",
+          "triggerAtMs": 1774587600000,
+          "kinds": [
+            "MONEY:10000"
+          ]
+        },
+        {
+          "key": "q:a1:2026-04-01",
+          "triggerAtMs": 1775019600000,
+          "kinds": [
+            "STAGE:h_1mo",
+            "DAYS:30"
+          ]
+        },
+        {
+          "key": "q:a1:2026-04-21",
+          "triggerAtMs": 1776747600000,
+          "kinds": [
+            "UNITS:500"
+          ]
+        },
+        {
+          "key": "q:a1:2026-05-01",
+          "triggerAtMs": 1777611600000,
+          "kinds": [
+            "DAYS:60"
+          ]
+        },
+        {
+          "key": "q:a1:2026-05-03",
+          "triggerAtMs": 1777794600000,
+          "kinds": [
+            "MONEY:25000"
+          ]
+        },
+        {
+          "key": "q:a1:2026-06-10",
+          "triggerAtMs": 1781067600000,
+          "kinds": [
+            "DAYS:100",
+            "UNITS:1000"
+          ]
+        },
+        {
+          "key": "q:a1:2026-07-05",
+          "triggerAtMs": 1783227600000,
+          "kinds": [
+            "MONEY:50000"
+          ]
+        },
+        {
+          "key": "q:a1:2026-08-29",
+          "triggerAtMs": 1787979600000,
+          "kinds": [
+            "DAYS:180"
+          ]
+        },
+        {
+          "key": "q:a1:2026-11-07",
+          "triggerAtMs": 1794027600000,
+          "kinds": [
+            "MONEY:100000"
+          ]
+        },
+        {
+          "key": "q:a1:2027-03-02",
+          "triggerAtMs": 1803963600000,
+          "kinds": [
+            "STAGE:h_1y",
+            "DAYS:365"
+          ]
+        },
+        {
+          "key": "q:a1:2027-07-15",
+          "triggerAtMs": 1815627600000,
+          "kinds": [
+            "UNITS:5000"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "quit_slip_moves_stages_and_early_instants_move_to_08",
+      "nowMs": 1773144000000,
+      "zone": "Europe/Istanbul",
+      "input": {
+        "plan": {
+          "id": "plan-1",
+          "mode": "QUIT",
+          "productType": "CIGARETTE",
+          "baselineUnitsPerDay": 10,
+          "dailyLimit": null,
+          "currencyCode": "TRY",
+          "reason": null,
+          "notificationsEnabled": true,
+          "eveningReminderEnabled": false,
+          "createdAtMs": 1769893200000,
+          "tzId": "Europe/Istanbul"
+        },
+        "prices": [
+          {
+            "id": "price-2026-03-01",
+            "effectiveFromEpochDay": 20513,
+            "unitCostMinor": 1000
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a1",
+            "startedAtMs": 1772344800000,
+            "tzId": "Europe/Istanbul",
+            "endedAtMs": null,
+            "endReason": null
+          }
+        ],
+        "events": [
+          {
+            "id": "s1",
+            "type": "SMOKED",
+            "occurredAtMs": 1772928000000,
+            "tzId": "Europe/Istanbul",
+            "epochDay": 20520,
+            "units": 2,
+            "trigger": null,
+            "intensity": null,
+            "productType": "CIGARETTE",
+            "attemptId": "a1"
+          }
+        ],
+        "goal": null
+      },
+      "expected": [
+        {
+          "key": "q:a1:2026-03-11",
+          "triggerAtMs": 1773230400000,
+          "kinds": [
+            "STAGE:h_72h",
+            "MONEY:100000",
+            "UNITS:100"
+          ]
+        },
+        {
+          "key": "q:a1:2026-03-15",
+          "triggerAtMs": 1773554400000,
+          "kinds": [
+            "DAYS:14"
+          ]
+        },
+        {
+          "key": "q:a1:2026-03-22",
+          "triggerAtMs": 1774155600000,
+          "kinds": [
+            "STAGE:h_2w"
+          ]
+        },
+        {
+          "key": "q:a1:2026-03-26",
+          "triggerAtMs": 1774522080000,
+          "kinds": [
+            "MONEY:250000"
+          ]
+        },
+        {
+          "key": "q:a1:2026-03-31",
+          "triggerAtMs": 1774936800000,
+          "kinds": [
+            "DAYS:30"
+          ]
+        },
+        {
+          "key": "q:a1:2026-04-07",
+          "triggerAtMs": 1775538000000,
+          "kinds": [
+            "STAGE:h_1mo"
+          ]
+        },
+        {
+          "key": "q:a1:2026-04-20",
+          "triggerAtMs": 1776686400000,
+          "kinds": [
+            "MONEY:500000",
+            "UNITS:500"
+          ]
+        },
+        {
+          "key": "q:a1:2026-04-30",
+          "triggerAtMs": 1777528800000,
+          "kinds": [
+            "DAYS:60"
+          ]
+        },
+        {
+          "key": "q:a1:2026-06-09",
+          "triggerAtMs": 1781006400000,
+          "kinds": [
+            "DAYS:100",
+            "MONEY:1000000",
+            "UNITS:1000"
+          ]
+        },
+        {
+          "key": "q:a1:2026-08-28",
+          "triggerAtMs": 1787896800000,
+          "kinds": [
+            "DAYS:180"
+          ]
+        },
+        {
+          "key": "q:a1:2026-11-06",
+          "triggerAtMs": 1793962080000,
+          "kinds": [
+            "MONEY:2500000"
+          ]
+        },
+        {
+          "key": "q:a1:2027-03-01",
+          "triggerAtMs": 1803880800000,
+          "kinds": [
+            "DAYS:365"
+          ]
+        },
+        {
+          "key": "q:a1:2027-03-08",
+          "triggerAtMs": 1804482000000,
+          "kinds": [
+            "STAGE:h_1y"
+          ]
+        },
+        {
+          "key": "q:a1:2027-07-14",
+          "triggerAtMs": 1815566400000,
+          "kinds": [
+            "MONEY:5000000",
+            "UNITS:5000"
+          ]
+        },
+        {
+          "key": "q:a1:2028-02-29",
+          "triggerAtMs": 1835416800000,
+          "kinds": [
+            "DAYS:730"
+          ]
+        },
+        {
+          "key": "q:a1:2028-11-25",
+          "triggerAtMs": 1858762080000,
+          "kinds": [
+            "MONEY:10000000"
+          ]
+        },
+        {
+          "key": "q:a1:2029-02-28",
+          "triggerAtMs": 1866952800000,
+          "kinds": [
+            "DAYS:1095"
+          ]
+        },
+        {
+          "key": "q:a1:2030-02-28",
+          "triggerAtMs": 1898488800000,
+          "kinds": [
+            "DAYS:1460"
+          ]
+        },
+        {
+          "key": "q:a1:2031-02-28",
+          "triggerAtMs": 1930024800000,
+          "kinds": [
+            "DAYS:1825"
+          ]
+        },
+        {
+          "key": "q:a1:2031-03-07",
+          "triggerAtMs": 1930626000000,
+          "kinds": [
+            "STAGE:h_5y"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "quit_money_projects_at_todays_unit_cost",
+      "nowMs": 1772776800000,
+      "zone": "Europe/Istanbul",
+      "input": {
+        "plan": {
+          "id": "plan-1",
+          "mode": "QUIT",
+          "productType": "CIGARETTE",
+          "baselineUnitsPerDay": 10,
+          "dailyLimit": null,
+          "currencyCode": "TRY",
+          "reason": null,
+          "notificationsEnabled": true,
+          "eveningReminderEnabled": false,
+          "createdAtMs": 1769893200000,
+          "tzId": "Europe/Istanbul"
+        },
+        "prices": [
+          {
+            "id": "price-2026-03-01",
+            "effectiveFromEpochDay": 20513,
+            "unitCostMinor": 1000
+          },
+          {
+            "id": "price-2026-03-05",
+            "effectiveFromEpochDay": 20517,
+            "unitCostMinor": 2000
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a1",
+            "startedAtMs": 1772344800000,
+            "tzId": "Europe/Istanbul",
+            "endedAtMs": null,
+            "endReason": null
+          }
+        ],
+        "events": [],
+        "goal": null
+      },
+      "expected": [
+        {
+          "key": "q:a1:2026-03-08",
+          "triggerAtMs": 1772949600000,
+          "kinds": [
+            "MONEY:100000",
+            "DAYS:7"
+          ]
+        },
+        {
+          "key": "q:a1:2026-03-11",
+          "triggerAtMs": 1773208800000,
+          "kinds": [
+            "UNITS:100"
+          ]
+        },
+        {
+          "key": "q:a1:2026-03-15",
+          "triggerAtMs": 1773581400000,
+          "kinds": [
+            "STAGE:h_2w",
+            "DAYS:14",
+            "MONEY:250000"
+          ]
+        },
+        {
+          "key": "q:a1:2026-03-28",
+          "triggerAtMs": 1774674000000,
+          "kinds": [
+            "MONEY:500000"
+          ]
+        },
+        {
+          "key": "q:a1:2026-03-31",
+          "triggerAtMs": 1774936800000,
+          "kinds": [
+            "STAGE:h_1mo",
+            "DAYS:30"
+          ]
+        },
+        {
+          "key": "q:a1:2026-04-20",
+          "triggerAtMs": 1776664800000,
+          "kinds": [
+            "UNITS:500"
+          ]
+        },
+        {
+          "key": "q:a1:2026-04-22",
+          "triggerAtMs": 1776834000000,
+          "kinds": [
+            "MONEY:1000000"
+          ]
+        },
+        {
+          "key": "q:a1:2026-04-30",
+          "triggerAtMs": 1777528800000,
+          "kinds": [
+            "DAYS:60"
+          ]
+        },
+        {
+          "key": "q:a1:2026-06-09",
+          "triggerAtMs": 1780984800000,
+          "kinds": [
+            "DAYS:100",
+            "UNITS:1000"
+          ]
+        },
+        {
+          "key": "q:a1:2026-07-06",
+          "triggerAtMs": 1783314000000,
+          "kinds": [
+            "MONEY:2500000"
+          ]
+        },
+        {
+          "key": "q:a1:2026-08-28",
+          "triggerAtMs": 1787896800000,
+          "kinds": [
+            "DAYS:180"
+          ]
+        },
+        {
+          "key": "q:a1:2026-11-08",
+          "triggerAtMs": 1794114000000,
+          "kinds": [
+            "MONEY:5000000"
+          ]
+        },
+        {
+          "key": "q:a1:2027-03-01",
+          "triggerAtMs": 1803880800000,
+          "kinds": [
+            "STAGE:h_1y",
+            "DAYS:365"
+          ]
+        },
+        {
+          "key": "q:a1:2027-07-14",
+          "triggerAtMs": 1815544800000,
+          "kinds": [
+            "UNITS:5000"
+          ]
+        },
+        {
+          "key": "q:a1:2027-07-16",
+          "triggerAtMs": 1815714000000,
+          "kinds": [
+            "MONEY:10000000"
+          ]
+        },
+        {
+          "key": "q:a1:2028-02-29",
+          "triggerAtMs": 1835416800000,
+          "kinds": [
+            "DAYS:730"
+          ]
+        },
+        {
+          "key": "q:a1:2029-02-28",
+          "triggerAtMs": 1866952800000,
+          "kinds": [
+            "DAYS:1095"
+          ]
+        },
+        {
+          "key": "q:a1:2030-02-28",
+          "triggerAtMs": 1898488800000,
+          "kinds": [
+            "DAYS:1460"
+          ]
+        },
+        {
+          "key": "q:a1:2031-02-28",
+          "triggerAtMs": 1930024800000,
+          "kinds": [
+            "STAGE:h_5y",
+            "DAYS:1825"
+          ]
+        },
+        {
+          "key": "q:a1:2032-02-28",
+          "triggerAtMs": 1961560800000,
+          "kinds": [
+            "DAYS:2190"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "quit_first_48h_days_split_early_and_late",
+      "nowMs": 1772344800000,
+      "zone": "Europe/Istanbul",
+      "input": {
+        "plan": {
+          "id": "plan-1",
+          "mode": "QUIT",
+          "productType": "CIGARETTE",
+          "baselineUnitsPerDay": 100,
+          "dailyLimit": null,
+          "currencyCode": "TRY",
+          "reason": null,
+          "notificationsEnabled": true,
+          "eveningReminderEnabled": false,
+          "createdAtMs": 1769893200000,
+          "tzId": "Europe/Istanbul"
+        },
+        "prices": [
+          {
+            "id": "price-2026-03-01",
+            "effectiveFromEpochDay": 20513,
+            "unitCostMinor": 1000
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a1",
+            "startedAtMs": 1772344800000,
+            "tzId": "Europe/Istanbul",
+            "endedAtMs": null,
+            "endReason": null
+          }
+        ],
+        "events": [],
+        "goal": null
+      },
+      "expected": [
+        {
+          "key": "q:a1:2026-03-01:early",
+          "triggerAtMs": 1772346000000,
+          "kinds": [
+            "STAGE:h_20m"
+          ]
+        },
+        {
+          "key": "q:a1:2026-03-01",
+          "triggerAtMs": 1772388000000,
+          "kinds": [
+            "STAGE:h_12h",
+            "MONEY:50000"
+          ]
+        },
+        {
+          "key": "q:a1:2026-03-02",
+          "triggerAtMs": 1772431200000,
+          "kinds": [
+            "DAYS:1",
+            "UNITS:100",
+            "MONEY:100000"
+          ]
+        },
+        {
+          "key": "q:a1:2026-03-03:early",
+          "triggerAtMs": 1772517600000,
+          "kinds": [
+            "STAGE:h_48h"
+          ]
+        },
+        {
+          "key": "q:a1:2026-03-03",
+          "triggerAtMs": 1772560800000,
+          "kinds": [
+            "MONEY:250000"
+          ]
+        },
+        {
+          "key": "q:a1:2026-03-04",
+          "triggerAtMs": 1772604000000,
+          "kinds": [
+            "STAGE:h_72h",
+            "DAYS:3"
+          ]
+        },
+        {
+          "key": "q:a1:2026-03-06",
+          "triggerAtMs": 1772776800000,
+          "kinds": [
+            "UNITS:500",
+            "MONEY:500000"
+          ]
+        },
+        {
+          "key": "q:a1:2026-03-08",
+          "triggerAtMs": 1772949600000,
+          "kinds": [
+            "DAYS:7"
+          ]
+        },
+        {
+          "key": "q:a1:2026-03-11",
+          "triggerAtMs": 1773208800000,
+          "kinds": [
+            "UNITS:1000",
+            "MONEY:1000000"
+          ]
+        },
+        {
+          "key": "q:a1:2026-03-15",
+          "triggerAtMs": 1773554400000,
+          "kinds": [
+            "STAGE:h_2w",
+            "DAYS:14"
+          ]
+        },
+        {
+          "key": "q:a1:2026-03-26",
+          "triggerAtMs": 1774504800000,
+          "kinds": [
+            "MONEY:2500000"
+          ]
+        },
+        {
+          "key": "q:a1:2026-03-31",
+          "triggerAtMs": 1774936800000,
+          "kinds": [
+            "STAGE:h_1mo",
+            "DAYS:30"
+          ]
+        },
+        {
+          "key": "q:a1:2026-04-20",
+          "triggerAtMs": 1776664800000,
+          "kinds": [
+            "UNITS:5000",
+            "MONEY:5000000"
+          ]
+        },
+        {
+          "key": "q:a1:2026-04-30",
+          "triggerAtMs": 1777528800000,
+          "kinds": [
+            "DAYS:60"
+          ]
+        },
+        {
+          "key": "q:a1:2026-06-09",
+          "triggerAtMs": 1780984800000,
+          "kinds": [
+            "DAYS:100",
+            "MONEY:10000000"
+          ]
+        },
+        {
+          "key": "q:a1:2026-08-28",
+          "triggerAtMs": 1787896800000,
+          "kinds": [
+            "DAYS:180"
+          ]
+        },
+        {
+          "key": "q:a1:2027-03-01",
+          "triggerAtMs": 1803880800000,
+          "kinds": [
+            "STAGE:h_1y",
+            "DAYS:365"
+          ]
+        },
+        {
+          "key": "q:a1:2028-02-29",
+          "triggerAtMs": 1835416800000,
+          "kinds": [
+            "DAYS:730"
+          ]
+        },
+        {
+          "key": "q:a1:2029-02-28",
+          "triggerAtMs": 1866952800000,
+          "kinds": [
+            "DAYS:1095"
+          ]
+        },
+        {
+          "key": "q:a1:2030-02-28",
+          "triggerAtMs": 1898488800000,
+          "kinds": [
+            "DAYS:1460"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "quit_berlin_dst_spring_forward_days_are_24_h",
+      "nowMs": 1774708200000,
+      "zone": "Europe/Berlin",
+      "input": {
+        "plan": {
+          "id": "plan-1",
+          "mode": "QUIT",
+          "productType": "CIGARETTE",
+          "baselineUnitsPerDay": 20,
+          "dailyLimit": null,
+          "currencyCode": "EUR",
+          "reason": null,
+          "notificationsEnabled": true,
+          "eveningReminderEnabled": false,
+          "createdAtMs": 1772319600000,
+          "tzId": "Europe/Berlin"
+        },
+        "prices": [
+          {
+            "id": "price-2026-03-01",
+            "effectiveFromEpochDay": 20513,
+            "unitCostMinor": 40
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a1",
+            "startedAtMs": 1774708200000,
+            "tzId": "Europe/Berlin",
+            "endedAtMs": null,
+            "endReason": null
+          }
+        ],
+        "events": [],
+        "goal": null
+      },
+      "expected": [
+        {
+          "key": "q:a1:2026-03-28",
+          "triggerAtMs": 1774709400000,
+          "kinds": [
+            "STAGE:h_20m"
+          ]
+        },
+        {
+          "key": "q:a1:2026-03-29:early",
+          "triggerAtMs": 1774764000000,
+          "kinds": [
+            "STAGE:h_12h"
+          ]
+        },
+        {
+          "key": "q:a1:2026-03-29",
+          "triggerAtMs": 1774794600000,
+          "kinds": [
+            "DAYS:1"
+          ]
+        },
+        {
+          "key": "q:a1:2026-03-30",
+          "triggerAtMs": 1774881000000,
+          "kinds": [
+            "STAGE:h_48h"
+          ]
+        },
+        {
+          "key": "q:a1:2026-03-31",
+          "triggerAtMs": 1774967400000,
+          "kinds": [
+            "STAGE:h_72h",
+            "DAYS:3"
+          ]
+        },
+        {
+          "key": "q:a1:2026-04-02",
+          "triggerAtMs": 1775140200000,
+          "kinds": [
+            "UNITS:100"
+          ]
+        },
+        {
+          "key": "q:a1:2026-04-04",
+          "triggerAtMs": 1775313000000,
+          "kinds": [
+            "MONEY:5000",
+            "DAYS:7"
+          ]
+        },
+        {
+          "key": "q:a1:2026-04-10",
+          "triggerAtMs": 1775800800000,
+          "kinds": [
+            "MONEY:10000"
+          ]
+        },
+        {
+          "key": "q:a1:2026-04-11",
+          "triggerAtMs": 1775917800000,
+          "kinds": [
+            "STAGE:h_2w",
+            "DAYS:14"
+          ]
+        },
+        {
+          "key": "q:a1:2026-04-22",
+          "triggerAtMs": 1776868200000,
+          "kinds": [
+            "UNITS:500"
+          ]
+        },
+        {
+          "key": "q:a1:2026-04-27",
+          "triggerAtMs": 1777300200000,
+          "kinds": [
+            "STAGE:h_1mo",
+            "DAYS:30"
+          ]
+        },
+        {
+          "key": "q:a1:2026-04-29",
+          "triggerAtMs": 1777442400000,
+          "kinds": [
+            "MONEY:25000"
+          ]
+        },
+        {
+          "key": "q:a1:2026-05-17",
+          "triggerAtMs": 1779028200000,
+          "kinds": [
+            "UNITS:1000"
+          ]
+        },
+        {
+          "key": "q:a1:2026-05-27",
+          "triggerAtMs": 1779892200000,
+          "kinds": [
+            "DAYS:60"
+          ]
+        },
+        {
+          "key": "q:a1:2026-05-30",
+          "triggerAtMs": 1780120800000,
+          "kinds": [
+            "MONEY:50000"
+          ]
+        },
+        {
+          "key": "q:a1:2026-07-06",
+          "triggerAtMs": 1783348200000,
+          "kinds": [
+            "DAYS:100"
+          ]
+        },
+        {
+          "key": "q:a1:2026-07-31",
+          "triggerAtMs": 1785508200000,
+          "kinds": [
+            "MONEY:100000"
+          ]
+        },
+        {
+          "key": "q:a1:2026-09-24",
+          "triggerAtMs": 1790260200000,
+          "kinds": [
+            "DAYS:180"
+          ]
+        },
+        {
+          "key": "q:a1:2026-12-03",
+          "triggerAtMs": 1796308200000,
+          "kinds": [
+            "UNITS:5000"
+          ]
+        },
+        {
+          "key": "q:a1:2027-02-04",
+          "triggerAtMs": 1801724400000,
+          "kinds": [
+            "MONEY:250000"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "quit_16_years_yearly_days_past_15_years_and_limit_20",
+      "nowMs": 1772366400000,
+      "zone": "UTC",
+      "input": {
+        "plan": {
+          "id": "plan-1",
+          "mode": "QUIT",
+          "productType": "CIGARETTE",
+          "baselineUnitsPerDay": 10,
+          "dailyLimit": null,
+          "currencyCode": "TRY",
+          "reason": null,
+          "notificationsEnabled": true,
+          "eveningReminderEnabled": false,
+          "createdAtMs": 1262304000000,
+          "tzId": "UTC"
+        },
+        "prices": [
+          {
+            "id": "price-2010-01-01",
+            "effectiveFromEpochDay": 14610,
+            "unitCostMinor": 1000
+          }
+        ],
+        "attempts": [
+          {
+            "id": "a1",
+            "startedAtMs": 1262347200000,
+            "tzId": "UTC",
+            "endedAtMs": null,
+            "endReason": null
+          }
+        ],
+        "events": [],
+        "goal": null
+      },
+      "expected": [
+        {
+          "key": "q:a1:2026-12-28",
+          "triggerAtMs": 1798459200000,
+          "kinds": [
+            "DAYS:6205"
+          ]
+        },
+        {
+          "key": "q:a1:2027-12-28",
+          "triggerAtMs": 1829995200000,
+          "kinds": [
+            "DAYS:6570"
+          ]
+        },
+        {
+          "key": "q:a1:2028-12-27",
+          "triggerAtMs": 1861531200000,
+          "kinds": [
+            "DAYS:6935"
+          ]
+        },
+        {
+          "key": "q:a1:2029-12-27",
+          "triggerAtMs": 1893067200000,
+          "kinds": [
+            "DAYS:7300"
+          ]
+        },
+        {
+          "key": "q:a1:2030-12-27",
+          "triggerAtMs": 1924603200000,
+          "kinds": [
+            "DAYS:7665"
+          ]
+        },
+        {
+          "key": "q:a1:2031-12-27",
+          "triggerAtMs": 1956139200000,
+          "kinds": [
+            "DAYS:8030"
+          ]
+        },
+        {
+          "key": "q:a1:2032-12-26",
+          "triggerAtMs": 1987675200000,
+          "kinds": [
+            "DAYS:8395"
+          ]
+        },
+        {
+          "key": "q:a1:2033-12-26",
+          "triggerAtMs": 2019211200000,
+          "kinds": [
+            "DAYS:8760"
+          ]
+        },
+        {
+          "key": "q:a1:2034-12-26",
+          "triggerAtMs": 2050747200000,
+          "kinds": [
+            "DAYS:9125"
+          ]
+        },
+        {
+          "key": "q:a1:2035-12-26",
+          "triggerAtMs": 2082283200000,
+          "kinds": [
+            "DAYS:9490"
+          ]
+        },
+        {
+          "key": "q:a1:2036-12-25",
+          "triggerAtMs": 2113819200000,
+          "kinds": [
+            "DAYS:9855"
+          ]
+        },
+        {
+          "key": "q:a1:2037-12-25",
+          "triggerAtMs": 2145355200000,
+          "kinds": [
+            "DAYS:10220"
+          ]
+        },
+        {
+          "key": "q:a1:2038-12-25",
+          "triggerAtMs": 2176891200000,
+          "kinds": [
+            "DAYS:10585"
+          ]
+        },
+        {
+          "key": "q:a1:2039-12-25",
+          "triggerAtMs": 2208427200000,
+          "kinds": [
+            "DAYS:10950"
+          ]
+        },
+        {
+          "key": "q:a1:2040-12-24",
+          "triggerAtMs": 2239963200000,
+          "kinds": [
+            "DAYS:11315"
+          ]
+        },
+        {
+          "key": "q:a1:2041-12-24",
+          "triggerAtMs": 2271499200000,
+          "kinds": [
+            "DAYS:11680"
+          ]
+        },
+        {
+          "key": "q:a1:2042-12-24",
+          "triggerAtMs": 2303035200000,
+          "kinds": [
+            "DAYS:12045"
+          ]
+        },
+        {
+          "key": "q:a1:2043-12-24",
+          "triggerAtMs": 2334571200000,
+          "kinds": [
+            "DAYS:12410"
+          ]
+        },
+        {
+          "key": "q:a1:2044-12-23",
+          "triggerAtMs": 2366107200000,
+          "kinds": [
+            "DAYS:12775"
+          ]
+        },
+        {
+          "key": "q:a1:2045-12-23",
+          "triggerAtMs": 2397643200000,
+          "kinds": [
+            "DAYS:13140"
+          ]
+        }
+      ]
+    }
+  ]
+}
