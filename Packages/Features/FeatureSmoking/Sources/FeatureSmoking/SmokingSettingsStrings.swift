@@ -1,6 +1,6 @@
 // The accessors for the keys `:feature:smoking` owns on the settings screen and its sheets and
 // confirmations — an extension of ``SmokingStrings`` so the enum itself stays inside SwiftLint's
-// 300-line `type_body_length`. The key names are in `SmokingStrings.Key`.
+// 300-line `type_body_length`. The key names are in ``SmokingStrings/SettingsKey``, beside the accessors.
 
 import Foundation
 import SalusCommon
@@ -11,7 +11,6 @@ extension SmokingStrings {
     public static var settingsCurrencyConfirmMessage: String { localized(.settingsCurrencyConfirmMessage) }
     public static var settingsCurrencyConfirmTitle: String { localized(.settingsCurrencyConfirmTitle) }
     public static var settingsCurrencySheetTitle: String { localized(.settingsCurrencySheetTitle) }
-    public static var settingsErrorOverlap: String { localized(.settingsErrorOverlap) }
     public static var settingsEvening: String { localized(.settingsEvening) }
     public static var settingsEveningDesc: String { localized(.settingsEveningDesc) }
     public static var settingsLimit: String { localized(.settingsLimit) }
@@ -80,7 +79,6 @@ extension SmokingStrings {
         case settingsCurrencyConfirmMessage = "smoking_settings_currency_confirm_message"
         case settingsCurrencyConfirmTitle = "smoking_settings_currency_confirm_title"
         case settingsCurrencySheetTitle = "smoking_settings_currency_sheet_title"
-        case settingsErrorOverlap = "smoking_settings_error_overlap"
         case settingsEvening = "smoking_settings_evening"
         case settingsEveningDesc = "smoking_settings_evening_desc"
         case settingsLimit = "smoking_settings_limit"

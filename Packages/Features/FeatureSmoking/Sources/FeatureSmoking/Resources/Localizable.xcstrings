@@ -2041,23 +2041,6 @@
         }
       }
     },
-    "smoking_settings_error_overlap" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "That time overlaps your previous attempt. Pick a later time."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bu zaman önceki denemenle çakışıyor. Daha geç bir zaman seç."
-          }
-        }
-      }
-    },
     "smoking_settings_evening" : {
       "extractionState" : "manual",
       "localizations" : {

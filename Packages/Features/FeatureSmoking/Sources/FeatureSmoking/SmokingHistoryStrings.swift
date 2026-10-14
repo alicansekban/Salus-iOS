@@ -1,6 +1,6 @@
 // The accessors for the keys `:feature:smoking` owns on the history screen and the entry editor — an
 // extension of ``SmokingStrings`` so the enum itself stays inside SwiftLint's 300-line
-// `type_body_length`. The key names are in `SmokingStrings.Key`.
+// `type_body_length`. The key names are in ``SmokingStrings/HistoryKey``, beside the accessors.
 //
 // Plurals (`smoking_history_journey_days`, `…_attempt_days`, `…_attempt_slips`, `…_attempt_cravings`)
 // are two keys selected in code (spec §9 (h)), where Android keeps one `<plurals>`: the general key
@@ -97,10 +97,10 @@ extension SmokingStrings {
 
     // MARK: - Keys
 
-    /// The catalog keys of the history screen and the entry editor, named once. They sit beside their accessors, and
-    /// not in
-    /// ``SmokingStrings/Key``, so that enum stays inside SwiftLint's 300-line `type_body_length`;
-    /// the parity test checks the union of the enums against the catalog.
+    /// The catalog keys of the history screen and the entry editor, named once. They sit beside
+    /// their accessors, and not in ``SmokingStrings/Key``, so that enum stays inside SwiftLint's
+    /// 300-line `type_body_length`; the parity test checks the union of the enums against the
+    /// catalog.
     enum HistoryKey: String, CaseIterable {
         case historyAttemptActive = "smoking_history_attempt_active"
         case historyAttemptCravings = "smoking_history_attempt_cravings"

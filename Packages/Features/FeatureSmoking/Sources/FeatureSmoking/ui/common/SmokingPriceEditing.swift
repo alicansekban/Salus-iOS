@@ -3,9 +3,9 @@
 //
 // What the person types (a pack or pouch price, a vape's weekly spend) and what is stored (the cost
 // of one unit) are told apart here, for the setup and the settings alike, so the two screens can
-// never round differently (contract §8.11). The setup keeps its own copy of the arithmetic in
-// `SmokingSetupUiState.price`; the settings sheet goes through these so the round trip
-// "open, save untouched" is a tested property, not a hope.
+// never round differently (contract §8.11). The setup's `SmokingSetupUiState.price` calls
+// `unitCostFromPackPrice` too, so there is one rule; the settings sheet's round trip "open, save
+// untouched" is a tested property, not a hope.
 
 import SalusSmoking
 

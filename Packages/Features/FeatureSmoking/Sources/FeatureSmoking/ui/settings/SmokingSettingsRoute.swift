@@ -63,7 +63,7 @@ extension SmokingSettingsError {
         switch self {
         case .futureDate: SmokingStrings.setupErrorFutureDate
         case .invalid: SmokingStrings.setupErrorInvalid
-        case .overlap: SmokingStrings.settingsErrorOverlap
+        case .overlap: SmokingStrings.mainQuitErrorOverlap
         case .generic: SmokingStrings.errorGeneric
         }
     }

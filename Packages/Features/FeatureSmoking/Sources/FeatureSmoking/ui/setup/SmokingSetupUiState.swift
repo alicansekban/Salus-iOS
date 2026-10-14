@@ -99,14 +99,14 @@ public struct SmokingSetupUiState: Equatable, Sendable {
     }
 
     /// The price as the use case takes it: per unit for a pack, weekly for a vape. A pack price is
-    /// divided by its size rounded half up, like the vape's weekly seven (contract §6).
+    /// divided by its size rounded half up, like the vape's weekly seven (contract §6, §8.11): the one
+    /// rule is `unitCostFromPackPrice`, shared with the settings price sheet.
     public var price: SmokingPrice? {
         guard let minor = priceMinor, minor > 0 else { return nil }
         if isVape {
             return .weeklySpend(minor)
         }
-        let size = Int64(unitsPerPack)
-        return .perUnit((2 * minor + size) / (2 * size))
+        return .perUnit(unitCostFromPackPrice(priceMinor: minor, unitsPerPack: unitsPerPack))
     }
 
     /// What one cigarette, stick or rolled cigarette — or a vape's day — costs, once stored.

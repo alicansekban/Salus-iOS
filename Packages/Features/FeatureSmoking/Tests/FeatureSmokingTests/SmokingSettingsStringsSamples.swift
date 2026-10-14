@@ -223,11 +223,6 @@ enum SmokingSettingsStringTable {
             key: "smoking_settings_reset_confirm",
             turkish: "Sıfırla",
             english: "Reset"
-        ),
-        SmokingStringSample(
-            key: "smoking_settings_error_overlap",
-            turkish: "Bu zaman önceki denemenle çakışıyor. Daha geç bir zaman seç.",
-            english: "That time overlaps your previous attempt. Pick a later time."
         )
     ]
 }
