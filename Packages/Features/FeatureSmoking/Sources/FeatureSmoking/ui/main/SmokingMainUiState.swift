@@ -84,6 +84,9 @@ public enum SmokingMainEvent: Equatable, Sendable {
     case quitDateDismissed
     /// The greyed "Bıraktığında seni bekleyenler" card.
     case timelinePreviewTapped
+    /// The route found no plan under it (a stale milestone notification opened the screen after
+    /// "Takibi sıfırla"). The ViewModel then swaps this screen for the setup.
+    case planMissing
 }
 
 /// One-shot UI work. Navigation is not here: the ViewModel navigates through the `Navigator`.

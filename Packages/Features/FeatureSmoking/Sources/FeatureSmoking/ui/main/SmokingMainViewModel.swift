@@ -62,6 +62,9 @@ public final class SmokingMainViewModel {
     /// re-emission would start a second stamp for the same goal.
     private var stampingGoalId: String?
 
+    /// The swap to the setup happens once, however often the route reports the missing plan.
+    private var replacedWithSetup = false
+
     /// The snapshot and entitlement observations, held so `deinit` can cancel them — a
     /// `CancellationBox` each because a `@MainActor` class cannot read its own stored properties
     /// from `deinit` in Swift 6.0.
@@ -166,6 +169,9 @@ public final class SmokingMainViewModel {
         case .goalDismissed, .goalSaved, .goalTapped, .insightsTapped:
             onPremiumEvent(event)
 
+        case .planMissing:
+            replaceWithSetup()
+
         case .noneToday, .plusOne, .quitDateConfirmed, .quitDateDismissed, .readyToQuit, .timelinePreviewTapped,
              .undoPlusOne:
             onReduceEvent(event)
@@ -176,6 +182,18 @@ public final class SmokingMainViewModel {
         if case let .quit(quit) = state.snapshot, let stage = quit.nextStage {
             navigator.navigate(SmokingTimelineKey(highlightStageId: stage.stageId))
         }
+    }
+
+    /// A plan is gone while this screen is the top of the stack: a milestone notification tapped
+    /// after "Takibi sıfırla" pushes Main over a reset app. The screen swaps itself for the setup the
+    /// way the setup swaps itself for this screen (pop, then push), so back from the setup does not
+    /// return into an empty body. Once only, and only on a snapshot that really is `notSetUp`:
+    /// before the first snapshot there is nothing to decide.
+    private func replaceWithSetup() {
+        guard !replacedWithSetup, state.snapshot == .notSetUp else { return }
+        replacedWithSetup = true
+        navigator.pop()
+        navigator.navigate(SmokingSetupKey())
     }
 
     /// The REDUCE half of ``onEvent(_:)``, split off to keep each `switch` readable.

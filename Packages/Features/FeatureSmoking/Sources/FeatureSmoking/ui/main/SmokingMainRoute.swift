@@ -40,6 +40,14 @@ public struct SmokingMainRoute: View {
                         show(effect, on: module)
                     }
                 }
+                // A plan that is gone while this screen is on show (a stale notification after a
+                // reset) has nothing to draw, so the ViewModel swaps it for the setup. Keyed on the
+                // fact, not on the snapshot, so the minute-by-minute re-emissions do not repeat it.
+                .task(id: viewModel.state.snapshot == .notSetUp) {
+                    if viewModel.state.snapshot == .notSetUp {
+                        viewModel.onEvent(.planMissing)
+                    }
+                }
             } else {
                 // Only until `.task` has run, or if the shell forgot to inject the module.
                 ProgressView()
