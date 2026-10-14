@@ -1,6 +1,6 @@
 # STATUS — iOS-M17 smoking cessation
 
-- **Phase:** executing (2026-10-14) — Tasks 1–9, 18, 19, 20, 22 done and reviewed; wave 5 (T10 ∥ T16 ∥ T17) implementing in `../wt-m17-i10/16/17`. All sync points reached; contract §8.1–§8.13 relayed. Controller: Claude Code desktop (Opus 5.5).
+- **Phase:** - **Phase:** executing (2026-10-15) — Tasks 1–14, 16–20, 22 done and reviewed. In flight: Task 15 (savings goal + teaser, now with contract §8.17 UpdateSavingsGoal) and controller-added Task 23 (mirror of Android's final fix wave: §8.14–§8.16, D-M17-z/aa–ad). Next: Task 21 sweep, whole-branch review, gates all, joint parity. Plan: `2026-10-14-ios-m17-smoking.md`.
 - **Plan:** `docs/superpowers/plans/2026-10-14-ios-m17-smoking.md`
 - **Spec:** `docs/superpowers/specs/2026-10-14-ios-m17-smoking-design.md`. It is a delta of `../salus-android/docs/superpowers/specs/2026-09-20-smoking-cessation-design.md`.
 - **Runbook:** `../salus-android/docs/superpowers/plans/2026-10-14-m17-parallel-runbook.md`. The Android twin runs in parallel and owns the contracts.
