@@ -21,6 +21,7 @@
 
 import Foundation
 import SalusCommon
+import SalusSmoking
 
 /// The strings `:feature:trends` owns.
 public enum TrendsStrings {
@@ -169,6 +170,139 @@ public enum TrendsStrings {
     public static var summaryChangeNoPrevious: String { localized(.summaryChangeNoPrevious) }
     public static var summaryChangeNotComputable: String { localized(.summaryChangeNotComputable) }
 
+    // MARK: - Smoking section (iOS-M17 Task 18)
+
+    /// The section's overline, stored upper-case (Turkish folds `i` to `İ`, and a runtime fold
+    /// would follow the device locale).
+    public static var smokingOverline: String { localized(.smokingOverline) }
+
+    public static var smokingEmptyTitle: String { localized(.smokingEmptyTitle) }
+    /// Names the threshold: the figures need entries on at least seven different days.
+    public static var smokingEmptyMessage: String { localized(.smokingEmptyMessage) }
+
+    public static var smokingTriggersTitle: String { localized(.smokingTriggersTitle) }
+    public static var smokingTriggersSubtitle: String { localized(.smokingTriggersSubtitle) }
+
+    /// `%%%1$lld` / `%1$lld%%` — a whole percent, written the way the language writes one.
+    static func smokingPercent(_ percent: Int) -> String {
+        String(format: localized(.smokingPercent), percent)
+    }
+
+    /// `%1$@, yüzde %2$lld` — one trigger row, spoken as one line.
+    static func smokingTriggerDescription(_ trigger: String, _ percent: Int) -> String {
+        String(format: localized(.smokingTriggerDescription), trigger, percent)
+    }
+
+    public static var smokingTriggersChartDescription: String { localized(.smokingTriggersChartDescription) }
+
+    public static var smokingHeatmapTitle: String { localized(.smokingHeatmapTitle) }
+    public static var smokingHeatmapSubtitle: String { localized(.smokingHeatmapSubtitle) }
+
+    /// `%1$@ %2$@: %3$@` — one cell, spoken: the weekday, the hour range, then the count.
+    static func smokingHeatmapCell(_ weekday: String, _ range: String, _ count: String) -> String {
+        String(format: localized(.smokingHeatmapCell), weekday, range, count)
+    }
+
+    /// The two-key plural (spec §9 (h)): `count == 1` reads the English singular. The word is
+    /// "kayıt" / "entries", not "kriz" — the cells count every occurrence, slips included
+    /// (contract §8.12).
+    static func smokingHeatmapCount(_ count: Int) -> String {
+        String(format: localized(count == 1 ? .smokingHeatmapCountOne : .smokingHeatmapCount), count)
+    }
+
+    /// No possessive suffix on the percentage: the right one depends on how the number is
+    /// pronounced, so no single literal fits every value.
+    static func smokingHeatmapCaption(_ range: String, _ percent: Int) -> String {
+        String(format: localized(.smokingHeatmapCaption), range, percent)
+    }
+
+    public static var smokingReductionTitle: String { localized(.smokingReductionTitle) }
+    public static var smokingReductionSubtitle: String { localized(.smokingReductionSubtitle) }
+
+    /// `%1$lld. hafta` — the reduction curve's x caption.
+    public static func smokingReductionWeek(_ week: Int) -> String {
+        String(format: localized(.smokingReductionWeek), week)
+    }
+
+    public static func smokingReductionDescription(first: Int, last: Int) -> String {
+        String(format: localized(.smokingReductionDescription), first, last)
+    }
+
+    public static var smokingAttemptsTitle: String { localized(.smokingAttemptsTitle) }
+    public static var smokingAttemptsSubtitle: String { localized(.smokingAttemptsSubtitle) }
+
+    public static func smokingAttemptLabel(_ ordinal: Int) -> String {
+        String(format: localized(.smokingAttemptLabel), ordinal)
+    }
+
+    /// The two-key plural (spec §9 (h)): `days == 1` reads the English singular.
+    public static func smokingAttemptDays(_ days: Int) -> String {
+        String(format: localized(days == 1 ? .smokingAttemptDaysOne : .smokingAttemptDays), days)
+    }
+
+    public static func smokingAttemptDescription(_ label: String, _ duration: String) -> String {
+        String(format: localized(.smokingAttemptDescription), label, duration)
+    }
+
+    /// The caption of the vertical line on the overlay chart at the day an attempt began.
+    public static var smokingQuitMarker: String { localized(.smokingQuitMarker) }
+
+    /// A trigger's name (`CravingTrigger` -> `trends_smoking_trigger_*`).
+    static func smokingTrigger(_ trigger: CravingTrigger) -> String {
+        switch trigger {
+        case .coffee: localized(.smokingTriggerCoffee)
+        case .stress: localized(.smokingTriggerStress)
+        case .alcohol: localized(.smokingTriggerAlcohol)
+        case .afterMeal: localized(.smokingTriggerAfterMeal)
+        case .social: localized(.smokingTriggerSocial)
+        case .boredom: localized(.smokingTriggerBoredom)
+        case .other: localized(.smokingTriggerOther)
+        }
+    }
+
+    /// The two-digit hour pair written in the heatmap's row label.
+    static func smokingBandShort(_ band: HourBand) -> String {
+        switch band {
+        case .h08_10: localized(.smokingBandShort0810)
+        case .h10_12: localized(.smokingBandShort1012)
+        case .h12_14: localized(.smokingBandShort1214)
+        case .h14_16: localized(.smokingBandShort1416)
+        case .h16_18: localized(.smokingBandShort1618)
+        case .h18_22: localized(.smokingBandShort1822)
+        case .h22_08: localized(.smokingBandShort2208)
+        }
+    }
+
+    /// The full clock range, for the caption and for each cell's spoken description.
+    static func smokingBandRange(_ band: HourBand) -> String {
+        switch band {
+        case .h08_10: localized(.smokingBand0810)
+        case .h10_12: localized(.smokingBand1012)
+        case .h12_14: localized(.smokingBand1214)
+        case .h14_16: localized(.smokingBand1416)
+        case .h16_18: localized(.smokingBand1618)
+        case .h18_22: localized(.smokingBand1822)
+        case .h22_08: localized(.smokingBand2208)
+        }
+    }
+
+    /// ISO weekdays, Monday first: `weekday` is the heatmap's column, 0...6.
+    static func smokingWeekdayShort(_ weekday: Int) -> String {
+        let keys: [Key] = [
+            .smokingWeekdayShort1, .smokingWeekdayShort2, .smokingWeekdayShort3, .smokingWeekdayShort4,
+            .smokingWeekdayShort5, .smokingWeekdayShort6, .smokingWeekdayShort7
+        ]
+        return localized(keys[weekday])
+    }
+
+    static func smokingWeekday(_ weekday: Int) -> String {
+        let keys: [Key] = [
+            .smokingWeekday1, .smokingWeekday2, .smokingWeekday3, .smokingWeekday4,
+            .smokingWeekday5, .smokingWeekday6, .smokingWeekday7
+        ]
+        return localized(keys[weekday])
+    }
+
     // MARK: - Keys
 
     /// The catalog keys, named once. Internal so the parity test can prove every accessor asks for
@@ -243,6 +377,68 @@ public enum TrendsStrings {
         case metricBloodPressureOverline = "trends_metric_blood_pressure_overline"
         case metricGlucoseOverline = "trends_metric_glucose_overline"
         case metricWeightOverline = "trends_metric_weight_overline"
+
+        // The smoking section (iOS-M17 Task 18), the twin of the `trends_smoking_*` keys.
+        case smokingOverline = "trends_smoking_overline"
+        case smokingEmptyTitle = "trends_smoking_empty_title"
+        case smokingEmptyMessage = "trends_smoking_empty_message"
+        case smokingTriggersTitle = "trends_smoking_triggers_title"
+        case smokingTriggersSubtitle = "trends_smoking_triggers_subtitle"
+        case smokingTriggerCoffee = "trends_smoking_trigger_coffee"
+        case smokingTriggerStress = "trends_smoking_trigger_stress"
+        case smokingTriggerAlcohol = "trends_smoking_trigger_alcohol"
+        case smokingTriggerAfterMeal = "trends_smoking_trigger_after_meal"
+        case smokingTriggerSocial = "trends_smoking_trigger_social"
+        case smokingTriggerBoredom = "trends_smoking_trigger_boredom"
+        case smokingTriggerOther = "trends_smoking_trigger_other"
+        case smokingPercent = "trends_smoking_percent"
+        case smokingTriggerDescription = "trends_smoking_trigger_description"
+        case smokingTriggersChartDescription = "trends_smoking_triggers_chart_description"
+        case smokingHeatmapTitle = "trends_smoking_heatmap_title"
+        case smokingHeatmapSubtitle = "trends_smoking_heatmap_subtitle"
+        case smokingBandShort0810 = "trends_smoking_band_short_08_10"
+        case smokingBandShort1012 = "trends_smoking_band_short_10_12"
+        case smokingBandShort1214 = "trends_smoking_band_short_12_14"
+        case smokingBandShort1416 = "trends_smoking_band_short_14_16"
+        case smokingBandShort1618 = "trends_smoking_band_short_16_18"
+        case smokingBandShort1822 = "trends_smoking_band_short_18_22"
+        case smokingBandShort2208 = "trends_smoking_band_short_22_08"
+        case smokingBand0810 = "trends_smoking_band_08_10"
+        case smokingBand1012 = "trends_smoking_band_10_12"
+        case smokingBand1214 = "trends_smoking_band_12_14"
+        case smokingBand1416 = "trends_smoking_band_14_16"
+        case smokingBand1618 = "trends_smoking_band_16_18"
+        case smokingBand1822 = "trends_smoking_band_18_22"
+        case smokingBand2208 = "trends_smoking_band_22_08"
+        case smokingWeekdayShort1 = "trends_smoking_weekday_short_1"
+        case smokingWeekdayShort2 = "trends_smoking_weekday_short_2"
+        case smokingWeekdayShort3 = "trends_smoking_weekday_short_3"
+        case smokingWeekdayShort4 = "trends_smoking_weekday_short_4"
+        case smokingWeekdayShort5 = "trends_smoking_weekday_short_5"
+        case smokingWeekdayShort6 = "trends_smoking_weekday_short_6"
+        case smokingWeekdayShort7 = "trends_smoking_weekday_short_7"
+        case smokingWeekday1 = "trends_smoking_weekday_1"
+        case smokingWeekday2 = "trends_smoking_weekday_2"
+        case smokingWeekday3 = "trends_smoking_weekday_3"
+        case smokingWeekday4 = "trends_smoking_weekday_4"
+        case smokingWeekday5 = "trends_smoking_weekday_5"
+        case smokingWeekday6 = "trends_smoking_weekday_6"
+        case smokingWeekday7 = "trends_smoking_weekday_7"
+        case smokingHeatmapCell = "trends_smoking_heatmap_cell"
+        case smokingHeatmapCount = "trends_smoking_heatmap_count"
+        case smokingHeatmapCountOne = "trends_smoking_heatmap_count_one"
+        case smokingHeatmapCaption = "trends_smoking_heatmap_caption"
+        case smokingReductionTitle = "trends_smoking_reduction_title"
+        case smokingReductionSubtitle = "trends_smoking_reduction_subtitle"
+        case smokingReductionWeek = "trends_smoking_reduction_week"
+        case smokingReductionDescription = "trends_smoking_reduction_description"
+        case smokingAttemptsTitle = "trends_smoking_attempts_title"
+        case smokingAttemptsSubtitle = "trends_smoking_attempts_subtitle"
+        case smokingAttemptLabel = "trends_smoking_attempt_label"
+        case smokingAttemptDays = "trends_smoking_attempt_days"
+        case smokingAttemptDaysOne = "trends_smoking_attempt_days_one"
+        case smokingAttemptDescription = "trends_smoking_attempt_description"
+        case smokingQuitMarker = "trends_smoking_quit_marker"
     }
 
     private static func localized(_ key: Key) -> String {

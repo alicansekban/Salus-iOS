@@ -25,6 +25,9 @@ import SwiftUI
 struct MetricOverlayCard: View {
     let overlay: MetricOverlay
     let glucoseUnit: GlucoseUnit
+    /// The local day every quit attempt began on (iOS-M17 Task 18); `overlayChartModelOf` keeps the
+    /// ones inside the plotted span and draws each as a "Bıraktın" guideline.
+    var quitMarkerEpochDays: [Int64] = []
 
     @Environment(\.salusTheme) private var theme
     /// The in-app language pick (`RootView+Locale.swift`); the legend's ranges are written in it.
@@ -36,7 +39,9 @@ struct MetricOverlayCard: View {
         // today but which is answered rather than assumed away.
         if let model = overlayChartModelOf(
             overlay: overlay,
-            xLabel: { String($0) }
+            xLabel: { String($0) },
+            quitMarkerEpochDays: quitMarkerEpochDays,
+            quitMarkerLabel: TrendsStrings.smokingQuitMarker
         ) {
             // The chart is silent to VoiceOver, so the legend is spoken as one summary — each
             // line named with the metric and its real range, exactly as it is drawn.
@@ -55,6 +60,7 @@ struct MetricOverlayCard: View {
                 Spacer().frame(height: SalusSpacing.md)
                 SalusMultiSeriesChart(
                     model: model.chart,
+                    markerColor: theme.extendedColors.smoking.accent,
                     contentDescription: TrendsStrings.overlayChartDescription(
                         spokenLegend.joined(separator: ", ")
                     )

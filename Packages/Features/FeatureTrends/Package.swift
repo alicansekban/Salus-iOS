@@ -24,6 +24,9 @@ let package = Package(
         .package(path: "../../SalusPremium"),
         .package(path: "../../SalusDatabase"),
         .package(path: "../../SalusSettings"),
+        // The smoking section of Trends reads `SmokingRepository` and `SmokingInsightsCalculator`
+        // (iOS-M17 Task 18). A core package, so no Feature -> Feature edge.
+        .package(path: "../../SalusSmoking"),
         .package(path: "../../SalusTesting")
     ],
     targets: [
@@ -37,7 +40,8 @@ let package = Package(
                 .product(name: "SalusNavigation", package: "SalusNavigation"),
                 .product(name: "SalusPremium", package: "SalusPremium"),
                 .product(name: "SalusDatabase", package: "SalusDatabase"),
-                .product(name: "SalusSettings", package: "SalusSettings")
+                .product(name: "SalusSettings", package: "SalusSettings"),
+                .product(name: "SalusSmoking", package: "SalusSmoking")
             ],
             resources: [
                 .process("Resources")
@@ -47,6 +51,7 @@ let package = Package(
             name: "FeatureTrendsTests",
             dependencies: [
                 "FeatureTrends",
+                .product(name: "SalusSmoking", package: "SalusSmoking"),
                 .product(name: "SalusTesting", package: "SalusTesting")
             ]
         )

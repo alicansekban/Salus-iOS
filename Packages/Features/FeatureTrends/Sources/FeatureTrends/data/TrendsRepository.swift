@@ -1,9 +1,11 @@
 // Ported 1:1 from Android
 // `feature/trends/src/main/kotlin/com/alicansekban/salus/feature/trends/data/TrendsRepository.kt`.
 
+import Foundation
 import os
 import SalusCommon
 import SalusPremium
+import SalusSmoking
 
 /// Produces one trends screen's worth of data, and owns the rule about who may see it
 /// (`TrendsRepository.kt:20-29`).
@@ -30,15 +32,18 @@ public protocol TrendsRepository: Sendable {
 public struct TrendsRepositoryImpl: TrendsRepository {
     private let reader: any TrendsReader
     private let premiumRepository: any PremiumRepository
+    private let smokingRepository: any SmokingRepository
     private let clock: any SalusClock
 
     public init(
         reader: any TrendsReader,
         premiumRepository: any PremiumRepository,
+        smokingRepository: any SmokingRepository,
         clock: any SalusClock
     ) {
         self.reader = reader
         self.premiumRepository = premiumRepository
+        self.smokingRepository = smokingRepository
         self.clock = clock
     }
 
@@ -62,11 +67,17 @@ public struct TrendsRepositoryImpl: TrendsRepository {
 
         do {
             let records = try await reader.records(days: days, timeZone: timeZone)
-            if records.isEmpty {
+            // Behind the gate like everything else, and read before the empty check: a window with
+            // no vitals is only "nothing to show" when there is no smoking plan either.
+            let smoking = await smokingTrends(timeZone: timeZone)
+            if records.isEmpty, smoking == nil {
                 // Nothing to compare, and nobody to show a comparison to. Returning here keeps
                 // an empty window at the one read it has always cost, instead of scanning a
                 // second year of rows to summarise a screen that will say "nothing yet".
                 return .empty
+            }
+            if records.isEmpty {
+                return .ready(TrendsReady(smoking: smoking))
             }
             let previousRecords = try await reader.records(days: previousDays, timeZone: timeZone)
             // The analyses run here rather than in the ViewModel or the screen: they are pure
@@ -86,7 +97,8 @@ public struct TrendsRepositoryImpl: TrendsRepository {
                     summaries: metricSummariesOrNull(
                         current: records.measurements,
                         previous: previousRecords.measurements
-                    )
+                    ),
+                    smoking: smoking
                 )
             )
         } catch is CancellationError {
@@ -101,6 +113,19 @@ public struct TrendsRepositoryImpl: TrendsRepository {
             logger.warning("Trends records could not be read: \(String(describing: error), privacy: .private)")
             return .failed
         }
+    }
+}
+
+extension TrendsRepositoryImpl {
+    /// The smoking section, or `nil` when there is no plan or the smoking rows could not be read.
+    ///
+    /// A failed read costs only this section (`SmokingRepository` ends its stream without an element
+    /// on a storage failure, after logging it): the vitals are a different set of tables, and a
+    /// trends screen that showed an error because the *add-on* could not answer would hide numbers
+    /// that were read fine.
+    private func smokingTrends(timeZone: TimeZone) async -> SmokingInsights? {
+        guard let input = await smokingRepository.observeInput().firstValue() else { return nil }
+        return smokingTrendsOrNull(input, nowMs: clock.nowEpochMilliseconds(), zone: timeZone)
     }
 }
 

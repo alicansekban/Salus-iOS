@@ -16,6 +16,7 @@ import Foundation
 import SalusCommon
 import SalusModel
 import SalusPremium
+import SalusSmoking
 import SalusTesting
 import Testing
 
@@ -193,6 +194,93 @@ struct TrendsRepositoryTests {
         #expect(ready.summaries == nil)
     }
 
+    // MARK: - The smoking section (iOS-M17 Task 18)
+
+    @Test("a set-up smoking plan adds the smoking section to a ready answer")
+    func setUpPlanAddsTheSmokingSection() async {
+        let smoking = FakeSmokingRepository(input: smokingInput(events: eventsOnConsecutiveDays(8)))
+        let reader = RecordingReader(records: recordsWithOneMeasurement)
+
+        let result = await repository(reader: reader, premium: .premium, smoking: smoking).load(range: .quarter)
+
+        guard case let .ready(ready) = result else {
+            Issue.record("expected .ready, got \(result)")
+            return
+        }
+        #expect(ready.smoking?.hasEnoughData == true)
+    }
+
+    @Test("no smoking plan leaves the smoking section out")
+    func noPlanLeavesTheSmokingSectionOut() async {
+        let smoking = FakeSmokingRepository(input: smokingInput(plan: nil))
+        let reader = RecordingReader(records: recordsWithOneMeasurement)
+
+        let result = await repository(reader: reader, premium: .premium, smoking: smoking).load(range: .quarter)
+
+        guard case let .ready(ready) = result else {
+            Issue.record("expected .ready, got \(result)")
+            return
+        }
+        #expect(ready.smoking == nil)
+    }
+
+    /// Someone who only tracks smoking must not be told there is nothing to analyse.
+    @Test("a window with no vitals but a smoking plan is still a screen to show")
+    func noVitalsButAPlanIsStillAScreen() async {
+        let smoking = FakeSmokingRepository(input: smokingInput(events: eventsOnConsecutiveDays(8)))
+        let reader = RecordingReader(records: TrendsRecords(measurements: [], doses: []))
+
+        let result = await repository(reader: reader, premium: .premium, smoking: smoking).load(range: .quarter)
+
+        guard case let .ready(ready) = result else {
+            Issue.record("expected .ready, got \(result)")
+            return
+        }
+        #expect(ready.smoking != nil)
+        #expect(ready.overlay == nil)
+        #expect(ready.summaries == nil)
+        // Nothing to compare against still means the earlier window is never scanned.
+        #expect(reader.requestedWindows.count == 1)
+    }
+
+    @Test("a free user's load never reads the smoking records")
+    func freeUserNeverReadsSmoking() async {
+        let smoking = FakeSmokingRepository(input: smokingInput(events: eventsOnConsecutiveDays(8)))
+
+        let result = await repository(reader: ExplodingReader(), premium: .free, smoking: smoking).load(range: .quarter)
+
+        #expect(result == .locked)
+        #expect(smoking.reads == 0)
+    }
+
+    /// A storage failure ends the repository's stream without an element (its documented shape), and
+    /// that costs only this section: the vitals are different tables, and a screen that showed an
+    /// error because the add-on could not answer would hide numbers that were read fine.
+    @Test("a smoking read that fails costs the section, not the screen")
+    func failedSmokingReadCostsOnlyTheSection() async {
+        let smoking = FakeSmokingRepository(input: nil)
+        let reader = RecordingReader(records: recordsWithOneMeasurement)
+
+        let result = await repository(reader: reader, premium: .premium, smoking: smoking).load(range: .quarter)
+
+        guard case let .ready(ready) = result else {
+            Issue.record("expected .ready, got \(result)")
+            return
+        }
+        #expect(ready.smoking == nil)
+        #expect(smoking.reads == 1)
+    }
+
+    @Test("an empty window with a failed smoking read is still empty")
+    func emptyWindowWithAFailedSmokingReadIsEmpty() async {
+        let smoking = FakeSmokingRepository(input: nil)
+        let reader = RecordingReader(records: TrendsRecords(measurements: [], doses: []))
+
+        let result = await repository(reader: reader, premium: .premium, smoking: smoking).load(range: .quarter)
+
+        #expect(result == .empty)
+    }
+
     // MARK: - Failure
 
     /// A read that throws is answered `failed` instead of escaping.
@@ -222,10 +310,15 @@ struct TrendsRepositoryTests {
 
     // MARK: - Fixtures
 
-    private func repository(reader: any TrendsReader, premium: PremiumStatus) -> any TrendsRepository {
+    private func repository(
+        reader: any TrendsReader,
+        premium: PremiumStatus,
+        smoking: FakeSmokingRepository = FakeSmokingRepository(input: smokingInput(plan: nil))
+    ) -> any TrendsRepository {
         TrendsRepositoryImpl(
             reader: reader,
             premiumRepository: FakePremiumRepository(status: premium),
+            smokingRepository: smoking,
             clock: clock
         )
     }

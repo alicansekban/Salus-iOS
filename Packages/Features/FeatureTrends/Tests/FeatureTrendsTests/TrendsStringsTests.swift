@@ -232,16 +232,17 @@ struct TrendsStringsTests {
         )
     ]
 
-    static let expectedKeys = Set(samples.map(\.key))
+    static let expectedKeys = Set((samples + smokingSamples).map(\.key))
 
-    @Test("the catalog holds exactly the 55 keys :feature:trends owns")
-    func catalogHoldsExactlyTheFiftyFiveKeys() throws {
+    @Test("the catalog holds exactly the 115 keys :feature:trends owns")
+    func catalogHoldsExactlyTheKeys() throws {
         // Pinned as a number as well as a set: a row deleted from the table together with its key
         // from the catalog would otherwise agree with itself and pass. 55 = the 52 keys that
         // survived (`trends_back`, `trends_summary_stats`, `trends_value_number` were removed in
         // M15) plus the 4 additions: `trends_summary_count` and the three `trends_metric_*_overline`
-        // keys.
-        #expect(Self.samples.count == 55)
+        // keys. Then the 58 `trends_smoking_*` keys of the Android twin (`smokingSamples`) plus the
+        // two `_one` plural twins this port adds: 55 + 58 + 2 = 115.
+        #expect(Self.samples.count + Self.smokingSamples.count == 115)
 
         try StringCatalogParity.assertKeys(of: Self.loadCatalog(), are: Self.expectedKeys)
     }
@@ -256,7 +257,7 @@ struct TrendsStringsTests {
 
     @Test(
         "the values are Android-verbatim (feature/trends/res/values*/strings.xml)",
-        arguments: samples
+        arguments: samples + smokingSamples
     )
     func valuesAreAndroidVerbatim(sample: TrendsStringSample) throws {
         let catalog = try Self.loadCatalog()

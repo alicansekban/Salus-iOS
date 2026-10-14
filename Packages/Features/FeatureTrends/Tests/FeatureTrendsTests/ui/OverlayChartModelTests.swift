@@ -104,6 +104,84 @@ struct OverlayChartModelTests {
         #expect(model?.chart.xLabel(firstDay) == dayLabel(firstDay))
     }
 
+    @Test("a quit day inside the plotted span becomes a labelled marker")
+    func quitDayInsideTheSpanBecomesAMarker() {
+        let model = overlayChartModelOf(
+            overlay: overlay(
+                series(.weight, 0, 1, 0.5),
+                series(.bloodPressure, 1, 0, 0.5)
+            ),
+            xLabel: dayLabel,
+            quitMarkerEpochDays: [Int64(firstDay + 1)],
+            quitMarkerLabel: "Quit"
+        )
+
+        #expect(model?.chart.markers == [ChartMarker(xEpochDay: firstDay + 1, label: "Quit")])
+    }
+
+    @Test("quit days outside the plotted span never become markers")
+    func quitDaysOutsideTheSpanNeverBecomeMarkers() {
+        // Three points: firstDay ... firstDay + 2. The attempt before and the one after the window
+        // have nothing to be drawn against.
+        let model = overlayChartModelOf(
+            overlay: overlay(
+                series(.weight, 0, 1, 0.5),
+                series(.bloodPressure, 1, 0, 0.5)
+            ),
+            xLabel: dayLabel,
+            quitMarkerEpochDays: [
+                Int64(firstDay - 1), Int64(firstDay), Int64(firstDay + 2), Int64(firstDay + 3)
+            ],
+            quitMarkerLabel: "Quit"
+        )
+
+        // Both ends of the span are inside it.
+        #expect(model?.chart.markers.map(\.xEpochDay) == [firstDay, firstDay + 2])
+    }
+
+    @Test("the plotted span is every series together and a repeated day is one marker")
+    func spanIsEverySeriesTogetherAndARepeatedDayIsOneMarker() {
+        let model = overlayChartModelOf(
+            overlay: overlay(
+                series(.weight, 0, 1),
+                series(.bloodPressure, 1, 0, 0.5, 0.2)
+            ),
+            xLabel: dayLabel,
+            quitMarkerEpochDays: [Int64(firstDay + 3), Int64(firstDay + 3)],
+            quitMarkerLabel: "Quit"
+        )
+
+        #expect(model?.chart.markers.count == 1)
+    }
+
+    @Test("the markers come out in day order")
+    func markersComeOutInDayOrder() {
+        let model = overlayChartModelOf(
+            overlay: overlay(
+                series(.weight, 0, 1, 0.5, 0.2),
+                series(.bloodPressure, 1, 0, 0.5, 0.2)
+            ),
+            xLabel: dayLabel,
+            quitMarkerEpochDays: [Int64(firstDay + 2), Int64(firstDay + 1)],
+            quitMarkerLabel: "Quit"
+        )
+
+        #expect(model?.chart.markers.map(\.xEpochDay) == [firstDay + 1, firstDay + 2])
+    }
+
+    @Test("without quit days the chart has no markers")
+    func withoutQuitDaysTheChartHasNoMarkers() {
+        let model = overlayChartModelOf(
+            overlay: overlay(
+                series(.weight, 0, 1),
+                series(.bloodPressure, 1, 0)
+            ),
+            xLabel: dayLabel
+        )
+
+        #expect(model?.chart.markers.isEmpty == true)
+    }
+
     // MARK: - Fixtures
 
     private func overlay(_ series: OverlaySeries...) -> MetricOverlay {

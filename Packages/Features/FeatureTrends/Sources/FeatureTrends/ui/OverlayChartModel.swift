@@ -36,12 +36,21 @@ struct OverlayChartModel {
 /// - Parameters:
 ///   - xLabel: the caption for an epoch day, already localized. Passed in rather than resolved
 ///     here, because resources are the view's business and this has to stay testable.
+///   - quitMarkerEpochDays: the local day every quit attempt began on, from the smoking section
+///     (iOS-M17 Task 18). Each one inside the span the lines plot becomes a marker captioned
+///     `quitMarkerLabel`; one before the first point or after the last has nothing to be drawn
+///     against and is left out here, so the mapping is correct on its own and does not lean on the
+///     chart to drop it. A day inside the span needs no reading of its own — the usual case for a
+///     quit date.
+///   - quitMarkerLabel: the localized caption of those markers, passed in like `xLabel`.
 /// - Returns: `nil` when fewer than `minOverlaySeries` series are left to draw, meaning there is
 ///   no card. The analysis already answers `nil` for the same reason; this is the same answer at
 ///   the other end, so "nothing to show" stays a `nil` model throughout.
 func overlayChartModelOf(
     overlay: MetricOverlay,
-    xLabel: @escaping @Sendable (Int) -> String
+    xLabel: @escaping @Sendable (Int) -> String,
+    quitMarkerEpochDays: [Int64] = [],
+    quitMarkerLabel: String = ""
 ) -> OverlayChartModel? {
     // A series with no points cannot be drawn and could not be honestly captioned either. The
     // analysis makes it unreachable today; it is answered here rather than assumed away.
@@ -72,10 +81,20 @@ func overlayChartModelOf(
         )
     }
 
+    // The span every drawn line covers together: a day inside it has a place on the x axis even
+    // when no reading was taken on it.
+    let days = drawable.flatMap { $0.points.map(\.xEpochDay) }
+    let span = (days.min() ?? 0) ... (days.max() ?? 0)
+    let markers = Set(quitMarkerEpochDays.map { Int($0) })
+        .filter { span.contains($0) }
+        .sorted()
+        .map { ChartMarker(xEpochDay: $0, label: quitMarkerLabel) }
+
     return OverlayChartModel(
         chart: MultiSeriesChartUiModel(
             series: chartSeries,
-            xLabel: xLabel
+            xLabel: xLabel,
+            markers: markers
         ),
         legend: legend
     )

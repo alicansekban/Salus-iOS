@@ -161,13 +161,23 @@ struct ReadyBody: View {
                     TimeOfDayCard(breakdown: timeOfDay, glucoseUnit: state.glucoseUnit)
                 }
                 if let overlay = ready.overlay {
-                    MetricOverlayCard(overlay: overlay, glucoseUnit: state.glucoseUnit)
+                    MetricOverlayCard(
+                        overlay: overlay,
+                        glucoseUnit: state.glucoseUnit,
+                        // Every attempt's start day; the chart model keeps only those inside its span.
+                        quitMarkerEpochDays: ready.smoking?.quitMarkerEpochDays ?? []
+                    )
                 }
                 if let doseWeeks = ready.doseWeeks {
                     DoseWeeksCard(weeks: doseWeeks, glucoseUnit: state.glucoseUnit)
                 }
                 if let summaries = ready.summaries {
                     MetricSummaryCard(summaries: summaries, glucoseUnit: state.glucoseUnit)
+                }
+                // Last, under the same lock as every card above it: a user with no plan has no
+                // section at all (iOS-M17 Task 18).
+                if let smoking = ready.smoking {
+                    SmokingTrendsSection(smoking: smoking)
                 }
             }
             .padding(.horizontal, SalusSpacing.lg)

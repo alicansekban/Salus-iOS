@@ -2,6 +2,7 @@
 // `feature/trends/src/main/kotlin/com/alicansekban/salus/feature/trends/domain/TrendsModels.kt`.
 
 import SalusModel
+import SalusSmoking
 
 /// The windows the screen can be looking at, each expressed as an inclusive number of local days
 /// ending on today (`TrendsModels.kt:18-23`).
@@ -98,7 +99,8 @@ public enum TrendsData: Equatable, Sendable {
     /// (`TrendsModels.kt:77`).
     case locked
 
-    /// Entitled, but the window holds no records to analyse (`TrendsModels.kt:80`).
+    /// Entitled, but the window holds no records to analyse and no smoking plan is set up
+    /// (`TrendsModels.kt:80`).
     case empty
 
     /// Entitled, with records (`TrendsModels.kt:100-105`).
@@ -141,15 +143,24 @@ public struct TrendsReady: Equatable, Sendable {
     /// only way the card is left out.
     public var summaries: MetricSummaries?
 
+    /// The "Sigara" section, or `nil` until a smoking plan exists (iOS-M17 Task 18). It is the one
+    /// field that does not come from `TrendsRecords`: a window with no vitals and no doses is still
+    /// `.ready` when this is set, because smoking is tracked on its own. The figures cover the
+    /// insights' 30-day window whatever range is selected; only `quitMarkerEpochDays` is range-aware,
+    /// and it is filtered against the chart it is drawn on.
+    public var smoking: SmokingInsights?
+
     public init(
         timeOfDay: TimeOfDayBreakdown? = nil,
         overlay: MetricOverlay? = nil,
         doseWeeks: [DoseWeek]? = nil,
-        summaries: MetricSummaries? = nil
+        summaries: MetricSummaries? = nil,
+        smoking: SmokingInsights? = nil
     ) {
         self.timeOfDay = timeOfDay
         self.overlay = overlay
         self.doseWeeks = doseWeeks
         self.summaries = summaries
+        self.smoking = smoking
     }
 }

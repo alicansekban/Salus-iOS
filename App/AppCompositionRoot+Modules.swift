@@ -192,6 +192,7 @@ extension AppCompositionRoot {
         let repository: any TrendsRepository = TrendsRepositoryImpl(
             reader: reader,
             premiumRepository: premium.premiumRepository,
+            smokingRepository: infrastructure.smokingCore.repository,
             clock: infrastructure.clock
         )
         return makeTrendsModule(
