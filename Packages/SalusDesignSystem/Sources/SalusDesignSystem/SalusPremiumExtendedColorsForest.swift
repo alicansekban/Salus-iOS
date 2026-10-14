@@ -42,6 +42,13 @@ private enum ForestLightExtendedValues {
     static let trendsContainer = Color(hex: 0xD4E6F0)
     static let trendsOnContainer = Color(hex: 0x0B2F41)
 
+    // Honey amber - a warm counterpoint to the olive and moss greens.
+    // PremiumExtendedColors.kt `smoking`
+    static let smokingAccent = Color(hex: 0x946000)
+    static let smokingOnAccent = Color(hex: 0xFFFFFF)
+    static let smokingContainer = Color(hex: 0xF3E2B8)
+    static let smokingOnContainer = Color(hex: 0x352500)
+
     // Hero — green into deep green.
     // PremiumExtendedColors.kt:271-274
     static let heroTop = Color(hex: 0x266C31)
@@ -85,6 +92,12 @@ private enum ForestLightExtendedValues {
         container: trendsContainer,
         onContainer: trendsOnContainer
     )
+    static let smoking = FeatureAccent(
+        accent: smokingAccent,
+        onAccent: smokingOnAccent,
+        container: smokingContainer,
+        onContainer: smokingOnContainer
+    )
 }
 
 /// §4.6 — FOREST, dark. Source: `PremiumExtendedColors.kt:244-285`.
@@ -124,6 +137,13 @@ private enum ForestDarkExtendedValues {
     static let trendsOnAccent = Color(hex: 0x083246)
     static let trendsContainer = Color(hex: 0x1F4051)
     static let trendsOnContainer = Color(hex: 0xCAE3F0)
+
+    // Honey amber - a warm counterpoint to the olive and moss greens.
+    // PremiumExtendedColors.kt `smoking`
+    static let smokingAccent = Color(hex: 0xE8B040)
+    static let smokingOnAccent = Color(hex: 0x362800)
+    static let smokingContainer = Color(hex: 0x483A12)
+    static let smokingOnContainer = Color(hex: 0xF8E5B8)
 
     // Hero — the app ground rising into the Forest primary container.
     // PremiumExtendedColors.kt:319-322
@@ -168,6 +188,12 @@ private enum ForestDarkExtendedValues {
         container: trendsContainer,
         onContainer: trendsOnContainer
     )
+    static let smoking = FeatureAccent(
+        accent: smokingAccent,
+        onAccent: smokingOnAccent,
+        container: smokingContainer,
+        onContainer: smokingOnContainer
+    )
 }
 
 extension SalusExtendedColors {
@@ -178,6 +204,7 @@ extension SalusExtendedColors {
         vitals: ForestLightExtendedValues.vitals,
         appointments: ForestLightExtendedValues.appointments,
         trends: ForestLightExtendedValues.trends,
+        smoking: ForestLightExtendedValues.smoking,
         hero: ForestLightExtendedValues.hero
     )
     .restatingAccentDerivedRoles(
@@ -194,6 +221,7 @@ extension SalusExtendedColors {
         vitals: ForestDarkExtendedValues.vitals,
         appointments: ForestDarkExtendedValues.appointments,
         trends: ForestDarkExtendedValues.trends,
+        smoking: ForestDarkExtendedValues.smoking,
         hero: ForestDarkExtendedValues.hero
     )
     .restatingAccentDerivedRoles(

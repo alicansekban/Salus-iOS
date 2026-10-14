@@ -7,7 +7,7 @@ import SwiftUI
 // tertiary roles stay exactly as §1/§2 define them, so cards keep reading as the same calm
 // panels and no palette can quietly break the contrast of body text on a surface.
 // Status colors (§3.3) are unaffected as well. Feature accents are NOT: §4.6 gives each palette
-// its own five, in `SalusPremiumExtendedColors.swift`.
+// its own six, in `SalusPremiumExtendedColors.swift`.
 //
 // This file holds the palette data only. Applying a palette to a `SalusColorScheme` is theme
 // resolution and lives outside this package's token layer.

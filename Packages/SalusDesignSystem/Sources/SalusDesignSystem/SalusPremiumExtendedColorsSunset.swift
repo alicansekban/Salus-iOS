@@ -41,6 +41,14 @@ private enum SunsetLightExtendedValues {
     static let trendsContainer = Color(hex: 0xF0D4E9)
     static let trendsOnContainer = Color(hex: 0x410B34)
 
+    // Orange-amber - a step warmer than the brand amber, still 25+ degrees off the error red
+    // (asserted in `SmokingAccentTests`).
+    // PremiumExtendedColors.kt `smoking`
+    static let smokingAccent = Color(hex: 0xAB5E00)
+    static let smokingOnAccent = Color(hex: 0xFFFFFF)
+    static let smokingContainer = Color(hex: 0xFADFC0)
+    static let smokingOnContainer = Color(hex: 0x3E2100)
+
     // Hero — orange into burnt orange.
     // PremiumExtendedColors.kt:174-177
     static let heroTop = Color(hex: 0x6C4326)
@@ -84,6 +92,12 @@ private enum SunsetLightExtendedValues {
         container: trendsContainer,
         onContainer: trendsOnContainer
     )
+    static let smoking = FeatureAccent(
+        accent: smokingAccent,
+        onAccent: smokingOnAccent,
+        container: smokingContainer,
+        onContainer: smokingOnContainer
+    )
 }
 
 /// §4.6 — SUNSET, dark. Source: `PremiumExtendedColors.kt:156-197`.
@@ -122,6 +136,14 @@ private enum SunsetDarkExtendedValues {
     static let trendsOnAccent = Color(hex: 0x37062A)
     static let trendsContainer = Color(hex: 0x511F44)
     static let trendsOnContainer = Color(hex: 0xF0CAE6)
+
+    // Orange-amber - a step warmer than the brand amber, still 25+ degrees off the error red
+    // (asserted in `SmokingAccentTests`).
+    // PremiumExtendedColors.kt `smoking`
+    static let smokingAccent = Color(hex: 0xF2AE58)
+    static let smokingOnAccent = Color(hex: 0x3E2300)
+    static let smokingContainer = Color(hex: 0x523812)
+    static let smokingOnContainer = Color(hex: 0xFFE0C2)
 
     // Hero — the app ground rising into the Sunset primary container.
     // PremiumExtendedColors.kt:221-224
@@ -166,6 +188,12 @@ private enum SunsetDarkExtendedValues {
         container: trendsContainer,
         onContainer: trendsOnContainer
     )
+    static let smoking = FeatureAccent(
+        accent: smokingAccent,
+        onAccent: smokingOnAccent,
+        container: smokingContainer,
+        onContainer: smokingOnContainer
+    )
 }
 
 extension SalusExtendedColors {
@@ -176,6 +204,7 @@ extension SalusExtendedColors {
         vitals: SunsetLightExtendedValues.vitals,
         appointments: SunsetLightExtendedValues.appointments,
         trends: SunsetLightExtendedValues.trends,
+        smoking: SunsetLightExtendedValues.smoking,
         hero: SunsetLightExtendedValues.hero
     )
     .restatingAccentDerivedRoles(
@@ -192,6 +221,7 @@ extension SalusExtendedColors {
         vitals: SunsetDarkExtendedValues.vitals,
         appointments: SunsetDarkExtendedValues.appointments,
         trends: SunsetDarkExtendedValues.trends,
+        smoking: SunsetDarkExtendedValues.smoking,
         hero: SunsetDarkExtendedValues.hero
     )
     .restatingAccentDerivedRoles(

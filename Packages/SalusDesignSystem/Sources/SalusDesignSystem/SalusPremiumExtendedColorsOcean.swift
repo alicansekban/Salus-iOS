@@ -42,6 +42,13 @@ private enum OceanLightExtendedValues {
     static let trendsContainer = Color(hex: 0xD6D4F0)
     static let trendsOnContainer = Color(hex: 0x100B41)
 
+    // Golden amber - the yellow end of amber, the warm one amid the cool Ocean family.
+    // PremiumExtendedColors.kt `smoking`
+    static let smokingAccent = Color(hex: 0x8C6200)
+    static let smokingOnAccent = Color(hex: 0xFFFFFF)
+    static let smokingContainer = Color(hex: 0xF7E3B5)
+    static let smokingOnContainer = Color(hex: 0x382700)
+
     // Hero — cyan into deep cyan.
     // PremiumExtendedColors.kt:78-81
     static let heroTop = Color(hex: 0x26606C)
@@ -85,6 +92,12 @@ private enum OceanLightExtendedValues {
         container: trendsContainer,
         onContainer: trendsOnContainer
     )
+    static let smoking = FeatureAccent(
+        accent: smokingAccent,
+        onAccent: smokingOnAccent,
+        container: smokingContainer,
+        onContainer: smokingOnContainer
+    )
 }
 
 /// §4.6 — OCEAN, dark. Source: `PremiumExtendedColors.kt:88-134`.
@@ -124,6 +137,13 @@ private enum OceanDarkExtendedValues {
     static let trendsOnAccent = Color(hex: 0x08052E)
     static let trendsContainer = Color(hex: 0x241F51)
     static let trendsOnContainer = Color(hex: 0xCDCAF0)
+
+    // Golden amber - the yellow end of amber, the warm one amid the cool Ocean family.
+    // PremiumExtendedColors.kt `smoking`
+    static let smokingAccent = Color(hex: 0xF0BC4E)
+    static let smokingOnAccent = Color(hex: 0x3A2A00)
+    static let smokingContainer = Color(hex: 0x4A3A0C)
+    static let smokingOnContainer = Color(hex: 0xFBE6B8)
 
     // Hero — the app ground rising into the Ocean primary container.
     // PremiumExtendedColors.kt:126-129
@@ -168,6 +188,12 @@ private enum OceanDarkExtendedValues {
         container: trendsContainer,
         onContainer: trendsOnContainer
     )
+    static let smoking = FeatureAccent(
+        accent: smokingAccent,
+        onAccent: smokingOnAccent,
+        container: smokingContainer,
+        onContainer: smokingOnContainer
+    )
 }
 
 extension SalusExtendedColors {
@@ -178,6 +204,7 @@ extension SalusExtendedColors {
         vitals: OceanLightExtendedValues.vitals,
         appointments: OceanLightExtendedValues.appointments,
         trends: OceanLightExtendedValues.trends,
+        smoking: OceanLightExtendedValues.smoking,
         hero: OceanLightExtendedValues.hero
     )
     .restatingAccentDerivedRoles(
@@ -194,6 +221,7 @@ extension SalusExtendedColors {
         vitals: OceanDarkExtendedValues.vitals,
         appointments: OceanDarkExtendedValues.appointments,
         trends: OceanDarkExtendedValues.trends,
+        smoking: OceanDarkExtendedValues.smoking,
         hero: OceanDarkExtendedValues.hero
     )
     .restatingAccentDerivedRoles(

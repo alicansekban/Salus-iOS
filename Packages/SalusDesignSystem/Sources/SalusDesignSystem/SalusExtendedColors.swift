@@ -71,7 +71,7 @@ public struct SalusGradient: Equatable, Sendable {
 /// The Salus colors that sit outside the Material roles, for one theme: one accent set per
 /// feature area, two shared status colors, and the hero gradient.
 ///
-/// These are the brand (CLASSIC) values. A premium theme repaints the five feature accents and
+/// These are the brand (CLASSIC) values. A premium theme repaints the six feature accents and
 /// the hero gradient from its own §4.6 set (`SalusPremiumExtendedColors.swift`); `success` and
 /// `warning` are inherited from here by every palette and never move.
 public struct SalusExtendedColors: Equatable, Sendable {
@@ -83,6 +83,13 @@ public struct SalusExtendedColors: Equatable, Sendable {
     /// The trends screen reports on every feature at once, so borrowing any one feature's
     /// color would have made it read as that feature's screen. Keep the indigo.
     public var trends: FeatureAccent
+    /// M17 (sync S1): the one amber accent of the smoking-cessation feature — hero numbers, rings,
+    /// bars, the feature's primary button and the heatmap scale. It is NOT `warning` and it is
+    /// never red or pink (design review R1): the smoking screens show slips and over-limit days,
+    /// so the accent has to read as supportive, never as an alarm. Over-limit is told apart by a
+    /// neutral overflow segment and a "+n" chip, not by a colour change (R2), which is why it may
+    /// sit in the same amber family as `warning` (`ExtendedColors.kt`, `smoking`).
+    public var smoking: FeatureAccent
 
     /// §3.3 status color. There is no `error` here — error stays on the Material role.
     public var success: Color
@@ -111,18 +118,19 @@ public struct SalusExtendedColors: Equatable, Sendable {
     /// surface across palettes (`ExtendedColors.kt:169-172,115-118`).
     public var aiGradient: SalusGradient
 
-    /// The five feature accents in document order.
+    /// The six feature accents in document order.
     public var featureAccents: [SalusFeatureAccentEntry] {
         [
             SalusFeatureAccentEntry(name: "medications", accent: medications),
             SalusFeatureAccentEntry(name: "cycle", accent: cycle),
             SalusFeatureAccentEntry(name: "vitals", accent: vitals),
             SalusFeatureAccentEntry(name: "appointments", accent: appointments),
-            SalusFeatureAccentEntry(name: "trends", accent: trends)
+            SalusFeatureAccentEntry(name: "trends", accent: trends),
+            SalusFeatureAccentEntry(name: "smoking", accent: smoking)
         ]
     }
 
-    /// The 20 feature accent colors of this theme, keyed `<feature>.<member>`.
+    /// The 24 feature accent colors of this theme, keyed `<feature>.<member>`.
     package var accentTokens: [String: Color] {
         var tokens: [String: Color] = [:]
         for entry in featureAccents {
@@ -189,6 +197,13 @@ private enum LightAccentPalette {
     static let trendsContainer = Color(hex: 0xDEE0FF)
     static let trendsOnContainer = Color(hex: 0x00105C)
 
+    // smoking — M17, ExtendedColors.kt `smoking`. Light accent ~ the 600 amber so white text on it
+    // clears AA (5.45:1 on the card ground); tones otherwise follow the Material 3 curve.
+    static let smokingAccent = Color(hex: 0x9B5A00)
+    static let smokingOnAccent = Color(hex: 0xFFFFFF)
+    static let smokingContainer = Color(hex: 0xFFE0B2)
+    static let smokingOnContainer = Color(hex: 0x3B2100)
+
     // cycle — ExtendedColors.kt:75-80. The cycle accent is the tertiary role itself: "period"
     // is one hue app-wide, whether it is drawn as a feature accent or as a Material surface.
     static let cycleAccent = Color(hex: 0xE11D48) // TertiaryLight — rose-600
@@ -243,6 +258,12 @@ private enum LightAccentPalette {
         container: trendsContainer,
         onContainer: trendsOnContainer
     )
+    static let smoking = FeatureAccent(
+        accent: smokingAccent,
+        onAccent: smokingOnAccent,
+        container: smokingContainer,
+        onContainer: smokingOnContainer
+    )
 }
 
 /// §3.2 / §3.3 / §3.5 — the dark accent and gradient values. Source: `ExtendedColors.kt:92-130`.
@@ -270,6 +291,13 @@ private enum DarkAccentPalette {
     static let trendsOnAccent = Color(hex: 0x1E2578)
     static let trendsContainer = Color(hex: 0x363E90)
     static let trendsOnContainer = Color(hex: 0xDEE0FF)
+
+    // smoking — M17, ExtendedColors.kt `smoking`. The dark half of the same amber: accent is the
+    // amber-400 family, onAccent ~ tone 10 brown, container ~ tone 20, onContainer ~ tone 90.
+    static let smokingAccent = Color(hex: 0xF5A524)
+    static let smokingOnAccent = Color(hex: 0x3D2400)
+    static let smokingContainer = Color(hex: 0x4D3000)
+    static let smokingOnContainer = Color(hex: 0xFFDDB0)
 
     // cycle — ExtendedColors.kt:129-134. The cycle accent is the tertiary role itself — see the
     // light set.
@@ -326,6 +354,12 @@ private enum DarkAccentPalette {
         container: trendsContainer,
         onContainer: trendsOnContainer
     )
+    static let smoking = FeatureAccent(
+        accent: smokingAccent,
+        onAccent: smokingOnAccent,
+        container: smokingContainer,
+        onContainer: smokingOnContainer
+    )
 }
 
 extension SalusExtendedColors {
@@ -336,6 +370,7 @@ extension SalusExtendedColors {
         vitals: LightAccentPalette.vitals,
         appointments: LightAccentPalette.appointments,
         trends: LightAccentPalette.trends,
+        smoking: LightAccentPalette.smoking,
         success: LightAccentPalette.success,
         warning: LightAccentPalette.warning,
         hero: LightAccentPalette.hero,
@@ -354,6 +389,7 @@ extension SalusExtendedColors {
         vitals: DarkAccentPalette.vitals,
         appointments: DarkAccentPalette.appointments,
         trends: DarkAccentPalette.trends,
+        smoking: DarkAccentPalette.smoking,
         success: DarkAccentPalette.success,
         warning: DarkAccentPalette.warning,
         hero: DarkAccentPalette.hero,

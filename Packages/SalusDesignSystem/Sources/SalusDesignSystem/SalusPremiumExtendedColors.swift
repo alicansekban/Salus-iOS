@@ -5,7 +5,7 @@ import SwiftUI
 //
 // A premium theme repaints accents — and until this file existed, only the eight Material
 // accent roles of §4 moved with it, so Home, Medications, Vitals and Appointments kept drawing
-// the brand greens under an Ocean or a Sunset palette. Each palette here restates the five
+// the brand greens under an Ocean or a Sunset palette. Each palette here restates the six
 // `FeatureAccent`s, the hero gradient and the accent-derived extended roles; everything else is
 // inherited from the brand set.
 //
@@ -35,13 +35,16 @@ extension SalusExtendedColors {
     /// The Swift twin of Kotlin's `LightExtendedColors.copy(medications = …, hero = …)`
     /// (`PremiumExtendedColors.kt:40`): the three roles a premium palette does NOT repaint —
     /// `success`, `warning`, and the structural roles `cardBorder` + `metricDown` +
-    /// `aiGradient.bottom` — are carried over from the receiver rather than restated.
-    func replacingFeatureAccents(
+    /// `aiGradient.bottom` — are carried over from the receiver rather than restated. Seven
+    /// parameters (six accents and the hero) on purpose: they are named exactly like Kotlin's
+    /// `copy(...)` call, so each palette reads line for line against `PremiumExtendedColors.kt`.
+    func replacingFeatureAccents( // swiftlint:disable:this function_parameter_count
         medications: FeatureAccent,
         cycle: FeatureAccent,
         vitals: FeatureAccent,
         appointments: FeatureAccent,
         trends: FeatureAccent,
+        smoking: FeatureAccent,
         hero: SalusGradient
     ) -> SalusExtendedColors {
         var copy = self
@@ -50,6 +53,7 @@ extension SalusExtendedColors {
         copy.vitals = vitals
         copy.appointments = appointments
         copy.trends = trends
+        copy.smoking = smoking
         copy.hero = hero
         return copy
     }

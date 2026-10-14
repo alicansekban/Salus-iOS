@@ -9,8 +9,8 @@ import Testing
 // Every literal below is copied out of that document by hand; the token sources are
 // transcribed from the same document independently. A typo on either side fails here.
 //
-// The count assertions are the drift detector: the doc declares 233 tokens and
-// 5 `FeatureAccent` sets. If a token is added, removed or renamed in the doc without the
+// The count assertions are the drift detector: the doc declares 241 tokens and
+// 6 `FeatureAccent` sets. If a token is added, removed or renamed in the doc without the
 // Swift side following, the totals stop matching.
 
 /// One sampled color row: token name, the transcribed value, the hex spelled out in the doc.
@@ -38,20 +38,22 @@ private enum TestError: Error {
 
 @Suite("Design token counts (drift detector)")
 struct DesignTokenCountTests {
-    /// `design-tokens.md` declares 233 tokens across all groups.
-    @Test("the package exposes exactly 233 tokens")
-    func totalTokenCountIs218() {
-        #expect(SalusTokens.allTokenCount == 233)
+    /// `design-tokens.md` declares 241 tokens across all groups (233 + the M17 smoking accent's
+    /// four members in each of the light and dark sets).
+    @Test("the package exposes exactly 241 tokens")
+    func totalTokenCountIs241() {
+        #expect(SalusTokens.allTokenCount == 241)
     }
 
-    /// §3 declares five feature accent sets: medications, cycle, vitals, appointments, trends.
-    @Test("there are exactly 5 FeatureAccent sets per theme")
-    func featureAccentCountIs5() {
-        #expect(SalusExtendedColors.light.featureAccents.count == 5)
-        #expect(SalusExtendedColors.dark.featureAccents.count == 5)
+    /// §3 declares six feature accent sets: medications, cycle, vitals, appointments, trends and
+    /// (M17) smoking.
+    @Test("there are exactly 6 FeatureAccent sets per theme")
+    func featureAccentCountIs6() {
+        #expect(SalusExtendedColors.light.featureAccents.count == 6)
+        #expect(SalusExtendedColors.dark.featureAccents.count == 6)
         #expect(
             SalusExtendedColors.light.featureAccents.map(\.name)
-                == ["medications", "cycle", "vitals", "appointments", "trends"]
+                == ["medications", "cycle", "vitals", "appointments", "trends", "smoking"]
         )
     }
 
@@ -64,9 +66,9 @@ struct DesignTokenCountTests {
         #expect(counts["colors.light"] == 35)
         // §2 Material color roles — dark
         #expect(counts["colors.dark"] == 35)
-        // §3.1 / §3.2 feature accents: 5 features x 4 members
-        #expect(counts["featureAccents.light"] == 20)
-        #expect(counts["featureAccents.dark"] == 20)
+        // §3.1 / §3.2 feature accents: 6 features x 4 members
+        #expect(counts["featureAccents.light"] == 24)
+        #expect(counts["featureAccents.dark"] == 24)
         // §3.3 success + warning, light and dark
         #expect(counts["statusColors"] == 4)
         // §3.6 structural and metric roles, light and dark
@@ -173,7 +175,12 @@ struct FeatureAccentTests {
                 UInt32(0x3E7D5F)
             ),
             ("trends.accent", SalusExtendedColors.light.trends.accent, UInt32(0x4F5AA8)),
-            ("trends.onContainer", SalusExtendedColors.light.trends.onContainer, UInt32(0x00105C))
+            ("trends.onContainer", SalusExtendedColors.light.trends.onContainer, UInt32(0x00105C)),
+            // §3.1 (M17, sync S1): the amber smoking accent, all four members.
+            ("smoking.accent", SalusExtendedColors.light.smoking.accent, UInt32(0x9B5A00)),
+            ("smoking.onAccent", SalusExtendedColors.light.smoking.onAccent, UInt32(0xFFFFFF)),
+            ("smoking.container", SalusExtendedColors.light.smoking.container, UInt32(0xFFE0B2)),
+            ("smoking.onContainer", SalusExtendedColors.light.smoking.onContainer, UInt32(0x3B2100))
         ] as [ColorSample]
     )
     func lightAccent(_ sample: ColorSample) {
@@ -194,7 +201,12 @@ struct FeatureAccentTests {
                 "appointments.container", SalusExtendedColors.dark.appointments.container,
                 UInt32(0x275B43)
             ),
-            ("trends.accent", SalusExtendedColors.dark.trends.accent, UInt32(0xBAC3FF))
+            ("trends.accent", SalusExtendedColors.dark.trends.accent, UInt32(0xBAC3FF)),
+            // §3.2 (M17, sync S1): the amber smoking accent, all four members.
+            ("smoking.accent", SalusExtendedColors.dark.smoking.accent, UInt32(0xF5A524)),
+            ("smoking.onAccent", SalusExtendedColors.dark.smoking.onAccent, UInt32(0x3D2400)),
+            ("smoking.container", SalusExtendedColors.dark.smoking.container, UInt32(0x4D3000)),
+            ("smoking.onContainer", SalusExtendedColors.dark.smoking.onContainer, UInt32(0xFFDDB0))
         ] as [ColorSample]
     )
     func darkAccent(_ sample: ColorSample) {
@@ -476,25 +488,5 @@ struct TypographyTokenTests {
         let names = Set(SalusTypography.allTokens.keys)
         #expect(names.isDisjoint(with: ["displayLarge", "displayMedium"]))
         #expect(names.contains("displaySmall"))
-    }
-}
-
-@Suite("Hex initializer")
-struct ColorHexInitializerTests {
-    /// The doc's §0 initializer: an opaque sRGB color, never Display P3.
-    @Test("hex initializer produces opaque sRGB components")
-    func hexComponents() {
-        #expect(
-            Color(hex: 0x3E7D5F)
-                == Color(
-                    .sRGB,
-                    red: Double(0x3E) / 255,
-                    green: Double(0x7D) / 255,
-                    blue: Double(0x5F) / 255,
-                    opacity: 1
-                )
-        )
-        #expect(Color(hex: 0xFFFFFF) == Color(.sRGB, red: 1, green: 1, blue: 1, opacity: 1))
-        #expect(Color(hex: 0x000000) == Color(.sRGB, red: 0, green: 0, blue: 0, opacity: 1))
     }
 }

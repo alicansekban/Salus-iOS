@@ -17,7 +17,7 @@ import Testing
 // restated here; what this file asserts is that CLASSIC stays *identical* to them and that the
 // three premium palettes land on §4.6's hexes.
 
-/// Which of the five feature accents a parity row is about.
+/// Which of the six feature accents a parity row is about.
 ///
 /// A `KeyPath<SalusExtendedColors, FeatureAccent>` would be the natural spelling, but `KeyPath`
 /// does not conform to `Sendable` under Swift 6 strict concurrency, and `@Test(arguments:)`
@@ -28,6 +28,7 @@ enum PremiumAccentFeature: String, Sendable {
     case vitals
     case appointments
     case trends
+    case smoking
 
     func accent(of colors: SalusExtendedColors) -> FeatureAccent {
         switch self {
@@ -36,6 +37,7 @@ enum PremiumAccentFeature: String, Sendable {
         case .vitals: colors.vitals
         case .appointments: colors.appointments
         case .trends: colors.trends
+        case .smoking: colors.smoking
         }
     }
 }
@@ -54,7 +56,7 @@ typealias PremiumAccentRow = (
 /// One hero row: palette, mode, and the two gradient stops.
 typealias PremiumHeroRow = (palette: PremiumTheme, dark: Bool, top: UInt32, bottom: UInt32)
 
-/// The §4.6 tables. 3 premium palettes x 2 modes x 5 features.
+/// The §4.6 tables. 3 premium palettes x 2 modes x 6 features.
 enum PremiumExtendedColorTables {
     static let accents: [PremiumAccentRow] = [
         (.ocean, false, .medications, 0x1B6FA8, 0xFFFFFF, 0xD6EAF8, 0x0B3A5C),
@@ -62,31 +64,37 @@ enum PremiumExtendedColorTables {
         (.ocean, false, .vitals, 0x2F6DBD, 0xFFFFFF, 0xD4E0F0, 0x0B2341),
         (.ocean, false, .appointments, 0x257592, 0xFFFFFF, 0xD4E8F0, 0x0B3341),
         (.ocean, false, .trends, 0x5347D1, 0xFFFFFF, 0xD6D4F0, 0x100B41),
+        (.ocean, false, .smoking, 0x8C6200, 0xFFFFFF, 0xF7E3B5, 0x382700),
         (.ocean, true, .medications, 0x7CC4F5, 0x06263B, 0x123A55, 0xCFE8FB),
         (.ocean, true, .cycle, 0xDD8ACF, 0x37062F, 0x511F49, 0xF0CAE9),
         (.ocean, true, .vitals, 0x8AAEDD, 0x072143, 0x1F3551, 0xCADAF0),
         (.ocean, true, .appointments, 0x8AC7DD, 0x083546, 0x1F4451, 0xCAE5F0),
         (.ocean, true, .trends, 0x918ADD, 0x08052E, 0x241F51, 0xCDCAF0),
+        (.ocean, true, .smoking, 0xF0BC4E, 0x3A2A00, 0x4A3A0C, 0xFBE6B8),
         (.sunset, false, .medications, 0xAA552A, 0xFFFFFF, 0xF0DDD4, 0x411D0B),
         (.sunset, false, .cycle, 0xC83257, 0xFFFFFF, 0xF0D4DB, 0x410B19),
         (.sunset, false, .vitals, 0x876822, 0xFFFFFF, 0xF0E7D4, 0x41310B),
         (.sunset, false, .appointments, 0xC33D31, 0xFFFFFF, 0xF0D6D4, 0x41100B),
         (.sunset, false, .trends, 0xBD2F9A, 0xFFFFFF, 0xF0D4E9, 0x410B34),
+        (.sunset, false, .smoking, 0xAB5E00, 0xFFFFFF, 0xFADFC0, 0x3E2100),
         (.sunset, true, .medications, 0xDDA68A, 0x441C08, 0x51301F, 0xF0D6CA),
         (.sunset, true, .cycle, 0xDD8A9F, 0x330611, 0x511F2C, 0xF0CAD3),
         (.sunset, true, .vitals, 0xDDC48A, 0x473408, 0x51421F, 0xF0E4CA),
         (.sunset, true, .appointments, 0xDD918A, 0x380A06, 0x51241F, 0xF0CDCA),
         (.sunset, true, .trends, 0xDD8AC8, 0x37062A, 0x511F44, 0xF0CAE6),
+        (.sunset, true, .smoking, 0xF2AE58, 0x3E2300, 0x523812, 0xFFE0C2),
         (.forest, false, .medications, 0x6B7A16, 0xFFFFFF, 0xEDF3C8, 0x2E3607),
         (.forest, false, .cycle, 0xC3317A, 0xFFFFFF, 0xF0D4E2, 0x410B26),
         (.forest, false, .vitals, 0x447A1E, 0xFFFFFF, 0xDFF0D4, 0x22410B),
         (.forest, false, .appointments, 0x1F7A63, 0xFFFFFF, 0xD4F0E9, 0x0B4134),
         (.forest, false, .trends, 0x27749A, 0xFFFFFF, 0xD4E6F0, 0x0B2F41),
+        (.forest, false, .smoking, 0x946000, 0xFFFFFF, 0xF3E2B8, 0x352500),
         (.forest, true, .medications, 0xD4E157, 0x2A3300, 0x3E4A12, 0xEEF5C4),
         (.forest, true, .cycle, 0xDD8AB4, 0x35061D, 0x511F38, 0xF0CADD),
         (.forest, true, .vitals, 0xADDD8A, 0x214508, 0x34511F, 0xD9F0CA),
         (.forest, true, .appointments, 0x8ADDC8, 0x084435, 0x1F5144, 0xCAF0E6),
-        (.forest, true, .trends, 0x8AC2DD, 0x083246, 0x1F4051, 0xCAE3F0)
+        (.forest, true, .trends, 0x8AC2DD, 0x083246, 0x1F4051, 0xCAE3F0),
+        (.forest, true, .smoking, 0xE8B040, 0x362800, 0x483A12, 0xF8E5B8)
     ]
 
     /// 3 premium palettes x 2 modes, hero top/bottom. Dark hero starts on the app ground and
@@ -172,9 +180,9 @@ struct PremiumExtendedColorsHexParityTests {
         #expect(colors.hero.bottom == Color(hex: row.bottom), "\(label) hero.bottom")
     }
 
-    @Test("the table covers 3 palettes x 2 modes x 5 features, plus 6 hero rows")
+    @Test("the table covers 3 palettes x 2 modes x 6 features, plus 6 hero rows")
     func tableIsComplete() {
-        #expect(PremiumExtendedColorTables.accents.count == 30)
+        #expect(PremiumExtendedColorTables.accents.count == 36)
         #expect(PremiumExtendedColorTables.heroes.count == 6)
     }
 }
@@ -227,6 +235,70 @@ struct PremiumExtendedColorsRestatedRolesTests {
         #expect(palette.metricDown == classic.metricDown, "\(label) metricDown")
         #expect(palette.cardBorder == classic.cardBorder, "\(label) cardBorder")
         #expect(palette.aiGradient.bottom == classic.aiGradient.bottom, "\(label) aiGradient.bottom")
+    }
+}
+
+@Suite("Smoking accent (M17, PremiumExtendedColorsTest.kt)")
+struct SmokingAccentTests {
+    /// Smoking is the one feature whose screens show the user's slips and over-limit days, so the
+    /// accent must never read as an alarm: amber, a clear step away from the error red in every
+    /// palette and mode (design review R1, "no red or pink"). Checked on the container too, since
+    /// a tinted chip is where a drifting hue would first look pink. The twin of Android's
+    /// `smoking accent hue is at least 25 degrees away from error`.
+    @Test(
+        "accent and container hue sit at least 25 degrees away from error",
+        arguments: PremiumTheme.allCases, [false, true]
+    )
+    func hueIsAwayFromError(_ palette: PremiumTheme, dark: Bool) {
+        let theme = SalusTheme.resolve(premiumTheme: palette, systemIsDark: dark)
+        let error = hue(of: hex(theme.colorScheme.error))
+        let smoking = theme.extendedColors.smoking
+        let roles = [("accent", smoking.accent), ("container", smoking.container)]
+        for (role, color) in roles {
+            let colorHue = hue(of: hex(color))
+            let distance = hueDistance(colorHue, error)
+            #expect(
+                distance >= 25,
+                "\(palette.rawValue) dark=\(dark) smoking \(role) hue \(colorHue) is \(distance) degrees from error \(error)"
+            )
+        }
+    }
+
+    /// Six accents, six different colours: no two features may read as each other. Android's
+    /// `the six feature accents of one palette are distinct`.
+    @Test(
+        "the six feature accents of one palette are distinct",
+        arguments: PremiumTheme.allCases, [false, true]
+    )
+    func accentsAreDistinct(_ palette: PremiumTheme, dark: Bool) {
+        let colors = SalusTheme.resolve(premiumTheme: palette, systemIsDark: dark).extendedColors
+        let accents = Set(colors.featureAccents.map { hex($0.accent.accent) })
+        #expect(accents.count == 6, "\(palette.rawValue) dark=\(dark) accents not distinct")
+    }
+
+    /// HSV hue in degrees, `0..<360`; 0 for a grey. Android's private `hue`, line for line.
+    private func hue(of rgb: UInt32) -> Double {
+        let red = Double((rgb >> 16) & 0xFF) / 255
+        let green = Double((rgb >> 8) & 0xFF) / 255
+        let blue = Double(rgb & 0xFF) / 255
+        let maxChannel = max(red, green, blue)
+        let delta = maxChannel - min(red, green, blue)
+        if delta == 0 {
+            return 0
+        }
+        let sector: Double = if maxChannel == red {
+            ((green - blue) / delta).truncatingRemainder(dividingBy: 6)
+        } else if maxChannel == green {
+            (blue - red) / delta + 2
+        } else {
+            (red - green) / delta + 4
+        }
+        return (sector * 60 + 360).truncatingRemainder(dividingBy: 360)
+    }
+
+    private func hueDistance(_ one: Double, _ other: Double) -> Double {
+        let gap = abs(one - other).truncatingRemainder(dividingBy: 360)
+        return gap > 180 ? 360 - gap : gap
     }
 }
 

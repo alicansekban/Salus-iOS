@@ -16,7 +16,7 @@ Every rule names its **enforcement point**. Token values come only from
   invent, round, or eyeball a color, spacing, radius, elevation or duration. If the doc lacks it,
   the doc gets updated on the Android side first.
   — *enforcement: `Packages/SalusDesignSystem/Tests/SalusDesignSystemTests/SalusDesignTokensTests.swift`
-  pins **233 tokens** and **5 `FeatureAccent` sets** per theme, plus per-section tables against
+  pins **241 tokens** and **6 `FeatureAccent` sets** per theme, plus per-section tables against
   §1–§9 of the doc. Adding a token without the doc line fails the count.*
 - **`SalusDesignSystem` is tokens only, no views** (mirrors Android's `:core:designsystem`).
   Shared views live in `SalusUI`. — *review.*

@@ -84,6 +84,13 @@ struct SalusColorSchemeContrastTests {
                 name: "metricUp/surfaceContainerLow",
                 foreground: extended.metricUp,
                 background: scheme.surfaceContainerLow
+            ),
+            // The smoking accent carries hero numbers and ring labels on a card, so it is held
+            // to the text ratio, not the 3:1 graphics one.
+            ContrastPair(
+                name: "smoking accent/surfaceContainerLow",
+                foreground: extended.smoking.accent,
+                background: scheme.surfaceContainerLow
             )
         ]
         for pair in pairs {
