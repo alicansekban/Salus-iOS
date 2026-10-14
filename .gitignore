@@ -32,3 +32,6 @@ Package.resolved
 # macOS
 .DS_Store
 .claude/worktrees/
+
+# Agent harness: per-run logs and locks (scripts/dev/gates.sh)
+.salus-run/
