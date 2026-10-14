@@ -27,6 +27,7 @@ let package = Package(
         .package(path: "../../SalusPremium"),
         .package(path: "../../SalusProfile"),
         .package(path: "../../SalusReminder"),
+        .package(path: "../../SalusSmoking"),
         .package(path: "../../SalusTesting")
     ],
     targets: [
@@ -45,7 +46,10 @@ let package = Package(
                 .product(name: "SalusProfile", package: "SalusProfile"),
                 // The dashboard's readiness card: `ReminderEnvironment.readiness(alarmKitSupported:)`
                 // and the `ReminderProblem.reason` sentence under it.
-                .product(name: "SalusReminder", package: "SalusReminder")
+                .product(name: "SalusReminder", package: "SalusReminder"),
+                // The smoking card: `SmokingSnapshot` and the use cases behind "+1" and its undo.
+                // A core package, not `FeatureSmoking` — features never depend on each other.
+                .product(name: "SalusSmoking", package: "SalusSmoking")
             ],
             resources: [
                 .process("Resources")

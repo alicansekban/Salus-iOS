@@ -68,7 +68,11 @@ extension AppCompositionRoot {
             alarmKitSupported: reminderBase.alarmKitSupported,
             profileId: SalusDatabase.defaultProfileId,
             profileRepository: infrastructure.profileRepository,
-            foreground: infrastructure.foreground
+            foreground: infrastructure.foreground,
+            // The smoking card reads the one core's snapshot and writes through its use cases, and
+            // its "+1" undo is shown on the shell's one snackbar.
+            smoking: SmokingCoreHomeSmoking(core: infrastructure.smokingCore),
+            snackbar: infrastructure.snackbar
         )
     }
 

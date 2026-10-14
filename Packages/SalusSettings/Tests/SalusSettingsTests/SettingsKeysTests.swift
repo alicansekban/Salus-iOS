@@ -3,19 +3,21 @@ import Testing
 
 @testable import SalusSettings
 
-// Pinning test for the 15 persisted preference keys (CLAUDE.md "Port fidelity rules", spec §9).
+// Pinning test for the 16 persisted preference keys (CLAUDE.md "Port fidelity rules", spec §9).
 //
 // Source of truth, copied by hand into the literals below:
 // `salus-android/core/datastore/.../SalusPreferencesDataSource.kt:78-87` (ten settings keys),
 // `salus-android/core/datastore/.../AiUsageDataSource.kt:118-120` (three AI usage keys) and the
-// in-app review spec §1 (two review prompt keys).
+// in-app review spec §1 (two review prompt keys) and the M17 Home card's dismissal flag
+// (`SalusPreferencesDataSource.kt` `KEY_SMOKING_DISCOVERY_DISMISSED`, branch
+// `feature/m17-smoking-cessation`).
 //
 // These strings are the backup format's `settings` block and the cross-platform contract: a key
 // renamed here silently orphans every value Android already wrote. Nothing may "improve" them.
 
 @Suite("Settings keys (Android parity)")
 struct SettingsKeysTests {
-    @Test("all 15 persisted keys are the Android strings, verbatim")
+    @Test("all 16 persisted keys are the Android strings, verbatim")
     func persistedKeys() {
         let keys = [
             SettingsKeys.onboardingCompleted,
@@ -32,7 +34,8 @@ struct SettingsKeysTests {
             SettingsKeys.aiCallsCount,
             SettingsKeys.aiCallsEpochDay,
             SettingsKeys.homeOpenCount,
-            SettingsKeys.reviewLastRequestedMs
+            SettingsKeys.reviewLastRequestedMs,
+            SettingsKeys.smokingDiscoveryDismissed
         ]
 
         #expect(keys == [
@@ -50,7 +53,8 @@ struct SettingsKeysTests {
             "ai_calls_count",
             "ai_calls_epoch_day",
             "home_open_count",
-            "review_last_requested_ms"
+            "review_last_requested_ms",
+            "smoking_discovery_dismissed"
         ])
     }
 

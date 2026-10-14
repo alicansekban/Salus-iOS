@@ -33,6 +33,7 @@ public final class SalusPreferencesDataSource: Sendable {
     nonisolated(unsafe) let defaults: UserDefaults
     private let appLockFlagStore: any AppLockFlagStore
     private let values: DefaultsValueStream<UserSettings>
+    private let smokingDismissal: DefaultsValueStream<Bool>
 
     /// - Parameters:
     ///   - defaults: the store; production passes `.standard`, tests a throwaway suite.
@@ -45,6 +46,9 @@ public final class SalusPreferencesDataSource: Sendable {
         nonisolated(unsafe) let captured = defaults
         values = DefaultsValueStream(defaults: defaults) {
             Self.read(from: captured, appLockFlagStore: appLockFlagStore)
+        }
+        smokingDismissal = DefaultsValueStream(defaults: defaults) {
+            captured.storedBool(forKey: SettingsKeys.smokingDiscoveryDismissed, default: false)
         }
     }
 
@@ -100,6 +104,24 @@ public final class SalusPreferencesDataSource: Sendable {
     public func setPremiumTheme(_ theme: PremiumTheme) {
         // `theme.name` on Android (:74).
         write(theme.rawValue, forKey: SettingsKeys.premiumTheme)
+    }
+
+    // MARK: - Smoking discovery
+
+    // Twins of `SalusPreferencesDataSource.kt`'s `smokingDiscoveryDismissed` /
+    // `setSmokingDiscoveryDismissed` (plan Task 16). A UI preference, not a database row (spec §2),
+    // so it survives a smoking reset: once closed, the row stays closed. Its own stream rather
+    // than a field of `UserSettings`, which is the backup format's `settings` block and the
+    // settings screen's whole state — neither has any use for it.
+
+    /// Whether the Home discovery row was closed; emits the stored value, then each change.
+    public var smokingDiscoveryDismissed: AsyncStream<Bool> {
+        smokingDismissal.makeStream()
+    }
+
+    public func setSmokingDiscoveryDismissed(_ dismissed: Bool) {
+        defaults.set(dismissed, forKey: SettingsKeys.smokingDiscoveryDismissed)
+        smokingDismissal.publish()
     }
 
     // MARK: - Review prompt

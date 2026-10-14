@@ -3,6 +3,12 @@
 // and text verbatim, resolved against this package's own bundle exactly as `R.string` resolves
 // against `:feature:home`.
 //
+// THE M17 SMOKING CARD ADDS 24 CATALOG KEYS (42 → 66), Android's 20 `home_smoking_*` resources
+// from `feature/m17-smoking-cessation`: sixteen `<string>`s and four `<plurals>`. Each plural
+// is a pair, the general key and a `_one` twin the accessor picks by count (spec §9 (h), the M14
+// (e) precedent — `AppointmentsStrings.swift` has the long form), so 16 + 4 × 2 = 24. Turkish has
+// one form and both keys carry it. The overline is stored upper-case, never folded at run time.
+//
 // THE M15 SWEEP, key for key (Android `3391896..529a30f`). The table grew from 34 to 42: nine keys
 // were added (`home_overline_today`, `home_see_all`, `home_ai_new_summary`, the three
 // `home_pager_*` page labels, `home_next_dose`, `home_next_dose_none`, `home_last_dose`), exactly
@@ -206,13 +212,91 @@ public enum HomeStrings {
         formatted(.vitalsGlucoseMmol, value)
     }
 
+    // MARK: - The smoking card (24)
+
+    /// `home_smoking_overline` — "SİGARA" / "SMOKING", stored upper-case (spec §6).
+    public static var smokingOverline: String { localized(.smokingOverline) }
+    /// `home_smoking_discovery` — the slim row that opens the setup.
+    public static var smokingDiscovery: String { localized(.smokingDiscovery) }
+    /// `home_smoking_discovery_dismiss` — the row's (x), spoken: "Kapat" / "Dismiss".
+    public static var smokingDiscoveryDismiss: String { localized(.smokingDiscoveryDismiss) }
+    /// `home_smoking_quit_caption` — "sigarasız" / "smoke-free", under the day count.
+    public static var smokingQuitCaption: String { localized(.smokingQuitCaption) }
+    /// `home_smoking_craving` — the QUIT card's button.
+    public static var smokingCraving: String { localized(.smokingCraving) }
+    /// `home_smoking_plus_one` — "+1", the REDUCE button's face.
+    public static var smokingPlusOne: String { localized(.smokingPlusOne) }
+    /// `home_smoking_plus_one_description` — what VoiceOver says for that button.
+    public static var smokingPlusOneDescription: String { localized(.smokingPlusOneDescription) }
+    /// `home_smoking_added` — the snackbar after a "+1", with "Geri al" beside it.
+    public static var smokingAdded: String { localized(.smokingAdded) }
+    /// `home_smoking_error` — a refused write or undo.
+    public static var smokingError: String { localized(.smokingError) }
+
+    /// `home_smoking_days` — "%1$lld gün" / "%1$lld days" (English "1 day" for one).
+    public static func smokingDays(_ days: Int) -> String {
+        formatted(days == 1 ? .smokingDaysOne : .smokingDays, days)
+    }
+
+    /// `home_smoking_saved` — "%1$@ biriktirdin" / "%1$@ saved"; the argument is the formatted sum.
+    public static func smokingSaved(_ amount: String) -> String {
+        formatted(.smokingSaved, amount)
+    }
+
+    /// `home_smoking_next_stage` — "Sonraki aşama: %1$@" / "Next stage: %1$@"; the argument is
+    /// one of the three counts below.
+    public static func smokingNextStage(_ remaining: String) -> String {
+        formatted(.smokingNextStage, remaining)
+    }
+
+    /// `home_smoking_next_days` — the coarsest unit that still reads as a count.
+    public static func smokingNextDays(_ count: Int) -> String {
+        formatted(count == 1 ? .smokingNextDaysOne : .smokingNextDays, count)
+    }
+
+    /// `home_smoking_next_hours`.
+    public static func smokingNextHours(_ count: Int) -> String {
+        formatted(count == 1 ? .smokingNextHoursOne : .smokingNextHours, count)
+    }
+
+    /// `home_smoking_next_minutes`.
+    public static func smokingNextMinutes(_ count: Int) -> String {
+        formatted(count == 1 ? .smokingNextMinutesOne : .smokingNextMinutes, count)
+    }
+
+    /// `home_smoking_today` — "Bugün %1$lld / %2$lld" / "Today %1$lld / %2$lld".
+    public static func smokingToday(_ today: Int, _ limit: Int) -> String {
+        formatted(.smokingToday, today, limit)
+    }
+
+    /// `home_smoking_over_chip` — "+%1$lld", the neutral chip beside the count when over the limit.
+    public static func smokingOverChip(_ over: Int) -> String {
+        formatted(.smokingOverChip, over)
+    }
+
+    /// `home_smoking_quit_spoken` — the QUIT card read as one sentence.
+    public static func smokingQuitSpoken(_ days: String, _ saved: String) -> String {
+        formatted(.smokingQuitSpoken, days, saved)
+    }
+
+    /// `home_smoking_reduce_spoken` — the REDUCE card read as one sentence.
+    public static func smokingReduceSpoken(_ today: Int, _ limit: Int) -> String {
+        formatted(.smokingReduceSpoken, today, limit)
+    }
+
+    /// `home_smoking_reduce_over_spoken` — the same, over the limit by the third argument.
+    public static func smokingReduceOverSpoken(_ today: Int, _ limit: Int, _ over: Int) -> String {
+        String(format: localized(.smokingReduceOverSpoken), locale: .current, today, limit, over)
+    }
+
     // MARK: - Keys
 
     /// The catalog keys, named once. Internal so the parity test can prove every accessor asks for
     /// a key the catalog really carries — a typo here would otherwise ship the key as the label.
     ///
     /// Android's `home_title` and `home_settings` were never ported (both were dead there, and
-    /// Android has since deleted them), so this enum and the XML are the same 42 keys.
+    /// Android has since deleted them), so this enum and the XML were the same 42 keys before the
+    /// M17 card, whose 24 follow.
     enum Key: String, CaseIterable {
         // The hero band (10).
         case overlineToday = "home_overline_today"
@@ -271,6 +355,32 @@ public enum HomeStrings {
         case vitalsBloodPressure = "today_vitals_bp"
         case vitalsGlucoseMgdl = "today_vitals_glucose_mgdl"
         case vitalsGlucoseMmol = "today_vitals_glucose_mmol"
+
+        // The smoking card (24).
+        case smokingOverline = "home_smoking_overline"
+        case smokingDiscovery = "home_smoking_discovery"
+        case smokingDiscoveryDismiss = "home_smoking_discovery_dismiss"
+        case smokingDays = "home_smoking_days"
+        case smokingDaysOne = "home_smoking_days_one"
+        case smokingQuitCaption = "home_smoking_quit_caption"
+        case smokingSaved = "home_smoking_saved"
+        case smokingNextStage = "home_smoking_next_stage"
+        case smokingNextDays = "home_smoking_next_days"
+        case smokingNextDaysOne = "home_smoking_next_days_one"
+        case smokingNextHours = "home_smoking_next_hours"
+        case smokingNextHoursOne = "home_smoking_next_hours_one"
+        case smokingNextMinutes = "home_smoking_next_minutes"
+        case smokingNextMinutesOne = "home_smoking_next_minutes_one"
+        case smokingCraving = "home_smoking_craving"
+        case smokingToday = "home_smoking_today"
+        case smokingOverChip = "home_smoking_over_chip"
+        case smokingPlusOne = "home_smoking_plus_one"
+        case smokingPlusOneDescription = "home_smoking_plus_one_description"
+        case smokingAdded = "home_smoking_added"
+        case smokingError = "home_smoking_error"
+        case smokingQuitSpoken = "home_smoking_quit_spoken"
+        case smokingReduceSpoken = "home_smoking_reduce_spoken"
+        case smokingReduceOverSpoken = "home_smoking_reduce_over_spoken"
     }
 
     private static func localized(_ key: Key) -> String {

@@ -52,12 +52,51 @@ public enum HomeEvent: Equatable, Sendable {
     /// here. The ViewModel re-reads the device state the user toggles outside our process, and
     /// counts the open the review prompt hangs off.
     case appeared
+    /// The REDUCE card's "+1": one smoked unit, now, with an undo that deletes it by id
+    /// (plan Task 16).
+    case smokingPlusOne
+    /// The discovery row's (x): it never comes back — the More row stays the way in.
+    case smokingDiscoveryDismissed
 }
 
 /// One-shot work only a view can perform (in-app review spec §3).
 public enum HomeEffect: Equatable, Sendable {
     /// Ask StoreKit to show the rating sheet; whether it does is the platform's decision.
     case requestReview
+}
+
+/// QUIT's figures. `days` are whole days of the attempt. The next-stage pair is nil once every
+/// stage is done; `nextStagePermille` is time progress toward it, never a body measurement.
+public struct HomeSmokingQuit: Equatable, Sendable {
+    public let days: Int
+    public let savedMinor: Int64
+    public let currency: String
+    public let nextStagePermille: Int?
+    public let nextStageRemainingMs: Int64?
+
+    public init(
+        days: Int,
+        savedMinor: Int64,
+        currency: String,
+        nextStagePermille: Int?,
+        nextStageRemainingMs: Int64?
+    ) {
+        self.days = days
+        self.savedMinor = savedMinor
+        self.currency = currency
+        self.nextStagePermille = nextStagePermille
+        self.nextStageRemainingMs = nextStageRemainingMs
+    }
+}
+
+/// What the smoking card on Home shows; nil in ``HomeUiState`` draws no card at all (dismissed, or
+/// no snapshot yet). Every figure comes from `SmokingSnapshot` — Android's `HomeSmokingCard`.
+public enum HomeSmokingCard: Equatable, Sendable {
+    /// No plan yet and the row was not dismissed: one slim line that opens the setup.
+    case discovery
+    case quit(HomeSmokingQuit)
+    /// REDUCE. `overflow` is the units past `limit`; 0 while at or under it.
+    case reduce(today: Int, limit: Int, overflow: Int)
 }
 
 /// What the dashboard draws (`HomeUiState.kt:18-30`).
@@ -84,6 +123,8 @@ public struct HomeUiState: Sendable {
     /// Why reminders may not fire, when they may not (`HomeUiState.kt:50-54`). Nil while unknown
     /// and while everything is healthy — the card is drawn only for a non-nil report.
     public var reminderReadiness: ReminderReadinessReport?
+    /// The smoking card, nil for none (plan Task 16).
+    public var smokingCard: HomeSmokingCard?
 
     public init(
         isLoading: Bool = true,
@@ -97,7 +138,8 @@ public struct HomeUiState: Sendable {
         vitals: VitalsSnapshot? = nil,
         freeAiSummaryAvailable: Bool = false,
         isPremium: Bool = false,
-        reminderReadiness: ReminderReadinessReport? = nil
+        reminderReadiness: ReminderReadinessReport? = nil,
+        smokingCard: HomeSmokingCard? = nil
     ) {
         self.isLoading = isLoading
         self.todayEpochDay = todayEpochDay
@@ -111,6 +153,7 @@ public struct HomeUiState: Sendable {
         self.freeAiSummaryAvailable = freeAiSummaryAvailable
         self.isPremium = isPremium
         self.reminderReadiness = reminderReadiness
+        self.smokingCard = smokingCard
     }
 }
 
@@ -133,5 +176,6 @@ extension HomeUiState: Equatable {
             && lhs.freeAiSummaryAvailable == rhs.freeAiSummaryAvailable
             && lhs.isPremium == rhs.isPremium
             && lhs.reminderReadiness == rhs.reminderReadiness
+            && lhs.smokingCard == rhs.smokingCard
     }
 }

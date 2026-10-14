@@ -36,11 +36,20 @@
 // ``HomeEvent/appeared`` and never as part of a repository emission, and a healthy device is
 // stored as nil so no card is drawn.
 
+// **The smoking card is a second, independent observation** (plan Task 16). Android folds it into
+// the same `combine` (`HomeViewModel.kt`); here the overview join is `latestOfThree` with a
+// transform-less loop, so the card's two sources (the snapshot and the discovery flag) are
+// combined on their own and the answer is held in ``smokingCard`` and carried forward by
+// ``publish(overview:freeAiSummaryAvailable:isPremium:)`` — the `reminderReadiness` shape. A
+// missing or slow smoking read therefore never blanks the rest of Home.
+
 import Observation
 import SalusCommon
 import SalusModel
 import SalusReminder
 import SalusSettings
+import SalusSmoking
+import SalusUI
 
 /// Drives the dashboard (`HomeViewModel.kt:18-69`).
 @MainActor
@@ -66,6 +75,16 @@ public final class HomeViewModel {
     private let alarmKitSupported: Bool
     private let preferences: SalusPreferencesDataSource
     private let foreground: AppForegroundSignal
+    private let smoking: any HomeSmoking
+    private let snackbar: SalusSnackbarController
+
+    /// The last card the smoking observation produced, nil for none. Held apart from ``state`` so
+    /// an overview emission republishes it instead of clearing it.
+    private var smokingCard: HomeSmokingCard?
+
+    /// Whether a "+1" write is in flight. A tap while the previous write has not finished is
+    /// dropped, so a double tap writes once.
+    @ObservationIgnored private var isLoggingPlusOne = false
 
     /// The last answer ``refreshReminderReadiness()`` got, nil for a healthy device. Held apart
     /// from ``state`` so a repository emission republishes it instead of clearing it — Kotlin gets
@@ -86,6 +105,8 @@ public final class HomeViewModel {
 
     /// The collection. Boxed so `deinit` can cancel it — see `CancellationBox`.
     private let observation = CancellationBox()
+    /// The smoking card's collection, boxed for the same reason.
+    private let smokingObservation = CancellationBox()
     /// The foreground subscription, released in `deinit`.
     @ObservationIgnored private var foregroundSubscription: AppForegroundSignal.Subscription?
     /// Whether the dashboard is on screen. A foreground return counts as an "open" only while it
@@ -97,7 +118,8 @@ public final class HomeViewModel {
     /// Kotlin also takes (`HomeViewModel.kt:40`) and the AlarmKit availability that has no Kotlin
     /// twin, because AlarmKit exists only from iOS 26 and the classification refuses to decide
     /// that itself — plus the review prompt's two: the preferences that hold its counters and the
-    /// shell's foreground signal (`AppForegroundSignal`, iOS-only).
+    /// shell's foreground signal (`AppForegroundSignal`, iOS-only) — plus the smoking card's two:
+    /// the ``HomeSmoking`` source and the shell's one snackbar controller its "+1" undo uses.
     public init(
         repository: any TodayRepository,
         aiSummaryAvailability: any HomeAiSummaryAvailability,
@@ -107,7 +129,9 @@ public final class HomeViewModel {
         environment: any ReminderEnvironment,
         alarmKitSupported: Bool,
         preferences: SalusPreferencesDataSource,
-        foreground: AppForegroundSignal
+        foreground: AppForegroundSignal,
+        smoking: any HomeSmoking,
+        snackbar: SalusSnackbarController
     ) {
         self.repository = repository
         self.aiSummaryAvailability = aiSummaryAvailability
@@ -118,6 +142,8 @@ public final class HomeViewModel {
         self.alarmKitSupported = alarmKitSupported
         self.preferences = preferences
         self.foreground = foreground
+        self.smoking = smoking
+        self.snackbar = snackbar
         restartObservation()
         foregroundSubscription = foreground.subscribe { [weak self] in
             self?.sceneDidBecomeActive()
@@ -126,6 +152,7 @@ public final class HomeViewModel {
 
     deinit {
         observation.cancel()
+        smokingObservation.cancel()
         // `deinit` is nonisolated; the signal is main-actor bound, and a ViewModel is only ever
         // released on the main actor (it is a view's `@State`), so the hop is a formality.
         //
@@ -179,6 +206,13 @@ public final class HomeViewModel {
                 await self?.refreshReminderReadiness()
             }
 
+        case .smokingPlusOne:
+            logSmokedUnit()
+
+        case .smokingDiscoveryDismissed:
+            // The preference's own stream re-emits, which drops the card; nothing to set here.
+            preferences.setSmokingDiscoveryDismissed(true)
+
         case let .takeDose(scheduleId, minuteOfDay):
             // Read here rather than inside the task: Kotlin reads the clock inside the coroutine,
             // but the day a tap belongs to is the day the tap happened on, and a `Task` that is
@@ -217,6 +251,7 @@ public final class HomeViewModel {
         // called, so building first would hold two complete joins open over the same tables until
         // `replace` got around to dropping the old task. `flatMapLatest` cancels the inner flow
         // before it starts the next one, and so does `VitalsViewModel.restartHistoryObservation()`.
+        restartSmokingObservation()
         observation.cancel()
         // Each source is read once: all three build a fresh stream per access, so a second read
         // would open a second observation of the same data.
@@ -243,6 +278,74 @@ public final class HomeViewModel {
                 // which is what Android's `stateIn` initial value does too.
             }
         })
+    }
+
+    /// Re-opens the smoking card's two sources and keeps the standing card until the first answer.
+    ///
+    /// Re-opened with the rest on every appearance: the snapshot is a function of "now", so a
+    /// dashboard left open over midnight must re-read to show the new day's count.
+    private func restartSmokingObservation() {
+        smokingObservation.cancel()
+        let pairs = latestOfBoth(
+            throwingStream(over: smoking.observeSnapshot()),
+            throwingStream(over: preferences.smokingDiscoveryDismissed)
+        ) { ($0, $1) }
+        smokingObservation.replace(with: Task { [weak self] in
+            do {
+                for try await (snapshot, dismissed) in pairs {
+                    guard let self, !Task.isCancelled else { return }
+                    publishSmokingCard(Self.smokingCard(for: snapshot, discoveryDismissed: dismissed))
+                }
+            } catch {
+                // Nothing the person could act on: a failed read leaves the card as it stood, and
+                // the rest of Home is a different observation.
+            }
+        })
+    }
+
+    private func publishSmokingCard(_ card: HomeSmokingCard?) {
+        smokingCard = card
+        state.smokingCard = card
+    }
+
+    /// One unit, stamped now. The instant is read here rather than inside the task for
+    /// `takeDose`'s reason. The snackbar carries the new event's id, so the undo deletes that row
+    /// and nothing else, whatever day the clock shows by then.
+    ///
+    /// Neither the write nor the undo captures `self`: the undo is tapped on the shell's snackbar,
+    /// which outlives this screen's route, and a delete that died with the ViewModel would leave
+    /// the unit the person just took back.
+    private func logSmokedUnit() {
+        guard case .reduce = state.smokingCard, !isLoggingPlusOne else { return }
+        isLoggingPlusOne = true
+        let atMs = clock.nowEpochMilliseconds()
+        Task { [weak self, smoking, snackbar] in
+            do {
+                let eventId = try await smoking.logOneSmoked(atMs: atMs)
+                snackbar.show(
+                    SnackbarRequest(
+                        message: HomeStrings.smokingAdded,
+                        actionLabel: SalusUIStrings.undo,
+                        onAction: {
+                            Task {
+                                do {
+                                    try await smoking.deleteEvent(eventId: eventId)
+                                } catch {
+                                    snackbar.show(SnackbarRequest(message: HomeStrings.smokingError))
+                                }
+                            }
+                        },
+                        // Material's rule gives an action snackbar no timeout, which suits a
+                        // delete that waits for a decision; a counter's "+1" should not pin the
+                        // shell's one snackbar slot until the next tap.
+                        duration: .long
+                    )
+                )
+            } catch {
+                snackbar.show(SnackbarRequest(message: HomeStrings.smokingError))
+            }
+            self?.isLoggingPlusOne = false
+        }
     }
 
     /// The review prompt (in-app review spec §3): every arrival counts, and the request goes out
@@ -304,9 +407,37 @@ public final class HomeViewModel {
             isPremium: isPremium,
             // Carried forward rather than re-read: the device is asked on `.appeared` only, and a
             // repository emission is not one. Kotlin's fourth `combine` source does the same.
-            reminderReadiness: reminderReadiness
+            reminderReadiness: reminderReadiness,
+            // Carried forward for the same reason: the smoking sources have their own cadence.
+            smokingCard: smokingCard
         )
     }
+
+    /// The card for a snapshot. A set-up plan always wins over the discovery row, so the row can
+    /// never return after setup however the dismissal flag stands (`HomeViewModel.kt`
+    /// `smokingCardOf`).
+    static func smokingCard(for snapshot: SmokingSnapshot, discoveryDismissed: Bool) -> HomeSmokingCard? {
+        switch snapshot {
+        case .notSetUp:
+            return discoveryDismissed ? nil : .discovery
+
+        case let .quit(quit):
+            return .quit(HomeSmokingQuit(
+                days: Int(quit.attemptElapsedMs / dayMs),
+                savedMinor: quit.savedMinor,
+                currency: quit.plan.currencyCode,
+                nextStagePermille: quit.nextStage?.permille,
+                nextStageRemainingMs: quit.nextStage?.remainingMs
+            ))
+
+        case let .reduce(reduce):
+            let today = Int(reduce.todayUnits)
+            let limit = Int(reduce.dailyLimit)
+            return .reduce(today: today, limit: limit, overflow: max(today - limit, 0))
+        }
+    }
+
+    private static let dayMs: Int64 = 86_400_000
 
     /// `HomeViewModel.kt:61-68` — the four buckets, verbatim.
     ///

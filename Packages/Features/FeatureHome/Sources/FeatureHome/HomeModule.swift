@@ -27,6 +27,7 @@ import SalusModel
 import SalusProfile
 import SalusReminder
 import SalusSettings
+import SalusUI
 import SwiftUI
 
 /// Everything this feature's views need, built by the composition root (`HomeModule.kt:11-23`).
@@ -39,7 +40,7 @@ public struct HomeModule {
     public let makeHomeViewModel: @MainActor () -> HomeViewModel
 }
 
-// The fourteen parameters are the eleven things Koin resolves inside `homeModule`
+// The sixteen parameters are the eleven things Koin resolves inside `homeModule`
 // (`HomeModule.kt:12-21`) plus three iOS-only ones:
 // the seven `get()` values `TodayRepositoryImpl` takes (medicationDao, appointmentDao, cycleDao,
 // vitalsDao, preferences, clock, profileRepository) plus the profile id, which Koin passes as a
@@ -48,7 +49,9 @@ public struct HomeModule {
 // environment and the AlarmKit availability the dashboard's readiness card classifies from, which
 // Android's `homeModule` resolves as one `get()` because Kotlin needs no second flag, and the
 // `AppForegroundSignal` both the review prompt and the readiness re-read hang off
-// (`HomeViewModel.swift`).
+// (`HomeViewModel.swift`), plus the smoking card's two (plan Task 16): the ``HomeSmoking`` source
+// the composition root builds over its one `SmokingCoreModule`, and the shell's one snackbar
+// controller the "+1" undo is shown on.
 // Bundling them into a "dependencies" struct would be a second shape for the composition root's own
 // properties. The rule is waived here rather than the signature bent, exactly as
 // `makeVitalsModule` and `makeAppointmentsModule` waive it.
@@ -73,7 +76,9 @@ public func makeHomeModule(
     alarmKitSupported: Bool,
     profileId: String = SalusDatabase.defaultProfileId,
     profileRepository: any ProfileRepository,
-    foreground: AppForegroundSignal
+    foreground: AppForegroundSignal,
+    smoking: any HomeSmoking,
+    snackbar: SalusSnackbarController
 ) -> HomeModule {
     // `HomeModule.kt:12-21` — the profile id Koin passes, spelled out rather than left to the
     // repository's default so the one construction site says which profile it opened.
@@ -102,7 +107,9 @@ public func makeHomeModule(
                 environment: reminderEnvironment,
                 alarmKitSupported: alarmKitSupported,
                 preferences: preferences,
-                foreground: foreground
+                foreground: foreground,
+                smoking: smoking,
+                snackbar: snackbar
             )
         }
     )

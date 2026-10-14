@@ -38,6 +38,7 @@ import SalusCommon
 import SalusModel
 import SalusReminder
 import SalusTesting
+import SalusUI
 import Testing
 
 @testable import FeatureHome
@@ -104,7 +105,9 @@ struct HomeViewModelTests {
             environment: environment,
             alarmKitSupported: alarmKitSupported,
             preferences: preferences,
-            foreground: foreground
+            foreground: foreground,
+            smoking: FakeHomeSmoking(),
+            snackbar: SalusSnackbarController()
         )
     }
 

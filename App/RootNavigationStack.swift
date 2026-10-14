@@ -188,7 +188,14 @@ struct RootNavigationStack: View {
                     // is why `settingsDestinations()` and the settings module appear below. No pop
                     // first, unlike the medication editor's Fix: the dashboard is a tab root and
                     // there is nothing above it to replace.
-                    onOpenReminderHealth: { root.navigator.navigate(ReminderHealthKey()) }
+                    onOpenReminderHealth: { root.navigator.navigate(ReminderHealthKey()) },
+                    // The smoking card's three hops. `FeatureSmoking` names the keys and `FeatureHome`
+                    // cannot import it, so the shell pushes them onto THIS stack (Back returns to
+                    // Home) — which is why `smokingDestinations(…)` and the smoking module appear
+                    // below. The craving key's destination arrives with the craving screen.
+                    onOpenSmoking: { root.navigator.navigate(SmokingKey()) },
+                    onOpenSmokingSetup: { root.navigator.navigate(SmokingSetupKey()) },
+                    onOpenCraving: { root.navigator.navigate(SmokingCravingKey(source: "home")) }
                 )
                 .rootToolbar(for: tab, navigator: root.navigator)
                 // `cycleDestinations()` stays on this stack because two things now push `CycleKey`
@@ -219,6 +226,15 @@ struct RootNavigationStack: View {
                 // ride along — the modifier is that feature's whole registrar — and neither is
                 // reachable from here.
                 .settingsDestinations()
+                // The smoking card pushes the main screen, the setup and the craving flow onto
+                // this stack. The same two cross-feature hops More's stack passes: Trends and the
+                // reminder-readiness screen belong to other features.
+                .smokingDestinations(
+                    onOpenTrends: { root.navigator.navigate(TrendsKey()) },
+                    onOpenReminderHealth: { root.navigator.navigate(ReminderHealthKey()) }
+                )
+                // Trends is one of those hops, so its destination must be registered here too.
+                .trendsDestinations()
             }
             // On the stack, not inside its root — the pushed `CycleKey`, `AiSummaryKey` and
             // `AppointmentDetailKey` destinations are rendered by the stack, so an environment
@@ -231,6 +247,9 @@ struct RootNavigationStack: View {
             // What a pushed `ReminderHealthRoute` reads, for the same reason the three lines above
             // exist.
             .environment(\.settingsModule, root.settingsModule)
+            // What the pushed smoking screens read.
+            .environment(\.smokingModule, root.smokingModule)
+            .environment(\.trendsModule, root.trendsModule)
         }
         // No `default:` clause on purpose: `RootTab` lives in this target, so an exhaustive switch
         // is what makes a sixth tab added to the enum land as a compile error here rather than as a

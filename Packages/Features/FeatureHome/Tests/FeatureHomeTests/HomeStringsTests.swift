@@ -5,7 +5,7 @@ import Testing
 @testable import FeatureHome
 
 /// The twin of Android's `feature/home/src/main/res/values/strings.xml` (`tr`, the source
-/// language) and `values-en/strings.xml`, and the drift detector between them: the 42 ported keys
+/// language) and `values-en/strings.xml`, and the drift detector between them: the 66 ported keys
 /// and both of their translations are pinned here, copied from the XML.
 ///
 /// **M16 moved the table from 34 to 42**, mirroring Android's M15 sweep (`3391896..529a30f`):
@@ -19,6 +19,10 @@ import Testing
 /// the two catalogs finally hold the same key set. The disjointness assertion below stays as the
 /// guard it always was — if either key ever comes back, it comes back on both sides on purpose or
 /// not at all.
+///
+/// **M17 added the smoking card's 24** (42 → 66): Android's 20 `home_smoking_*` resources, of which
+/// four are `<plurals>` that this port splits into a general key and a `_one` twin (spec §9 (h)).
+/// The Turkish is Android's, verbatim; the English likewise.
 ///
 /// The catalog is read off disk rather than through `Bundle.module`. Android's own parity checks
 /// read the XML for the first reason: `String(localized:)` answers for ONE locale — the host's —
@@ -129,6 +133,63 @@ struct HomeStringsTests {
             key: "today_vitals_glucose_mmol",
             turkish: "Kan şekeri: %1$@ mmol/L",
             english: "Blood glucose: %1$@ mmol/L"
+        ),
+        // The smoking card (24).
+        HomeStringSample(key: "home_smoking_overline", turkish: "SİGARA", english: "SMOKING"),
+        HomeStringSample(
+            key: "home_smoking_discovery",
+            turkish: "Sigarayı bırakmayı mı düşünüyorsun?",
+            english: "Thinking about quitting smoking?"
+        ),
+        HomeStringSample(key: "home_smoking_discovery_dismiss", turkish: "Kapat", english: "Dismiss"),
+        HomeStringSample(key: "home_smoking_days", turkish: "%1$lld gün", english: "%1$lld days"),
+        HomeStringSample(key: "home_smoking_days_one", turkish: "%1$lld gün", english: "%1$lld day"),
+        HomeStringSample(key: "home_smoking_quit_caption", turkish: "sigarasız", english: "smoke-free"),
+        HomeStringSample(key: "home_smoking_saved", turkish: "%1$@ biriktirdin", english: "%1$@ saved"),
+        HomeStringSample(
+            key: "home_smoking_next_stage",
+            turkish: "Sonraki aşama: %1$@",
+            english: "Next stage: %1$@"
+        ),
+        HomeStringSample(key: "home_smoking_next_days", turkish: "%1$lld gün", english: "%1$lld days"),
+        HomeStringSample(key: "home_smoking_next_days_one", turkish: "%1$lld gün", english: "%1$lld day"),
+        HomeStringSample(key: "home_smoking_next_hours", turkish: "%1$lld saat", english: "%1$lld hours"),
+        HomeStringSample(key: "home_smoking_next_hours_one", turkish: "%1$lld saat", english: "%1$lld hour"),
+        HomeStringSample(key: "home_smoking_next_minutes", turkish: "%1$lld dakika", english: "%1$lld minutes"),
+        HomeStringSample(
+            key: "home_smoking_next_minutes_one",
+            turkish: "%1$lld dakika",
+            english: "%1$lld minute"
+        ),
+        HomeStringSample(key: "home_smoking_craving", turkish: "Canım çekti", english: "I have a craving"),
+        HomeStringSample(
+            key: "home_smoking_today",
+            turkish: "Bugün %1$lld / %2$lld",
+            english: "Today %1$lld / %2$lld"
+        ),
+        HomeStringSample(key: "home_smoking_over_chip", turkish: "+%1$lld", english: "+%1$lld"),
+        HomeStringSample(key: "home_smoking_plus_one", turkish: "+1", english: "+1"),
+        HomeStringSample(key: "home_smoking_plus_one_description", turkish: "Bir adet ekle", english: "Add one"),
+        HomeStringSample(key: "home_smoking_added", turkish: "1 adet eklendi", english: "1 added"),
+        HomeStringSample(
+            key: "home_smoking_error",
+            turkish: "Kaydedilemedi, lütfen tekrar dene.",
+            english: "Couldn't save, please try again."
+        ),
+        HomeStringSample(
+            key: "home_smoking_quit_spoken",
+            turkish: "Sigara. %1$@ sigarasız. %2$@ biriktirdin.",
+            english: "Smoking. %1$@ smoke-free. %2$@ saved."
+        ),
+        HomeStringSample(
+            key: "home_smoking_reduce_spoken",
+            turkish: "Sigara. Bugün %1$lld adet, günlük sınır %2$lld.",
+            english: "Smoking. Today %1$lld, daily limit %2$lld."
+        ),
+        HomeStringSample(
+            key: "home_smoking_reduce_over_spoken",
+            turkish: "Sigara. Bugün %1$lld adet, günlük sınır %2$lld, sınırın %3$lld üzerinde.",
+            english: "Smoking. Today %1$lld, daily limit %2$lld, %3$lld over the limit."
         )
     ]
 
@@ -138,11 +199,11 @@ struct HomeStringsTests {
     /// pinned decision rather than something that looks like a forgotten row.
     static let deadAndroidKeys: Set = ["home_title", "home_settings"]
 
-    @Test("the catalog holds exactly the 42 keys ported from :feature:home")
-    func catalogHoldsExactlyTheFortyTwoKeys() throws {
+    @Test("the catalog holds exactly the 66 keys ported from :feature:home")
+    func catalogHoldsExactlyTheSixtySixKeys() throws {
         // Pinned as a number as well as a set: a row deleted from the table together with its key
         // from the catalog would otherwise agree with itself and pass.
-        #expect(Self.samples.count == 42)
+        #expect(Self.samples.count == 66)
 
         try StringCatalogParity.assertKeys(of: Self.loadCatalog(), are: Self.expectedKeys)
     }
@@ -152,8 +213,8 @@ struct HomeStringsTests {
         // `home_title` (the shell owns the title) and `home_settings` (the settings gear Android's
         // M9 removed) were declared in both `values/` and `values-en/` and read by no `R.string.*`
         // in `HomeScreen.kt`. iOS never ported them; Android has since deleted them itself
-        // (`aebb056`), so both XMLs hold 42 `<string>` entries today — the same count as this
-        // catalog, with neither dead key on either side.
+        // (`aebb056`), so both XMLs held 42 `<string>` entries before M17 — the same count as this
+        // catalog then, with neither dead key on either side.
         //
         // Only assertions that can fail live here. A third line used to pin
         // `expectedKeys.count + deadAndroidKeys.count == 36` and claim the XML declared 36: it was
@@ -222,6 +283,40 @@ struct HomeStringsTests {
         try Self.assertSpecifiers()
     }
 
+    @Test("the smoking card's overline is stored upper-case, not folded at run time")
+    func smokingOverlineIsStoredUpperCase() throws {
+        let catalog = try Self.loadCatalog()
+
+        for locale in ["tr", "en"] {
+            let value = try #require(catalog.value(of: "home_smoking_overline", in: locale))
+            // `uppercased()` with the locale's own rules: "SİGARA" keeps its dotted capital İ.
+            #expect(value == value.uppercased(with: Locale(identifier: locale)))
+        }
+    }
+
+    @Test("the smoking card's format keys render the Android sentence")
+    func smokingFormatKeysRenderTheAndroidSentence() throws {
+        try #expect(Self.render("home_smoking_days", "tr", 42) == "42 gün")
+        try #expect(Self.render("home_smoking_days", "en", 42) == "42 days")
+        try #expect(Self.render("home_smoking_days_one", "en", 1) == "1 day")
+        try #expect(Self.render("home_smoking_saved", "tr", "₺3.150") == "₺3.150 biriktirdin")
+        try #expect(Self.render("home_smoking_saved", "en", "$3,150") == "$3,150 saved")
+        try #expect(Self.render("home_smoking_next_stage", "en", "3 days") == "Next stage: 3 days")
+        try #expect(Self.render("home_smoking_next_hours_one", "en", 1) == "1 hour")
+        try #expect(Self.render("home_smoking_next_minutes", "tr", 20) == "20 dakika")
+        try #expect(Self.render("home_smoking_today", "tr", 6, 10) == "Bugün 6 / 10")
+        try #expect(Self.render("home_smoking_today", "en", 6, 10) == "Today 6 / 10")
+        try #expect(Self.render("home_smoking_over_chip", "tr", 2) == "+2")
+        try #expect(Self.render("home_smoking_quit_spoken", "tr", "42 gün", "₺3.150")
+            == "Sigara. 42 gün sigarasız. ₺3.150 biriktirdin.")
+        try #expect(Self
+            .render("home_smoking_reduce_spoken", "tr", 12, 10) == "Sigara. Bugün 12 adet, günlük sınır 10.")
+        try #expect(Self.render("home_smoking_reduce_over_spoken", "tr", 12, 10, 2)
+            == "Sigara. Bugün 12 adet, günlük sınır 10, sınırın 2 üzerinde.")
+        try #expect(Self.render("home_smoking_reduce_over_spoken", "en", 12, 10, 2)
+            == "Smoking. Today 12, daily limit 10, 2 over the limit.")
+    }
+
     @Test("the catalog names nothing on the banned health-claims list")
     func theCatalogNamesNothingBanned() throws {
         // Repository-wide coverage already exists in `SalusTestingTests.BannedHealthClaimsTests`.
@@ -272,6 +367,18 @@ struct HomeStringsTests {
     static func render(_ key: String, _ locale: String, _ argument: CVarArg) throws -> String {
         let format = try #require(loadCatalog().value(of: key, in: locale))
         return String(format: format, locale: nil, argument)
+    }
+
+    /// The three-argument form, for `home_smoking_reduce_over_spoken`.
+    static func render(
+        _ key: String,
+        _ locale: String,
+        _ first: CVarArg,
+        _ second: CVarArg,
+        _ third: CVarArg
+    ) throws -> String {
+        let format = try #require(loadCatalog().value(of: key, in: locale))
+        return String(format: format, locale: nil, first, second, third)
     }
 
     /// The two-argument form, for `today_vitals_bp`.

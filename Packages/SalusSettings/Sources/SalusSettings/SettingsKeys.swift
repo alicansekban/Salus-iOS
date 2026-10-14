@@ -1,10 +1,11 @@
 import SalusModel
 
-/// The 15 persisted preference keys, spelled exactly as Android spells them.
+/// The 16 persisted preference keys, spelled exactly as Android spells them.
 ///
 /// Ported from `core/datastore/.../SalusPreferencesDataSource.kt:78-87` (the ten settings),
 /// `core/datastore/.../AiUsageDataSource.kt:118-120` (the three AI counters) and the two review
-/// prompt counters (`docs/superpowers/specs/2026-09-06-in-app-review-design.md` §1). Android reaches
+/// prompt counters (`docs/superpowers/specs/2026-09-06-in-app-review-design.md` §1) and the M17 Home
+/// smoking card's dismissal flag (`SalusPreferencesDataSource.kt` `KEY_SMOKING_DISCOVERY_DISMISSED`). Android reaches
 /// them through typed `Preferences.Key` objects; on iOS the same strings are `UserDefaults` keys
 /// — except `appLockEnabled`, which names a Keychain account instead (spec §5, see
 /// `AppLockFlagStore`).
@@ -34,4 +35,6 @@ public enum SettingsKeys {
     public static let homeOpenCount = "home_open_count"
     /// Epoch milliseconds of the last native review request; absent = never asked.
     public static let reviewLastRequestedMs = "review_last_requested_ms"
+    /// The Home smoking discovery row was closed with its (x); once set, it never returns.
+    public static let smokingDiscoveryDismissed = "smoking_discovery_dismissed"
 }

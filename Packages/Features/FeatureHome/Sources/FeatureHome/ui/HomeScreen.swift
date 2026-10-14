@@ -25,7 +25,9 @@
 //
 // THE ORDER IS LOAD-BEARING and it is Kotlin's (`HomeScreen.kt:148-189`): hero band, then the
 // reminder readiness card when reminders are in trouble, then the snapshot pager, the AI card and
-// the appointments — `salusEnter` 0 to 4, the same ladder here. The readiness card sits *between*
+// the appointments — `salusEnter` 0 to 4, the same ladder here. The M17 smoking card sits between
+// the pager and the AI card (spec §3), so the ladder is 0 to 5 and the cards after it each moved
+// down one (Android renumbers its `salusEnter` the same way). The readiness card sits *between*
 // the greeting and the pager after owner QA (`HomeScreen.kt:152-155`): a dose list is worthless
 // when the alarm behind it cannot fire, and the card only exists when there is something wrong, so
 // it belongs immediately above the doses it is about.
@@ -52,6 +54,9 @@ public struct HomeRoute: View {
     private let onOpenVitals: () -> Void
     private let onOpenAiSummary: () -> Void
     private let onOpenReminderHealth: () -> Void
+    private let onOpenSmoking: () -> Void
+    private let onOpenSmokingSetup: () -> Void
+    private let onOpenCraving: () -> Void
 
     @Environment(\.homeModule) private var module
     /// StoreKit's rating sheet, the twin of Play's `launchReviewFlow` (in-app review spec §3).
@@ -68,6 +73,10 @@ public struct HomeRoute: View {
     ///   - onOpenVitals: switches to the Vitals tab.
     ///   - onOpenAiSummary: pushes the AI health summary onto Home's own stack.
     ///   - onOpenReminderHealth: pushes Reminder health onto Home's own stack.
+    ///   - onOpenSmoking: pushes the smoking main screen onto Home's own stack. `FeatureSmoking`
+    ///     names the key and features never import each other, so the shell pushes it.
+    ///   - onOpenSmokingSetup: pushes the smoking setup (the discovery row's tap).
+    ///   - onOpenCraving: pushes the craving flow (the QUIT card's "Canım çekti").
     public init(
         onOpenMedications: @escaping () -> Void,
         onOpenAppointments: @escaping () -> Void,
@@ -75,7 +84,10 @@ public struct HomeRoute: View {
         onOpenCycle: @escaping () -> Void,
         onOpenVitals: @escaping () -> Void,
         onOpenAiSummary: @escaping () -> Void,
-        onOpenReminderHealth: @escaping () -> Void
+        onOpenReminderHealth: @escaping () -> Void,
+        onOpenSmoking: @escaping () -> Void,
+        onOpenSmokingSetup: @escaping () -> Void,
+        onOpenCraving: @escaping () -> Void
     ) {
         self.onOpenMedications = onOpenMedications
         self.onOpenAppointments = onOpenAppointments
@@ -84,6 +96,9 @@ public struct HomeRoute: View {
         self.onOpenVitals = onOpenVitals
         self.onOpenAiSummary = onOpenAiSummary
         self.onOpenReminderHealth = onOpenReminderHealth
+        self.onOpenSmoking = onOpenSmoking
+        self.onOpenSmokingSetup = onOpenSmokingSetup
+        self.onOpenCraving = onOpenCraving
     }
 
     public var body: some View {
@@ -98,7 +113,10 @@ public struct HomeRoute: View {
                     onOpenCycle: onOpenCycle,
                     onOpenVitals: onOpenVitals,
                     onOpenAiSummary: onOpenAiSummary,
-                    onOpenReminderHealth: onOpenReminderHealth
+                    onOpenReminderHealth: onOpenReminderHealth,
+                    onOpenSmoking: onOpenSmoking,
+                    onOpenSmokingSetup: onOpenSmokingSetup,
+                    onOpenCraving: onOpenCraving
                 )
             } else {
                 // A dropped injection draws the spinner rather than a half-built graph — the
@@ -167,6 +185,9 @@ struct HomeScreen: View {
     let onOpenVitals: () -> Void
     let onOpenAiSummary: () -> Void
     let onOpenReminderHealth: () -> Void
+    let onOpenSmoking: () -> Void
+    let onOpenSmokingSetup: () -> Void
+    let onOpenCraving: () -> Void
 
     @Environment(\.salusTheme) private var theme
     /// `LocalLocale.current.platformLocale` (`HomeScreen.kt:194`).
@@ -208,18 +229,31 @@ struct HomeScreen: View {
                 )
                 .salusEntrance(index: 2)
 
+                // Its own static card between the doses and the AI card (spec §3), never a pager
+                // page; nil — dismissed, or not read yet — draws nothing.
+                if let smokingCard = state.smokingCard {
+                    HomeSmokingSection(
+                        card: smokingCard,
+                        onEvent: onEvent,
+                        onOpenSmoking: onOpenSmoking,
+                        onOpenSmokingSetup: onOpenSmokingSetup,
+                        onOpenCraving: onOpenCraving
+                    )
+                    .salusEntrance(index: 3)
+                }
+
                 HomeAiCard(
                     newSummaryAvailable: state.freeAiSummaryAvailable,
                     onOpenAiSummary: onOpenAiSummary
                 )
-                .salusEntrance(index: 3)
+                .salusEntrance(index: 4)
 
                 HomeAppointmentsSection(
                     appointments: state.appointments,
                     onOpenAppointments: onOpenAppointments,
                     onOpenAppointment: onOpenAppointment
                 )
-                .salusEntrance(index: 4)
+                .salusEntrance(index: 5)
             }
             // No top padding: the hero band's gradient is full-bleed and meets the navigation bar.
             // The bottom step is the last card's clearance from the tab bar, the `lg` spec §4 gives
@@ -317,170 +351,5 @@ extension View {
 // empty case is now the shared `SalusEmptyState` inside its own card (`HomePager.kt:327-331`,
 // `HomeCards.kt:134-138`), so the screen no longer owns an empty-state of its own.
 
-// MARK: - Previews
-
-/// The fixtures the previews share — `populatedPreviewState()` (`HomeScreen.kt:232-284`) and
-/// `emptyPreviewState()` (`HomeScreen.kt:286-300`), value for value, plus the readiness-problem
-/// state Kotlin builds by `copy` (`HomeScreen.kt:307-316`).
-///
-/// A `private enum` so everything preview-only is one block a reader can skip.
-private enum PreviewData {
-    /// `todayEpochDay = 20_680` (`HomeScreen.kt:235`), `profileName = "Alican"`,
-    /// `doseProgress = 2 to 4` (`HomeScreen.kt:237-238`).
-    static let loaded = HomeUiState(
-        isLoading: false,
-        todayEpochDay: 20680,
-        greeting: .morning,
-        profileName: "Alican",
-        doseProgress: (taken: 2, total: 4),
-        doses: [
-            TodayDose(
-                scheduleId: "s1",
-                medicationId: "m1",
-                medicationName: "Metformin",
-                minuteOfDay: 8 * 60,
-                doseAmount: 1,
-                status: .pending
-            ),
-            TodayDose(
-                scheduleId: "s2",
-                medicationId: "m2",
-                medicationName: "Vitamin D",
-                minuteOfDay: 22 * 60,
-                doseAmount: 1,
-                status: .taken
-            )
-        ],
-        appointments: [
-            UpcomingAppointment(
-                id: "a1",
-                title: "Annual check-up",
-                doctorName: "Dr. Lee",
-                startsAtEpochMs: 1_787_212_800_000,
-                timeZoneId: "Europe/Istanbul"
-            )
-        ],
-        cycle: CycleSnapshot(cycleDay: 12, isPeriodOpen: false, averageCycleLengthDays: 28),
-        vitals: VitalsSnapshot(
-            latestWeightKg: 72.5,
-            weightTrend: [73.4, 73.1, 72.8, 73.0, 72.5],
-            latestSystolic: 120,
-            latestDiastolic: 80,
-            latestGlucoseMgdl: 95,
-            glucoseUnit: .mgDl
-        ),
-        freeAiSummaryAvailable: true
-    )
-
-    /// A loaded dashboard with nothing recorded yet — every empty state at once, which is what a
-    /// first run draws. No profile name, no doses: the `*_plain` greeting and no dose chip
-    /// (`emptyPreviewState()`, `HomeScreen.kt:286-300`).
-    static let allEmpty = HomeUiState(
-        isLoading: false,
-        todayEpochDay: 20680,
-        greeting: .evening,
-        cycle: CycleSnapshot(cycleDay: nil, isPeriodOpen: false),
-        vitals: VitalsSnapshot(
-            latestWeightKg: nil,
-            weightTrend: [],
-            latestSystolic: nil,
-            latestDiastolic: nil,
-            latestGlucoseMgdl: nil,
-            glucoseUnit: .mgDl
-        )
-    )
-
-    /// The populated root with reminders broken — the one state that draws
-    /// ``HomeReminderReadinessCard``, between the hero and the pager
-    /// (`readinessProblemPreviewState()`, `HomeScreen.kt:301-316`).
-    static let readinessProblem: HomeUiState = {
-        var state = loaded
-        state.reminderReadiness = ReminderReadinessReport(
-            problems: [.notificationsOff, .backgroundRefreshOff]
-        )
-        return state
-    }()
-}
-
-// The eight-panel fan-out every restyled surface gets (spec §7): one render per premium palette in
-// both modes, so a palette regression is visible without opening the app.
-#Preview("Home") {
-    SalusPreviewPalettes {
-        HomeScreen(
-            state: PreviewData.loaded,
-            onEvent: { _ in },
-            onOpenMedications: {},
-            onOpenAppointments: {},
-            onOpenAppointment: { _ in },
-            onOpenCycle: {},
-            onOpenVitals: {},
-            onOpenAiSummary: {},
-            onOpenReminderHealth: {}
-        )
-    }
-}
-
-#Preview("Home — loading") {
-    SalusPreviewPalettes {
-        HomeScreen(
-            state: HomeUiState(),
-            onEvent: { _ in },
-            onOpenMedications: {},
-            onOpenAppointments: {},
-            onOpenAppointment: { _ in },
-            onOpenCycle: {},
-            onOpenVitals: {},
-            onOpenAiSummary: {},
-            onOpenReminderHealth: {}
-        )
-    }
-}
-
-#Preview("Home — nothing recorded") {
-    SalusPreviewPalettes {
-        HomeScreen(
-            state: PreviewData.allEmpty,
-            onEvent: { _ in },
-            onOpenMedications: {},
-            onOpenAppointments: {},
-            onOpenAppointment: { _ in },
-            onOpenCycle: {},
-            onOpenVitals: {},
-            onOpenAiSummary: {},
-            onOpenReminderHealth: {}
-        )
-    }
-}
-
-#Preview("Home — reminders broken") {
-    SalusPreviewPalettes {
-        HomeScreen(
-            state: PreviewData.readinessProblem,
-            onEvent: { _ in },
-            onOpenMedications: {},
-            onOpenAppointments: {},
-            onOpenAppointment: { _ in },
-            onOpenCycle: {},
-            onOpenVitals: {},
-            onOpenAiSummary: {},
-            onOpenReminderHealth: {}
-        )
-    }
-}
-
-// The tab root at the largest text size the design is checked against — Kotlin's
-// `@Preview(fontScale = 1.3f)` (`HomeScreen.kt:356-361`), and the step spec §7 names for iOS.
-#Preview("Home — xxxLarge") {
-    HomeScreen(
-        state: PreviewData.loaded,
-        onEvent: { _ in },
-        onOpenMedications: {},
-        onOpenAppointments: {},
-        onOpenAppointment: { _ in },
-        onOpenCycle: {},
-        onOpenVitals: {},
-        onOpenAiSummary: {},
-        onOpenReminderHealth: {}
-    )
-    .dynamicTypeSize(.xxxLarge)
-}
+// The previews live in `HomeScreenPreviews.swift`: this file passed SwiftLint's 500-line limit when
+// the smoking card added its three states, and the fixtures are the half of it nothing ships.

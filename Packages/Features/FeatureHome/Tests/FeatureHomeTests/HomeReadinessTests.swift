@@ -15,6 +15,7 @@ import SalusCommon
 import SalusModel
 import SalusReminder
 import SalusTesting
+import SalusUI
 import Testing
 
 @testable import FeatureHome
@@ -76,7 +77,9 @@ struct HomeReadinessTests {
             environment: environment,
             alarmKitSupported: alarmKitSupported,
             preferences: preferences,
-            foreground: foreground
+            foreground: foreground,
+            smoking: FakeHomeSmoking(),
+            snackbar: SalusSnackbarController()
         )
     }
 
