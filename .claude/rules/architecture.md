@@ -32,7 +32,7 @@ Settled decisions, layer rules and port-fidelity rules. Every rule names its **e
   Android `applicationId` — RevenueCat needs the two to be one project). The app ships from
   `Salus.xcodeproj`.
 - **Swift 6 language mode everywhere, strict concurrency from day one**: `SWIFT_VERSION: "6.0"`
-  in `project.yml` and `// swift-tools-version: 6.0` in all 24 manifests. Never downgrade a
+  in `project.yml` and `// swift-tools-version: 6.0` in all 25 manifests. Never downgrade a
   target to Swift 5 mode (`swiftLanguageMode(.v5)`) to silence a `Sendable` error — fix the
   model instead. — *enforcement: `project.yml` + the manifests; a downgrade is visible in the
   diff.*
@@ -152,19 +152,19 @@ Settled decisions, layer rules and port-fidelity rules. Every rule names its **e
   exists today) + review of every new/edited feature manifest.*
 - **Packages mirror the Gradle modules 1:1** (spec §4): `SalusModel` ← `:core:model`,
   `SalusCommon` ← `:core:common`, `SalusDesignSystem` ← `:core:designsystem`, and so on for all
-  24. A new module on either platform gets its twin on the other, with the same name shape. —
+  25. A new module on either platform gets its twin on the other, with the same name shape. —
   *review; `scripts/test-packages.sh` discovers packages by manifest, so a new one is tested
   automatically.*
 - **`.macOS(.v14)` in a manifest is a test-host concession, not a target.** `swift test` cannot
   run a bundle on an iOS simulator, so a package whose host build cannot succeed under
   `[.iOS(.v17)]` alone also declares `.macOS(.v14)`. **iOS 17 remains the ship target** and never
-  ship-conditions on macOS. There are exactly three reasons a package qualifies, and 21 of the 24
+  ship-conditions on macOS. There are exactly three reasons a package qualifies, and 22 of the 25
   do:
   - **Reaches SwiftUI** — directly (`SalusDesignSystem`, and `SalusNavigation` since its
     `TabBackStacks` holds one `NavigationPath` per tab) or transitively (`SalusUI` and the ten
     feature packages). Thirteen packages.
   - **Reaches GRDB** — `SalusDatabase`, plus its dependents `SalusProfile`, `SalusAI`,
-    `SalusReminder`. Four packages. GRDB's own manifest declares a macOS 10.15 floor; a manifest
+    `SalusReminder`, `SalusSmoking`. Five packages. GRDB's own manifest declares a macOS 10.15 floor; a manifest
     that names no macOS platform is read by SwiftPM as macOS 10.13, and the host build fails with
     *"the library 'SalusDatabase' requires macos 10.13, but depends on the product 'GRDB' which
     requires macos 10.15"*. The floor propagates, so every future package that links

@@ -126,6 +126,10 @@ packages:
     path: Packages/SalusReminder
   SalusPremium:
     path: Packages/SalusPremium
+  # iOS-M17 Task 4: the smoking-cessation domain (models and calculators; the twin of Android
+  # `:core:smoking`). Linking it puts it through the iOS SDK; it holds no UI and no catalog yet.
+  SalusSmoking:
+    path: Packages/SalusSmoking
   # iOS-M10 Task 7: `SalusAI` is the AI package the app links so the shell can build the real
   # `FirebaseAiClient` graph, and `firebase-ios-sdk` is its remote dependency — the third and
   # final entry on the closed allowlist. The app imports `FirebaseCore` directly in `SalusApp.swift`
@@ -316,6 +320,8 @@ targets:
       # `purchases-ios` transitively, exactly as it already reaches GRDB through `SalusDatabase`.
       - package: SalusPremium
         product: SalusPremium
+      - package: SalusSmoking
+        product: SalusSmoking
       # iOS-M10 Task 7: the app links `SalusAI` (the AI repositories and `FirebaseAiClient`) and
       # `FirebaseCore` (the `FirebaseApp.configure()` call in `SalusApp.init`). The app reaches
       # `firebase-ios-sdk` transitively through `SalusAI` and directly through `FirebaseCore`.

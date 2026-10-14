@@ -137,6 +137,36 @@ extension LocalDateTime {
     }
 }
 
+/// The local calendar day `epochMs` falls on in `zone`, as the `epochDay` number a day column
+/// stores — the twin of `Instant.toLocalDateTime(zone).date.toEpochDays()`.
+///
+/// iOS-M17 added this pair for the smoking calculator, which buckets money per local day
+/// (`smoking-domain-contract.md` §3 rule 7) while every duration stays a difference of `epochMs`
+/// (rule 16). It lives in this file for the same reason `today()` does: it is the instant-to-day
+/// direction, and the `Calendar` carve-out is this file and nowhere else.
+public func epochDay(of epochMs: Int64, in zone: TimeZone) -> Int64 {
+    let calendar = gregorianCalendar(in: zone)
+    let instant = Date(epochMilliseconds: epochMs)
+    let day = LocalDate(
+        year: calendar.component(.year, from: instant),
+        month: calendar.component(.month, from: instant),
+        day: calendar.component(.day, from: instant)
+    )
+    return Int64(day.epochDay)
+}
+
+/// The first instant of local day `epochDay` in `zone`, in epoch milliseconds — the inverse of
+/// `epochDay(of:in:)` at a day boundary, and the twin of `LocalDate.atStartOfDayIn(zone)`.
+///
+/// Where a zone skips midnight on a daylight-saving day the answer is the first instant that day
+/// does have, which is what `atStartOfDayIn` answers too; a 23-hour day therefore measures 23 hours
+/// between two consecutive starts.
+public func startOfDayMs(epochDay: Int64, in zone: TimeZone) -> Int64 {
+    LocalDateTime(date: LocalDate(epochDay: Int(epochDay)), minuteOfDay: 0)
+        .instant(in: zone)
+        .epochMilliseconds
+}
+
 /// A Gregorian calendar reading in `zone` — the **only** `Calendar` the instant↔day carve-out builds,
 /// and `private` to this file so it cannot grow a second caller elsewhere in the package.
 ///

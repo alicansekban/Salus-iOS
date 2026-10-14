@@ -27,7 +27,7 @@
 		347CC17203F154F13B32CE21 /* PaywallHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = 095041F0094FA2361E9C69EE /* PaywallHost.swift */; };
 		3D484E56042E4D7001156A70 /* AppCompositionRoot+Modules.swift in Sources */ = {isa = PBXBuildFile; fileRef = C46AC39F5A2F807756E92213 /* AppCompositionRoot+Modules.swift */; };
 		4E1FB0FCA8071ED1503A2FEC /* AppLockGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC90CD3E4D0ADF19D6382982 /* AppLockGate.swift */; };
-		521C553AD45E91567F7AF082 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = 9B1AE323695E8CBD6882E3AE /* FirebaseCore */; };
+		521C553AD45E91567F7AF082 /* SalusAI in Frameworks */ = {isa = PBXBuildFile; productRef = B0931AF9E9C5CAE0E5D9A91F /* SalusAI */; };
 		537EC5AA135769AF924F7DC3 /* SalusCommon in Frameworks */ = {isa = PBXBuildFile; productRef = AC3FBAE5BFB699978B2666B6 /* SalusCommon */; };
 		551793D6452E4FC23ACF2654 /* SalusNavigation in Frameworks */ = {isa = PBXBuildFile; productRef = ACCBF7E12A2FD2C767BEFFBE /* SalusNavigation */; };
 		56D46F5ED917FBAEA79E96F5 /* FeatureOnboarding in Frameworks */ = {isa = PBXBuildFile; productRef = C6307E49C6A4B39D1F40287C /* FeatureOnboarding */; };
@@ -36,7 +36,7 @@
 		67B28E418073168A4F8C0D99 /* FeatureAppointments in Frameworks */ = {isa = PBXBuildFile; productRef = 80827652F8B85F6508132EC2 /* FeatureAppointments */; };
 		71A7E5AF1C24B88439724AF9 /* RootTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 814A06AA9BCDD69E3C76C98E /* RootTab.swift */; };
 		7A7E19B0A72C770F33130FD3 /* WindowPurchaseHost.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2E78EA7B704B8A1333B32A6 /* WindowPurchaseHost.swift */; };
-		81044E5FE47EA632618E1C7F /* SalusAI in Frameworks */ = {isa = PBXBuildFile; productRef = B0931AF9E9C5CAE0E5D9A91F /* SalusAI */; };
+		81044E5FE47EA632618E1C7F /* SalusSmoking in Frameworks */ = {isa = PBXBuildFile; productRef = 2C2A82BDAF2235CA3A326A28 /* SalusSmoking */; };
 		82BFDB838C5B33E74EC797EA /* AlarmActionBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C55BD8FCF59C4D3D0B3D410 /* AlarmActionBridge.swift */; };
 		8A50D3A5738D054EDC2BDB8B /* SalusReminder in Frameworks */ = {isa = PBXBuildFile; productRef = A5B22EB0FD372492463281EC /* SalusReminder */; };
 		9529EDDCBF549513CBD95244 /* SalusPremium in Frameworks */ = {isa = PBXBuildFile; productRef = 87DE08D54D6185E8F6ABC654 /* SalusPremium */; };
@@ -54,6 +54,7 @@
 		E663D1CB93024B5AC0BA8CF2 /* RootNavigationStack.swift in Sources */ = {isa = PBXBuildFile; fileRef = 365EDF624F76CE1522F13846 /* RootNavigationStack.swift */; };
 		E6D8F62A94D311D909FEF6B3 /* AppAlarmIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBB3D1F6577F9A1686EEF47C /* AppAlarmIntents.swift */; };
 		E96240D6854215CCE9B0EB25 /* SalusProfile in Frameworks */ = {isa = PBXBuildFile; productRef = C00759E3F5DE77C5688CF407 /* SalusProfile */; };
+		EF7A5CF4756D940A571463EC /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = 9B1AE323695E8CBD6882E3AE /* FirebaseCore */; };
 		F23FBE658A3DFEC37FE4A564 /* FeaturePaywall in Frameworks */ = {isa = PBXBuildFile; productRef = 33D00ED7DEAC33B24C7D560B /* FeaturePaywall */; };
 		FCAEC19BE57D93E9ECEF0569 /* PrivacyOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1967360C450E679E57DA1D68 /* PrivacyOverlay.swift */; };
 /* End PBXBuildFile section */
@@ -61,7 +62,6 @@
 /* Begin PBXFileReference section */
 		060BB0FDE51AC42B923DB32F /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		061B25B94B5030AB40007508 /* SalusPremium */ = {isa = PBXFileReference; lastKnownFileType = folder; name = SalusPremium; path = Packages/SalusPremium; sourceTree = SOURCE_ROOT; };
-		069ADE1695ADB2AA5AA05801 /* Secrets.local.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Secrets.local.xcconfig; sourceTree = "<group>"; };
 		095041F0094FA2361E9C69EE /* PaywallHost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PaywallHost.swift; sourceTree = "<group>"; };
 		0AC88801DE3E3AB2A681391E /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		0C40A21C37AD104957DD4999 /* AppStrings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStrings.swift; sourceTree = "<group>"; };
@@ -70,6 +70,7 @@
 		15AD79D550BC94771443016D /* AppCompositionRoot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppCompositionRoot.swift; sourceTree = "<group>"; };
 		17EC8F7F2D16791CF7D4063F /* AppLockScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLockScreen.swift; sourceTree = "<group>"; };
 		1967360C450E679E57DA1D68 /* PrivacyOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyOverlay.swift; sourceTree = "<group>"; };
+		1BDC026418BB0601DEC0F4AC /* SalusSmoking */ = {isa = PBXFileReference; lastKnownFileType = folder; name = SalusSmoking; path = Packages/SalusSmoking; sourceTree = SOURCE_ROOT; };
 		22BCD818921CF8261813C3F1 /* FeatureAIHealth */ = {isa = PBXFileReference; lastKnownFileType = folder; name = FeatureAIHealth; path = Packages/Features/FeatureAIHealth; sourceTree = SOURCE_ROOT; };
 		2A068E62066834CBBAD1DFE8 /* FeatureAppointments */ = {isa = PBXFileReference; lastKnownFileType = folder; name = FeatureAppointments; path = Packages/Features/FeatureAppointments; sourceTree = SOURCE_ROOT; };
 		32081AE7A86A99CF65AC0A3A /* SalusSettings */ = {isa = PBXFileReference; lastKnownFileType = folder; name = SalusSettings; path = Packages/SalusSettings; sourceTree = SOURCE_ROOT; };
@@ -140,8 +141,9 @@
 				B188A1539DA23C3F506EFCB9 /* FeatureTrends in Frameworks */,
 				8A50D3A5738D054EDC2BDB8B /* SalusReminder in Frameworks */,
 				9529EDDCBF549513CBD95244 /* SalusPremium in Frameworks */,
-				81044E5FE47EA632618E1C7F /* SalusAI in Frameworks */,
-				521C553AD45E91567F7AF082 /* FirebaseCore in Frameworks */,
+				81044E5FE47EA632618E1C7F /* SalusSmoking in Frameworks */,
+				521C553AD45E91567F7AF082 /* SalusAI in Frameworks */,
+				EF7A5CF4756D940A571463EC /* FirebaseCore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -171,6 +173,7 @@
 				C9D663E6B65CEEF73E47F04C /* SalusProfile */,
 				DCD32552E9312DFB2001E89E /* SalusReminder */,
 				32081AE7A86A99CF65AC0A3A /* SalusSettings */,
+				1BDC026418BB0601DEC0F4AC /* SalusSmoking */,
 				CFD65DD6E68A8FDD2B7AF95E /* SalusUI */,
 			);
 			path = Packages;
@@ -222,7 +225,6 @@
 				A5F9D30994E04E2DA784C2A9 /* RootView+Previews.swift */,
 				814D8ECF9C6A2402529D7DF1 /* Salus.entitlements */,
 				F703871BE6F4C3CF92AA8959 /* SalusApp.swift */,
-				069ADE1695ADB2AA5AA05801 /* Secrets.local.xcconfig */,
 				6A163935FC35E7AA1B312E8E /* Secrets.xcconfig */,
 				B2E78EA7B704B8A1333B32A6 /* WindowPurchaseHost.swift */,
 			);
@@ -284,6 +286,7 @@
 				D035E34CA3269229C5C5AD05 /* FeatureTrends */,
 				A5B22EB0FD372492463281EC /* SalusReminder */,
 				87DE08D54D6185E8F6ABC654 /* SalusPremium */,
+				2C2A82BDAF2235CA3A326A28 /* SalusSmoking */,
 				B0931AF9E9C5CAE0E5D9A91F /* SalusAI */,
 				9B1AE323695E8CBD6882E3AE /* FirebaseCore */,
 			);
@@ -338,6 +341,7 @@
 				337C96AD9EDA00BA0977AE74 /* XCLocalSwiftPackageReference "Packages/SalusProfile" */,
 				23445E271CDF2938E9C5329F /* XCLocalSwiftPackageReference "Packages/SalusReminder" */,
 				951D15A91AED724707D7B845 /* XCLocalSwiftPackageReference "Packages/SalusSettings" */,
+				14D9B2B3464C6921027742B0 /* XCLocalSwiftPackageReference "Packages/SalusSmoking" */,
 				248CA880A0C0E1AB1D9F5F58 /* XCLocalSwiftPackageReference "Packages/SalusUI" */,
 			);
 			preferredProjectObjectVersion = 77;
@@ -617,6 +621,10 @@
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/SalusAI;
 		};
+		14D9B2B3464C6921027742B0 /* XCLocalSwiftPackageReference "Packages/SalusSmoking" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/SalusSmoking;
+		};
 		23445E271CDF2938E9C5329F /* XCLocalSwiftPackageReference "Packages/SalusReminder" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Packages/SalusReminder;
@@ -714,6 +722,10 @@
 		23E6F4A762A65FDBF66C5851 /* SalusDatabase */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = SalusDatabase;
+		};
+		2C2A82BDAF2235CA3A326A28 /* SalusSmoking */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = SalusSmoking;
 		};
 		2E2A6F78A5DCD99FDD5C879B /* FeatureHome */ = {
 			isa = XCSwiftPackageProductDependency;
