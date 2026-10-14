@@ -2,23 +2,27 @@
 // `core/ai/src/main/kotlin/com/alicansekban/salus/core/ai/PromptBuilder.kt`.
 
 import SalusModel
+import SalusSmoking
 
 /// Builds the fixed prompt templates used for AI health summaries.
 ///
 /// The only input that ever reaches the model is `HealthPeriodStats`: aggregated numbers.
 /// No name, birth date, note text or any other free-form user input is accepted or emitted,
 /// and the system instruction forbids diagnosis and treatment advice in both languages.
+///
+/// The tobacco block exists only when `HealthPeriodStats.smoking` does, and so does the system
+/// rule that goes with it: a user who never set smoking up gets the prompt they always got.
 public enum PromptBuilder {
     /// Prompt asking for a short (~150-200 word) narrative summary of the period.
     public static func summaryPrompt(_ stats: HealthPeriodStats, language: AiLanguage) -> AiPrompt {
         let copy = language.promptCopy()
-        return AiPrompt(system: copy.system, user: userMessage(stats, copy, copy.summaryTask))
+        return AiPrompt(system: copy.systemFor(stats), user: userMessage(stats, copy, copy.summaryTask))
     }
 
     /// Prompt asking for a period summary plus questions the user can ask their doctor.
     public static func doctorReportPrompt(_ stats: HealthPeriodStats, language: AiLanguage) -> AiPrompt {
         let copy = language.promptCopy()
-        return AiPrompt(system: copy.system, user: userMessage(stats, copy, copy.doctorReportTask))
+        return AiPrompt(system: copy.systemFor(stats), user: userMessage(stats, copy, copy.doctorReportTask))
     }
 }
 
@@ -37,9 +41,20 @@ private func userMessage(_ stats: HealthPeriodStats, _ copy: PromptCopy, _ task:
         lines.append("")
         lines.append(copy.doseRatioLine(percent: percent, taken: stats.takenDoses, logged: stats.loggedDoses))
     }
+    if let smoking = stats.smoking {
+        lines.append("")
+        lines.append(contentsOf: copy.smokingLines(smoking))
+    }
     lines.append("")
     lines.append(task)
     return lines.joined(separator: "\n")
+}
+
+extension PromptCopy {
+    /// The base instruction, plus the smoking rule only when the prompt carries smoking figures.
+    fileprivate func systemFor(_ stats: HealthPeriodStats) -> String {
+        stats.smoking == nil ? system : "\(system)\n- \(smokingRule)"
+    }
 }
 
 private func metricLines(_ stats: HealthPeriodStats, _ copy: PromptCopy) -> [String] {
@@ -81,6 +96,20 @@ private func format(_ value: Double) -> String {
     return "\(sign)\(magnitude / tenthsScaleL).\(magnitude % tenthsScaleL)"
 }
 
+/// The band as a clock range, locale-free like every other number in a prompt. The ranges mirror
+/// the contract's `HourBand` rows (`h22_08` is 22:00-07:59, so it reads 22:00-08:00).
+private func bandRange(_ band: HourBand) -> String {
+    switch band {
+    case .h08_10: "08:00-10:00"
+    case .h10_12: "10:00-12:00"
+    case .h12_14: "12:00-14:00"
+    case .h14_16: "14:00-16:00"
+    case .h16_18: "16:00-18:00"
+    case .h18_22: "18:00-22:00"
+    case .h22_08: "22:00-08:00"
+    }
+}
+
 private let tenthsScale = 10.0
 private let tenthsScaleL: Int64 = 10
 
@@ -107,6 +136,13 @@ private protocol PromptCopy {
     /// user recorded, not the doses the schedule called for, so calling this "adherence" would
     /// overstate it for anyone who only logs the doses they take.
     func doseRatioLine(percent: Int, taken: Int, logged: Int) -> String
+
+    /// Added to the system rules when the prompt has a tobacco block: no causal claim between
+    /// tobacco use and a measurement, and no advice about smoking itself.
+    var smokingRule: String { get }
+
+    /// The tobacco block: a header and one line per figure the stats actually carry.
+    func smokingLines(_ stats: SmokingAiStats) -> [String]
 }
 
 private struct TurkishCopy: PromptCopy {
@@ -153,6 +189,51 @@ private struct TurkishCopy: PromptCopy {
 
     func doseRatioLine(percent: Int, taken: Int, logged: Int) -> String {
         "Kaydedilen \(logged) dozun \(taken) tanesi alındı olarak işaretlendi (%\(percent))."
+    }
+
+    let smokingRule =
+        "Tütün kullanımı ile ölçümler arasında neden-sonuç ilişkisi kurma; tütün rakamlarını olduğu gibi "
+            + "anlat ve sigara konusunda tıbbi tavsiye verme (bırakma yöntemi, ürün veya ilaç önerme)."
+
+    func smokingLines(_ stats: SmokingAiStats) -> [String] {
+        var lines = ["Tütün kullanımı (özet sayılar):"]
+        lines.append("- Mod: \(stats.mode == .quit ? "bırakma" : "azaltma")")
+        lines.append("- Takip edilen gün: \(stats.daysTracked)")
+        lines.append(
+            stats.mode == .quit
+                ? "- Kaçamak sayısı: \(stats.slipCount)"
+                : "- Kayıtlı sigara içme sayısı: \(stats.slipCount)"
+        )
+        if !stats.topTriggers.isEmpty {
+            let triggers = stats.topTriggers.map { "\(triggerName($0.trigger)) (\($0.count))" }
+            lines.append("- En sık tetikleyiciler: " + triggers.joined(separator: ", "))
+        }
+        if let band = stats.busiestBand {
+            lines.append("- En yoğun saat aralığı: \(bandRange(band))")
+        }
+        if let percent = stats.reductionPercent {
+            let amount = if percent > 0 {
+                "alışılmış miktarın %\(percent) altında"
+            } else if percent < 0 {
+                "alışılmış miktarın %\(-percent) üzerinde"
+            } else {
+                "alışılmış miktarla aynı"
+            }
+            lines.append("- Kayıtlı günlerde ortalama kullanım: " + amount)
+        }
+        return lines
+    }
+
+    private func triggerName(_ trigger: CravingTrigger) -> String {
+        switch trigger {
+        case .coffee: "kahve"
+        case .stress: "stres"
+        case .alcohol: "alkol"
+        case .afterMeal: "yemek sonrası"
+        case .social: "sosyal ortamlar"
+        case .boredom: "can sıkıntısı"
+        case .other: "diğer"
+        }
     }
 
     private func periodName(_ period: SummaryPeriod) -> String {
@@ -224,6 +305,52 @@ private struct EnglishCopy: PromptCopy {
 
     func doseRatioLine(percent: Int, taken: Int, logged: Int) -> String {
         "\(taken) of \(logged) recorded doses marked taken (\(percent)%)"
+    }
+
+    let smokingRule =
+        "Do not claim that tobacco use caused or is caused by any measurement; describe the tobacco "
+            + "figures as they are and give no medical advice about smoking (no quitting methods, "
+            + "products or medication)."
+
+    func smokingLines(_ stats: SmokingAiStats) -> [String] {
+        var lines = ["Tobacco use (summary figures):"]
+        lines.append("- Mode: \(stats.mode == .quit ? "quitting" : "reducing")")
+        lines.append("- Days tracked: \(stats.daysTracked)")
+        lines.append(
+            stats.mode == .quit
+                ? "- Slips: \(stats.slipCount)"
+                : "- Logged smoking entries: \(stats.slipCount)"
+        )
+        if !stats.topTriggers.isEmpty {
+            let triggers = stats.topTriggers.map { "\(triggerName($0.trigger)) (\($0.count))" }
+            lines.append("- Most common triggers: " + triggers.joined(separator: ", "))
+        }
+        if let band = stats.busiestBand {
+            lines.append("- Busiest time of day: \(bandRange(band))")
+        }
+        if let percent = stats.reductionPercent {
+            let amount = if percent > 0 {
+                "\(percent)% below the usual amount"
+            } else if percent < 0 {
+                "\(-percent)% above the usual amount"
+            } else {
+                "the same as the usual amount"
+            }
+            lines.append("- Average use on logged days: " + amount)
+        }
+        return lines
+    }
+
+    private func triggerName(_ trigger: CravingTrigger) -> String {
+        switch trigger {
+        case .coffee: "coffee"
+        case .stress: "stress"
+        case .alcohol: "alcohol"
+        case .afterMeal: "after meals"
+        case .social: "social settings"
+        case .boredom: "boredom"
+        case .other: "other"
+        }
     }
 
     private func periodName(_ period: SummaryPeriod) -> String {

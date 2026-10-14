@@ -68,6 +68,10 @@ final class ReportWriter {
                 gap(bodyLeading)
             case let .table(heading, columns, weights, rows):
                 table(heading: heading, columns: columns, weights: weights, rows: rows)
+            case let .tobaccoUse(block):
+                tobaccoUse(heading: block.heading, lines: [
+                    block.status, block.quitDate, block.duration, block.slips, block.dailyAverage
+                ])
             }
         }
         finish()
@@ -83,6 +87,16 @@ final class ReportWriter {
         // a sentence cut off mid-word in a medical document is worse than a taller page.
         for wrapped in wrap(text) {
             line(wrapped, style: .body, leading: bodyLeading)
+        }
+    }
+
+    private func tobaccoUse(heading: String, lines: [String?]) {
+        // Heading and first line are reserved together, so the heading is never the last line of a
+        // page with its figures on the next (the same rule a table's heading follows).
+        require(sectionSpacing + sectionLeading + bodyLeading)
+        section(heading)
+        for text in lines.compactMap(\.self) {
+            body(text)
         }
     }
 

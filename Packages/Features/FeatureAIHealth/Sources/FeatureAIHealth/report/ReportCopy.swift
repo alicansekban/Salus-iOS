@@ -4,6 +4,7 @@
 
 import SalusAI
 import SalusModel
+import SalusSmoking
 
 /// Every fixed string the PDF prints, per language.
 ///
@@ -29,6 +30,7 @@ protocol ReportCopy {
     var weightColumns: [String] { get }
     var medicationHeading: String { get }
     var noDoses: String { get }
+    var tobaccoHeading: String { get }
     var narrativeHeading: String { get }
     var narrativeUnavailable: String { get }
 
@@ -41,6 +43,17 @@ protocol ReportCopy {
     func loggedDoseLine(percent: Int, taken: Int, logged: Int) -> String
 
     func contextLabel(context: MeasurementContext) -> String
+
+    func tobaccoStatus(mode: SmokingMode) -> String
+
+    func quitDateLine(epochDay: Int) -> String
+
+    func quitDurationLine(days: Int) -> String
+
+    func slipsLine(count: Int) -> String
+
+    /// `average` is already formatted, one decimal, no locale.
+    func dailyAverageLine(average: String) -> String
 
     func date(epochDay: Int) -> String
 }
@@ -72,6 +85,7 @@ private struct TurkishReportCopy: ReportCopy {
     let weightColumns = ["Tarih", "Kilo (kg)"]
     let medicationHeading = "İlaç kaydı özeti"
     let noDoses = "Bu dönemde ilaç dozu kaydedilmemiş."
+    let tobaccoHeading = "Tütün kullanımı"
     let narrativeHeading = "Yapay zekâ değerlendirmesi"
     let narrativeUnavailable = "AI özeti bu raporda üretilemedi."
 
@@ -95,6 +109,29 @@ private struct TurkishReportCopy: ReportCopy {
         case .random: "Rastgele"
         }
     }
+
+    func tobaccoStatus(mode: SmokingMode) -> String {
+        switch mode {
+        case .quit: "Durum: bırakma sürecinde"
+        case .reduce: "Durum: azaltma sürecinde"
+        }
+    }
+
+    func quitDateLine(epochDay: Int) -> String {
+        "Bırakma tarihi: \(formatReportDate(epochDay: epochDay))"
+    }
+
+    func quitDurationLine(days: Int) -> String {
+        "Bırakma tarihinden bu yana: \(days) gün"
+    }
+
+    func slipsLine(count: Int) -> String {
+        "Bu denemedeki kaçamak sayısı: \(count)"
+    }
+
+    func dailyAverageLine(average: String) -> String {
+        "Günlük ortalama (son 7 günün kayıtlı günleri): \(average)"
+    }
 }
 
 private struct EnglishReportCopy: ReportCopy {
@@ -109,6 +146,7 @@ private struct EnglishReportCopy: ReportCopy {
     let weightColumns = ["Date", "Weight (kg)"]
     let medicationHeading = "Recorded dose summary"
     let noDoses = "No medication dose was recorded in this period."
+    let tobaccoHeading = "Tobacco use"
     let narrativeHeading = "AI assessment"
     let narrativeUnavailable = "The AI summary could not be produced for this report."
 
@@ -131,5 +169,28 @@ private struct EnglishReportCopy: ReportCopy {
         case .bedtime: "Bedtime"
         case .random: "Random"
         }
+    }
+
+    func tobaccoStatus(mode: SmokingMode) -> String {
+        switch mode {
+        case .quit: "Status: quit attempt in progress"
+        case .reduce: "Status: reducing"
+        }
+    }
+
+    func quitDateLine(epochDay: Int) -> String {
+        "Quit date: \(formatReportDate(epochDay: epochDay))"
+    }
+
+    func quitDurationLine(days: Int) -> String {
+        "Time since quit date: \(days) \(days == 1 ? "day" : "days")"
+    }
+
+    func slipsLine(count: Int) -> String {
+        "Slips during this attempt: \(count)"
+    }
+
+    func dailyAverageLine(average: String) -> String {
+        "Daily average (logged days of the last 7): \(average)"
     }
 }

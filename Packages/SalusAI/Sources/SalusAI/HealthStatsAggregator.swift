@@ -3,16 +3,20 @@
 // `HealthStatsAggregator` class and the pure helper functions).
 
 import Foundation
+import os
 import SalusCommon
 import SalusDatabase
 import SalusModel
+import SalusSmoking
 
 /// Reduces the stored health records of one period to the de-identified `HealthPeriodStats`
 /// payload that is the only thing ever sent to the model, and — for the doctor report — to the
 /// numeric `HealthPeriodRows` that stay on the device.
 ///
-/// Free-form text — measurement notes, intake notes, medication names, the profile — is never
-/// read: neither output type has a string field it could be carried in.
+/// Free-form text — measurement notes, intake notes, medication names, the profile, the smoking
+/// plan's reason — is never read: neither output type has a string field it could be carried in.
+/// Smoking is the one table read through its repository rather than a DAO, and only to hand the
+/// rows to `SmokingInsightsCalculator.aiStats`, whose result type is the contract's aggregate.
 ///
 /// Both reads are deliberately thin. All arithmetic and all row mapping live in the pure
 /// functions in this file so they can be tested without GRDB.
@@ -20,11 +24,18 @@ public struct HealthStatsAggregator: HealthPeriodReader {
     private let vitalsDao: VitalsDao
     private let medicationDao: MedicationDao
     private let profileId: String
+    private let smokingRepository: any SmokingRepository
 
-    public init(vitalsDao: VitalsDao, medicationDao: MedicationDao, profileId: String) {
+    public init(
+        vitalsDao: VitalsDao,
+        medicationDao: MedicationDao,
+        profileId: String,
+        smokingRepository: any SmokingRepository
+    ) {
         self.vitalsDao = vitalsDao
         self.medicationDao = medicationDao
         self.profileId = profileId
+        self.smokingRepository = smokingRepository
     }
 
     public func aggregate(
@@ -47,7 +58,29 @@ public struct HealthStatsAggregator: HealthPeriodReader {
                 fromEpochDay: days.lowerBound,
                 toEpochDay: days.upperBound
             ),
-            timeZone: timeZone
+            timeZone: timeZone,
+            smoking: smokingStatsFor(days, timeZone: timeZone)
+        )
+    }
+
+    /// The smoking aggregate for `days`, or `nil` when nothing is set up or the read failed.
+    ///
+    /// Total on purpose: smoking is an optional section of the prompt, and a failing smoking read
+    /// must not take the vitals summary the user asked for down with it. The repository's stream
+    /// does not throw - a storage failure ends it without an element - so "no element" is the
+    /// failure signal here. The aggregate is cut on the same zone and day window as the vitals, so
+    /// both halves of the prompt describe one period.
+    private func smokingStatsFor(_ days: ClosedRange<Int>, timeZone: TimeZone) async -> SmokingAiStats? {
+        var inputs = smokingRepository.observeInput().makeAsyncIterator()
+        guard let input = await inputs.next() else {
+            logger.warning("Smoking statistics left out of the summary: no input")
+            return nil
+        }
+        return SmokingInsightsCalculator.aiStats(
+            input,
+            fromEpochDay: Int64(days.lowerBound),
+            toEpochDay: Int64(days.upperBound),
+            zone: timeZone
         )
     }
 
@@ -152,7 +185,8 @@ func healthStatsOf(
     days: ClosedRange<Int>,
     measurements: [VitalsMeasurementRecord],
     intakeLogs: [MedicationIntakeLogRecord],
-    timeZone: TimeZone
+    timeZone: TimeZone,
+    smoking: SmokingAiStats? = nil
 ) -> HealthPeriodStats {
     let dated = measurements
         .map { row -> (VitalsMeasurementRecord, Int) in (row, row.epochDayIn(timeZone)) }
@@ -184,7 +218,8 @@ func healthStatsOf(
         // Both counts come out of the same list, so taken can never exceed logged and
         // takenPercent can never render above 100%.
         loggedDoses: dosesInPeriod.count,
-        takenDoses: dosesInPeriod.count { $0.status == IntakeStatus.taken.rawValue }
+        takenDoses: dosesInPeriod.count { $0.status == IntakeStatus.taken.rawValue },
+        smoking: smoking
     )
 }
 
@@ -201,6 +236,9 @@ extension VitalsMeasurementRecord {
         Date(epochMilliseconds: measuredAtEpochMs).wallClock(in: timeZone).date.epochDay
     }
 }
+
+/// Shared with the rest of the app's log output, so one filter catches everything.
+private let logger = Logger(subsystem: "com.alicansekban.salus", category: "ai")
 
 private let weeklyDayCount = 7
 private let monthlyDayCount = 30

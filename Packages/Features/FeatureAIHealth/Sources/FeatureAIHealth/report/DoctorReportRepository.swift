@@ -8,6 +8,7 @@ import SalusAI
 import SalusCommon
 import SalusPremium
 import SalusSettings
+import SalusSmoking
 
 /// Everything `DoctorReportRepository.generate` can answer.
 ///
@@ -77,6 +78,7 @@ public protocol DoctorReportRepository: Sendable {
 public final class DoctorReportRepositoryImpl: DoctorReportRepository {
     private let aiClient: any AiClient
     private let periodReader: any HealthPeriodReader
+    private let smokingRepository: any SmokingRepository
     private let usageDataSource: AiUsageDataSource
     private let premiumRepository: any PremiumRepository
     private let generator: any PdfReportGenerator
@@ -85,6 +87,7 @@ public final class DoctorReportRepositoryImpl: DoctorReportRepository {
     public init(
         aiClient: any AiClient,
         periodReader: any HealthPeriodReader,
+        smokingRepository: any SmokingRepository,
         usageDataSource: AiUsageDataSource,
         premiumRepository: any PremiumRepository,
         generator: any PdfReportGenerator,
@@ -92,6 +95,7 @@ public final class DoctorReportRepositoryImpl: DoctorReportRepository {
     ) {
         self.aiClient = aiClient
         self.periodReader = periodReader
+        self.smokingRepository = smokingRepository
         self.usageDataSource = usageDataSource
         self.premiumRepository = premiumRepository
         self.generator = generator
@@ -148,11 +152,30 @@ public final class DoctorReportRepositoryImpl: DoctorReportRepository {
 
         let rows = try await periodReader.periodRows(period: period, todayEpochDay: todayEpochDay, timeZone: timeZone)
         let narrative = await narrativeFor(stats: stats, todayEpochDay: todayEpochDay, language: language)
+        let tobacco = await tobaccoUseFor(timeZone: timeZone)
 
         return try .ready(
-            pdfFile: generator.generate(stats: stats, rows: rows, narrative: narrative, language: language),
+            pdfFile: generator.generate(
+                stats: stats,
+                rows: rows,
+                narrative: narrative,
+                language: language,
+                tobacco: tobacco
+            ),
             narrativeIncluded: narrative != nil
         )
+    }
+
+    /// The tobacco section's figures, or `nil` when smoking is not set up or could not be read.
+    ///
+    /// Read only after the premium and empty-period gates, so a free user's tap and an empty period
+    /// never reach the smoking tables. Total for the same reason the narrative is: it is an extra
+    /// section of a report whose value is the recorded measurements, and an unreadable smoking
+    /// table must cost the report one section, not the whole document. `snapshotNow()` does not
+    /// throw - a storage failure is logged inside and answers `.notSetUp` - so a failed read and an
+    /// unconfigured plan both leave the section out.
+    private func tobaccoUseFor(timeZone: TimeZone) async -> TobaccoUseSummary? {
+        await tobaccoUseSummaryOf(smokingRepository.snapshotNow(), zone: timeZone)
     }
 
     /// The AI section's text, or `nil` when it was skipped for any of the three reasons.

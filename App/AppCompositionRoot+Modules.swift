@@ -142,7 +142,8 @@ extension AppCompositionRoot {
         let aggregator: any HealthPeriodReader = HealthStatsAggregator(
             vitalsDao: VitalsDao(database: database),
             medicationDao: MedicationDao(database: database),
-            profileId: SalusDatabase.defaultProfileId
+            profileId: SalusDatabase.defaultProfileId,
+            smokingRepository: infrastructure.smokingCore.repository
         )
         let summaryRepository: any AiSummaryRepository = AiSummaryRepositoryImpl(
             aiClient: FirebaseAiClient(),
@@ -155,6 +156,7 @@ extension AppCompositionRoot {
         let doctorReportRepository: any DoctorReportRepository = DoctorReportRepositoryImpl(
             aiClient: FirebaseAiClient(),
             periodReader: aggregator,
+            smokingRepository: infrastructure.smokingCore.repository,
             usageDataSource: aiUsage,
             premiumRepository: premium.premiumRepository,
             generator: IosPdfReportGenerator(clock: infrastructure.clock),

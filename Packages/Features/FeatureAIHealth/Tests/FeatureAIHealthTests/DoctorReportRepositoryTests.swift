@@ -8,6 +8,7 @@ import SalusAI
 import SalusCommon
 import SalusPremium
 import SalusSettings
+import SalusSmoking
 import SalusTesting
 import Testing
 
@@ -26,6 +27,7 @@ struct DoctorReportRepositoryTests {
     private let periodReader = FakeHealthPeriodReader()
     private let premiumRepository = ReportFakePremiumRepository()
     private let generator = FakeReportGenerator()
+    private let smokingRepository = FakeReportSmokingRepository()
     private let clock = FixedSalusClock(now: Date(epochMilliseconds: nowEpochMs), timeZone: utc)
     private let usage: AiUsageDataSource
 
@@ -118,12 +120,55 @@ struct DoctorReportRepositoryTests {
         #expect(await usage.usage.firstValue()?.callsOn(todayEpochDay: today) == dailyLimit)
     }
 
+    // MARK: - The tobacco block
+
+    @Test("a set-up smoking plan hands the generator a tobacco summary")
+    func setUpPlanHandsTheGeneratorATobaccoSummary() async throws {
+        smokingRepository.snapshot = TobaccoFixture.reduceSnapshot([3, 4, nil])
+
+        _ = await repository().generate(period: .weekly, todayEpochDay: today, language: .en)
+
+        let tobacco = try #require(generator.calls.first?.tobacco)
+        #expect(tobacco.mode == .reduce)
+        #expect(tobacco.dailyAverageTenths == 35)
+    }
+
+    @Test("without smoking set up the generator gets no tobacco summary")
+    func notSetUpGivesNoTobaccoSummary() async {
+        smokingRepository.snapshot = .notSetUp
+
+        _ = await repository().generate(period: .weekly, todayEpochDay: today, language: .en)
+
+        #expect(generator.calls.count == 1)
+        #expect(generator.calls.first?.tobacco == nil)
+    }
+
+    @Test("a free user's tap does not read smoking at all")
+    func freeTapDoesNotReadSmoking() async {
+        premiumRepository.set(.free)
+
+        _ = await repository().generate(period: .weekly, todayEpochDay: today, language: .en)
+
+        #expect(smokingRepository.snapshotCalls == 0)
+    }
+
+    @Test("an empty period does not read smoking either")
+    func emptyPeriodDoesNotReadSmoking() async {
+        periodReader.stats = statsWith(distinctRecordDays: 0)
+
+        let outcome = await repository().generate(period: .weekly, todayEpochDay: today, language: .en)
+
+        #expect(outcome == .needsMoreData)
+        #expect(smokingRepository.snapshotCalls == 0)
+    }
+
     // MARK: - Helpers
 
     private func repository() -> DoctorReportRepository {
         DoctorReportRepositoryImpl(
             aiClient: aiClient,
             periodReader: periodReader,
+            smokingRepository: smokingRepository,
             usageDataSource: usage,
             premiumRepository: premiumRepository,
             generator: generator,
@@ -279,6 +324,7 @@ private final class FakeReportGenerator: PdfReportGenerator, @unchecked Sendable
         let rows: HealthPeriodRows
         let narrative: String?
         let language: AiLanguage
+        let tobacco: TobaccoUseSummary?
     }
 
     private let lock = NSLock()
@@ -293,12 +339,45 @@ private final class FakeReportGenerator: PdfReportGenerator, @unchecked Sendable
         stats: HealthPeriodStats,
         rows: HealthPeriodRows,
         narrative: String?,
-        language: AiLanguage
+        language: AiLanguage,
+        tobacco: TobaccoUseSummary?
     ) throws -> URL {
         lock.withLock {
-            recorded.append(Call(stats: stats, rows: rows, narrative: narrative, language: language))
+            recorded.append(Call(stats: stats, rows: rows, narrative: narrative, language: language, tobacco: tobacco))
         }
         return outputFile
+    }
+}
+
+/// Serves the snapshot a test set and counts the reads, so a test can assert which gates keep a
+/// free user's tap away from the smoking tables.
+private final class FakeReportSmokingRepository: SmokingRepository, @unchecked Sendable {
+    private let lock = NSLock()
+    private var current: SmokingSnapshot = .notSetUp
+    private var reads = 0
+
+    var snapshot: SmokingSnapshot {
+        get { lock.withLock { current } }
+        set { lock.withLock { current = newValue } }
+    }
+
+    var snapshotCalls: Int {
+        lock.withLock { reads }
+    }
+
+    func observeInput() -> AsyncStream<SmokingInput> {
+        AsyncStream { $0.finish() }
+    }
+
+    func observeSnapshot() -> AsyncStream<SmokingSnapshot> {
+        AsyncStream { $0.finish() }
+    }
+
+    func snapshotNow() async -> SmokingSnapshot {
+        lock.withLock {
+            reads += 1
+            return current
+        }
     }
 }
 

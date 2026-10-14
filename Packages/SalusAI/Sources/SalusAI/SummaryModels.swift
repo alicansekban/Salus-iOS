@@ -2,6 +2,7 @@
 // `core/ai/src/main/kotlin/com/alicansekban/salus/core/ai/SummaryModels.kt`.
 
 import SalusModel
+import SalusSmoking
 
 /// Aggregation window a `HealthPeriodStats` snapshot covers.
 public enum SummaryPeriod: Sendable {
@@ -65,6 +66,10 @@ private let monthlyMinRecordDays = 7
 ///   dose the user never interacted with, so a dose that was silently missed is absent from this
 ///   count entirely.
 /// - `takenDoses`: subset of `loggedDoses` marked as taken.
+/// - `smoking`: the contract's smoking aggregate for the period (mode, days, slip count, top
+///   triggers, busiest band, reduction %), or `nil` when nothing is set up or it could not be
+///   read. A prompt without it is byte-for-byte what it was before the smoking feature existed.
+///   `SmokingAiStats` has no field for the plan's reason, an instant or money, so none can travel.
 public struct HealthPeriodStats: Equatable, Sendable {
     public let periodType: SummaryPeriod
     public let startEpochDay: Int
@@ -77,6 +82,7 @@ public struct HealthPeriodStats: Equatable, Sendable {
     public let weightKg: MetricStats?
     public let loggedDoses: Int
     public let takenDoses: Int
+    public let smoking: SmokingAiStats?
 
     public init(
         periodType: SummaryPeriod,
@@ -89,7 +95,8 @@ public struct HealthPeriodStats: Equatable, Sendable {
         glucoseMgDl: MetricStats?,
         weightKg: MetricStats?,
         loggedDoses: Int,
-        takenDoses: Int
+        takenDoses: Int,
+        smoking: SmokingAiStats? = nil
     ) {
         self.periodType = periodType
         self.startEpochDay = startEpochDay
@@ -102,6 +109,7 @@ public struct HealthPeriodStats: Equatable, Sendable {
         self.weightKg = weightKg
         self.loggedDoses = loggedDoses
         self.takenDoses = takenDoses
+        self.smoking = smoking
     }
 
     /// Share of *recorded* doses marked as taken, as a whole percentage, or `nil` when nothing

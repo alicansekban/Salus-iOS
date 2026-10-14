@@ -28,11 +28,14 @@ public protocol PdfReportGenerator: Sendable {
     ///     parameter and not the device configuration because the document outlives the session it
     ///     was made in: a file generated in Turkish must still read Turkish after the user switches
     ///     the app to English.
+    ///   - tobacco: the "Tobacco use" section's figures, or `nil` when smoking is not set up - the
+    ///     section is then left out entirely.
     func generate(
         stats: HealthPeriodStats,
         rows: HealthPeriodRows,
         narrative: String?,
-        language: AiLanguage
+        language: AiLanguage,
+        tobacco: TobaccoUseSummary?
     ) throws -> URL
 }
 
@@ -61,7 +64,8 @@ public protocol PdfReportGenerator: Sendable {
             stats: HealthPeriodStats,
             rows: HealthPeriodRows,
             narrative: String?,
-            language: AiLanguage
+            language: AiLanguage,
+            tobacco: TobaccoUseSummary?
         ) throws -> URL {
             let blocks = reportBlocksOf(
                 stats: stats,
@@ -70,7 +74,8 @@ public protocol PdfReportGenerator: Sendable {
                 copy: language.reportCopy(),
                 // The clock is injected like every other date in the app, never `Date()`, so the
                 // header is deterministic under test.
-                generatedOn: clock.today()
+                generatedOn: clock.today(),
+                tobacco: tobacco
             )
 
             let output = try outputFileFor(stats)

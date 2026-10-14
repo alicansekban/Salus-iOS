@@ -20,6 +20,10 @@ let package = Package(
         .package(path: "../SalusCommon"),
         .package(path: "../SalusPremium"),
         .package(path: "../SalusSettings"),
+        // The AI prompt carries the smoking aggregate (`SmokingAiStats`), which is part of this
+        // package's public surface through `HealthPeriodStats.smoking` (Android `:core:ai`
+        // declares `api(projects.core.smoking)` for the same reason).
+        .package(path: "../SalusSmoking"),
         .package(path: "../SalusTesting"),
         // The third and final remote dependency on the allowlist (Android :core:ai parity).
         // FirebaseAI + FirebaseAppCheck arrive together with iOS-M10; the allowlist closes here.
@@ -34,6 +38,7 @@ let package = Package(
                 .product(name: "SalusCommon", package: "SalusCommon"),
                 .product(name: "SalusPremium", package: "SalusPremium"),
                 .product(name: "SalusSettings", package: "SalusSettings"),
+                .product(name: "SalusSmoking", package: "SalusSmoking"),
                 .product(name: "FirebaseAI", package: "firebase-ios-sdk"),
                 .product(name: "FirebaseAppCheck", package: "firebase-ios-sdk"),
                 .product(name: "FirebaseCore", package: "firebase-ios-sdk")
@@ -46,6 +51,7 @@ let package = Package(
                 .product(name: "SalusDatabase", package: "SalusDatabase"),
                 .product(name: "SalusPremium", package: "SalusPremium"),
                 .product(name: "SalusSettings", package: "SalusSettings"),
+                .product(name: "SalusSmoking", package: "SalusSmoking"),
                 .product(name: "SalusTesting", package: "SalusTesting")
             ]
         )

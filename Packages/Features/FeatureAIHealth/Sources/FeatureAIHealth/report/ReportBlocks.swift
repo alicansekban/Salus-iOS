@@ -21,10 +21,25 @@ enum ReportBlock: Equatable, Sendable {
     /// Blank vertical space; a paragraph break inside narrative prose.
     case gap
 
+    /// The "Tobacco use" section; see `TobaccoUseBlock`.
+    case tobaccoUse(TobaccoUseBlock)
+
     /// - Parameters:
     ///   - weights: column widths as a share of the usable page width.
     ///   - rows: one list of cells per record, in the column order of `columns`.
     case table(heading: String, columns: [String], weights: [Float], rows: [[String]])
+}
+
+/// One heading and up to five already-worded lines. Each line is a finished sentence in the
+/// report's language, so the writer has nothing left to decide. A line that does not apply to the
+/// person's mode is `nil` and is not drawn.
+struct TobaccoUseBlock: Equatable, Sendable {
+    let heading: String
+    let status: String
+    let quitDate: String?
+    let duration: String?
+    let slips: String?
+    let dailyAverage: String?
 }
 
 /// Everything the report says, in order.
@@ -37,7 +52,8 @@ func reportBlocksOf(
     rows: HealthPeriodRows,
     narrative: String?,
     copy: ReportCopy,
-    generatedOn: LocalDate
+    generatedOn: LocalDate,
+    tobacco: TobaccoUseSummary? = nil
 ) -> [ReportBlock] {
     var blocks: [ReportBlock] = []
     blocks.append(.title(copy.documentTitle))
@@ -48,6 +64,7 @@ func reportBlocksOf(
 
     addMeasurementTables(&blocks, rows: rows, copy: copy)
     addDoseSummary(&blocks, stats: stats, copy: copy)
+    addTobaccoUse(&blocks, tobacco: tobacco, copy: copy)
     addNarrative(&blocks, narrative: narrative, copy: copy)
     return blocks
 }
@@ -128,6 +145,32 @@ private func addDoseSummary(
     }
 }
 
+/// The tobacco section, only when smoking is set up. It states the person's own figures and
+/// nothing a reader could take as a judgement: no money, no craving counts, no health claim.
+private func addTobaccoUse(
+    _ blocks: inout [ReportBlock],
+    tobacco: TobaccoUseSummary?,
+    copy: ReportCopy
+) {
+    guard let tobacco else {
+        return
+    }
+    blocks.append(
+        .tobaccoUse(
+            TobaccoUseBlock(
+                heading: copy.tobaccoHeading,
+                status: copy.tobaccoStatus(mode: tobacco.mode),
+                quitDate: tobacco.quitDateEpochDay.map { copy.quitDateLine(epochDay: $0) },
+                duration: tobacco.durationDays.map { copy.quitDurationLine(days: $0) },
+                slips: tobacco.slipCount.map { copy.slipsLine(count: $0) },
+                dailyAverage: tobacco.dailyAverageTenths.map {
+                    copy.dailyAverageLine(average: "\($0 / tenthsPerUnit).\($0 % tenthsPerUnit)")
+                }
+            )
+        )
+    )
+}
+
 /// The AI section, or the note that stands in for it when it was skipped.
 private func addNarrative(
     _ blocks: inout [ReportBlock],
@@ -183,6 +226,7 @@ extension Int {
 
 private let tenthsScale = 10.0
 private let tenthsScaleL: Int64 = 10
+private let tenthsPerUnit = 10
 
 /// Column widths as a share of the usable width, per table.
 private let bloodPressureWeights: [Float] = [0.35, 0.35, 0.30]

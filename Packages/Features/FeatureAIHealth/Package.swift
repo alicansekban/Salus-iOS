@@ -24,6 +24,9 @@ let package = Package(
         .package(path: "../../SalusPremium"),
         .package(path: "../../SalusNavigation"),
         .package(path: "../../SalusSettings"),
+        // The report's tobacco section reads the smoking snapshot (a core package, like Android's
+        // `:core:smoking`), never another feature.
+        .package(path: "../../SalusSmoking"),
         .package(path: "../../SalusTesting")
     ],
     targets: [
@@ -37,7 +40,8 @@ let package = Package(
                 .product(name: "SalusAI", package: "SalusAI"),
                 .product(name: "SalusPremium", package: "SalusPremium"),
                 .product(name: "SalusNavigation", package: "SalusNavigation"),
-                .product(name: "SalusSettings", package: "SalusSettings")
+                .product(name: "SalusSettings", package: "SalusSettings"),
+                .product(name: "SalusSmoking", package: "SalusSmoking")
             ],
             resources: [
                 .process("Resources")
@@ -47,6 +51,7 @@ let package = Package(
             name: "FeatureAIHealthTests",
             dependencies: [
                 "FeatureAIHealth",
+                .product(name: "SalusSmoking", package: "SalusSmoking"),
                 .product(name: "SalusTesting", package: "SalusTesting")
             ]
         )
