@@ -108,8 +108,9 @@ Settled decisions, layer rules and port-fidelity rules. Every rule names its **e
     Recorded here in iOS-M4 because both files used to call themselves the last one.
   - **A `Calendar` may also be read for *localized symbols only*, in exactly one place:**
     `Packages/SalusUI/Sources/SalusUI/component/SalusWeekdaySymbols.swift` (iOS-M6), which answers
-    the seven narrow weekday letters a calendar grid heads its columns with — Kotlin gets them from
-    `DayOfWeek.getDisplayName(TextStyle.NARROW, locale)` and Foundation has no `DayOfWeek`. The
+    the seven narrow or short weekday symbols a calendar grid or a chart axis heads its columns with —
+    Kotlin gets them from `DayOfWeek.getDisplayName(TextStyle.NARROW / SHORT, locale)` and Foundation
+    has no `DayOfWeek`. The
     carve-out is narrow on purpose: a fixed `Calendar(identifier: .gregorian)` with the *caller's*
     `locale` set (never `Calendar.current`, which follows the device's region and would answer
     another calendar's week), reading a static symbol table and **never touching a `Date`** —
