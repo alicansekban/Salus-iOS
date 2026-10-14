@@ -477,6 +477,40 @@
         }
       }
     },
+    "paywall_title_smoking_goal" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unlock the savings goal"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tasarruf hedefine eriş"
+          }
+        }
+      }
+    },
+    "paywall_title_smoking_insights" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unlock craving insights"
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kriz içgörülerine eriş"
+          }
+        }
+      }
+    },
     "paywall_title_themes" : {
       "extractionState" : "manual",
       "localizations" : {

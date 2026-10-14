@@ -5,6 +5,7 @@
 import Foundation
 import SalusCommon
 import SalusNavigation
+import SalusPremium
 import SalusSmoking
 import SalusTesting
 import SalusUI
@@ -95,7 +96,9 @@ func makeMainViewModel(
     clock: FixedSalusClock,
     ids: CountingIds,
     snackbar: SalusSnackbarController,
-    navigator: FakeNavigator
+    navigator: FakeNavigator,
+    premium: FakePremiumRepository = FakePremiumRepository(),
+    paywall: PaywallController = PaywallController()
 ) -> SmokingMainViewModel {
     SmokingMainViewModel(
         repository: FakeSmokingRepository(store: store, clock: clock),
@@ -106,6 +109,11 @@ func makeMainViewModel(
         deleteEvent: DeleteEvent(store: store),
         logNoneToday: LogNoneToday(store: store, clock: clock, idGenerator: ids),
         switchMode: SwitchMode(store: store, clock: clock, idGenerator: ids),
+        saveSavingsGoal: SaveSavingsGoal(store: store, clock: clock, idGenerator: ids),
+        markGoalAchieved: MarkGoalAchieved(store: store, clock: clock),
+        updateSavingsGoal: UpdateSavingsGoal(store: store),
+        premiumRepository: premium,
+        paywallController: paywall,
         snackbar: snackbar,
         navigator: navigator.navigator
     )

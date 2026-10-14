@@ -4,8 +4,9 @@
 // presentation here: `isPresented` is "there is a sheet", the title and the content follow
 // ``MainSheet``, and the sheet stays up while its content changes from "Olur böyle şeyler" to
 // "Ne tetikledi?". Every dismissal route (close button, swipe, scrim) reports the event that sheet
-// treats as leaving it: ``SmokingMainEvent/slipDismissed``, ``SmokingMainEvent/triggerSkipped`` or,
-// for REDUCE's "Bırakmaya hazırım", ``SmokingMainEvent/quitDateDismissed``.
+// treats as leaving it: ``SmokingMainEvent/slipDismissed``, ``SmokingMainEvent/triggerSkipped``,
+// for REDUCE's "Bırakmaya hazırım" ``SmokingMainEvent/quitDateDismissed`` and, for the savings goal,
+// ``SmokingMainEvent/goalDismissed``.
 //
 // The quit-date sheet's confirm closes it as well as handing its instant up (`QuitDateSheet`), and
 // the ViewModel ignores a dismissal while the write is in flight and keeps the sheet for a refused
@@ -18,6 +19,8 @@ import SwiftUI
 struct MainSheetModifier: ViewModifier {
     let sheet: MainSheet?
     let writing: Bool
+    /// The plan's currency, which the goal sheet types its target in.
+    let currencyCode: String?
     /// "Now" for the quit-date sheet's starting moment and its future check.
     let clock: any SalusClock
     let onEvent: (SmokingMainEvent) -> Void
@@ -51,6 +54,7 @@ struct MainSheetModifier: ViewModifier {
                 case .slip: onEvent(.slipDismissed)
                 case .trigger: onEvent(.triggerSkipped)
                 case .quitDate: onEvent(.quitDateDismissed)
+                case .goal: onEvent(.goalDismissed)
                 case nil: break
                 }
             }
@@ -62,6 +66,7 @@ struct MainSheetModifier: ViewModifier {
         case .slip: SmokingStrings.slipTitle
         case .trigger: SmokingStrings.triggerTitle
         case .quitDate: SmokingStrings.quitSheetTitle
+        case .goal: SmokingStrings.goalSheetTitle
         case nil: ""
         }
     }
@@ -91,6 +96,20 @@ struct MainSheetModifier: ViewModifier {
                 clock: clock
             )
 
+        case let .goal(title, targetMinor, editingGoalId):
+            // A goal sheet only opens over a plan, so the currency is there; without it there is
+            // nothing to type an amount in.
+            if let currencyCode {
+                GoalSheet(
+                    currencyCode: currencyCode,
+                    initialTitle: title,
+                    initialTargetMinor: targetMinor,
+                    editing: editingGoalId != nil,
+                    writing: writing,
+                    onSave: { title, target in onEvent(.goalSaved(title: title, targetMinor: target)) }
+                )
+            }
+
         case nil:
             EmptyView()
         }
@@ -98,13 +117,22 @@ struct MainSheetModifier: ViewModifier {
 }
 
 extension View {
-    /// Hosts the main screen's slip, trigger and quit-date sheets.
+    /// Hosts the main screen's slip, trigger, quit-date and savings-goal sheets.
     func mainSheets(
         _ sheet: MainSheet?,
         writing: Bool,
+        currencyCode: String?,
         clock: any SalusClock,
         onEvent: @escaping (SmokingMainEvent) -> Void
     ) -> some View {
-        modifier(MainSheetModifier(sheet: sheet, writing: writing, clock: clock, onEvent: onEvent))
+        modifier(
+            MainSheetModifier(
+                sheet: sheet,
+                writing: writing,
+                currencyCode: currencyCode,
+                clock: clock,
+                onEvent: onEvent
+            )
+        )
     }
 }

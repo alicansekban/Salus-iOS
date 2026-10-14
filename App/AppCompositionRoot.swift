@@ -411,10 +411,15 @@ final class AppCompositionRoot {
         // just scheduled can reach the user), while the graph's other half needs the handlers the
         // modules own. See `makeReminderEnvironment`.
         let reminderBase = makeReminderEnvironment()
+        // Before the scheduled modules, not after them: the smoking main screen's goal card and
+        // insights teaser read the entitlement and open the paywall, and the premium graph depends
+        // on none of the modules the reminder cycle is built around.
+        let premium = makePremiumGraph()
         let scheduled = makeScheduledModules(
             infrastructure: infrastructure,
             reminderScheduler: reminderRelay,
-            reminderBase: reminderBase
+            reminderBase: reminderBase,
+            premium: premium
         )
         let reminder = makeReminderGraph(
             base: reminderBase,
@@ -448,12 +453,7 @@ final class AppCompositionRoot {
             snackbar: infrastructure.snackbar,
             navigator: infrastructure.navigator
         )
-        let premium = makePremiumGraph()
-        let settings = makeSettingsGraph(
-            infrastructure: infrastructure,
-            reminder: reminder,
-            premium: premium
-        )
+        let settings = makeSettingsGraph(infrastructure: infrastructure, reminder: reminder, premium: premium)
         return FeatureModules(
             reminder: reminder,
             vitals: vitals,

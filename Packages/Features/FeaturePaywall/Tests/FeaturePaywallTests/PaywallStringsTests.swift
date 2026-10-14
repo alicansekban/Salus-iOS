@@ -6,7 +6,7 @@ import Testing
 @testable import FeaturePaywall
 
 /// The twin of Android's `feature/paywall/src/main/res/values/strings.xml` (`tr`, the source
-/// language) and `values-en/strings.xml`, and the drift detector between them: all 30 keys and
+/// language) and `values-en/strings.xml`, and the drift detector between them: all 32 keys and
 /// both of their translations are pinned here, copied from the XML.
 ///
 /// The catalog is read off disk rather than through `Bundle.module`. Android's own parity checks
@@ -60,6 +60,16 @@ struct PaywallStringsTests {
             key: "paywall_title_backup",
             turkish: "Şifreli yedeğe eriş",
             english: "Unlock encrypted backup"
+        ),
+        PaywallStringSample(
+            key: "paywall_title_smoking_insights",
+            turkish: "Kriz içgörülerine eriş",
+            english: "Unlock craving insights"
+        ),
+        PaywallStringSample(
+            key: "paywall_title_smoking_goal",
+            turkish: "Tasarruf hedefine eriş",
+            english: "Unlock the savings goal"
         ),
         PaywallStringSample(
             key: "paywall_subtitle",
@@ -187,11 +197,11 @@ struct PaywallStringsTests {
 
     static let expectedKeys = Set(samples.map(\.key))
 
-    @Test("the catalog holds exactly the 30 keys :feature:paywall owns")
+    @Test("the catalog holds exactly the 32 keys :feature:paywall owns")
     func catalogHoldsExactlyTheThirtyKeys() throws {
         // Pinned as a number as well as a set: a row deleted from the table together with its key
         // from the catalog would otherwise agree with itself and pass.
-        #expect(Self.samples.count == 30)
+        #expect(Self.samples.count == 32)
 
         try StringCatalogParity.assertKeys(of: Self.loadCatalog(), are: Self.expectedKeys)
     }
@@ -248,6 +258,8 @@ struct PaywallStringsTests {
         #expect(PaywallStrings.headlineKey(for: .aiSummary) == "paywall_title_ai_summary")
         #expect(PaywallStrings.headlineKey(for: .doctorReport) == "paywall_title_doctor_report")
         #expect(PaywallStrings.headlineKey(for: .backup) == "paywall_title_backup")
+        #expect(PaywallStrings.headlineKey(for: .smokingInsights) == "paywall_title_smoking_insights")
+        #expect(PaywallStrings.headlineKey(for: .smokingGoal) == "paywall_title_smoking_goal")
     }
 
     /// One catalog value with its single argument substituted, formatted locale-independently so

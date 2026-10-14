@@ -10,7 +10,8 @@ import SalusUI
 import SwiftUI
 
 /// The stateful end of the main screen. `onOpenTrends` is the shell's callback: Trends belongs to
-/// another feature, whose key this one cannot see, so the insights card asks the shell to open it.
+/// another feature, whose key this one cannot see, so the insights teaser asks the shell to open it
+/// once the ViewModel has decided a tap is not for the paywall (``SmokingMainEffect/openTrends``).
 public struct SmokingMainRoute: View {
     let onOpenTrends: () -> Void
 
@@ -27,12 +28,7 @@ public struct SmokingMainRoute: View {
             if let viewModel, let module {
                 SmokingMainScreen(
                     state: viewModel.state,
-                    onEvent: { event in
-                        switch event {
-                        case .insightsTapped: onOpenTrends()
-                        default: viewModel.onEvent(event)
-                        }
-                    },
+                    onEvent: viewModel.onEvent,
                     clock: module.clock
                 )
                 // `Channel.receiveAsFlow()` collected in a `LaunchedEffect`, spelled for an
@@ -60,6 +56,8 @@ public struct SmokingMainRoute: View {
         switch effect {
         case let .showError(error):
             module.snackbar.show(SnackbarRequest(message: message(for: error)))
+        case .openTrends:
+            onOpenTrends()
         }
     }
 

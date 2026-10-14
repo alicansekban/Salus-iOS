@@ -8,6 +8,10 @@ public enum PaywallSource: Sendable, Equatable, CaseIterable {
     case aiSummary
     case doctorReport
     case backup
+    /// The smoking main screen's insights teaser (M17; `SMOKING_INSIGHTS` on Android).
+    case smokingInsights
+    /// The smoking main screen's savings-goal card (M17; `SMOKING_GOAL` on Android).
+    case smokingGoal
 }
 
 /// An open paywall, and the reason it opened.

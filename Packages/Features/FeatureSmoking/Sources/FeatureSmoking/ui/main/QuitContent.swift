@@ -1,9 +1,8 @@
 // Ported from `feature/smoking/src/main/kotlin/com/alicansekban/salus/feature/smoking/ui/main/
 // QuitContent.kt`.
 //
-// The QUIT body of the main screen: the live counter, the four metrics and the next stage. A
-// scrolling parent supplies the padding; this is only the column of cards. The savings-goal and
-// insights cards sit below the stage card; plan Task 15 adds them, with the slots they need.
+// The QUIT body of the main screen: the live counter, the four metrics, the next stage and the two
+// premium cards. A scrolling parent supplies the padding; this is only the column of cards.
 //
 // Compose → SwiftUI, beyond the shared mapping table:
 //   ViewModel `liveNowMs` + `runClock`   → `TimelineView(LiveCounterSchedule)`: the view is handed
@@ -36,6 +35,8 @@ private enum QuitSymbols {
 
 struct QuitContent: View {
     let quit: QuitSnapshot
+    /// What the premium cards read: the entitlement and the active goal.
+    let state: SmokingMainUiState
     let counterClock: CounterClock
     let onEvent: (SmokingMainEvent) -> Void
 
@@ -45,12 +46,12 @@ struct QuitContent: View {
             // The schedule is fixed per view value, so a new last smoke (a slip, a restart) has to
             // be a new identity; a plain minute recompute keeps the same one and the timeline runs on.
             TimelineView(LiveCounterSchedule(lastSmokeAtMs: quit.lastSmokeAtMs)) { context in
-                QuitCards(quit: quit, nowMs: context.date.epochMilliseconds, onEvent: onEvent)
+                QuitCards(quit: quit, state: state, nowMs: context.date.epochMilliseconds, onEvent: onEvent)
             }
             .id("\(quit.attemptId)-\(quit.lastSmokeAtMs)")
 
         case let .frozen(atMs):
-            QuitCards(quit: quit, nowMs: atMs, onEvent: onEvent)
+            QuitCards(quit: quit, state: state, nowMs: atMs, onEvent: onEvent)
         }
     }
 }
@@ -58,6 +59,7 @@ struct QuitContent: View {
 /// The cards for one instant. Stateless: the instant is a parameter, so a preview draws any hour.
 struct QuitCards: View {
     let quit: QuitSnapshot
+    let state: SmokingMainUiState
     let nowMs: Int64
     let onEvent: (SmokingMainEvent) -> Void
 
@@ -83,6 +85,7 @@ struct QuitCards: View {
                     onTap: { onEvent(.stageTapped) }
                 )
             }
+            PremiumCards(state: state, currencyCode: quit.plan.currencyCode, onEvent: onEvent)
         }
         .frame(maxWidth: .infinity)
     }

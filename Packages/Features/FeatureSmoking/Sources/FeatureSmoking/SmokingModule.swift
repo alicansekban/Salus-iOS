@@ -12,6 +12,7 @@
 
 import SalusCommon
 import SalusNavigation
+import SalusPremium
 import SalusReminder
 import SalusSmoking
 import SalusUI
@@ -23,7 +24,7 @@ import SwiftUI
 /// `.task`, which already runs there.
 @MainActor
 public struct SmokingModule {
-    /// The domain: the repository and the fifteen use cases, built once by the root.
+    /// The domain: the repository and the sixteen use cases, built once by the root.
     public let core: SmokingCoreModule
 
     /// Publishes what the Routes and ViewModels ask for; the shell applies it.
@@ -44,9 +45,6 @@ public struct SmokingModule {
     public let makeSetupViewModel: @MainActor (String) -> SmokingSetupViewModel
 
     /// `viewModel { SmokingMainViewModel(repository = get(), premiumRepository = get(), …) }`.
-    /// The premium repository is not here yet: nothing on the main screen reads it until the goal
-    /// and insights cards (plan Task 15) arrive, which add it with the composition-root change it
-    /// needs (the premium graph is built after the scheduled modules, smoking among them).
     public let makeMainViewModel: @MainActor () -> SmokingMainViewModel
 
     /// `viewModel { CravingViewModel(repository = get(), clock = get(), …) }`. A new one per
@@ -70,15 +68,20 @@ public struct SmokingModule {
 }
 
 /// Builds the feature's graph — the twin of `val smokingModule = module { … }`. Every dependency is
-/// passed in and none is reached for.
+/// passed in and none is reached for. The parameter list is the dependency list — the shape Koin's
+/// `module { }` block has — so `function_parameter_count` is answered with a targeted disable, as
+/// `makeSettingsModule` does, and not by a struct that would exist only to satisfy a count.
 @MainActor
+// swiftlint:disable:next function_parameter_count
 public func makeSmokingModule(
     core: SmokingCoreModule,
     clock: any SalusClock,
     snackbar: SalusSnackbarController,
     navigator: Navigator,
     reminderScheduler: any ReminderScheduler,
-    reminderEnvironment: any ReminderEnvironment
+    reminderEnvironment: any ReminderEnvironment,
+    premiumRepository: any PremiumRepository,
+    paywallController: PaywallController
 ) -> SmokingModule {
     // Koin's `getAll<SmokingChangeListener>()`: every committed smoking write asks the engine to
     // refill its window, so a slip, a reset or a mode switch moves or cancels the milestones.
@@ -101,20 +104,14 @@ public func makeSmokingModule(
                 navigator: navigator
             )
         },
-        makeMainViewModel: {
-            SmokingMainViewModel(
-                repository: core.repository,
-                clock: clock,
-                resolveSlip: core.resolveSlip,
-                editEvent: core.editEvent,
-                logSmoked: core.logSmoked,
-                deleteEvent: core.deleteEvent,
-                logNoneToday: core.logNoneToday,
-                switchMode: core.switchMode,
-                snackbar: snackbar,
-                navigator: navigator
-            )
-        },
+        makeMainViewModel: mainFactory(
+            core: core,
+            clock: clock,
+            snackbar: snackbar,
+            navigator: navigator,
+            premiumRepository: premiumRepository,
+            paywallController: paywallController
+        ),
         makeCravingViewModel: cravingFactory(core: core, clock: clock, navigator: navigator),
         cravingPresenter: SmokingCravingPresenter(),
         makeTimelineViewModel: { highlightStageId in
@@ -140,6 +137,39 @@ public func makeSmokingModule(
             environment: reminderEnvironment
         )
     )
+}
+
+/// The main screen's factory, apart from `makeSmokingModule` for the same reason as the settings
+/// screen's below: with the goal use cases and the premium collaborators it takes the most arguments
+/// of any ViewModel but the settings one, and the function is at SwiftLint's body length.
+@MainActor
+private func mainFactory(
+    core: SmokingCoreModule,
+    clock: any SalusClock,
+    snackbar: SalusSnackbarController,
+    navigator: Navigator,
+    premiumRepository: any PremiumRepository,
+    paywallController: PaywallController
+) -> @MainActor () -> SmokingMainViewModel {
+    {
+        SmokingMainViewModel(
+            repository: core.repository,
+            clock: clock,
+            resolveSlip: core.resolveSlip,
+            editEvent: core.editEvent,
+            logSmoked: core.logSmoked,
+            deleteEvent: core.deleteEvent,
+            logNoneToday: core.logNoneToday,
+            switchMode: core.switchMode,
+            saveSavingsGoal: core.saveSavingsGoal,
+            markGoalAchieved: core.markGoalAchieved,
+            updateSavingsGoal: core.updateSavingsGoal,
+            premiumRepository: premiumRepository,
+            paywallController: paywallController,
+            snackbar: snackbar,
+            navigator: navigator
+        )
+    }
 }
 
 /// The craving flow's factory, apart from `makeSmokingModule` for the same reason as the settings

@@ -3,23 +3,31 @@
 //
 // Two shape differences from the Kotlin state. `liveNowMs` is gone: Android's ViewModel moves it
 // between snapshots, here the view's `TimelineView` hands the counters their instant, so the state
-// holds only what the screen has been told. And `isPremium` is not here yet — nothing on this task's
-// screen reads it; the savings-goal and insights cards (plan Task 15) add it with their consumers.
-// A third: Android's `UndoOffered` effect is gone. The ViewModel shows the undo snackbar through the
+// holds only what the screen has been told. A second: Android's `UndoOffered` effect is gone. The ViewModel shows the
+// undo snackbar through the
 // shell's controller itself (see `SmokingMainViewModel`), so no effect has to reach a Route that may
 // already be off screen.
 
 import SalusSmoking
 
-/// What the main screen shows. `snapshot` is `nil` until the first one arrives. `writing` is true
-/// from the first tap of a confirm until its write ends, and disables the sheets' buttons.
+/// What the main screen shows. `snapshot` is `nil` until the first one arrives. `isPremium` is the
+/// entitlement the two premium cards read: the goal card and the insights teaser lock without it.
+/// `writing` is true from the first tap of a confirm until its write ends, and disables the sheets'
+/// buttons.
 public struct SmokingMainUiState: Equatable, Sendable {
     public var snapshot: SmokingSnapshot?
+    public var isPremium: Bool
     public var sheet: MainSheet?
     public var writing: Bool
 
-    public init(snapshot: SmokingSnapshot? = nil, sheet: MainSheet? = nil, writing: Bool = false) {
+    public init(
+        snapshot: SmokingSnapshot? = nil,
+        isPremium: Bool = false,
+        sheet: MainSheet? = nil,
+        writing: Bool = false
+    ) {
         self.snapshot = snapshot
+        self.isPremium = isPremium
         self.sheet = sheet
         self.writing = writing
     }
@@ -33,6 +41,11 @@ public enum MainSheet: Equatable, Sendable {
     case slip(units: Int)
     /// REDUCE "Bırakmaya hazırım": picks the instant the quit attempt starts.
     case quitDate
+    /// The savings-goal sheet. `title` and `targetMinor` are the goal being edited, or empty and
+    /// `nil` for a first or a next goal. `editingGoalId` is that goal's id: set, saving updates the
+    /// goal and keeps its progress (contract §8.17); `nil`, saving creates a new goal that counts
+    /// from now.
+    case goal(title: String, targetMinor: Int64?, editingGoalId: String?)
 }
 
 public enum SmokingMainEvent: Equatable, Sendable {
@@ -47,7 +60,12 @@ public enum SmokingMainEvent: Equatable, Sendable {
     case triggerSkipped
     /// The next-stage card: opens the timeline on that stage.
     case stageTapped
+    /// The goal card: the paywall when locked, otherwise the goal sheet.
     case goalTapped
+    /// Save in the goal sheet; `targetMinor` is in the plan's currency.
+    case goalSaved(title: String, targetMinor: Int64)
+    case goalDismissed
+    /// The insights teaser: the paywall when locked, otherwise Trends.
     case insightsTapped
     case historyTapped
     case settingsTapped
@@ -72,6 +90,8 @@ public enum SmokingMainEvent: Equatable, Sendable {
 public enum SmokingMainEffect: Equatable, Sendable {
     /// A refused or failed write; the Route shows the message for the error.
     case showError(SmokingMainError)
+    /// Trends belongs to another feature, so the Route asks the shell to open it.
+    case openTrends
 }
 
 /// Why a write the main screen made was refused, which picks the snackbar's words.

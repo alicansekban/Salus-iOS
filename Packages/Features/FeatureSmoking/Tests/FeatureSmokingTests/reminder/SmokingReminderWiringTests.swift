@@ -9,6 +9,7 @@ import SalusCommon
 import SalusDatabase
 import SalusModel
 import SalusNavigation
+import SalusPremium
 import SalusReminder
 import SalusSmoking
 import SalusTesting
@@ -69,7 +70,9 @@ struct SmokingReminderWiringTests {
             snackbar: SalusSnackbarController(),
             navigator: Navigator(),
             reminderScheduler: scheduler,
-            reminderEnvironment: AuthorizedEnvironment()
+            reminderEnvironment: AuthorizedEnvironment(),
+            premiumRepository: FakePremiumRepository(),
+            paywallController: PaywallController()
         )
         #expect(scheduler.syncs == 0)
 

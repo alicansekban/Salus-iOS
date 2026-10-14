@@ -351,7 +351,9 @@ struct PaywallViewModelTests {
 
     @Test("every feature source gets a headline of its own")
     func everyFeatureSourceGetsAHeadlineOfItsOwn() {
-        let featureSources: [PaywallSource] = [.themes, .trends, .aiSummary, .doctorReport, .backup]
+        let featureSources: [PaywallSource] = [
+            .themes, .trends, .aiSummary, .doctorReport, .backup, .smokingInsights, .smokingGoal
+        ]
         let generic = headlineKey(for: .settings)
 
         let headlines = featureSources.map(headlineKey(for:))

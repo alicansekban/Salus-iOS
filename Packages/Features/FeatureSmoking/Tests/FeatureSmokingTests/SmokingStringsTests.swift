@@ -21,6 +21,7 @@ struct SmokingStringsTests {
         + SmokingNotificationStringTable.samples + SmokingTimelineStringTable.samples
         + SmokingReduceStringTable.samples + SmokingHistoryStringTable.samples
         + SmokingSettingsStringTable.samples + SmokingCravingStringTable.samples
+        + SmokingGoalStringTable.samples
     static let expectedKeys = Set(samples.map(\.key))
 
     /// Setup's overlines: the step counter and the field labels. Stored upper-case in both locales.
@@ -38,14 +39,17 @@ struct SmokingStringsTests {
         // The history and settings screens': the journey card, the four setting groups and the reason field.
         "smoking_history_journey_overline", "smoking_settings_section_habit",
         "smoking_settings_section_notifications", "smoking_settings_section_mode",
-        "smoking_settings_section_data", "smoking_settings_reason_label"
+        "smoking_settings_section_data", "smoking_settings_reason_label",
+        // The premium cards': the goal card, the insights teaser and the goal sheet's two field labels.
+        "smoking_goal_overline", "smoking_insights_overline", "smoking_goal_sheet_name_label",
+        "smoking_goal_sheet_amount_label"
     ]
 
-    @Test("the catalog holds exactly the 305 keys :feature:smoking owns so far")
+    @Test("the catalog holds exactly the 324 keys :feature:smoking owns so far")
     func catalogHoldsExactlyTheKeys() throws {
         // Pinned as a number as well as a set: a row deleted from the table together with its key
         // from the catalog would otherwise agree with itself and pass.
-        #expect(Self.samples.count == 305)
+        #expect(Self.samples.count == 324)
 
         try StringCatalogParity.assertKeys(of: Self.loadCatalog(), are: Self.expectedKeys)
     }
@@ -79,7 +83,8 @@ struct SmokingStringsTests {
             + SmokingStrings.HistoryKey.allCases.map(\.rawValue)
             + SmokingStrings.SettingsKey.allCases.map(\.rawValue)
             + SmokingStrings.CravingKey.allCases.map(\.rawValue)
-        // The four key enums are disjoint: a key two of them claim would collapse in the set below
+            + SmokingStrings.GoalKey.allCases.map(\.rawValue)
+        // The five key enums are disjoint: a key two of them claim would collapse in the set below
         // and hide the overlap, so the list and the set must be the same size.
         #expect(accessorKeys.count == Set(accessorKeys).count)
         #expect(Set(accessorKeys) == catalog.keys)
@@ -124,6 +129,7 @@ struct SmokingStringsTests {
         try #expect(Self.render(catalog, "smoking_setup_quit_today", "tr", "09:30") == "Bugün, 09:30")
         try Self.expectMainScreenSentences(catalog)
         try Self.expectHistoryAndSettingsSentences(catalog)
+        try Self.expectGoalSentences(catalog)
         // `%%` is a literal percent under `String(format:)`, exactly as in Java's `Formatter`.
         try #expect(
             Self.render(catalog, "smoking_setup_limit_suggestion", "tr", 20)

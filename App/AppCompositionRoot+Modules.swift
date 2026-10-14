@@ -315,7 +315,8 @@ extension AppCompositionRoot {
     static func makeScheduledModules(
         infrastructure: Infrastructure,
         reminderScheduler: ReminderSchedulerRelay,
-        reminderBase: ReminderEnvironmentGraph
+        reminderBase: ReminderEnvironmentGraph,
+        premium: PremiumGraph
     ) -> ScheduledModules {
         let database = infrastructure.database
         let clock = infrastructure.clock
@@ -367,7 +368,11 @@ extension AppCompositionRoot {
             reminderScheduler: reminderScheduler,
             // The settings switch asks the same environment Reminder Health reads, so the two
             // surfaces can never disagree about the device.
-            reminderEnvironment: reminderBase.environment
+            reminderEnvironment: reminderBase.environment,
+            // The goal card and the insights teaser read the entitlement and meet the paywall:
+            // the same two singletons every other premium-gated feature shares.
+            premiumRepository: premium.premiumRepository,
+            paywallController: premium.paywallController
         )
         return ScheduledModules(appointments: appointments, medications: medications, cycle: cycle, smoking: smoking)
     }

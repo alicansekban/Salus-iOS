@@ -19,6 +19,7 @@ import Foundation
 import Observation
 import SalusCommon
 import SalusNavigation
+import SalusPremium
 import SalusSmoking
 import SalusUI
 
@@ -44,6 +45,10 @@ public final class SmokingMainViewModel {
     private let deleteEvent: DeleteEvent
     private let logNoneToday: LogNoneToday
     private let switchMode: SwitchMode
+    private let saveSavingsGoal: SaveSavingsGoal
+    private let markGoalAchieved: MarkGoalAchieved
+    private let updateSavingsGoal: UpdateSavingsGoal
+    private let paywallController: PaywallController
     private let snackbar: SalusSnackbarController
     private let navigator: Navigator
 
@@ -52,9 +57,16 @@ public final class SmokingMainViewModel {
     /// names the event.
     private var lastSlip: LoggedSlip?
 
-    /// The snapshot observation, held so `deinit` can cancel it — a `CancellationBox` because a
-    /// `@MainActor` class cannot read its own stored properties from `deinit` in Swift 6.0.
+    /// The goal a stamp is already on its way for. Snapshots arrive every minute and on every
+    /// write, and the stamp's own write has not landed in the next one yet, so without this a
+    /// re-emission would start a second stamp for the same goal.
+    private var stampingGoalId: String?
+
+    /// The snapshot and entitlement observations, held so `deinit` can cancel them — a
+    /// `CancellationBox` each because a `@MainActor` class cannot read its own stored properties
+    /// from `deinit` in Swift 6.0.
     private let observation = CancellationBox()
+    private let entitlementObservation = CancellationBox()
 
     public init(
         repository: any SmokingRepository,
@@ -65,6 +77,11 @@ public final class SmokingMainViewModel {
         deleteEvent: DeleteEvent,
         logNoneToday: LogNoneToday,
         switchMode: SwitchMode,
+        saveSavingsGoal: SaveSavingsGoal,
+        markGoalAchieved: MarkGoalAchieved,
+        updateSavingsGoal: UpdateSavingsGoal,
+        premiumRepository: any PremiumRepository,
+        paywallController: PaywallController,
         snackbar: SalusSnackbarController,
         navigator: Navigator
     ) {
@@ -75,6 +92,10 @@ public final class SmokingMainViewModel {
         self.deleteEvent = deleteEvent
         self.logNoneToday = logNoneToday
         self.switchMode = switchMode
+        self.saveSavingsGoal = saveSavingsGoal
+        self.markGoalAchieved = markGoalAchieved
+        self.updateSavingsGoal = updateSavingsGoal
+        self.paywallController = paywallController
         self.snackbar = snackbar
         self.navigator = navigator
 
@@ -83,12 +104,21 @@ public final class SmokingMainViewModel {
             for await snapshot in snapshots {
                 guard let self, !Task.isCancelled else { return }
                 state.snapshot = snapshot
+                stampGoalIfReached()
+            }
+        })
+        let statuses = premiumRepository.status
+        entitlementObservation.replace(with: Task { [weak self] in
+            for await status in statuses {
+                guard let self, !Task.isCancelled else { return }
+                entitlementChanged(isPremium: status.isEntitled)
             }
         })
     }
 
     deinit {
         observation.cancel()
+        entitlementObservation.cancel()
     }
 
     /// Drains the queued effects in order, leaving the queue empty.
@@ -133,10 +163,8 @@ public final class SmokingMainViewModel {
         case .settingsTapped:
             navigator.navigate(SmokingSettingsKey())
 
-        // The goal card and the insights card are filled by the premium task; the Route opens
-        // Trends itself, since that screen belongs to another feature.
-        case .goalTapped, .insightsTapped:
-            break
+        case .goalDismissed, .goalSaved, .goalTapped, .insightsTapped:
+            onPremiumEvent(event)
 
         case .noneToday, .plusOne, .quitDateConfirmed, .quitDateDismissed, .readyToQuit, .timelinePreviewTapped,
              .undoPlusOne:
@@ -338,4 +366,108 @@ public final class SmokingMainViewModel {
 
     private static let cravingSource = "main"
     private static let defaultSlipUnits = 1
+}
+
+// MARK: - Premium: savings goal and insights
+
+/// An extension in this file, not part of the class body: it reaches the same private state, and the
+/// class stays inside SwiftLint's `type_body_length`.
+extension SmokingMainViewModel {
+    /// The goal card's and the teaser's half of ``onEvent(_:)``.
+    private func onPremiumEvent(_ event: SmokingMainEvent) {
+        switch event {
+        case .goalTapped:
+            goalTapped()
+
+        case let .goalSaved(title, targetMinor):
+            saveGoal(title: title, targetMinor: targetMinor)
+
+        case .goalDismissed:
+            if case .goal = state.sheet, !state.writing {
+                state.sheet = nil
+            }
+
+        case .insightsTapped:
+            insightsTapped()
+
+        // The cases `onEvent` never sends here.
+        default:
+            break
+        }
+    }
+
+    /// A goal sheet over a card that has just re-locked would save a goal nobody can see; closing
+    /// it also keeps the sheet from outliving the entitlement. A write in flight keeps its sheet,
+    /// as every other dismissal does.
+    private func entitlementChanged(isPremium: Bool) {
+        state.isPremium = isPremium
+        if !isPremium, case .goal = state.sheet, !state.writing {
+            state.sheet = nil
+        }
+        stampGoalIfReached()
+    }
+
+    private func goalTapped() {
+        guard state.isPremium else {
+            paywallController.show(.smokingGoal)
+            return
+        }
+        guard state.sheet == nil, state.snapshot?.hasPlan == true else { return }
+        // Only a goal still being saved for is offered back for editing; a reached one starts blank.
+        let active = state.snapshot?.goalProgress.flatMap { $0.reached ? nil : $0.goal }
+        state.sheet = .goal(title: active?.title ?? "", targetMinor: active?.targetMinor, editingGoalId: active?.id)
+    }
+
+    /// A refusal (the use case rejects a blank title or a non-positive target; a store failure)
+    /// leaves the sheet open as it was and says so. Editing a goal still being saved for keeps its
+    /// progress (contract §8.17, which supersedes plan ruling D4's restart); only a first goal or
+    /// one after a reached goal is created new and counts from now.
+    private func saveGoal(title: String, targetMinor: Int64) {
+        guard !state.writing, case let .goal(_, _, editingGoalId) = state.sheet, state.isPremium else { return }
+        state.writing = true
+        Task { [weak self, saveSavingsGoal, updateSavingsGoal] in
+            do {
+                if let editingGoalId {
+                    try await updateSavingsGoal(goalId: editingGoalId, title: title, targetMinor: targetMinor)
+                } else {
+                    try await saveSavingsGoal(title: title, targetMinor: targetMinor)
+                }
+                self?.goalWritten()
+            } catch {
+                self?.failed()
+            }
+        }
+    }
+
+    private func goalWritten() {
+        state.writing = false
+        state.sheet = nil
+    }
+
+    /// The teaser opens Trends for a premium account. That screen belongs to another feature, so
+    /// the Route asks the shell for it on the effect; a free account meets the paywall instead.
+    private func insightsTapped() {
+        if state.isPremium {
+            pendingEffects.append(.openTrends)
+        } else {
+            paywallController.show(.smokingInsights)
+        }
+    }
+
+    /// Stamps a goal that has reached its target, once. Only while the card is unlocked: a lapsed
+    /// account's goal is kept as it is and is stamped when the card comes back. A failed stamp is
+    /// not reported (nobody asked for it) and is simply tried again on the next emission.
+    private func stampGoalIfReached() {
+        guard let progress = state.snapshot?.goalProgress else { return }
+        let goal = progress.goal
+        guard state.isPremium, progress.reached, goal.achievedAtMs == nil, stampingGoalId != goal.id else { return }
+        stampingGoalId = goal.id
+        Task { [weak self, markGoalAchieved] in
+            do {
+                try await markGoalAchieved(goalId: goal.id)
+            } catch {
+                self?.stampingGoalId = nil
+            }
+        }
+    }
 }

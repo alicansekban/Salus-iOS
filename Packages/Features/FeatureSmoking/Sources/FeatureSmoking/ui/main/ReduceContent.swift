@@ -2,9 +2,8 @@
 // ReduceContent.kt` (branch `feature/m17-smoking-cessation`).
 //
 // The REDUCE body of the main screen (design screen `04`): today's ring with the large "+1", the
-// last seven days, the week in units and money, the greyed timeline preview and "Bırakmaya hazırım".
-// A scrolling parent supplies the padding; this is only the column of cards. The savings-goal and
-// insights cards sit after the weekly card; plan Task 15 adds them, with the slots they need.
+// last seven days, the week in units and money, the two premium cards, the greyed timeline preview
+// and "Bırakmaya hazırım". A scrolling parent supplies the padding; this is only the column of cards.
 //
 // Over the limit is information, not an alarm (review R1/R2): the ring stays in the accent, the
 // excess is a neutral lap and a neutral "+n" chip, and no part of this file names a red or a pink.
@@ -45,6 +44,8 @@ private enum ReduceDefaults {
 
 struct ReduceContent: View {
     let reduce: ReduceSnapshot
+    /// What the premium cards read: the entitlement and the active goal.
+    let state: SmokingMainUiState
     let writing: Bool
     let onEvent: (SmokingMainEvent) -> Void
 
@@ -54,6 +55,7 @@ struct ReduceContent: View {
             ReduceHero(view: view, enabled: !writing, onEvent: onEvent)
             WeekChartCard(view: view)
             WeekSummaryCard(view: view, currencyCode: reduce.plan.currencyCode)
+            PremiumCards(state: state, currencyCode: reduce.plan.currencyCode, onEvent: onEvent)
             TimelinePreviewCard(
                 stageIds: reduce.stagesPreview.prefix(ReduceDefaults.timelinePreviewStages).map(\.stageId),
                 onTap: { onEvent(.timelinePreviewTapped) }

@@ -22,6 +22,7 @@ let package = Package(
         .package(path: "../../SalusCommon"),
         .package(path: "../../SalusModel"),
         .package(path: "../../SalusNavigation"),
+        .package(path: "../../SalusPremium"),
         .package(path: "../../SalusReminder"),
         .package(path: "../../SalusSmoking"),
         .package(path: "../../SalusTesting")
@@ -35,6 +36,7 @@ let package = Package(
                 .product(name: "SalusCommon", package: "SalusCommon"),
                 .product(name: "SalusModel", package: "SalusModel"),
                 .product(name: "SalusNavigation", package: "SalusNavigation"),
+                .product(name: "SalusPremium", package: "SalusPremium"),
                 .product(name: "SalusReminder", package: "SalusReminder"),
                 .product(name: "SalusSmoking", package: "SalusSmoking")
             ],

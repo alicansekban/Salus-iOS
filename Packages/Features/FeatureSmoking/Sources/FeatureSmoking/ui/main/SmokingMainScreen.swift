@@ -35,9 +35,9 @@ struct SmokingMainScreen: View {
                 VStack(spacing: SalusSpacing.md) {
                     switch state.snapshot {
                     case let .quit(quit):
-                        QuitContent(quit: quit, counterClock: counterClock, onEvent: onEvent)
+                        QuitContent(quit: quit, state: state, counterClock: counterClock, onEvent: onEvent)
                     case let .reduce(reduce):
-                        ReduceContent(reduce: reduce, writing: state.writing, onEvent: onEvent)
+                        ReduceContent(reduce: reduce, state: state, writing: state.writing, onEvent: onEvent)
                     case nil, .notSetUp:
                         EmptyView()
                     }
@@ -74,11 +74,17 @@ struct SmokingMainScreen: View {
                 )
             }
         }
-        .mainSheets(state.sheet, writing: state.writing, clock: clock, onEvent: onEvent)
+        .mainSheets(
+            state.sheet,
+            writing: state.writing,
+            currencyCode: state.snapshot?.currencyCode,
+            clock: clock,
+            onEvent: onEvent
+        )
         // LAST in the chain, and `#if os(iOS)` because the modifier is iOS-only API while every
         // feature package also builds for the macOS test host.
         #if os(iOS)
-            .navigationBarTitleDisplayMode(.inline)
+        .navigationBarTitleDisplayMode(.inline)
         #endif
     }
 }

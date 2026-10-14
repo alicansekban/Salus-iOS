@@ -42,6 +42,8 @@ public enum PaywallStrings {
     public static var titleAiSummary: String { localized(.titleAiSummary) }
     public static var titleDoctorReport: String { localized(.titleDoctorReport) }
     public static var titleBackup: String { localized(.titleBackup) }
+    public static var titleSmokingInsights: String { localized(.titleSmokingInsights) }
+    public static var titleSmokingGoal: String { localized(.titleSmokingGoal) }
     public static var subtitle: String { localized(.subtitle) }
 
     // MARK: - Feature bullets
@@ -101,6 +103,8 @@ public enum PaywallStrings {
         case .aiSummary: Key.titleAiSummary.rawValue
         case .doctorReport: Key.titleDoctorReport.rawValue
         case .backup: Key.titleBackup.rawValue
+        case .smokingInsights: Key.titleSmokingInsights.rawValue
+        case .smokingGoal: Key.titleSmokingGoal.rawValue
         }
     }
 
@@ -126,6 +130,8 @@ public enum PaywallStrings {
         case titleAiSummary = "paywall_title_ai_summary"
         case titleDoctorReport = "paywall_title_doctor_report"
         case titleBackup = "paywall_title_backup"
+        case titleSmokingInsights = "paywall_title_smoking_insights"
+        case titleSmokingGoal = "paywall_title_smoking_goal"
         case subtitle = "paywall_subtitle"
         case featureAiSummary = "paywall_feature_ai_summary"
         case featureDoctorReport = "paywall_feature_doctor_report"
