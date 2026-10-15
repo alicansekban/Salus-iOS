@@ -15,6 +15,7 @@
 
 import SalusModel
 import SalusNavigation
+import SalusTesting
 import Testing
 
 @testable import FeatureCycle

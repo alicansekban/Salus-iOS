@@ -2,6 +2,7 @@
 // main-actor yields does not (the yields can all be spent before a loaded pool thread gets a turn).
 
 import Foundation
+import SalusTesting
 import Testing
 
 @MainActor

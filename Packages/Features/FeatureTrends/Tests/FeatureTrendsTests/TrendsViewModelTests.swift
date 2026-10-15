@@ -15,6 +15,7 @@ import Foundation
 import Observation
 import SalusModel
 import SalusPremium
+import SalusTesting
 import Testing
 
 @testable import FeatureTrends

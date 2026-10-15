@@ -14,6 +14,7 @@
 // table (and under the `type_body_length` gate).
 
 import SalusPremium
+import SalusTesting
 import Testing
 
 @testable import FeatureSettings

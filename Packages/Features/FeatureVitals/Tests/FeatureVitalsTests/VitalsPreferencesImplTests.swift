@@ -14,6 +14,7 @@
 import Foundation
 import SalusModel
 import SalusSettings
+import SalusTesting
 import Testing
 
 @testable import FeatureVitals

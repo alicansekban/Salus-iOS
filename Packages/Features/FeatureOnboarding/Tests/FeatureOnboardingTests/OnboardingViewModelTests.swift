@@ -6,8 +6,8 @@
 // the house pattern the M7/M8 ViewModel tests already set:
 //
 //   1. `MainDispatcherRule` + `runTest`'s virtual scheduler → the cooperative pool. Each
-//      `advanceUntilIdle()` becomes a `waitUntil` that yields the main actor until the named
-//      condition holds (`FeatureSettings/Tests/.../WaitUntil.swift`).
+//      `advanceUntilIdle()` becomes a `waitUntil` that polls until the named condition
+//      holds (`SalusTesting/WaitUntil.swift`).
 //   2. `repository.profiles.value!!` → `repository.profile`, the lock-guarded read the fake exposes.
 //   3. `Triple(72.4, now.toEpochMilliseconds(), "Europe/Istanbul")` → a named ``RecordedWeight``.
 //   4. Ruling 7's ordering — profile write, then weight, then the completion flag — is asserted

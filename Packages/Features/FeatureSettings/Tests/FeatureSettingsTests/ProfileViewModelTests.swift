@@ -9,6 +9,7 @@
 
 import SalusModel
 import SalusProfile
+import SalusTesting
 import Testing
 
 @testable import FeatureSettings

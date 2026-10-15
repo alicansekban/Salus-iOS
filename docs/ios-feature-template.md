@@ -404,7 +404,7 @@ inside its root view, or a pushed destination would not see it.
 | What | How |
 | --- | --- |
 | UseCase | Pure Swift Testing; `Fake<X>Repository` in the test target (`Tests/…/FakeVitalsRepository.swift`) |
-| ViewModel | `@MainActor` suite + fake repo + `FixedSalusClock` + `FakeNavigator`; there is no Turbine — poll the `@Observable` `state` with the local `waitUntil` helper (`Tests/…/WaitUntil.swift`) |
+| ViewModel | `@MainActor` suite + fake repo + `FixedSalusClock` + `FakeNavigator`; there is no Turbine — poll the `@Observable` `state` with `SalusTesting`'s shared `waitUntil` (`Packages/SalusTesting/Sources/SalusTesting/WaitUntil.swift`, a clock-deadline poll) — never a per-feature copy |
 | Mapper | Input/output equality, pure test (`WeightEntryMapperTests.swift`) |
 | DAO | Lives in `SalusDatabase`, not in the feature: add feature-specific queries and their tests there (`VitalsDaoTests.swift`) |
 | Repository impl | In-memory `SalusDatabase.inMemory()` round trip (`VitalsRepositoryImplTests.swift`) |

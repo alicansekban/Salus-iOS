@@ -51,8 +51,8 @@ struct AiUsageSummaryAvailabilityTests {
     /// `.bufferingNewest(1)` means a duplicate `true` yielded by `recordCall` is overwritten by the
     /// `false` that follows it, so a consumer that only wakes at the end reads `[true, false]`
     /// whether the guard is there or not. Here a task drains every element as it arrives and
-    /// `settle()` (`Settle.swift`) — a bounded run of the cooperative pool, `WaitUntil.swift`'s
-    /// mechanism without its condition — gives it the turn it needs *between* the two writes. Verified RED by
+    /// `settle()` (`Settle.swift`) — a bounded run of the cooperative pool with no condition to
+    /// wait for — gives it the turn it needs *between* the two writes. Verified RED by
     /// deleting `guard available != lastSent`: the middle expectation then reads `[true, true]`.
     @Test("a usage change that leaves the credit alone emits nothing", .timeLimit(.minutes(1)))
     func aUsageChangeThatLeavesTheCreditAloneEmitsNothing() async throws {

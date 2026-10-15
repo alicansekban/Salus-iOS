@@ -8,12 +8,9 @@
 // sleep between checks hands the pool real time, and the deadline turns a broken expectation into a
 // recorded failure instead of a hung test run.
 //
-// **No longer byte-for-byte the same as `FeatureCycleTests/WaitUntil.swift`** (the other features
-// still carry the yield-count form). A test target cannot import another package's test target, and
-// the feature template's "features never depend on each other" rule makes a shared home a
-// `SalusTesting` change rather than a feature one, so each feature that tests an `@Observable`
-// ViewModel carries its own copy (iOS-M6 divergence (j), restated for M7 as divergence (j)). This
-// one was changed for the plus-one cases in `HomeSmokingViewModelTests`.
+// It lives here rather than in each feature's test target because a test target cannot import
+// another package's test target, and features never depend on each other; every feature test
+// target already depends on `SalusTesting`.
 
 import Testing
 
@@ -24,7 +21,7 @@ import Testing
 ///   - timeout: wall-clock time to spend before giving up. Generous, because a healthy run returns
 ///     within a few milliseconds and only a broken expectation pays it.
 @MainActor
-func waitUntil(
+public func waitUntil(
     _ what: String,
     timeout: Duration = .seconds(5),
     sourceLocation: SourceLocation = #_sourceLocation,

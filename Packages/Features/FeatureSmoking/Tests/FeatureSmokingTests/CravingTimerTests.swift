@@ -11,6 +11,7 @@
 
 import Foundation
 import SalusSmoking
+import SalusTesting
 import Testing
 
 @testable import FeatureSmoking

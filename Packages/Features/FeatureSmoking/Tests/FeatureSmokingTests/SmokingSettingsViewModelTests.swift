@@ -8,6 +8,7 @@
 import Foundation
 import SalusNavigation
 import SalusSmoking
+import SalusTesting
 import Testing
 
 @testable import FeatureSmoking

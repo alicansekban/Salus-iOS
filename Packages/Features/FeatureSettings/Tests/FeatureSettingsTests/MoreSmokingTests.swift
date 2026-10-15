@@ -7,6 +7,7 @@
 import Foundation
 import SalusPremium
 import SalusSmoking
+import SalusTesting
 import Testing
 
 @testable import FeatureSettings

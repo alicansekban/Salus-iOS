@@ -8,6 +8,7 @@
 // behaviour so the entitlement assertions read the same.
 
 import SalusPremium
+import SalusTesting
 import Testing
 
 @testable import FeaturePaywall

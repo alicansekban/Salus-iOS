@@ -1,4 +1,4 @@
-// The other half of `WaitUntil.swift`, and this target's single copy of it.
+// The other half of `SalusTesting`'s `waitUntil`, and this target's single copy of it.
 //
 // `waitUntil(_:)` proves something *arrived*; `settle()` is what a case needs to prove something
 // did **not**. There is no state to wait for in that direction, only a point after which "not yet"

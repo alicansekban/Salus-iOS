@@ -12,6 +12,7 @@
 import Foundation
 import SalusModel
 import SalusPremium
+import SalusTesting
 import Testing
 
 @testable import FeatureSettings
