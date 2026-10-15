@@ -19,6 +19,7 @@ git. Written 2026-10-14; update it at the end of a milestone and, between tasks,
   - manual QA `docs/qa/m17-manual-qa.md` — walk it together with Android's sheet (runbook §4.4);
   - delta spec `docs/superpowers/specs/2026-10-14-ios-m17-smoking-design.md`; plan `docs/superpowers/plans/2026-10-14-ios-m17-smoking.md`.
   - **Checkpoint:** coordinator Claude Code (Opus 5.5 controller), checkout `salus-ios`, branch `m17-smoking` HEAD `8679d00`; implementers Sonnet 5.5, reviewers Opus 5.5 / Sonnet 5.5 as each reported. Tasks 1–23 complete and reviewed, whole-branch review and final fix wave approved, `gates.sh all` green. **Resume:** the owner's QA; push only on the owner's word. Android folds parity rows D-M17-i-7 and i-8.
+- **Fix: Home's reminder readiness card on every cold start** — `SystemReminderEnvironment` sampled `UIApplication.backgroundRefreshStatus` once in `App.init`, before launch finished, so Home's cold-start read reported "background refresh off" while Reminder Health (opened later) showed everything granted. The status is now read live on the main actor per question (`backgroundRefreshAvailable()` is `async`); the foreground re-sample is gone. In `main` for 1.1.0; on-device confirmation is the owner's.
 - **Agent harness** — done and fast-forwarded into `main` (plan `salus-android/docs/superpowers/plans/2026-10-14-agent-harness.md`, status `docs/superpowers/plans/STATUS-agent-harness.md`).
 
 ## Open items
