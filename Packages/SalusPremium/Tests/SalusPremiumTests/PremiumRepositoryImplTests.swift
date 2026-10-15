@@ -72,20 +72,26 @@ struct PremiumRepositoryImplTests {
     }
 
     /// The twin of Android's `runCurrent()` / `advanceUntilIdle()`: the repository's collection
-    /// `Task` applies pushed snapshots off-thread, so a test must hand the cooperative pool a few
-    /// yields before asserting the derived `currentStatus`.
+    /// `Task` applies pushed snapshots off-thread, so a test must hand the cooperative pool real time
+    /// before asserting the derived `currentStatus`. The same clock-deadline form as `SalusTesting`'s
+    /// shared `waitUntil` (a fixed count of main-actor yields can run out before a busy pool gives
+    /// that `Task` a turn); kept local because this package's tests do not otherwise need
+    /// `SalusTesting`.
     private func waitUntil(
         _ what: String,
-        limit: Int = 1000,
+        timeout: Duration = .seconds(5),
         sourceLocation: SourceLocation = #_sourceLocation,
         _ condition: () -> Bool
     ) async {
-        for _ in 0 ..< limit {
+        let deadline = ContinuousClock.now + timeout
+        while ContinuousClock.now < deadline {
             if condition() {
                 return
             }
-            await Task.yield()
+            try? await Task.sleep(for: .milliseconds(1))
         }
-        Issue.record("timed out waiting for \(what)", sourceLocation: sourceLocation)
+        if !condition() {
+            Issue.record("timed out waiting for \(what)", sourceLocation: sourceLocation)
+        }
     }
 }

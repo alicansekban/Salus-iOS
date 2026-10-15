@@ -24,8 +24,7 @@ git. Written 2026-10-14; update it at the end of a milestone and, between tasks,
 ## Open items
 
 - **App Store release 1.0.1:** the review verdict is not in the repository. The submission plan selects "Release manually" so both stores can go live together (`docs/appstore/store-listing.md`, "App Store Connect order", step 8); Android's Play review is the other half.
-- **Next release backlog:** align the versions across the stores (iOS `m17-smoking` is `1.1.0 (6)`, `main` `1.0.1`; Android `1.0.0`). The 1.1.0 What's New text in `docs/appstore/store-listing.md` is the owner's to write.
-- **Follow-up after M17:** one shared deadline-based `waitUntil` test helper in `SalusTesting` (the eleven feature copies drifted in M17).
+- **Next release backlog:** align the versions across the stores (iOS `main` is `1.1.0 (6)` since M17, the store has `1.0.1`; Android `1.0.0`). The 1.1.0 What's New text in `docs/appstore/store-listing.md` is the owner's to write.
 - **Encrypted backup** (`../salus-android/docs/parity-ledger.md` A2 / O-1): the format contract is still a draft, so iOS-M12 (`SalusBackup`) stays parked, no date.
 
 ## Gates baseline
