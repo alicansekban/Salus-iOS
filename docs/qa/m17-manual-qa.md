@@ -465,6 +465,12 @@ the same notification again: no second stack of screens.
 another stage while the first timeline is showing: the highlight changes and one back press lands on the main
 screen.
 
+11.3a ☐ Back from a stage notification's timeline, then a second stage notification. Tap a delivered stage
+notification (More opens on the main screen with the timeline over it), press Back once so only the main
+screen is showing, then tap a notification for another stage. **Expected:** only the timeline is pushed, over
+the main screen that is already there, highlighting the new stage; one Back press lands on that main screen and
+a second Back leaves smoking for the More list. There is never a second main screen under the timeline.
+
 11.4 ☐ Quiet hours: arrange a milestone that falls between 22:00 and 08:00 (quit at 10:00: the 12-hour stage).
 **Expected:** nothing before 08:00 the next morning; the notification appears at 08:00.
 
@@ -583,15 +589,15 @@ colour, nothing is clipped, and **nothing is red or pink**.
 | Trends "SİGARA" section | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
 | Doctor report preview with "Tütün kullanımı" | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ | ☐ |
 
-14.1b ☐ Live repaint. Open Main and, on top of it, a stage sheet from the timeline; then change mode and palette
-(Daha Fazla → Görünüm & Tema, or the system appearance from Control Centre) and return. **Expected:** Main, the
-timeline and the open stage sheet repaint in the new accent without a relaunch; no stale ground or amber from
-the old palette remains behind the sheet.
-
 14.1a ☐ The SF Symbols were picked by name (`nosign`, `banknote`, `shield`, `hourglass`,
 `figure.mind.and.body`, `cup.and.saucer`, `bolt`, `wineglass`, `fork.knife`, `person.3`, `sparkles`,
 `clock.arrow.circlepath`, `gearshape`). **Expected:** every icon renders; a wrong name draws nothing and no
 test sees it.
+
+14.1b ☐ Live repaint. Open Main and, on top of it, a stage sheet from the timeline; then change mode and palette
+(Daha Fazla → Görünüm & Tema, or the system appearance from Control Centre) and return. **Expected:** Main, the
+timeline and the open stage sheet repaint in the new accent without a relaunch; no stale ground or amber from
+the old palette remains behind the sheet.
 
 ### 14.2 Dynamic Type — xxxLarge and the accessibility sizes
 
@@ -657,7 +663,7 @@ Note what you see; each is a candidate for the fix wave, not a pass or fail by i
   suspended or killed mid-sync.
 - **Sheet detents and heights:** the slip and trigger sheet, the quit-date sheet, the stage sheet, the goal
   sheet and the four settings sheets size to their content; check each at the default text size, at the
-  largest accessibility size, in landscape and on the smallest device you have (the content must scroll with
+  largest accessibility size and on the smallest device you have (the content must scroll with
   its action reachable), and that the sheet's ground reaches both screen edges.
 - **Keyboard:** the goal sheet (8.2) and the price sheet (10.2) may let the keyboard cover "Kaydet". Note the
   device and text size if so.
