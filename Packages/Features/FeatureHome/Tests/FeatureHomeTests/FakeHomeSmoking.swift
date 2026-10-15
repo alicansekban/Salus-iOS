@@ -28,9 +28,22 @@ final class FakeHomeSmoking: HomeSmoking, @unchecked Sendable {
     /// arrive while the first write is still in flight.
     private var logGates: [CheckedContinuation<Void, Never>] = []
     private var gateArmed = false
+    private var enteredCalls = 0
+    private let completionSignal: AsyncStream<Void>.Continuation
+
+    /// One element per log call that finished writing, after its row is in ``logged``. A test
+    /// awaits this instead of polling a count, so it does not depend on how many scheduler turns the
+    /// write took.
+    let logCompletions: AsyncStream<Void>
 
     init(_ snapshot: SmokingSnapshot = .notSetUp) {
         self.snapshot = snapshot
+        (logCompletions, completionSignal) = AsyncStream.makeStream(of: Void.self)
+    }
+
+    /// How many log calls reached the fake, finished or still held at the gate.
+    var logCallsEntered: Int {
+        lock.withLock { enteredCalls }
     }
 
     /// Every instant a "+1" was written at, in order.
@@ -95,6 +108,7 @@ final class FakeHomeSmoking: HomeSmoking, @unchecked Sendable {
 
     func logOneSmoked(atMs: Int64) async throws -> String {
         let (fail, hold) = lock.withLock { () -> (Bool, Bool) in
+            enteredCalls += 1
             defer { failNextLog = false }
             return (failNextLog, gateArmed)
         }
@@ -106,10 +120,12 @@ final class FakeHomeSmoking: HomeSmoking, @unchecked Sendable {
         if fail {
             throw FakeSmokingWriteFailure()
         }
-        return lock.withLock {
+        let id = lock.withLock {
             loggedAtMs.append(atMs)
             return "evt-\(loggedAtMs.count)"
         }
+        completionSignal.yield()
+        return id
     }
 
     func deleteEvent(eventId: String) async throws {

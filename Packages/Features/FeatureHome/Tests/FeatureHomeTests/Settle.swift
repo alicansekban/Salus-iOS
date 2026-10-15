@@ -6,15 +6,14 @@
 // to finish and then returns. Turbine spells the same step `expectNoEvents()`; Kotlin's ViewModel
 // tests get it from `runTest`'s virtual scheduler, which Swift Testing has no equivalent of.
 //
-// Like `waitUntil`, it waits on the pool and never on wall-clock time: `Task.yield()` hands the
-// executor to whatever is enqueued and comes straight back, so a healthy run costs the two or
-// three hops it actually needs and the bound is only there to keep a broken expectation bounded.
+// Unlike `waitUntil`, it spends no wall-clock time: `Task.yield()` hands the executor to whatever
+// is enqueued and comes straight back. So it is only ever the LAST step of a negative check, after
+// a positive signal (a `waitUntil`, a completion stream) has proved the work it guards has started
+// or finished; never the only thing standing between a write and its assertion.
 //
 // **One file, not one per suite.** Three suites here grew a private `settle()` of their own
 // (`AiUsageSummaryAvailabilityTests`, `HomeReadinessTests`), with different turn counts and the
-// same body; they all call this one now. It is not folded into `WaitUntil.swift` because that file
-// is deliberately byte-for-byte identical to `FeatureCycleTests/WaitUntil.swift` — a claim its own
-// header makes — and appending to it would quietly break the copy.
+// same body; they all call this one now.
 
 /// Hands the cooperative pool enough turns for everything already runnable to finish.
 ///

@@ -208,15 +208,21 @@ struct HomeSmokingViewModelTests {
         let viewModel = viewModel()
         await settled(viewModel, card: .reduce(today: 6, limit: 10, overflow: 0))
         smoking.holdLogs()
+        var completions = smoking.logCompletions.makeAsyncIterator()
 
         viewModel.onEvent(.smokingPlusOne)
         viewModel.onEvent(.smokingPlusOne)
+        // The first write is at the gate; whatever a missing guard would have started has had its
+        // turns too before the gate opens.
+        await waitUntil("the first write to reach the store") { smoking.logCallsEntered >= 1 }
         await settle()
         smoking.releaseLogs()
+        await completions.next()
         await waitUntil("the snackbar") { snackbar.current != nil }
         await settle()
 
         #expect(smoking.logged.count == 1)
+        #expect(smoking.logCallsEntered == 1)
     }
 
     @Test("a tap after the first write finished writes again")
@@ -224,11 +230,16 @@ struct HomeSmokingViewModelTests {
         smoking.set(HomeSmokingFixture.reduce(today: 6, limit: 10))
         let viewModel = viewModel()
         await settled(viewModel, card: .reduce(today: 6, limit: 10, overflow: 0))
+        var completions = smoking.logCompletions.makeAsyncIterator()
 
         viewModel.onEvent(.smokingPlusOne)
-        await waitUntil("the first write") { smoking.logged.count == 1 }
-        await settle()
+        await completions.next()
+        // The snackbar is shown in the same main-actor step that clears the in-flight flag, so once
+        // it is up a second tap is no longer dropped.
+        await waitUntil("the first write to finish") { snackbar.current != nil }
         viewModel.onEvent(.smokingPlusOne)
+        // Bounded by the helper's deadline: if the tap were wrongly dropped nothing would ever
+        // complete, and an unbounded `next()` would hang instead of failing.
         await waitUntil("the second write") { smoking.logged.count == 2 }
     }
 
