@@ -9,16 +9,6 @@ struct PushedAppointmentDetail: Equatable {
     let depth: Int
 }
 
-/// What sits on top of More's stack from the smoking screens: the main screen (`stageId == nil`) or
-/// the timeline highlighting `stageId` over it, and the depth the stack had with it on top.
-///
-/// Seeded by a reminder tap and by More pushing `SmokingKey` itself; `pushSmoking` compares both
-/// fields, because the same depth with another stage is a different highlight, not a duplicate.
-struct PushedSmokingScreens: Equatable {
-    let stageId: String?
-    let depth: Int
-}
-
 #Preview("Light") {
     RootView()
         .environment(AppCompositionRoot())

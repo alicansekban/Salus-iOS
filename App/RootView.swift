@@ -99,7 +99,7 @@ struct RootView: View {
     /// or the main screen More opened itself — the smoking half of the same "is this still on top?"
     /// question. Stage and depth both, because a second stage-notification tap is a different
     /// highlight, not a duplicate.
-    @State private var reminderPushedSmoking: PushedSmokingScreens?
+    @State private var reminderPushedSmoking: SmokingPushedScreens?
 
     /// `Theme.kt:99-104`. The premium palette is resolved from entitlement via
     /// `effectivePremiumTheme` — a free user draws `.classic`, a lapsed selection survives.
@@ -361,28 +361,25 @@ struct RootView: View {
     /// Brings the smoking screens a milestone notification names to the top of More's stack, and
     /// nothing more than that: the main screen if it is not already there, the timeline over it
     /// when the notification announced a stage. A second tap for another stage replaces the older
-    /// highlight instead of stacking a second timeline, and a tap for what is already on top is a
-    /// no-op — the twin of `pushCycleCalendar`'s guard, with the stage as payload.
+    /// highlight instead of stacking a second timeline, a tap for what is already on top is a
+    /// no-op, and after Back from the timeline only the timeline goes over the main screen that is
+    /// still there. The decision is `SmokingMilestoneRoute`'s; this applies it.
     private func pushSmoking(stageId: String?) {
-        let current = backStacks.path(for: .more).count
-        let known = reminderPushedSmoking.flatMap { $0.depth == current ? $0 : nil }
-        if let known, known.stageId == stageId {
-            return
-        }
-        var depth = current
-        if known?.stageId != nil {
+        let route = SmokingMilestoneRoute.make(
+            currentDepth: backStacks.path(for: .more).count,
+            memo: reminderPushedSmoking,
+            stageId: stageId
+        )
+        for _ in 0 ..< route.pops {
             backStacks.pop()
-            depth -= 1
         }
-        if known == nil {
+        if route.pushesMain {
             backStacks.push(AnyNavKey(SmokingKey()))
-            depth += 1
         }
-        if let stageId {
-            backStacks.push(AnyNavKey(SmokingTimelineKey(highlightStageId: stageId)))
-            depth += 1
+        if let timelineStageId = route.timelineStageId {
+            backStacks.push(AnyNavKey(SmokingTimelineKey(highlightStageId: timelineStageId)))
         }
-        reminderPushedSmoking = PushedSmokingScreens(stageId: stageId, depth: depth)
+        reminderPushedSmoking = route.memo
     }
 
     /// Pushes the appointment's detail, unless that same detail is what the last tap already left on
@@ -463,7 +460,7 @@ struct RootView: View {
             // other key clears it.
             if case let .navigate(key) = command, backStacks.selection == .more {
                 reminderPushedSmoking = key == AnyNavKey(SmokingKey())
-                    ? PushedSmokingScreens(stageId: nil, depth: backStacks.path(for: .more).count + 1)
+                    ? SmokingPushedScreens(stageId: nil, depth: backStacks.path(for: .more).count + 1)
                     : nil
             }
             // Home's memo is seeded rather than only cleared: a Home card pushes `CycleKey` too,
