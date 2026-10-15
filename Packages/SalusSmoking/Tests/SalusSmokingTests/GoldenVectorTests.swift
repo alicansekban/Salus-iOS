@@ -100,10 +100,11 @@ private func requireKnownKeys(_ json: JSON, _ known: Set<String>, _ what: String
 
 private func decodePlan(_ json: JSON?) throws -> SmokingPlan? {
     guard let json else { return nil }
-    try requireKnownKeys(json, [
+    let planKeys: Set = [
         "id", "mode", "productType", "baselineUnitsPerDay", "dailyLimit", "currencyCode", "reason",
         "notificationsEnabled", "eveningReminderEnabled", "createdAtMs", "tzId"
-    ], "plan")
+    ]
+    try requireKnownKeys(json, planKeys, "plan")
     return try SmokingPlan(
         id: require(string(json["id"]), "plan.id"),
         mode: require(SmokingMode(rawValue: string(json["mode"]) ?? ""), "plan.mode"),
@@ -140,9 +141,10 @@ private func decodeAttempt(_ json: JSON) throws -> QuitAttempt {
 }
 
 private func decodeEvent(_ json: JSON) throws -> SmokingEvent {
-    try requireKnownKeys(json, [
+    let eventKeys: Set = [
         "id", "type", "occurredAtMs", "tzId", "epochDay", "units", "trigger", "intensity", "productType", "attemptId"
-    ], "event")
+    ]
+    try requireKnownKeys(json, eventKeys, "event")
     return try SmokingEvent(
         id: require(string(json["id"]), "event.id"),
         type: require(SmokingEventType(rawValue: string(json["type"]) ?? ""), "event.type"),
@@ -243,11 +245,11 @@ private let integerKeys = [
 
 /// Every key an `expected` object may carry, by snapshot kind. The two integer lists mirror
 /// `quitValue` and `reduceValue`; a key outside its kind's list is a problem (`expectedProblems`).
-private let quitExpectedKeys: Set<String> = [
+private let quitExpectedKeys: Set = [
     "kind", "nextStageId", "attemptElapsedMs", "sinceLastSmokeMs", "slipCount", "unitsNotSmoked", "savedMinor",
     "timeRegainedMinutes", "cravingsBeaten", "nextStagePermille", "goalSavedTowardMinor"
 ]
-private let reduceExpectedKeys: Set<String> = [
+private let reduceExpectedKeys: Set = [
     "kind", "todayUnits", "weekReductionUnits", "weekSavedMinor", "savedSinceSetupMinor", "goalSavedTowardMinor"
 ]
 
@@ -393,7 +395,8 @@ struct GoldenVectorDecoderTests {
     func wrongExpectedType() {
         #expect(!expectedProblems(["kind": "QUIT", "savedMinor": "12"], kind: "QUIT").isEmpty)
         #expect(!expectedProblems(["kind": "QUIT", "nextStageId": 7], kind: "QUIT").isEmpty)
-        #expect(expectedProblems(["kind": "QUIT", "nextStageId": NSNull(), "savedMinor": NSNull()], kind: "QUIT").isEmpty)
+        #expect(expectedProblems(["kind": "QUIT", "nextStageId": NSNull(), "savedMinor": NSNull()], kind: "QUIT")
+            .isEmpty)
     }
 
     @Test("an enum value the port does not know throws")

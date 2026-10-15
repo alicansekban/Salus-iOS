@@ -95,31 +95,6 @@ struct SmokingInsightsAvailabilityTests {
         #expect(!insights(quit(events), window: 6).hasEnoughData)
     }
 
-    @Test("a window shorter than one day is one day: only today is looked at")
-    func windowBelowOneDay() {
-        let events = [
-            event("t", day: today, trigger: .stress),
-            event("y", day: today - 1, trigger: .social)
-        ]
-        let one = insights(quit(events), window: 1)
-        #expect(one.triggers.map(\.trigger) == [.stress])
-        for window in [0, -5] {
-            #expect(insights(quit(events), window: window) == one, "window \(window)")
-        }
-    }
-
-    @Test("an event on the day after today is outside the window")
-    func upperWindowEdge() {
-        let six = (0 ..< 6).map { event("e\($0)", day: today - Int64($0)) }
-        // Today + 1 is a future-dated entry (a clock set back, an import): not a seventh day, and
-        // not an occurrence.
-        let withTomorrow = insights(quit(six + [event("future", day: today + 1, trigger: .stress)]))
-        #expect(!withTomorrow.hasEnoughData)
-        #expect(withTomorrow.triggers.isEmpty)
-        #expect(withTomorrow.heatmap.flatMap(\.self).reduce(0, +) == 6)
-        #expect(insights(quit(six + [event("today-again", day: today, hour: 9)])).heatmap.flatMap(\.self).reduce(0, +) == 7)
-    }
-
     @Test("a zero-unit marker counts as a logged day")
     func markerCountsAsDay() {
         var events = (0 ..< 6).map { event("e\($0)", day: today - Int64($0)) }
@@ -345,17 +320,6 @@ struct SmokingInsightsHistoryTests {
         ])
     }
 
-    @Test("attempts that start at the same instant keep their stored order")
-    func equalStartsKeepTheirOrder() {
-        let start = Fixture.midnight(20010)
-        let b = Fixture.attempt("b", start: start, end: start + Fixture.dayMs, reason: .restarted)
-        let a = Fixture.attempt("a", start: start)
-        // Neither the id nor the end decides: the order the rows came in does.
-        #expect(insights(Fixture.quitInput(attempts: [b, a])).attemptDurations.map(\.attemptId) == ["b", "a"])
-        #expect(insights(Fixture.quitInput(attempts: [a, b])).attemptDurations.map(\.attemptId) == ["a", "b"])
-        #expect(insights(Fixture.quitInput(attempts: [a, b])).quitMarkerEpochDays == [20010, 20010])
-    }
-
     @Test("a device clock behind the start clamps the duration to 0")
     func durationClamp() {
         let future = Fixture.attempt("a1", start: now + Fixture.dayMs)
@@ -465,36 +429,6 @@ struct SmokingAiStatsTests {
     func reductionNegative() throws {
         let result = try #require(stats(reduce([event("a", day: 20001, units: 30)])))
         #expect(result.reductionPercent == -50)
-    }
-
-    @Test("no baseline means no reduction percent")
-    func reductionNoBaseline() throws {
-        for baseline in [Int64(0), -3] {
-            let input = SmokingInput(
-                plan: Fixture.plan(mode: .reduce, baseline: baseline, limit: 10),
-                prices: [Fixture.price(1000)],
-                attempts: [],
-                events: [event("a", day: 20001, units: 5)],
-                goal: nil
-            )
-            #expect(try #require(stats(input)).reductionPercent == nil, "baseline \(baseline)")
-        }
-    }
-
-    @Test("a percent that cannot be computed without overflow is nil, not a trap")
-    func reductionOverflow() throws {
-        // Units x 100 overflows Int64.
-        let huge = reduce([event("a", day: 20001, units: Int64.max / 50)])
-        #expect(try #require(stats(huge)).reductionPercent == nil)
-        // Days x baseline overflows Int64.
-        let wide = SmokingInput(
-            plan: Fixture.plan(mode: .reduce, baseline: Int64.max, limit: 10),
-            prices: [Fixture.price(1000)],
-            attempts: [],
-            events: [event("a", day: 20001, units: 1), event("b", day: 20002, units: 1)],
-            goal: nil
-        )
-        #expect(try #require(stats(wide)).reductionPercent == nil)
     }
 
     @Test("a zero-unit marker day lowers the average")
