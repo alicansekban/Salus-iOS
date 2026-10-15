@@ -136,5 +136,7 @@ public protocol ReminderEnvironment: Sendable {
 
     /// Whether the OS will run the background sync that refills the alarm window. False means
     /// the window is only refilled while the app is open.
-    func backgroundRefreshAvailable() -> Bool
+    ///
+    /// `async` where Kotlin's is not because iOS can only read the answer on the main actor.
+    func backgroundRefreshAvailable() async -> Bool
 }

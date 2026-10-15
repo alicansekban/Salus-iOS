@@ -11,8 +11,10 @@
 //  * `alarmKitAuthorized()` routes on the presence of the AlarmKit seam, exactly as
 //    `UserNotificationGateway` routes on the presence of the alarm scheduler — so a case says
 //    "this device is iOS 26.0+" by injecting a double instead of faking an availability check.
-//  * `backgroundRefreshAvailable()` is a snapshot the app layer samples, because
-//    `UIApplication.backgroundRefreshStatus` is main-actor-only and this seam is not.
+//  * `backgroundRefreshAvailable()` asks a main-actor probe the app layer supplies, because
+//    `UIApplication.backgroundRefreshStatus` is main-actor-only. It is asked at the moment of the
+//    question and never at construction: a value sampled while the app was still launching read
+//    as "off" and kept the Home readiness card up on every cold start.
 
 import Foundation
 import Testing
@@ -48,18 +50,42 @@ final class FakeAlarmKitAuthorizer: AlarmKitAuthorizing, @unchecked Sendable {
     }
 }
 
+/// `UIApplication.backgroundRefreshStatus`, in memory, counting how often it is read.
+final class FakeBackgroundRefreshStatus: @unchecked Sendable {
+    private let lock = NSLock()
+    private var available: Bool
+    private var reads = 0
+
+    var readCount: Int { lock.withLock { reads } }
+
+    init(available: Bool) {
+        self.available = available
+    }
+
+    func set(_ available: Bool) {
+        lock.withLock { self.available = available }
+    }
+
+    func read() -> Bool {
+        lock.withLock {
+            reads += 1
+            return available
+        }
+    }
+}
+
 @Suite("System reminder environment")
 struct SystemReminderEnvironmentTests {
     private let center = FakeUserNotificationCenter()
 
     private func makeEnvironment(
         alarmKit: (any AlarmKitAuthorizing)? = nil,
-        backgroundRefreshAvailable: Bool = true
+        backgroundRefresh: FakeBackgroundRefreshStatus = FakeBackgroundRefreshStatus(available: true)
     ) -> SystemReminderEnvironment {
         SystemReminderEnvironment(
             center: center,
             alarmKit: alarmKit,
-            backgroundRefreshAvailable: backgroundRefreshAvailable
+            backgroundRefreshStatus: { backgroundRefresh.read() }
         )
     }
 
@@ -111,14 +137,36 @@ struct SystemReminderEnvironmentTests {
         #expect(await makeEnvironment().requestNotificationAuthorization() == false)
     }
 
-    @Test("background refresh reports the sampled snapshot")
-    func backgroundRefreshReportsTheSnapshot() {
-        let environment = makeEnvironment(backgroundRefreshAvailable: false)
-        #expect(environment.backgroundRefreshAvailable() == false)
+    @Test("background refresh is not read while the environment is built")
+    func backgroundRefreshIsNotReadAtConstruction() {
+        let status = FakeBackgroundRefreshStatus(available: false)
+        _ = makeEnvironment(backgroundRefresh: status)
 
-        // The app layer re-samples `UIApplication.backgroundRefreshStatus` whenever the app comes
-        // back to the foreground, because the user can flip it in Settings behind our back.
-        environment.setBackgroundRefreshAvailable(true)
-        #expect(environment.backgroundRefreshAvailable() == true)
+        // The composition root is built inside `App.init`, before launch finishes, where the
+        // status is not yet the device's answer.
+        #expect(status.readCount == 0)
+    }
+
+    @Test("background refresh answers what the status is when asked")
+    func backgroundRefreshIsReadLive() async {
+        let status = FakeBackgroundRefreshStatus(available: false)
+        let environment = makeEnvironment(backgroundRefresh: status)
+        #expect(await environment.backgroundRefreshAvailable() == false)
+
+        // The user can flip it in Settings behind our back; no re-sample step is needed.
+        status.set(true)
+        #expect(await environment.backgroundRefreshAvailable() == true)
+    }
+
+    @Test("readiness drops the background refresh problem once the status reads available")
+    func readinessFollowsTheLiveStatus() async {
+        // The fake centre can only answer "unknown" (see the header), so notifications stay off
+        // here; what is pinned is the background refresh row alone.
+        let status = FakeBackgroundRefreshStatus(available: false)
+        let environment = makeEnvironment(backgroundRefresh: status)
+        #expect(await environment.readiness(alarmKitSupported: false).problems.contains(.backgroundRefreshOff))
+
+        status.set(true)
+        #expect(await !environment.readiness(alarmKitSupported: false).problems.contains(.backgroundRefreshOff))
     }
 }

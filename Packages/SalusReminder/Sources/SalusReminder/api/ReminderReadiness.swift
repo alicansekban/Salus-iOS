@@ -119,7 +119,7 @@ extension ReminderEnvironment {
                 problems.append(.alarmKitDenied)
             }
         }
-        if !backgroundRefreshAvailable() {
+        if await !backgroundRefreshAvailable() {
             problems.append(.backgroundRefreshOff)
         }
 

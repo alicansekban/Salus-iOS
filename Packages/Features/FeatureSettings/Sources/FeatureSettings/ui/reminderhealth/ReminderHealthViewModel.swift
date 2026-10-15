@@ -101,13 +101,14 @@ public final class ReminderHealthViewModel {
     func refresh() async {
         let notifications = await environment.notificationsAuthorized()
         let alarmKit = await environment.alarmKitAuthorized()
+        let backgroundRefresh = await environment.backgroundRefreshAvailable()
 
         state = ReminderHealthUiState(
             isLoading: false,
             notificationsEnabled: notifications,
             alarmKitSupported: alarmKitSupported,
             alarmKitAuthorized: alarmKit,
-            backgroundRefreshAvailable: environment.backgroundRefreshAvailable(),
+            backgroundRefreshAvailable: backgroundRefresh,
             lastSyncAt: syncState.lastSyncCompletedAt,
             timeZone: clock.timeZone()
         )

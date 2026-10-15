@@ -195,10 +195,6 @@ final class AppCompositionRoot {
     /// delegate needs the same coalescing funnel rather than the raw synchronizer.
     private let backgroundRefreshScheduler: BackgroundRefreshScheduler
 
-    /// The same object as ``reminderEnvironment``, kept concretely for the one thing only the app
-    /// layer can do: re-sample `UIApplication.backgroundRefreshStatus`, which is main-actor-only.
-    private let systemReminderEnvironment: SystemReminderEnvironment
-
     /// What an alarm's buttons run through, once ``startReminderEngine()`` has handed it to
     /// ``AlarmActionBridge``. Held here because the graph owns it: the bridge keeps a reference,
     /// not ownership, and an intent that arrives before the bind waits for this value.
@@ -251,7 +247,6 @@ final class AppCompositionRoot {
         // `reminderModule` (`ReminderModule.kt:18-28`), assembled in one place — see
         // `makeReminderGraph`. The properties below are eight views of that one sub-graph.
         let reminder = modules.reminder
-        systemReminderEnvironment = reminder.environment
         reminderEnvironment = reminder.environment
         reminderAuthorization = reminder.environment
         reminderSyncState = reminder.syncState
@@ -316,12 +311,10 @@ final class AppCompositionRoot {
 
     /// The foreground reconcile: `scenePhase == .active`.
     ///
-    /// Two things, in this order. The background-refresh sample first, because the user may have
-    /// just come back from Settings having changed it — and because the sync's own decisions read
-    /// the environment. Then the pass itself, which is what makes opening the app the most
-    /// reliable refill trigger the engine has.
+    /// The pass itself, which is what makes opening the app the most reliable refill trigger the
+    /// engine has. No background-refresh re-sample: the environment reads the status live
+    /// (`SystemReminderEnvironment.backgroundRefreshAvailable()`).
     func reminderDidBecomeActive() {
-        systemReminderEnvironment.setBackgroundRefreshAvailable(Self.isBackgroundRefreshAvailable())
         reminderScheduler.requestSync()
     }
 

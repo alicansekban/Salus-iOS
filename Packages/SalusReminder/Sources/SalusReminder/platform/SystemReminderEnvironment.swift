@@ -41,10 +41,7 @@ public final class SystemReminderEnvironment: ReminderEnvironment, @unchecked Se
 
     private let center: any UserNotificationCenting
     private let alarmKit: (any AlarmKitAuthorizing)?
-
-    /// Guards the background-refresh snapshot below.
-    private let lock = NSLock()
-    private var isBackgroundRefreshAvailable: Bool
+    private let backgroundRefreshStatus: @MainActor @Sendable () -> Bool
 
     /// - Parameters:
     ///   - center: the notification centre seam.
@@ -52,16 +49,16 @@ public final class SystemReminderEnvironment: ReminderEnvironment, @unchecked Se
     ///     IS the "iOS 26.0+" answer, exactly as the alarm scheduler's presence is for
     ///     ``UserNotificationGateway`` — the composition root builds one behind `#available`, so
     ///     nothing below this line version-checks.
-    ///   - backgroundRefreshAvailable: the app layer's sample of
-    ///     `UIApplication.backgroundRefreshStatus`. See ``backgroundRefreshAvailable()``.
+    ///   - backgroundRefreshStatus: the app layer's read of `UIApplication.backgroundRefreshStatus`.
+    ///     Called on every ``backgroundRefreshAvailable()`` and never here. See that member.
     public init(
         center: any UserNotificationCenting,
         alarmKit: (any AlarmKitAuthorizing)? = nil,
-        backgroundRefreshAvailable: Bool
+        backgroundRefreshStatus: @escaping @MainActor @Sendable () -> Bool
     ) {
         self.center = center
         self.alarmKit = alarmKit
-        isBackgroundRefreshAvailable = backgroundRefreshAvailable
+        self.backgroundRefreshStatus = backgroundRefreshStatus
     }
 
     /// `areNotificationsEnabled()` (`AndroidReminderEnvironment.kt:14-15`).
@@ -89,19 +86,14 @@ public final class SystemReminderEnvironment: ReminderEnvironment, @unchecked Se
     /// (`AndroidReminderEnvironment.kt:22-25`): both answer "will the OS let us run when the app is
     /// not open?".
     ///
-    /// A snapshot rather than a live read, because `UIApplication` is main-actor-isolated and this
-    /// member — ported from a Kotlin interface with no suspension — is neither `async` nor
-    /// isolated. The app layer samples the status at launch and again whenever the app returns to
-    /// the foreground, which is exactly when it can have changed: the switch lives in Settings,
-    /// outside this process.
-    public func backgroundRefreshAvailable() -> Bool {
-        lock.withLock { isBackgroundRefreshAvailable }
-    }
-
-    /// Takes a fresh sample from the app layer. Called from the main actor, where `UIApplication`
-    /// can be read.
-    public func setBackgroundRefreshAvailable(_ available: Bool) {
-        lock.withLock { isBackgroundRefreshAvailable = available }
+    /// A live read on the main actor, where `UIApplication` can be read, and never a stored
+    /// sample. This used to be a snapshot taken when the composition root was built inside
+    /// `App.init`, before launch finished. There the status did not yet read `.available`, and on a
+    /// cold start Home asked before the foreground re-sample landed. So the readiness card claimed
+    /// background refresh was off on every launch, while Reminder Health, opened later, said
+    /// everything was fine.
+    public func backgroundRefreshAvailable() async -> Bool {
+        await backgroundRefreshStatus()
     }
 }
 

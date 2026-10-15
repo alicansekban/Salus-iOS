@@ -31,7 +31,7 @@ extension AppCompositionRoot {
             environment: SystemReminderEnvironment(
                 center: notificationCenter,
                 alarmKit: alarmKit.authorizing,
-                backgroundRefreshAvailable: isBackgroundRefreshAvailable()
+                backgroundRefreshStatus: { isBackgroundRefreshAvailable() }
             )
         )
     }
@@ -166,8 +166,9 @@ extension AppCompositionRoot {
         return (nil, nil)
     }
 
-    /// `UIApplication.backgroundRefreshStatus`, sampled here because it is main-actor-only and
-    /// `ReminderEnvironment.backgroundRefreshAvailable()` is neither `async` nor isolated.
+    /// `UIApplication.backgroundRefreshStatus`, read here because it is main-actor-only and the
+    /// reminder packages do not import UIKit. Called per question, never while the graph is built.
+    @MainActor
     static func isBackgroundRefreshAvailable() -> Bool {
         UIApplication.shared.backgroundRefreshStatus == .available
     }
