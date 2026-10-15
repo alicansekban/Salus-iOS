@@ -29,6 +29,7 @@ public struct SalusProgressBar: View {
     private let overflow: Double
 
     @Environment(\.salusTheme) private var theme
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     /// - Parameters:
     ///   - accent: overrides the tone's fill colour when set (iOS-M17 Task 8).
@@ -64,12 +65,15 @@ public struct SalusProgressBar: View {
             }
         }
         .frame(height: SalusProgressBarDefaults.height)
-        .animation(.easeInOut(duration: SalusMotion.stateChangeDurationSeconds), value: clamped)
-        .animation(.easeInOut(duration: SalusMotion.stateChangeDurationSeconds), value: overflow)
+        // Reduce Motion drops the slide, as `SalusProgressRing` does: the width still changes, at once.
+        .animation(reduceMotion ? nil : Self.slide, value: clamped)
+        .animation(reduceMotion ? nil : Self.slide, value: overflow)
         // Kotlin draws two bare `Box`es, which TalkBack never focuses: the number beside the bar
         // is what states the metric, and a second unnamed stop would only slow the reader down.
         .accessibilityHidden(true)
     }
+
+    private static let slide = Animation.easeInOut(duration: SalusMotion.stateChangeDurationSeconds)
 
     /// `progress.coerceIn(0f, 1f)` (`SalusProgressBar.kt:52`).
     private var clamped: Double {

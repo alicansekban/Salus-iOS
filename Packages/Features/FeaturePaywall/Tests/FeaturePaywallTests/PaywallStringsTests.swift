@@ -198,7 +198,7 @@ struct PaywallStringsTests {
     static let expectedKeys = Set(samples.map(\.key))
 
     @Test("the catalog holds exactly the 32 keys :feature:paywall owns")
-    func catalogHoldsExactlyTheThirtyKeys() throws {
+    func catalogHoldsExactlyTheKeys() throws {
         // Pinned as a number as well as a set: a row deleted from the table together with its key
         // from the catalog would otherwise agree with itself and pass.
         #expect(Self.samples.count == 32)

@@ -176,7 +176,7 @@ private struct SmokingQuitCard: View {
             if let nextStagePermille = quit.nextStagePermille, let nextStageText {
                 VStack(spacing: SalusSpacing.xs) {
                     SalusProgressRing(
-                        progress: Float(nextStagePermille) / 1000,
+                        progress: Float(nextStagePermille) / Float(permilleWhole),
                         label: HomeSmokingFormatting.percent(permille: nextStagePermille, locale: locale),
                         accent: accent.accent
                     )
@@ -222,7 +222,7 @@ private struct SmokingReduceCard: View {
 
     /// The excess in permille of the track, so 12 of 10 is a 200 permille second lap.
     private var overflowPermille: Int {
-        isOver && limit > 0 ? overflow * 1000 / limit : 0
+        isOver && limit > 0 ? overflow * permilleWhole / limit : 0
     }
 
     var body: some View {
@@ -258,6 +258,9 @@ private struct SmokingReduceCard: View {
     }
 }
 
+/// A whole in permille — Android's `PERMILLE_WHOLE` (`HomeSmokingCards.kt`).
+private let permilleWhole = 1000
+
 /// The badge and the overline both cards open with.
 private struct SmokingCardHeader: View {
     @Environment(\.salusTheme) private var theme
@@ -266,8 +269,8 @@ private struct SmokingCardHeader: View {
         HStack(spacing: SalusSpacing.sm) {
             SalusIconBadge(systemImage: "smoke", accent: theme.extendedColors.smoking)
             Text(verbatim: HomeStrings.smokingOverline)
-                .font(SalusTypography.labelMedium.font)
-                .tracking(SalusTypography.labelMedium.tracking)
+                .font(SalusTypography.labelSmall.font)
+                .tracking(SalusTypography.labelSmall.tracking)
                 .foregroundStyle(theme.extendedColors.smoking.accent)
         }
     }

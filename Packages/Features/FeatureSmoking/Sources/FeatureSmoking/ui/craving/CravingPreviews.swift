@@ -51,12 +51,13 @@ private struct CravingPreview: View {
     }
 }
 
-// Mid-way through the held breath.
+// Mid-way through the held breath (104 s is 6 s into the 14 s cycle: 4 s in, then the hold).
 #Preview("Craving — running") {
-    SalusPreviewPalettes { CravingPreview(state: previewState(elapsedMs: 109_000)) }
+    SalusPreviewPalettes { CravingPreview(state: previewState(elapsedMs: 104_000)) }
 }
 
-// The out-breath, no reason set, the line on savings.
+// The out-breath (26 s is 12 s into the cycle), no reason set, the focus line (26 s is the fourth
+// 8 s slot of the rotation).
 #Preview("Craving — running, no reason") {
     SalusPreviewPalettes { CravingPreview(state: previewState(elapsedMs: 26000, reason: nil)) }
 }
