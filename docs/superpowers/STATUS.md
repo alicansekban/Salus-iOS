@@ -14,7 +14,7 @@ git. Written 2026-10-14; update it at the end of a milestone and, between tasks,
 
 ## Now
 
-- **iOS-M17 smoking cessation** — **done and fast-forwarded into `main`** at `6a749f9` on the owner's word (2026-10-15), **not pushed**; the owner's manual QA still runs (fixes land on a new branch off `main`). Built in parallel with Android on contracts owned by the Android repo. Version 1.1.0 (6).
+- **iOS-M17 smoking cessation** — **done, fast-forwarded into `main`** at `6a749f9` (2026-10-15); the owner's manual QA passed and `main` was **pushed** on the owner's word the same day (Android M17 is on its `main` too). Next: the 1.1.0 (6) release (restore the production RevenueCat key in `App/Secrets.local.xcconfig` before archiving). Built in parallel with Android on contracts owned by the Android repo. Version 1.1.0 (6).
   - status `docs/superpowers/plans/STATUS-ios-m17-smoking.md` (task log, rulings, ledger rows to fold);
   - manual QA `docs/qa/m17-manual-qa.md` — walk it together with Android's sheet (runbook §4.4);
   - delta spec `docs/superpowers/specs/2026-10-14-ios-m17-smoking-design.md`; plan `docs/superpowers/plans/2026-10-14-ios-m17-smoking.md`.

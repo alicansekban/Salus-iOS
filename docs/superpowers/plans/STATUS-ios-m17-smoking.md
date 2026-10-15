@@ -1,6 +1,6 @@
 # STATUS — iOS-M17 smoking cessation
 
-- **Phase:** - **Phase:** done (2026-10-15) — Tasks 1–23 done and reviewed; whole-branch review APPROVED, one final fix wave (`4b525e0`…`2d62c26`) re-reviewed APPROVED. `gates.sh all` on `2d62c26`: green, **2284 tests, 0 failed**. Joint string parity with Android clean. Fast-forwarded into `main` at `6a749f9` on the owner's word (2026-10-15), not pushed. **Waiting on the owner:** manual QA (`docs/qa/m17-manual-qa.md`, both platforms together) and the word to push. Plan: `2026-10-14-ios-m17-smoking.md`.
+- **Phase:** - **Phase:** done (2026-10-15) — Tasks 1–23 done and reviewed; whole-branch review APPROVED, one final fix wave (`4b525e0`…`2d62c26`) re-reviewed APPROVED. `gates.sh all` on `2d62c26`: green, **2284 tests, 0 failed**. Joint string parity with Android clean. Fast-forwarded into `main` at `6a749f9` on the owner's word (2026-10-15). The owner's manual QA (`docs/qa/m17-manual-qa.md`, both platforms together) passed; `main` pushed on the owner's word (2026-10-15). Plan: `2026-10-14-ios-m17-smoking.md`.
 - **Plan:** `docs/superpowers/plans/2026-10-14-ios-m17-smoking.md`
 - **Spec:** `docs/superpowers/specs/2026-10-14-ios-m17-smoking-design.md`. It is a delta of `../salus-android/docs/superpowers/specs/2026-09-20-smoking-cessation-design.md`.
 - **Runbook:** `../salus-android/docs/superpowers/plans/2026-10-14-m17-parallel-runbook.md`. The Android twin runs in parallel and owns the contracts.
