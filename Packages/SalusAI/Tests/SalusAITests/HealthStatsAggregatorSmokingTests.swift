@@ -74,10 +74,14 @@ struct HealthStatsAggregatorSmokingTests {
         #expect(stats.smoking != nil)
 
         for language in [AiLanguage.tr, .en] {
+            // The tobacco block has to be in the prompt, or the negative checks below pass because
+            // nothing smoking-related was ever written.
+            let header = language == .tr ? "Tütün kullanımı (özet sayılar):" : "Tobacco use (summary figures):"
             for prompt in [
                 PromptBuilder.summaryPrompt(stats, language: language),
                 PromptBuilder.doctorReportPrompt(stats, language: language)
             ] {
+                #expect(prompt.user.contains(header), "\(language): the tobacco block is in the prompt")
                 #expect(!prompt.user.contains(planted))
                 #expect(!prompt.system.contains(planted))
             }
