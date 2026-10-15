@@ -139,13 +139,13 @@ struct CravingWriteTests {
         vm.onEvent(.continueTapped)
 
         vm.onEvent(.triggerSaved(trigger: .coffee, intensity: 4))
-        await waitUntil("the screen is left") { !harness.navigator.commandLog.isEmpty }
+        await waitUntil("the screen is left") { harness.cover.closes > 0 }
 
         let event = try #require(harness.resisted.first)
         #expect(event.trigger == .coffee)
         #expect(event.intensity == 4)
         #expect(event.occurredAtMs == harness.nowMs)
-        #expect(harness.navigator.commandLog == [.pop])
+        #expect(harness.cover.closes == 1)
     }
 
     @Test("skipping the trigger leaves the craving as logged and leaves the screen")
@@ -157,10 +157,10 @@ struct CravingWriteTests {
         vm.onEvent(.continueTapped)
 
         vm.onEvent(.triggerSkipped)
-        await waitUntil("the screen is left") { !harness.navigator.commandLog.isEmpty }
+        await waitUntil("the screen is left") { harness.cover.closes > 0 }
 
         #expect(harness.store.commits == committed)
-        #expect(harness.navigator.commandLog == [.pop])
+        #expect(harness.cover.closes == 1)
     }
 
     // MARK: Exits that write nothing
@@ -172,10 +172,10 @@ struct CravingWriteTests {
         vm.refreshClock()
 
         vm.onEvent(.closeTapped)
-        await waitUntil("the screen is left") { !harness.navigator.commandLog.isEmpty }
+        await waitUntil("the screen is left") { harness.cover.closes > 0 }
 
         #expect(harness.store.calls == 0)
-        #expect(harness.navigator.commandLog == [.pop])
+        #expect(harness.cover.closes == 1)
     }
 
     @Test("closing is ignored while a write is in flight")
@@ -189,7 +189,7 @@ struct CravingWriteTests {
         vm.onEvent(.closeTapped)
         await Task.yield()
 
-        #expect(harness.navigator.commandLog.isEmpty)
+        #expect(harness.cover.closes == 0)
         gate.open()
         await waitUntil("the craving is logged") { vm.state.logged }
     }
@@ -200,12 +200,12 @@ struct CravingWriteTests {
 
         vm.onEvent(.closeTapped)
         vm.onEvent(.closeTapped)
-        await waitUntil("the screen is left") { !harness.navigator.commandLog.isEmpty }
+        await waitUntil("the screen is left") { harness.cover.closes > 0 }
         for _ in 0 ..< 20 {
             await Task.yield()
         }
 
-        #expect(harness.navigator.commandLog == [.pop])
+        #expect(harness.cover.closes == 1)
     }
 
     @Test("the ViewModel is released once the screen is left")
@@ -213,7 +213,7 @@ struct CravingWriteTests {
         var vm: CravingViewModel? = await harness.readyViewModel()
         weak var probe = vm
         vm?.onEvent(.closeTapped)
-        await waitUntil("the screen is left") { !harness.navigator.commandLog.isEmpty }
+        await waitUntil("the screen is left") { harness.cover.closes > 0 }
 
         vm = nil
         await Task.yield()
@@ -231,7 +231,7 @@ struct CravingWriteTests {
 
         #expect(vm.state.sheet == .slip)
         #expect(harness.store.calls == 0)
-        #expect(harness.navigator.commandLog.isEmpty)
+        #expect(harness.cover.closes == 0)
     }
 
     @Test("dismissing the slip sheet stays on the craving screen")
@@ -244,7 +244,7 @@ struct CravingWriteTests {
 
         #expect(vm.state.sheet == nil)
         #expect(harness.store.calls == 0)
-        #expect(harness.navigator.commandLog.isEmpty)
+        #expect(harness.cover.closes == 0)
     }
 
     @Test("confirming a slip writes it once and asks what triggered it")
@@ -272,12 +272,12 @@ struct CravingWriteTests {
         await waitUntil("the trigger sheet") { vm.state.sheet != .slip }
 
         vm.onEvent(.triggerSaved(trigger: .stress, intensity: nil))
-        await waitUntil("the screen is left") { !harness.navigator.commandLog.isEmpty }
+        await waitUntil("the screen is left") { harness.cover.closes > 0 }
 
         let slip = try #require(harness.smoked.first)
         #expect(slip.units == 2)
         #expect(slip.trigger == .stress)
-        #expect(harness.navigator.commandLog == [.pop])
+        #expect(harness.cover.closes == 1)
     }
 
     @Test("in REDUCE the smoked button logs one unit and leaves")
@@ -286,12 +286,12 @@ struct CravingWriteTests {
         let vm = await reduce.readyViewModel()
 
         vm.onEvent(.smokedTapped)
-        await waitUntil("the screen is left") { !reduce.navigator.commandLog.isEmpty }
+        await waitUntil("the screen is left") { reduce.cover.closes > 0 }
 
         let entry = try #require(reduce.smoked.first)
         #expect(reduce.smoked.count == 1)
         #expect(entry.units == 1)
-        #expect(reduce.navigator.commandLog == [.pop])
+        #expect(reduce.cover.closes == 1)
     }
 
     @Test("a double tap on smoked in REDUCE writes once")
@@ -305,10 +305,35 @@ struct CravingWriteTests {
         vm.onEvent(.smokedTapped)
         await waitUntil("the write is started") { reduce.store.calls == 1 }
         gate.open()
-        await waitUntil("the screen is left") { !reduce.navigator.commandLog.isEmpty }
+        await waitUntil("the screen is left") { reduce.cover.closes > 0 }
 
         #expect(reduce.smoked.count == 1)
         #expect(reduce.store.calls == 1)
+    }
+
+    @Test("a write finishing after the cover was closed from outside pops no screen")
+    func writeFinishingAfterAnExternalCloseTouchesNoStack() async {
+        let reduce = CravingHarness(mode: .reduce)
+        let vm = await reduce.readyViewModel()
+        let gate = WriteGate()
+        reduce.store.gate = gate
+        vm.onEvent(.smokedTapped)
+        await waitUntil("the write is started") { reduce.store.calls == 1 }
+
+        // A notification tap closes the cover and pushes its screen onto the tab stack.
+        reduce.cover.presenter.dismiss()
+        gate.open()
+        await waitUntil("the write is done") { reduce.smoked.count == 1 }
+        await waitUntil("the screen asks to leave") { reduce.cover.closes > 0 }
+        for _ in 0 ..< 20 {
+            await Task.yield()
+        }
+
+        // The close ran once, and landed on a cover that was already gone: no stack command at
+        // all, and no cover is up.
+        #expect(reduce.cover.closes == 1)
+        #expect(reduce.cover.stack.commandLog.isEmpty)
+        #expect(reduce.cover.presenter.presented == nil)
     }
 
     @Test("smoked does nothing before the snapshot says which mode this is")

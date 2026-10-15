@@ -86,6 +86,8 @@ public func makeSmokingModule(
     // Koin's `getAll<SmokingChangeListener>()`: every committed smoking write asks the engine to
     // refill its window, so a slip, a reset or a mode switch moves or cancels the milestones.
     core.changeListeners.add(SmokingReminderResync(scheduler: reminderScheduler))
+    // One presenter, shared by the module's `cravingPresenter` and the craving ViewModel's close.
+    let cravingPresenter = SmokingCravingPresenter()
     return SmokingModule(
         core: core,
         navigator: navigator,
@@ -112,8 +114,8 @@ public func makeSmokingModule(
             premiumRepository: premiumRepository,
             paywallController: paywallController
         ),
-        makeCravingViewModel: cravingFactory(core: core, clock: clock, navigator: navigator),
-        cravingPresenter: SmokingCravingPresenter(),
+        makeCravingViewModel: cravingFactory(core: core, clock: clock, presenter: cravingPresenter),
+        cravingPresenter: cravingPresenter,
         makeTimelineViewModel: { highlightStageId in
             SmokingTimelineViewModel(
                 highlightStageId: highlightStageId,
@@ -178,7 +180,7 @@ private func mainFactory(
 private func cravingFactory(
     core: SmokingCoreModule,
     clock: any SalusClock,
-    navigator: Navigator
+    presenter: SmokingCravingPresenter
 ) -> @MainActor () -> CravingViewModel {
     {
         CravingViewModel(
@@ -188,7 +190,7 @@ private func cravingFactory(
             logSmoked: core.logSmoked,
             resolveSlip: core.resolveSlip,
             editEvent: core.editEvent,
-            navigator: navigator
+            closeCover: { presenter.dismiss() }
         )
     }
 }

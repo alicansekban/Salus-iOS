@@ -1,7 +1,7 @@
 // The state every `CravingViewModel` case shares, the twin of the Kotlin test's `Fixture`: one fixed
 // clock at 2026-03-10T12:00 Europe/Istanbul, a fake store holding a QUIT attempt that began 42 days
 // earlier with two cravings already beaten (or a REDUCE plan), the real calculator over it, and a
-// recording navigator.
+// cover probe (a presenter plus the stack under it).
 //
 // The clock never moves by itself, so a case that wants time to pass says so: `setClock(secondsAfterStart:)`
 // moves the fixed clock, and the ViewModel only learns of it through `refreshClock()` — which is
@@ -21,7 +21,8 @@ struct CravingHarness {
     let nowMs: Int64 = 1_773_133_200_000 // 2026-03-10T12:00 Europe/Istanbul
     let zone = FixedSalusClock.defaultZone
     let clock = FixedSalusClock(now: Date(timeIntervalSince1970: 1_773_133_200))
-    let navigator = FakeNavigator()
+    /// The cover the ViewModel closes, open from the start, and the tab stack under it.
+    let cover = CoverProbe()
     let ids = CountingIds()
     let store: FakeSmokingStore
 
@@ -102,7 +103,7 @@ struct CravingHarness {
     }
 
     func viewModel() -> CravingViewModel {
-        makeCravingViewModel(store: store, clock: clock, ids: ids, navigator: navigator)
+        makeCravingViewModel(store: store, clock: clock, ids: ids, cover: cover)
     }
 
     /// A ViewModel that has taken its first snapshot — Android's `ready()`.
@@ -134,7 +135,7 @@ func makeCravingViewModel(
     store: FakeSmokingStore,
     clock: FixedSalusClock,
     ids: CountingIds,
-    navigator: FakeNavigator
+    cover: CoverProbe
 ) -> CravingViewModel {
     CravingViewModel(
         repository: FakeSmokingRepository(store: store, clock: clock),
@@ -143,6 +144,29 @@ func makeCravingViewModel(
         logSmoked: LogSmoked(store: store, clock: clock, idGenerator: ids),
         resolveSlip: ResolveSlip(store: store, clock: clock, idGenerator: ids),
         editEvent: EditEvent(store: store),
-        navigator: navigator.navigator
+        closeCover: cover.close
     )
+}
+
+/// The shell's side of a craving cover: the presenter the ViewModel's close is bound to, how many
+/// times that close was asked for, and a recorded tab stack that must stay untouched.
+@MainActor
+final class CoverProbe {
+    let presenter = SmokingCravingPresenter()
+
+    /// Stands for the tab stack under the cover; the ViewModel has no way to reach it any more.
+    let stack = FakeNavigator()
+
+    private(set) var closes = 0
+
+    init() {
+        presenter.consume(.navigate(AnyNavKey(SmokingCravingKey(source: "main"))))
+    }
+
+    var close: @MainActor () -> Void {
+        { [self] in
+            closes += 1
+            presenter.dismiss()
+        }
+    }
 }

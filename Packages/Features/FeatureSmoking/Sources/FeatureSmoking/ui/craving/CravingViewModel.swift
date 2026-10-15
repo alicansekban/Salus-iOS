@@ -14,7 +14,6 @@
 import Foundation
 import Observation
 import SalusCommon
-import SalusNavigation
 import SalusSmoking
 
 /// The craving flow. The remaining time is not counted down: it is `5:00 - (now - startedAt)`, and
@@ -38,7 +37,11 @@ public final class CravingViewModel {
     private let logSmoked: LogSmoked
     private let resolveSlip: ResolveSlip
     private let editEvent: EditEvent
-    private let navigator: Navigator
+    /// Closes the cover, bound to the presenter's `dismiss()` rather than to `navigator.pop()`: a
+    /// pop is applied to whatever stack is on top when it arrives, so a write that finishes after a
+    /// notification tap already closed the cover and pushed its screen would pop that screen.
+    /// Dismissing a cover that is gone is a no-op.
+    private let closeCover: @MainActor () -> Void
 
     /// The instant the flow began. A `let`: the timer is a function of it and the clock, nothing else.
     private let startedAtMs: Int64
@@ -66,14 +69,14 @@ public final class CravingViewModel {
         logSmoked: LogSmoked,
         resolveSlip: ResolveSlip,
         editEvent: EditEvent,
-        navigator: Navigator
+        closeCover: @escaping @MainActor () -> Void
     ) {
         self.clock = clock
         self.logCravingResisted = logCravingResisted
         self.logSmoked = logSmoked
         self.resolveSlip = resolveSlip
         self.editEvent = editEvent
-        self.navigator = navigator
+        self.closeCover = closeCover
         startedAtMs = clock.nowEpochMilliseconds()
         state = CravingUiState()
 
@@ -281,12 +284,13 @@ public final class CravingViewModel {
     }
 
     /// Once. A second tap on the close button, or a trigger sheet and the close button racing, must
-    /// not send a second `.pop`: the shell would apply it to whatever screen is under the cover.
+    /// not close twice; and a close after the cover is already gone (see ``closeCover``) touches
+    /// nothing.
     private func leave() {
         guard !left else { return }
         left = true
         state.sheet = nil
-        navigator.pop()
+        closeCover()
     }
 
     /// A refused write: the state is as it was, only the busy flag drops, and the person is told.

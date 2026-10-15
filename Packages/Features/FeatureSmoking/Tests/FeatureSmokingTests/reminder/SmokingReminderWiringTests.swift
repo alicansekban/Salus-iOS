@@ -85,6 +85,32 @@ struct SmokingReminderWiringTests {
         try await real.core.resetSmoking()
         #expect(scheduler.syncs == 3)
     }
+
+    @Test("the module's craving ViewModel closes the module's own cover, not the stack under it")
+    func cravingViewModelClosesTheModulesCover() async throws {
+        let real = try RealCore()
+        let stack = FakeNavigator()
+        let module = makeSmokingModule(
+            core: real.core,
+            clock: real.clock,
+            snackbar: SalusSnackbarController(),
+            navigator: stack.navigator,
+            reminderScheduler: CountingScheduler(),
+            reminderEnvironment: AuthorizedEnvironment(),
+            premiumRepository: FakePremiumRepository(),
+            paywallController: PaywallController()
+        )
+        module.cravingPresenter.consume(.navigate(AnyNavKey(SmokingCravingKey(source: "main"))))
+        let viewModel = module.makeCravingViewModel()
+
+        viewModel.onEvent(.closeTapped)
+        for _ in 0 ..< 20 {
+            await Task.yield()
+        }
+
+        #expect(module.cravingPresenter.presented == nil)
+        #expect(stack.commandLog.isEmpty)
+    }
 }
 
 /// The real synchronizer and ledger over the real core, driven by the real use cases.
