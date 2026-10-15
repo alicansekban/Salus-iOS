@@ -14,11 +14,11 @@ git. Written 2026-10-14; update it at the end of a milestone and, between tasks,
 
 ## Now
 
-- **iOS-M17 smoking cessation** — **done, waiting on the owner's QA** (2026-10-15). Built in parallel with Android on contracts owned by the Android repo; branch `m17-smoking` HEAD `8679d00`, **not on `main`, not pushed**. Version 1.1.0 (6).
+- **iOS-M17 smoking cessation** — **done and fast-forwarded into `main`** at `6a749f9` on the owner's word (2026-10-15), **not pushed**; the owner's manual QA still runs (fixes land on a new branch off `main`). Built in parallel with Android on contracts owned by the Android repo. Version 1.1.0 (6).
   - status `docs/superpowers/plans/STATUS-ios-m17-smoking.md` (task log, rulings, ledger rows to fold);
   - manual QA `docs/qa/m17-manual-qa.md` — walk it together with Android's sheet (runbook §4.4);
   - delta spec `docs/superpowers/specs/2026-10-14-ios-m17-smoking-design.md`; plan `docs/superpowers/plans/2026-10-14-ios-m17-smoking.md`.
-  - **Checkpoint:** coordinator Claude Code (Opus 5.5 controller), checkout `salus-ios`, branch `m17-smoking` HEAD `8679d00`; implementers Sonnet 5.5, reviewers Opus 5.5 / Sonnet 5.5 as each reported. Tasks 1–23 complete and reviewed, whole-branch review and final fix wave approved, `gates.sh all` green. **Resume:** after the owner's QA, `git rebase main` then `git merge --ff-only m17-smoking` and push — only on the owner's word. Android folds parity rows D-M17-i-7 and i-8.
+  - **Checkpoint:** coordinator Claude Code (Opus 5.5 controller), checkout `salus-ios`, branch `m17-smoking` HEAD `8679d00`; implementers Sonnet 5.5, reviewers Opus 5.5 / Sonnet 5.5 as each reported. Tasks 1–23 complete and reviewed, whole-branch review and final fix wave approved, `gates.sh all` green. **Resume:** the owner's QA; push only on the owner's word. Android folds parity rows D-M17-i-7 and i-8.
 - **Agent harness** — done and fast-forwarded into `main` (plan `salus-android/docs/superpowers/plans/2026-10-14-agent-harness.md`, status `docs/superpowers/plans/STATUS-agent-harness.md`).
 
 ## Open items
@@ -30,4 +30,4 @@ git. Written 2026-10-14; update it at the end of a milestone and, between tasks,
 
 ## Gates baseline
 
-`/salus-gates` test: **2284 tests** across 26 packages, 0 failed, 0 skipped (iOS-M17 close-out on `m17-smoking`, 2026-10-15; `all` = toolchain, lint, lint-rules, test, build, green). `main` itself is still at the harness baseline until M17 merges.
+`/salus-gates` test: **2284 tests** across 26 packages, 0 failed, 0 skipped (iOS-M17 close-out on `m17-smoking`, 2026-10-15; `all` = toolchain, lint, lint-rules, test, build, green). 
