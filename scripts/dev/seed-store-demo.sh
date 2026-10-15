@@ -34,7 +34,10 @@ container="$(xcrun simctl get_app_container booted "$BUNDLE" data)"
 db="$container/$DB_REL"
 [[ -f "$db" ]] || { echo "no database yet — launch the app once so it creates $db"; exit 1; }
 
-if [[ "$(xcrun simctl spawn booted defaults read "$BUNDLE" onboarding_completed 2>/dev/null || echo 0)" != "1" ]]; then
+# Read the flag from the app container's plist: on newer runtimes `simctl spawn … defaults read`
+# looks at a different domain and misses it even after onboarding.
+prefs="$container/Library/Preferences/$BUNDLE.plist"
+if [[ "$(plutil -extract onboarding_completed raw -o - "$prefs" 2>/dev/null || echo false)" != "true" ]]; then
     echo "complete onboarding in the app first, then run this again."
     exit 1
 fi
