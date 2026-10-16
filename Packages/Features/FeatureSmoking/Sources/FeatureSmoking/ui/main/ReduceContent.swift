@@ -200,7 +200,8 @@ private struct ToneCopy: View {
     }
 }
 
-/// The large "+1", in every state (review R13). Spoken as what it does, not as a sign.
+/// The "+1", in every state (review R13). Spoken as what it does, not as a sign. Medium, centred
+/// by the hero card: an action inside a card wraps its content (`ReduceContent.kt`, `Medium`).
 private struct PlusOneButton: View {
     let enabled: Bool
     let onAdd: () -> Void
@@ -210,6 +211,7 @@ private struct PlusOneButton: View {
     var body: some View {
         SalusButton(
             SmokingStrings.reducePlusOne,
+            size: .medium,
             systemImage: ReduceSymbols.plus,
             accent: theme.extendedColors.smoking,
             enabled: enabled,

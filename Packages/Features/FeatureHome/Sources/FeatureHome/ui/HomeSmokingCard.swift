@@ -147,7 +147,11 @@ private struct SmokingQuitCard: View {
                 .homeOpensCard(onOpenSmoking)
                 .accessibilityLabel(Text(verbatim: spoken))
 
-                SalusButton(HomeStrings.smokingCraving, accent: accent, action: onOpenCraving)
+                // Medium and trailing, like the doses card's "Alındı": an action inside a card wraps
+                // its content, and a full-width 56 pt pill outweighed the card it sits in
+                // (`HomeSmokingCards.kt`, `Medium` + `align(End)`).
+                SalusButton(HomeStrings.smokingCraving, size: .medium, accent: accent, action: onOpenCraving)
+                    .frame(maxWidth: .infinity, alignment: .trailing)
             }
         }
         .frame(maxWidth: .infinity)
