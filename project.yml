@@ -190,9 +190,9 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.alicansekban.salus
         PRODUCT_NAME: Salus
         # `CURRENT_PROJECT_VERSION` is the build number and rises once per upload;
-        # `MARKETING_VERSION` is the version users see (1.1.0, build 6: the smoking release).
+        # `MARKETING_VERSION` is the version users see (1.1.0, build 7: the smoking release).
         MARKETING_VERSION: "1.1.0"
-        CURRENT_PROJECT_VERSION: "6"
+        CURRENT_PROJECT_VERSION: "7"
         # iPhone only, matching the Android phone-first app.
         TARGETED_DEVICE_FAMILY: "1"
         # The release app icon: `App/Assets.xcassets/AppIcon.appiconset`, the single 1024x1024
